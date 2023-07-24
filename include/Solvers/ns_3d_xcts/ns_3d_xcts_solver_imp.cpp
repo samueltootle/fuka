@@ -2,6 +2,7 @@
 #include "mpi.h"
 #include "bco_utilities.hpp"
 #include "ns_3d_xcts_regrid.hpp"
+#include "Solvers/sequences/sequence_utilities.hpp"
 #include <cmath>
 
 /**
@@ -83,6 +84,14 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve() {
   // Barrier needed in case we need to read from the previous output
   MPI_Barrier(MPI_COMM_WORLD);
   return exit_status;
+}
+
+template<class eos_t, typename config_t, typename space_t>
+int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve(Parameter_sequence<BCO_PARAMS> const * sequence_in) {
+  if(sequence_in != nullptr) {
+    this->seq.reset(new Parameter_sequence<BCO_PARAMS>(*sequence_in));
+  }
+  return this->solve();
 }
 
 template<class eos_t, typename config_t, typename space_t>
