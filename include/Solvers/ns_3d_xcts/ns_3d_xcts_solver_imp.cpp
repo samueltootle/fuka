@@ -38,11 +38,25 @@ std::string ns_3d_xcts_solver<eos_t, config_t, space_t>::converged_filename(
   ss << "NS";
   if(stage != "") ss  << "_" << stage << ".";
   else ss << ".";
-  ss << eosname << "."
-     << bconfig(MADM) << "."; 
-  if(stage != "NOROT_BC") ss << bconfig(CHI)<< ".";
+  ss << eosname << ".";
+  
+  if(seq && seq->is_set()) {
+    auto idx{std::get<0>(seq->get_indices())};
+    switch(idx) {
+      case BCO_PARAMS::HC:
+        ss << "HC." << bconfig(BCO_PARAMS::HC) << ".";
+        break;
+      case BCO_PARAMS::NC:
+        ss << "NC." << bconfig(BCO_PARAMS::NC) << ".";
+        break;
+      default:
+        ss << bconfig(BCO_PARAMS::MADM) << "."; 
+    }
+  }
+  
+  if(stage != "NOROT_BC") ss << bconfig(BCO_PARAMS::CHI)<< ".";
   else ss << "0.";
-  ss << bconfig(NSHELLS) << "."
+  ss << bconfig(BCO_PARAMS::NSHELLS) << "."
      <<std::setfill('0') << std::setw(2) << res;
   return ss.str();
 }
@@ -220,7 +234,7 @@ void ns_3d_xcts_solver<eos_t, config_t, space_t>::print_diagnostics(System_of_eq
 } // end print diagnostics rot
 
 template<class eos_t, typename config_t, typename space_t>
-void ns_3d_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(const double& loghc) {
+void ns_3d_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(const double loghc) {
   bconfig.set(HC) = std::exp(loghc);
   bconfig.set(NC) = EOS<eos_t,DENSITY>::get(bconfig(HC));
 }

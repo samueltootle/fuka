@@ -103,7 +103,7 @@ class ns_3d_xcts_solver : public Solver<config_t, space_t> {
   int binary_boost_stage(kadath_config_boost<BIN_INFO>& binconfig, const size_t bco);
 
   // Update bconfig(HC) and bconfig(NC)
-  void update_config_quantities(const double& loghc);
+  void update_config_quantities(const double loghc);
 };
 /** @}*/
 }}
