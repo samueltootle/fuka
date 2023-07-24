@@ -68,10 +68,22 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
  * @tparam config_t Configurator type
  * @param bconfig BH config file
  * @param outputdir output location
+ * @param seq optional sequence to enable sequenced NS solutions
  * @return int error code
  */
 template<typename config_t>
-int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir);
+int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq = nullptr);
+
+/**
+ * @brief Driver to compute a base solution for a given resolution to build on
+ * 
+ * @tparam config_t Configurator type
+ * @param bconfig BH config file
+ * @param outputdir output location
+ * @return int error code
+ */
+template<typename config_t>
+int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir);
 
 /**
  * @brief Driver for computing a NS solution including increasing resolution
@@ -81,10 +93,11 @@ int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir);
  * @param bconfig NS config file
  * @param resolution Resolution sequence
  * @param outputdir output location
+ * @param seq optional sequence to enable sequenced NS solutions
  * @return int error code
  */
 template<class config_t, class Res_t>
-inline int ns_3d_xcts_driver (config_t& bconfig, Res_t& resolution, std::string outputdir);
+inline int ns_3d_xcts_driver (config_t& bconfig, Res_t& resolution, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq=nullptr);
 
 /**
  * @brief Driver for computing a boosted NS solution based on binary parameters
