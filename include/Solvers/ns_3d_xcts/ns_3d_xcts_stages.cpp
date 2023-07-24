@@ -31,8 +31,9 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
   if (fixed) {
     if (rank == 0)
       std::cout << "############################" << std::endl
-                << "TOV with a fixed radius" << std::endl
+                << "FIXED stage is deprecated" << std::endl
                 << "############################" << std::endl;
+    std::__throw_runtime_error("Fixed stage is deprecated.\n");
   } else {
     if (rank == 0) {
       std::cout << "############################" << std::endl
@@ -45,44 +46,13 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
       std::cout << "############################" << std::endl;
     }
   }
-  
-  // set up radius and leve field in case of "fixed"
-  scalar_ary_t coord_scalars;
-  coord_scalars[R_BCO1] = Scalar(space);
 
-  update_fields_co(cfields, coord_vectors, coord_scalars, 0.);
-  
-  // a level function, defining a root at a given fixed radius
-  // helper construction to force the system to attain a fixed radius
-  // instead resolving the correct surface
-  Scalar level(space);
-  level = (*coord_scalars[R_BCO1]) * (*coord_scalars[R_BCO1]) -  bconfig(RMID) * bconfig(RMID);
-  level.std_base();
+  update_fields_co(cfields, coord_vectors, {}, 0.);
 
   // setup a system of equations
   System_of_eqs syst(space, 0, ndom - 1);
   syst.add_var("H"   , logh);
   syst_init(syst);
-
-  if(bconfig.control(MB_FIXING)) {
-    syst.add_cst("Mb"  , bconfig(MB));
-    syst.add_var("Madm", bconfig(MADM));
-  }
-  else {
-    syst.add_var("Mb"  , bconfig(MB));
-    syst.add_cst("Madm", bconfig(MADM));
-  }
-
-  // in case of a fixed radius solve the TOV with the given fixed central enthalpy
-  // in case of a resolved surface, solve for the central enthalpy
-  if(fixed){
-    syst.add_cst("Hc", loghc);
-  }else {
-    syst.add_var("Hc", loghc);
-  }
- 
-  // in case of "fixed" domain radii
-  syst.add_cst("lev" , level);
  
   for (int d = 0; d < ndom; d++) {
     switch (d) {
@@ -121,26 +91,50 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
   syst.add_eq_bc(ndom - 1, OUTER_BC, "N=1");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "P=1");
 
-  // if the radius of the stellar surface domain is fixed
-  // use the helper construction, i.e. a level function with a root defining the radius
-  if(fixed){
-    syst.add_eq_bc(1, OUTER_BC, "lev = 0");
-  }
   // if the surface is resolved, define it to be where the matter vanishes
-  else{
-    syst.add_eq_bc(1, OUTER_BC, "H = 0");
+  syst.add_eq_bc(1, OUTER_BC, "H = 0");
+  
+  std::string central_fixing_definition{"H - Hc"};
+  if(seq && seq->is_set()) {
+    auto idx{std::get<0>(seq->get_indices())};
+    switch(idx) {
+      case BCO_PARAMS::HC:
+        syst.add_cst("Hc", loghc);
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+        break;
+      case BCO_PARAMS::NC:
+        syst.add_cst("Nc", bconfig(BCO_PARAMS::NC));
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+        central_fixing_definition = "rho - Nc";
+        break;
+      default:
+        syst.add_var("Hc", loghc);
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+        break;
+    }
+  } else {
+    syst.add_var("Hc", loghc);
+    /// Future deprecate
+    if(bconfig.control(MB_FIXING)) {
+      syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
+      syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+    }
+    else {
+      syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+      syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+    }
   }
- 
   // first integral in the innermost domains with non-zero matter content
   // and condition on the central value, either fixed directly or by the
   // integral below
-  syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
+  syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
  
-  // if surface is resolved, fix the central enthalpy by one of these integrals
-  if(!fixed) {
-    space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
-    space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
-  }
+  // constrain stellar mass by these integrals and the central log enthalpy
+  space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+  space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
  
   // print the variation of the surface radius over the whole star
   if(rank == 0) {
@@ -159,7 +153,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
     // do exactly one newton step, given the system above
     endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
  
-    update_config_quantities(loghc);
+    update_config_quantities(bco_utils::get_boundary_val(0, logh, INNER_BC));
     // output files at this iteration and print diagnostics
     std::stringstream ss;
     ss << "norot_3d_";
@@ -179,7 +173,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
     }
  
     // update all coordinate fields, in case the domain extents have changed
-    update_fields_co(cfields, coord_vectors, coord_scalars, 0.);
+    update_fields_co(cfields, coord_vectors, {}, 0.);
 
     ite++;
     check_max_iter_exceeded(rank, ite, conv);
@@ -308,7 +302,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
   while (!endloop) {
     endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
 
-    update_config_quantities(loghc);
+    update_config_quantities(bco_utils::get_boundary_val(0, logh, INNER_BC));
     std::stringstream ss;
     ss << "rot_3d_total" << ite - 1 ;
     bconfig.set(QLMADM) = bconfig(MADM);
