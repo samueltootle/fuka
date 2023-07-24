@@ -39,60 +39,61 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
   // in the event the user wants an MADM > MTOV
   const double final_MADM = base_config(BCO_PARAMS::MADM);
   base_config.control(CONTROLS::ITERATIVE_M) = false;
-  config_t bconfig{};
+  config_t bconfig{base_config};
+  if(bconfig.control(CONTROLS::SEQUENCES) || bconfig.control(CONTROLS::RESOLVE)) {
+    if(rank == 0) {
+      setup_co<NODES::NS>(bconfig);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    // make sure all ranks have the same config
+    bconfig.open_config();
+    MPI_Barrier(MPI_COMM_WORLD);
+    bconfig.control(CONTROLS::ITERATIVE_M) = 
+      (bconfig(BCO_PARAMS::MADM) < final_MADM);
+
+    if(bconfig.control(CONTROLS::ITERATIVE_M) 
+        && std::fabs(bconfig(BCO_PARAMS::CHI)) < 1e-5) {
+      if(rank == 0)
+      std::cerr << "Cannot solve TOV for Madm = " << final_MADM
+                << " without spin.\n";
+      std::_Exit(EXIT_FAILURE);
+    }
+  }
+
+  // Need to get a rotating solution before increasing the
+  // NS mass up to final_MADM
+  if(bconfig.control(CONTROLS::ITERATIVE_M)){
+
+    std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
+    auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
+
+    // Only obtain the iterative solution at the initial_resolution
+    auto const res_init{resolution.init()};
+    Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);      
+    tmp_res.set(res_init,res_init,res_init);
+
+    exit_status = ns_3d_xcts_driver(bconfig, tmp_res, outputdir);
+
+    // Update config such that the next solving round uses
+    // the final ADM mass and spin
+    bconfig(BCO_PARAMS::MADM) = final_MADM;
+    bconfig.control(CONTROLS::SEQUENCES) = false;
+    
+    // Ensure only the final stage is used
+    // e.g. avoid NOROT stage
+    stage_enabled.fill(false);
+    stage_enabled[last_stage_idx] = true;
+  }
+
   #ifdef DEBUG
   std::cout << seq << std::endl;
   std::cout << resolution << std::endl;
   #endif
   auto single_seq = [&](auto val) {
-    bconfig = base_config;
+    // bconfig = base_config;
     if(seq.is_set())
       bconfig.set(sequence_var_indices) = val;
-
-    if(bconfig.control(CONTROLS::SEQUENCES)) {
-      if(rank == 0) {
-        setup_co<NODES::NS>(bconfig);
-      }
-      MPI_Barrier(MPI_COMM_WORLD);
-      // make sure all ranks have the same config
-      bconfig.open_config();
-      MPI_Barrier(MPI_COMM_WORLD);
-      bconfig.control(CONTROLS::ITERATIVE_M) = 
-        (bconfig(BCO_PARAMS::MADM) < final_MADM);
-
-      if(bconfig.control(CONTROLS::ITERATIVE_M) 
-          && std::fabs(bconfig(BCO_PARAMS::CHI)) < 1e-5) {
-        if(rank == 0)
-        std::cerr << "Cannot solve TOV for Madm = " << final_MADM
-                  << " without spin.\n";
-        std::_Exit(EXIT_FAILURE);
-      }
-    }
-
-    // Need to get a rotating solution before increasing the
-    // NS mass up to final_MADM
-    if(bconfig.control(CONTROLS::ITERATIVE_M)){
-
-      std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
-      auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
-
-      // Only obtain the iterative solution at the initial_resolution
-      auto const res_init{resolution.init()};
-      Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);      
-      tmp_res.set(res_init,res_init,res_init);
-
-      exit_status = ns_3d_xcts_driver(bconfig, tmp_res, outputdir);
-
-      // Update config such that the next solving round uses
-      // the final ADM mass and spin
-      bconfig(BCO_PARAMS::MADM) = final_MADM;
-      bconfig.control(CONTROLS::SEQUENCES) = false;
-      
-      // Ensure only the final stage is used
-      // e.g. avoid NOROT stage
-      stage_enabled.fill(false);
-      stage_enabled[last_stage_idx] = true;
-    }
+    
     exit_status = ns_3d_xcts_driver(bconfig, resolution, outputdir); 
     return exit_status;
   };
