@@ -94,6 +94,11 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve() {
       exit_status = uniform_rot_stage();
     }
   }
+  
+  if(stage_enabled[STAGES::TESTING] &&  exit_status != RELOAD_FILE) {
+    this->solver_stage = STAGES::TESTING;
+    exit_status = differential_rot_stage();
+  }
 
   // Barrier needed in case we need to read from the previous output
   MPI_Barrier(MPI_COMM_WORLD);
