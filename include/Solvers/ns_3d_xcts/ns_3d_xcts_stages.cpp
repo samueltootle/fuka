@@ -525,6 +525,25 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   }
   scalar_ary_t coord_scalars;
   coord_scalars[R_BCO1] = Scalar(space);
+  auto rs = Kadath::bco_utils::get_rmin_rmax(space, 1);
+  double Rratio = 0.99;
+  double& Rx = rs[1]; //bconfig(BCO_PARAMS::RMID);
+  double Rz = rs[0]; //Rratio * bconfig(BCO_PARAMS::RMID);
+
+  Scalar level(space);
+  auto update_level = [&] () {
+    Scalar x(space.get_cart_field(1));
+    Scalar y(space.get_cart_field(2));
+    Scalar z(space.get_cart_field(3));
+    // level = (*coord_scalars[R_BCO1]) * (*coord_scalars[R_BCO1]) -  bconfig(RMID) * bconfig(RMID);
+    level = (x/Rx) * (x/Rx) + (y/Rx) * (y/Rx) + (z/Rz) * (z/Rz) - 1.;
+    level.set_domain(ndom-1).annule_hard();
+    level.std_base();
+    if(rank == 0)
+      std::cout << level << std::endl;
+  };
+  update_level();
+
   
   const int max_iter = bconfig.seq_setting(MAX_ITER);
 
@@ -536,22 +555,24 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   ones.std_base();
 
   update_fields_co(cfields, coord_vectors, coord_scalars, xo);
-  int q = 2;
+  int q = 1;
   // \frac{A}{R_0}
-  double Aratio = std::pow(10., -3./2.);
+  double Aratio = 1. ;//std::pow(10., -3./2.);
   Scalar Omega(space);
-  Omega = bconfig(BCO_PARAMS::OMEGA);
+  Omega.annule_hard();
+  Omega.set_domain(0) = bconfig(BCO_PARAMS::OMEGA);
+  Omega.set_domain(1) = bconfig(BCO_PARAMS::OMEGA);
   Omega.std_base();
 
   std::string jint{};
-  std::string jome{"A^2 * ome * (omeratio^"+std::to_string(q)+" - 1)"};
-  std::string eqOme{"eqOme = P^4 * Wsquare * U^i * mg_i - " + jome};
+  std::string jome{"(Aratio * Rx)^2 * ome * (omeratio^"+std::to_string(q)+" - 1)"};
+  std::string eqOme{"eqOme = P^4 * Wsquare * U^i * mg_i / N - " + jome};
   switch(q) {
     case 2:
-      jint = "A^2 * ome^2 * (omeratio^2 * log(ome) - 1/2)";
+      jint = "(Aratio * Rx)^2 * ome^2 * (omeratio^2 * log(ome) - 1/2)";
       break;
     default:
-      jint = "A^2 * ome^2 * ((1 / (2-q)) * omeratio^"+std::to_string(q)+" - 1/2)";
+      jint = "(Aratio * Rx)^2 * ome^2 * ((1 / (2-q)) * omeratio^"+std::to_string(q)+" - 1/2)";
       break;
   }
   std::string firstint{"firstint = H + log(N) - log(W) + " + jint};
@@ -567,30 +588,42 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   syst.add_var("H"   , logh);
 
   syst_init(syst);
-  syst.add_cst("Rad", *coord_scalars[R_BCO1]);
+  // syst.add_cst("rm", *coord_scalars[R_BCO1]);
   syst.add_cst("one", ones);
   
   /// Differential rotation parameters
-  syst.add_cst("omec", bconfig(BCO_PARAMS::OMEGA));
-  syst.add_cst("A" , Aratio);
+  syst.add_var("omec", bconfig(BCO_PARAMS::OMEGA));
+  syst.add_cst("Aratio" , Aratio);
   syst.add_cst("q", q);
+  syst.add_cst("Rratio", Rratio);
   syst.add_var("ome", Omega); 
   syst.add_def("omeratio = omec / ome");
-  syst.add_var("R0", bconfig(BCO_PARAMS::RMID));
+  
+  // double Ry = bconfig(BCO_PARAMS::RMID);
+
+
 //  syst.add_def("A = one * Aratio * R0");
   
   
-  auto npts = space.get_domain(1)->get_nbr_points();
+  auto npts = space.get_domain(0)->get_nbr_points();
   Index pos_eq (npts);
-  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
-  pos_eq.set(2) = npts(2) - 1; /// Set theta to be on the xy plane.
-  syst.add_eq_val(1, "Rad - R0", pos_eq);
-
-  syst.add_var("Hc"  , loghc);
+  // pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+  // pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+  // std::cout << space.get_domain(1)->get_cart(1)(pos_eq) << std::endl;
+  // std::cout << space.get_domain(1)->get_cart(2)(pos_eq) << std::endl;
+  // std::cout << space.get_domain(1)->get_cart(3)(pos_eq) << std::endl;
+  syst.add_cst("Rx", Rx);
+  syst.add_cst("Rz", Rz);
+  syst.add_cst("lev", level);
+  syst.add_eq_val(0, "Rratio * Aratio * Rx / Rz - one", pos_eq);
   
 
-  syst.add_cst("Mb"  , bconfig(MB));
-  syst.add_var("Madm", bconfig(MADM));
+  // syst.add_var("Hc"  , loghc);
+  syst.add_cst("rhoc",bconfig(BCO_PARAMS::NC));
+  
+
+  syst.add_var("Mb"  , bconfig(MB));
+  // syst.add_var("Madm", bconfig(MADM));
 
   syst.add_var("bet" , shift);
 
@@ -648,7 +681,8 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
     syst.add_eq_matching(i, OUTER_BC, "dn(ome)");
   }
   syst.add_eq_inside(1, "eqOme = 0");
-  syst.add_eq_bc(1, OUTER_BC, "U^i * D_i H = 0");
+  // syst.add_eq_bc(1, OUTER_BC, "U^i * D_i H = 0");
+  syst.add_eq_bc(1, OUTER_BC, "lev = 0");
 
   space.add_eq(syst, "eqNP= 0", "N", "dn(N)");
   space.add_eq(syst, "eqP= 0", "P", "dn(P)");
@@ -660,11 +694,12 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
 
   syst.add_eq_bc(1, OUTER_BC, "H = 0");
 
-  syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
+  // syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
+  syst.add_eq_first_integral(0, 1, "firstint", "rho - rhoc");
   space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
 
   // space.add_eq_int_inf(syst, "integ(intJ) - chi * Madm * Madm = 0");
-  space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+  // space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
 
   if (rank == 0)
       print_diagnostics(syst, 0, 0);
@@ -674,24 +709,33 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   while (!endloop) {
     endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
 
-    update_config_quantities(bco_utils::get_boundary_val(0, logh, INNER_BC));
+    // update_config_quantities(bco_utils::get_boundary_val(0, logh, INNER_BC));
     std::stringstream ss;
     ss << "diffrot_3d_total" << ite - 1 ;
     bconfig.set(QLMADM) = bconfig(MADM);
     bconfig.set_filename(ss.str());
+    update_fields_co(cfields, coord_vectors, coord_scalars, xo, &syst);
+    // update_level();
+    // for(int d = 0; d < ndom; ++d) {
+    //   update_field(syst, d, "lev", level);
+    //   //update_field(syst, d, "r", coord_dist);
+    // }
+    // syst.sec_member();
     if (rank == 0) {
+      std::cout << "R0 = " << bconfig(RMID) << std::endl;
+      // std::cout << Omega << std::endl;
       print_diagnostics(syst, ite, conv);
       if(bconfig.control(CHECKPOINT))
-        checkpoint();
+        Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, Omega);
     }
-    update_fields_co(cfields, coord_vectors, coord_scalars, xo, &syst);
+    
     ite++;
     check_max_iter_exceeded(rank, ite, conv);
   }
   
   bconfig.set_filename(converged_filename("DIFF_ROT"));
   if (rank == 0) {
-    checkpoint();
+    Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, Omega);
   }
   return EXIT_SUCCESS;
 }
