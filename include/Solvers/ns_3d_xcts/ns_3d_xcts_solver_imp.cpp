@@ -52,6 +52,8 @@ std::string ns_3d_xcts_solver<eos_t, config_t, space_t>::converged_filename(
       default:
         ss << bconfig(BCO_PARAMS::MADM) << "."; 
     }
+  } else {
+    ss << bconfig(BCO_PARAMS::MADM) << "."; 
   }
   
   if(stage != "NOROT_BC") ss << bconfig(BCO_PARAMS::CHI)<< ".";
