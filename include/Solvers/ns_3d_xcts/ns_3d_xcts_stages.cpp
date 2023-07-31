@@ -527,7 +527,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   coord_scalars[R_BCO1] = Scalar(space);
   auto rs = Kadath::bco_utils::get_rmin_rmax(space, 1);
   double Rratio = 0.99;
-  double& Rx = rs[1]; //bconfig(BCO_PARAMS::RMID);
+  double& Rx = bconfig(BCO_PARAMS::RMID); //bconfig(BCO_PARAMS::RMID);
   double Rz = rs[0]; //Rratio * bconfig(BCO_PARAMS::RMID);
 
   Scalar level(space);
@@ -536,11 +536,16 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
     Scalar y(space.get_cart_field(2));
     Scalar z(space.get_cart_field(3));
     // level = (*coord_scalars[R_BCO1]) * (*coord_scalars[R_BCO1]) -  bconfig(RMID) * bconfig(RMID);
-    level = (x/Rx) * (x/Rx) + (y/Rx) * (y/Rx) + (z/Rz) * (z/Rz) - 1.;
+    
+    
+    // only valid for equator and pole
+    // level = (x*x + y*y) / Rx / Rx + z*z / Rz / Rz - 1.;
+    // level = sqrt(level);
+    level = x*x + y*y + z*z;
     level.set_domain(ndom-1).annule_hard();
     level.std_base();
-    if(rank == 0)
-      std::cout << level << std::endl;
+    // if(rank == 0)
+    //   std::cout << level << std::endl;
   };
   update_level();
 
@@ -557,7 +562,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   update_fields_co(cfields, coord_vectors, coord_scalars, xo);
   int q = 1;
   // \frac{A}{R_0}
-  double Aratio = 1. ;//std::pow(10., -3./2.);
+  double Aratio = 1e10 ;//std::pow(10., -3./2.);
   Scalar Omega(space);
   Omega.annule_hard();
   Omega.set_domain(0) = bconfig(BCO_PARAMS::OMEGA);
@@ -605,17 +610,31 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
 //  syst.add_def("A = one * Aratio * R0");
   
   
-  auto npts = space.get_domain(0)->get_nbr_points();
+  auto npts = space.get_domain(1)->get_nbr_points();
   Index pos_eq (npts);
-  // pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
-  // pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
-  // std::cout << space.get_domain(1)->get_cart(1)(pos_eq) << std::endl;
-  // std::cout << space.get_domain(1)->get_cart(2)(pos_eq) << std::endl;
-  // std::cout << space.get_domain(1)->get_cart(3)(pos_eq) << std::endl;
-  syst.add_cst("Rx", Rx);
-  syst.add_cst("Rz", Rz);
+  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+
+  Index pos_pole (npts);
+  pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
+
+  Index pos_orig (space.get_domain(0)->get_nbr_points());
+  
+  for (auto [ P, str ] : {std::make_tuple(pos_eq,"pole"), std::make_tuple(pos_pole, "equ")}) {
+    if(rank == 0)
+      std::cout << "Coord at " + std::string{str} + " ["
+                << space.get_domain(1)->get_cart(1)(P) << ", "
+                << space.get_domain(1)->get_cart(2)(P) << ", "
+                << space.get_domain(1)->get_cart(3)(P) << "]" << std::endl;
+  }
+  
+  syst.add_var("Rx", Rx);
+  syst.add_var("Rz", Rz);
   syst.add_cst("lev", level);
-  syst.add_eq_val(0, "Rratio * Aratio * Rx / Rz - one", pos_eq);
+  syst.add_eq_val(1, "lev - Rx * Rx", pos_eq);
+  syst.add_eq_val(1, "lev - Rz * Rz", pos_pole);
+  
+  // syst.add_eq_val(0, "Rratio * Aratio * Rx / Rz - one", pos_eq);
   
 
   // syst.add_var("Hc"  , loghc);
@@ -681,8 +700,8 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
     syst.add_eq_matching(i, OUTER_BC, "dn(ome)");
   }
   syst.add_eq_inside(1, "eqOme = 0");
-  // syst.add_eq_bc(1, OUTER_BC, "U^i * D_i H = 0");
-  syst.add_eq_bc(1, OUTER_BC, "lev = 0");
+  syst.add_eq_bc(1, OUTER_BC, "U^i * D_i H = 0");
+  // syst.add_eq_bc(1, OUTER_BC, "lev = 0");
 
   space.add_eq(syst, "eqNP= 0", "N", "dn(N)");
   space.add_eq(syst, "eqP= 0", "P", "dn(P)");
@@ -715,7 +734,8 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
     bconfig.set(QLMADM) = bconfig(MADM);
     bconfig.set_filename(ss.str());
     update_fields_co(cfields, coord_vectors, coord_scalars, xo, &syst);
-    // update_level();
+    update_level();
+    bconfig(RMID) = level(1)(pos_eq);
     // for(int d = 0; d < ndom; ++d) {
     //   update_field(syst, d, "lev", level);
     //   //update_field(syst, d, "r", coord_dist);
