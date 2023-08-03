@@ -523,13 +523,38 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
     return (current == bconfig.config_filename()) ? \
       EXIT_SUCCESS : RELOAD_FILE;
   }
+
+  const int max_iter = bconfig.seq_setting(MAX_ITER);
+
+  double loghc = bco_utils::get_boundary_val(0, logh, INNER_BC);
+  double hc = exp(loghc);
+  double xo = 0.0;
+
+  Scalar ones(space);
+  ones = 1;
+  ones.std_base();
+
   scalar_ary_t coord_scalars;
   coord_scalars[R_BCO1] = Scalar(space);
-  auto rs = Kadath::bco_utils::get_rmin_rmax(space, 1);
-  double Rratio = 0.99;
-  double& Rx = bconfig(BCO_PARAMS::RMID); //bconfig(BCO_PARAMS::RMID);
-  double Rz = rs[0]; //Rratio * bconfig(BCO_PARAMS::RMID);
+  
+  update_fields_co(cfields, coord_vectors, coord_scalars, xo);
+  
+  auto npts = space.get_domain(1)->get_nbr_points();
+  Index pos_eq (npts);
+  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
 
+  Index pos_pole (npts);
+  pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
+  
+  double R0 = (*coord_scalars[R_BCO1])(1)(pos_eq);
+  double Rpole= (*coord_scalars[R_BCO1])(1)(pos_pole);
+
+  // FIXME should be user driven
+  double A = bconfig(BCO_PARAMS::BVELX) ;//std::pow(10., -3./2.);
+  double Rratio = bconfig(BCO_PARAMS::BVELY) ; //0.875; //Rpole/R0;
+  int q = 1;
+  
   Scalar level(space);
   auto update_level = [&] () {
     Scalar x(space.get_cart_field(1));
@@ -541,7 +566,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
     // only valid for equator and pole
     // level = (x*x + y*y) / Rx / Rx + z*z / Rz / Rz - 1.;
     // level = sqrt(level);
-    level = x*x + y*y + z*z;
+    level = sqrt(x*x + y*y + z*z);
     level.set_domain(ndom-1).annule_hard();
     level.std_base();
     // if(rank == 0)
@@ -549,20 +574,10 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   };
   update_level();
 
-  
-  const int max_iter = bconfig.seq_setting(MAX_ITER);
 
-  double loghc = std::log(bconfig(HC));
-  double xo = 0.0;
-
-  Scalar ones(space);
-  ones = 1;
-  ones.std_base();
-
-  update_fields_co(cfields, coord_vectors, coord_scalars, xo);
-  int q = 1;
   // \frac{A}{R_0}
-  double Aratio = 1e10 ;//std::pow(10., -3./2.);
+
+  double invA = 1 / A;
   Scalar Omega(space);
   Omega.annule_hard();
   Omega.set_domain(0) = bconfig(BCO_PARAMS::OMEGA);
@@ -570,57 +585,49 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   Omega.std_base();
 
   std::string jint{};
-  std::string jome{"(Aratio * Rx)^2 * ome * (omeratio^"+std::to_string(q)+" - 1)"};
-  std::string eqOme{"eqOme = P^4 * Wsquare * U^i * mg_i / N - " + jome};
+  std::string jome{"ome * (omeratio^"+std::to_string(q)+" - 1)"};
+  // std::string eqOme{"eqOme = P^4 * Wsquare * f_ij * U^i * mg^j / N"};
+  std::string eqOme{"eqOme = (P^4 * Wsquare * f_ij * U^i * mg^j / N) / A^2 - " + jome};
   switch(q) {
     case 2:
-      jint = "(Aratio * Rx)^2 * ome^2 * (omeratio^2 * log(ome) - 1/2)";
+      jint = "ome^2 * (omeratio^2 * log(ome) - 0.5)"; // - omec^2 * (log(omec) - 0.5)";
       break;
     default:
-      jint = "(Aratio * Rx)^2 * ome^2 * ((1 / (2-q)) * omeratio^"+std::to_string(q)+" - 1/2)";
+      jint = "ome^2 * ((1 / (2-q)) * omeratio^"+std::to_string(q)+" - 0.5)"; // - omec^2 * q / (4 - 2 * q)";
       break;
   }
-  std::string firstint{"firstint = H + log(N) - log(W) + " + jint};
+  std::string firstint{"firstint = invA * invA * (H + log(N) - log(W)) + " + jint};
   if (rank == 0)
     std::cout << "###################################" << std::endl
               << "Differential Rotating models"      << std::endl
               << "j(Omega) = " + jome << std::endl
               << firstint << std::endl
               << eqOme << std::endl
+              << "q: " << q << std::endl
+              << "A: " << A << std::endl
+              << "Rp/Re: " << Rratio << std::endl
+              << "R0: " << R0 <<std::endl
               << "###################################" << std::endl;
 
   System_of_eqs syst(space, 0, ndom - 1);
   syst.add_var("H"   , logh);
 
   syst_init(syst);
-  // syst.add_cst("rm", *coord_scalars[R_BCO1]);
-  syst.add_cst("one", ones);
   
   /// Differential rotation parameters
   syst.add_var("omec", bconfig(BCO_PARAMS::OMEGA));
-  syst.add_cst("Aratio" , Aratio);
-  syst.add_cst("q", q);
-  syst.add_cst("Rratio", Rratio);
   syst.add_var("ome", Omega); 
+  syst.add_cst("R0", R0);
+
+  syst.add_cst("A" , A);
+  syst.add_cst("invA", invA);
+  syst.add_cst("q", q);
+  syst.add_cst("Rratio", Rratio);  
   syst.add_def("omeratio = omec / ome");
-  
-  // double Ry = bconfig(BCO_PARAMS::RMID);
-
-
-//  syst.add_def("A = one * Aratio * R0");
-  
-  
-  auto npts = space.get_domain(1)->get_nbr_points();
-  Index pos_eq (npts);
-  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
-  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
-
-  Index pos_pole (npts);
-  pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
 
   Index pos_orig (space.get_domain(0)->get_nbr_points());
   
-  for (auto [ P, str ] : {std::make_tuple(pos_eq,"pole"), std::make_tuple(pos_pole, "equ")}) {
+  for (auto [ P, str ] : {std::make_tuple(pos_pole,"pole"), std::make_tuple(pos_eq, "equ")}) {
     if(rank == 0)
       std::cout << "Coord at " + std::string{str} + " ["
                 << space.get_domain(1)->get_cart(1)(P) << ", "
@@ -628,19 +635,18 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
                 << space.get_domain(1)->get_cart(3)(P) << "]" << std::endl;
   }
   
-  syst.add_var("Rx", Rx);
-  syst.add_var("Rz", Rz);
+  
   syst.add_cst("lev", level);
-  syst.add_eq_val(1, "lev - Rx * Rx", pos_eq);
-  syst.add_eq_val(1, "lev - Rz * Rz", pos_pole);
+  
+  // syst.add_eq_val(1, "lev/R0 - 1", pos_eq);
+  syst.add_eq_val(1, "Rratio - lev / R0", pos_pole);
   
   // syst.add_eq_val(0, "Rratio * Aratio * Rx / Rz - one", pos_eq);
   
 
-  // syst.add_var("Hc"  , loghc);
-  syst.add_cst("rhoc",bconfig(BCO_PARAMS::NC));
+  syst.add_cst("Hc"  , loghc);
+  // syst.add_cst("rhoc",bconfig(BCO_PARAMS::NC));
   
-
   syst.add_var("Mb"  , bconfig(MB));
   // syst.add_var("Madm", bconfig(MADM));
 
@@ -678,6 +684,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
       
       syst.add_def(d, firstint.c_str());
       syst.add_def(d, eqOme.c_str());
+      syst.add_def(d, "UH = U^i * D_i H");
 
       break;
     default:
@@ -692,6 +699,8 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
       break;
     }
   }
+  
+  // std::cout << syst.give_val_def("UH") << std::endl;
   // add the equation and the matchings to the system
   // in case of the stellar domains
   for(int i = 0; i < 1; ++i) {
@@ -713,8 +722,8 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
 
   syst.add_eq_bc(1, OUTER_BC, "H = 0");
 
-  // syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
-  syst.add_eq_first_integral(0, 1, "firstint", "rho - rhoc");
+  syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
+  // syst.add_eq_first_integral(0, 1, "firstint", "rho - rhoc");
   space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
 
   // space.add_eq_int_inf(syst, "integ(intJ) - chi * Madm * Madm = 0");
@@ -735,16 +744,18 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
     bconfig.set_filename(ss.str());
     update_fields_co(cfields, coord_vectors, coord_scalars, xo, &syst);
     update_level();
-    bconfig(RMID) = level(1)(pos_eq);
-    // for(int d = 0; d < ndom; ++d) {
-    //   update_field(syst, d, "lev", level);
-    //   //update_field(syst, d, "r", coord_dist);
-    // }
-    // syst.sec_member();
+    // bconfig(RMID) = level(1)(pos_eq);
+    R0 = (*coord_scalars[R_BCO1])(1)(pos_eq);
+    for(int d = 0; d < ndom; ++d) {
+      update_field(syst, d, "lev", level);
+      //update_field(syst, d, "r", coord_dist);
+    }
+    syst.sec_member();
     if (rank == 0) {
       std::cout << "R0 = " << bconfig(RMID) << std::endl;
       // std::cout << Omega << std::endl;
       print_diagnostics(syst, ite, conv);
+      std::cout << syst.give_val_def("UH")()(1) << std::endl;
       if(bconfig.control(CHECKPOINT))
         Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, Omega);
     }
