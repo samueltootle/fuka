@@ -106,9 +106,11 @@ void reader_2d(config_t bconfig) {
 	Space_polar_adapted space (ff1) ;
 
   // load the fields defined on the space
-	Scalar bigA   (space, ff1) ;
-	Scalar lapse  (space, ff1) ;
+	Scalar nulogA   (space, ff1) ;
+	Scalar nu (space, ff1) ;
   Scalar logh   (space, ff1) ;
 	fclose(ff1) ;
+  auto A(exp(nulogA - nu));
+  std::cout << A;
   std::cout << space;
 }
