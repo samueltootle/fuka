@@ -818,6 +818,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
     bconfig.set_filename(converged_filename(stage_name, bconfig));
     bconfig.set_field(BCO_FIELDS::SHIFT) = true;
     bconfig.set_field(BCO_FIELDS::NP) = true;
+    bconfig.set_field(BCO_FIELDS::PHI) = true;
     bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, bet, wrsint, Omega);
   }  
   
