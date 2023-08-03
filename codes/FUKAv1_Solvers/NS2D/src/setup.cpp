@@ -211,9 +211,17 @@ int norot_2dsetup(config_t& bconfig) {
 
   Scalar r_field(space);
   r_field.annule_hard();
-  for (auto i : {0,1,2})
+  for (auto i = 0; i < ndom; ++i)
     r_field.set_domain(i) = space.get_domain(i)->get_radius();
-  
+  auto npts = space.get_domain(ndom-1)->get_nbr_points();
+  Index pos_c(npts);
+  pos_c.set(0) = npts(0) - 1; // outer_bc
+
+  for(auto i = 0; i < npts(1); ++i) {
+    pos_c.set(1) = i;
+    r_field.set_domain(ndom-1).set(pos_c) = 1e10;
+  }
+  pos_c.set_start();
 
   // update the fields based on TOV solution for a given domain
   auto update_fields= [&](const size_t dom) {
@@ -222,7 +230,7 @@ int norot_2dsetup(config_t& bconfig) {
       double rval = r_field(dom)(pos);
       auto all_ltp = lintp.interpolate_all(rval);
       auto h = EOS<eos_t,DENSITY>::h_cold__rho(all_ltp[ltpQ::RHO]);
-      if(pos(0) == 0 && pos(1) == 0)
+      if(dom == 0 && pos(0) == 0 && pos(1) == 0)
         bconfig.set(HC) = h;
       logh.set_domain(dom).set(pos) = (std::log(h) <= 0) ? 0. : std::log(h); 
       lapse.set_domain(dom).set(pos) = all_ltp[ltpQ::LAPSE];
@@ -234,6 +242,10 @@ int norot_2dsetup(config_t& bconfig) {
 
   for (int d = 2; d < ndom; d++)
     logh.set_domain(d).annule_hard();
+
+  // Fix compactified domain metric variables
+  conf.set_domain(ndom-1) = 1 + (conf(ndom-1)(pos_c) - 1) * r_field(ndom-1)(pos_c) / r_field(ndom-1);
+  lapse.set_domain(ndom-1) = 1 + (lapse(ndom-1)(pos_c) - 1) * r_field(ndom-1)(pos_c) / r_field(ndom-1);
 
   Scalar A(conf * conf);
   Scalar nu(log(lapse));
