@@ -142,8 +142,11 @@ int driver(config_t& bconfig, std::string outputdir) {
       std::cout << "Last Stage Enabled: " << last_stage << std::endl;
   }
 
-  if(stage_enabled[STAGES::NOROT_BC])
+  if(stage_enabled[STAGES::NOROT_BC]) {
+    if(bconfig.control(CONTROLS::SEQUENCES))
+      exit_status = NS_solver_2d_norot<eos_t>(bconfig, true);
     exit_status = NS_solver_2d_norot<eos_t>(bconfig);
+  }
   if(stage_enabled[STAGES::TOTAL_BC])
     exit_status = NS_solver_2d_uniform_rot<eos_t>(bconfig);
   if(stage_enabled[STAGES::TESTING])
@@ -195,17 +198,23 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
                          -bconfig(RMID) * bconfig(RMID);
   level.set_domain(ndom - 1) = 1;
   level.std_base();
-
+  
   // setup a system of equations
   System_of_eqs syst(space, 0, ndom - 1);
 
   // define numerical constants
   syst.add_cst("4piG", bconfig(BCO_QPIG));
 //       syst.add_cst("Mb"  , bconfig(MB));
-  syst.add_cst("Madm", bconfig(MADM));
+  
 
-
-  syst.add_var("Hc", loghc);
+  if(fixed) {
+    syst.add_cst("Hc", loghc);
+    syst.add_var("Madm", bconfig(MADM));
+  } else {
+    syst.add_var("Hc", loghc);
+    syst.add_cst("Madm", bconfig(MADM));
+  }
+  
 
   // the basic fields, conformal factor, lapse and (log) enthalpy
   syst.add_var("H", logh);
@@ -317,10 +326,10 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
     // count the steps
     ite++;
   }
-    
-  update_config<eos_t>(bconfig, logh);
+  if(!fixed)  
+    update_config<eos_t>(bconfig, logh);
   bconfig.set_filename(converged_filename(stage_name, bconfig));
-
+  bconfig.control(CONTROLS::SEQUENCES) = false;
   bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, nulogA);
   return EXIT_SUCCESS;
 }
