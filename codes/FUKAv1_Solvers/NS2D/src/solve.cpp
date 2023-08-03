@@ -330,7 +330,9 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
     update_config<eos_t>(bconfig, logh);
   bconfig.set_filename(converged_filename(stage_name, bconfig));
   bconfig.control(CONTROLS::SEQUENCES) = false;
-  bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, nulogA);
+  if(rank == 0)
+    bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, nulogA);
+  MPI_Barrier(MPI_COMM_WORLD);
   return EXIT_SUCCESS;
 }
 
@@ -377,9 +379,9 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
     std::cout << "Starting from shift and omega fields from file\n";
     bet = Scalar(space, ff1);
     wrsint = Scalar(space, ff1);
-    std::cout << "Bet and wrsint read\n";
   } else {
-    std::cout << "Generating new shift and omega fields\n";
+    if(rank == 0)
+      std::cout << "Generating new shift and omega fields\n";
     Scalar w(space);
     w.annule_hard();
     w.std_base();
@@ -534,19 +536,18 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
     // count the steps
     ite++;
   }
-  
-  if(rank == 0) {
-    std::cout << "Success!\n";
-    
-    update_config<eos_t>(bconfig, logh);
-    std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
-    stage_enabled.fill(false);
-    stage_enabled[STAGES::TOTAL_BC] = true;
+  update_config<eos_t>(bconfig, logh);
+    // std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
+    // stage_enabled.fill(false);
+    // stage_enabled[STAGES::TOTAL_BC] = true;
     bconfig.set_filename(converged_filename(stage_name, bconfig));
     bconfig.set_field(BCO_FIELDS::SHIFT) = true;
     bconfig.set_field(BCO_FIELDS::NP) = true;
+  if(rank == 0) {
+    std::cout << "Success!\n";
     bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, bet, wrsint);
   }  
+  MPI_Barrier(MPI_COMM_WORLD);
   
   return EXIT_SUCCESS;
 }
@@ -597,7 +598,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   
   if(bconfig.set_field(BCO_FIELDS::SHIFT) && bconfig.set_field(BCO_FIELDS::NP)) {
     if(rank == 0)
-    std::cout << "Starting from shift and omega fields from file\n";
+      std::cout << "Starting from shift and omega fields from file\n";
     bet = Scalar(space, ff1);
     wrsint = Scalar(space, ff1);
     if(bconfig.set_field(BCO_FIELDS::PHI)) {
@@ -606,7 +607,8 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
       Omega = Scalar(space, ff1);
     }
   } else {
-    std::cout << "Generating new shift and omega fields\n";
+    if(rank == 0)
+      std::cout << "Generating new shift and omega fields\n";
     Scalar w(space);
     w.annule_hard();
     w.std_base();
@@ -816,11 +818,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
     // count the steps
     ite++;
   }
-  
-  if(rank == 0) {
-    std::cout << "Success!\n";
-    
-    update_config<eos_t>(bconfig, logh);
+      update_config<eos_t>(bconfig, logh);
     std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
     stage_enabled.fill(false);
     stage_enabled[STAGES::TESTING] = true;
@@ -828,9 +826,11 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
     bconfig.set_field(BCO_FIELDS::SHIFT) = true;
     bconfig.set_field(BCO_FIELDS::NP) = true;
     bconfig.set_field(BCO_FIELDS::PHI) = true;
+  if(rank == 0) {
+    std::cout << "Success!\n";
     bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, bet, wrsint, Omega);
   }  
-  
+  MPI_Barrier(MPI_COMM_WORLD);
   return EXIT_SUCCESS;
 }
 
