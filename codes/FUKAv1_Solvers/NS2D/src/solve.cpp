@@ -197,10 +197,10 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
   // define numerical constants
   syst.add_cst("4piG", bconfig(BCO_QPIG));
 //       syst.add_cst("Mb"  , bconfig(MB));
-  syst.add_var("Madm", bconfig(MADM));
+  syst.add_cst("Madm", bconfig(MADM));
 
 
-  syst.add_cst("Hc", loghc);
+  syst.add_var("Hc", loghc);
 
   // the basic fields, conformal factor, lapse and (log) enthalpy
   syst.add_var("H", logh);
@@ -353,15 +353,6 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   Scalar bet(space);
   Scalar wrsint(space);
 
-  Scalar one(space);
-  one = 1;
-  one.std_base();
-
-  Scalar rsint (space) ;
-  for (int d=0 ; d<ndom-1 ; d++)
-	  rsint.set_domain(d) = space.get_domain(d)->mult_r(space.get_domain(d)->mult_sin_theta(one(d))) ;
-         rsint.set_domain(ndom-1) = space.get_domain(ndom-1)->mult_sin_theta(one(ndom-1)) ;
-
   // load the fields defined on the space
 	Scalar nulogA   (space, ff1) ;
 	Scalar nu  (space, ff1) ;
@@ -379,30 +370,15 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
     w.annule_hard();
     w.std_base();
     wrsint = Scalar(w.mult_r().mult_sin_theta());
-    wrsint.affect_parameters();
-    wrsint.set_parameters()->set_m_quant() = 1 ;
-    wrsint.std_base();
     
     Scalar B(exp(nulogA - nu));
     Scalar N(exp(nu));
     Scalar tmp(N * B - 1);
     bet = Scalar(tmp.mult_sin_theta().mult_r());
   }
-	// fclose(ff1) ;
-  // std::cout << nulogA;
-  // std::cout << bet;
-  // std::cout << wrsint;
-  // return 0;
   wrsint.affect_parameters();
   wrsint.set_parameters()->set_m_quant() = 1 ;
-
-  Scalar level(space);
-  for (int d = 0; d < ndom - 1; d++)
-    level.set_domain(d) = space.get_domain(d)->get_radius() * space.get_domain(d)->get_radius() 
-                         -bconfig(RMID) * bconfig(RMID);
-  level.set_domain(ndom - 1) = 1;
-  level.std_base();
-
+  wrsint.std_base();
 
   // setup a system of equations
   System_of_eqs syst(space, 0, ndom - 1);
@@ -410,33 +386,23 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   // define numerical constants
   syst.add_cst("4piG", bconfig(BCO_PARAMS::BCO_QPIG));
   syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
-  syst.add_cst ("rsint", rsint) ;
 
   // syst.add_cst("Mb"  , bconfig(MB));
-  // syst.add_var("Madm", bconfig(MADM));
+  syst.add_cst("Madm", bconfig(MADM));
 
-
-  syst.add_cst("Hc", loghc);
-  syst.add_cst("lev", level);
-
-  bool variable_omega = (bconfig.set_field(BCO_FIELDS::SHIFT) && bconfig.set_field(BCO_FIELDS::NP));
-  variable_omega = true;
+  syst.add_var("Hc", loghc);
 
   // the basic fields, conformal factor, lapse and (log) enthalpy
   syst.add_var("H", logh);
   syst.add_var("nu", nu);
   syst.add_var("nulogA", nulogA);
   syst.add_var("bet", bet);
-  if(variable_omega)
-    syst.add_var("wrsint", wrsint);  
-  else
-    syst.add_cst("wrsint", wrsint);
+  syst.add_var("wrsint", wrsint);  
 
   // Useful definitions
   syst.add_def("N = exp(nu)");
   syst.add_def("A = exp(nulogA - nu)");
   syst.add_def("B = (divrsint(bet) + 1) / N");
-  // syst.add_def("Brsint = multrsint(B)");
   syst.add_def("w = divrsint(wrsint)");
 
   // define quantity to be integrated at infinity
@@ -468,46 +434,29 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
     // in the star the constraint equations are sourced by the matter
     case 0:
     case 1:
-      syst.add_def(d, "U = B * rsint / N * (Omega - w)");
+      syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
       syst.add_def(d, "Usq = U*U");
       syst.add_def(d, "Wsq = 1 / 1 - Usq");
+      
       // sources
-      // E * delta
-      // syst.add_def(d, "E = W^2 * press * h - press * delta");
-
-      // S * delta
-      // syst.add_def(d, "Spp = press * delta * (1 + Usq) + E * Usq");
-      // syst.add_def(d, "Srrtt = press * delta");
-      // syst.add_def(d, "S = 2 * Srrtt + Spp");
-      // syst.add_def(d, "pressp = Brsint * (E + Srrtt) * U");
-
-      // syst.add_def(d, "eqnu  = delta * (lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-      //                       "- Brsint^2 / 2 / N^2 * scal(grad(w), grad(w))) "
-      //                       "- 4piG * A^2 * (E + S)");
-      // syst.add_def(d, "eqnulogA = delta * (lap2(nulogA) + scal(grad(nu), grad(nu))"
-      //                 "- 3 * Brsint^2 / 4 / N^2 * scal(grad(w), grad(w)))"
-      //                 "- 2 * 4piG * A^2 * Spp");
-      // syst.add_def(d, "eqbet = delta * lap2(bet) - 2 * 4piG * N * A^2 * Brsint * (2 * Srrtt)");
-      // syst.add_def(d, "eqw = delta * ( lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B)))))"
-      //                     "+ 4 * 4piG * N * A^2 / B / Brsint * pressp");
-
       syst.add_def(d, "edens = rho * (1 + eps)");
       syst.add_def(d, "E = Wsq * (edens + press) - press");
       syst.add_def(d, "Srrtt = press");
-      syst.add_def(d, "pressp = B * rsint * (E + Srrtt) * U");
+      syst.add_def(d, "pressp = multrsint(B * (E + Srrtt) * U)");
       syst.add_def(d, "Spp = press * (1 + Usq) + E * Usq");
       syst.add_def(d, "S = 2 * Srrtt + Spp");
-
+      
       syst.add_def(d, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                            "- B^2 * rsint^2 / 2 / N^2 * scal(grad(w), grad(w)) "
+                            "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
                             "- 4piG * A^2 * (E + S)");
       syst.add_def(d, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))"
-                      "- 3 * B^2 * rsint^2 / 4 / N^2 * scal(grad(w), grad(w))"
+                      "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
                       "- 2 * 4piG * A^2 * Spp");
-      syst.add_def(d, "eqbet = lap2(bet) - 2 * 4piG * N * A^2 * B * rsint * (2 * Srrtt)");
+      syst.add_def(d, "eqbet = lap2(bet) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
       syst.add_def(d, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                          "+ 4 * 4piG * N * A^2 / B^2 / rsint * pressp");
-      // // definition for the baryonic mass integral
+                          "+ 4 * 4piG * N * A^2 / B^2 * divrsint(pressp)");
+      
+      // definition for the baryonic mass integral - need a volume integral first
       // syst.add_def(d, "intMb = P^6 * rho");
       
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
@@ -517,9 +466,9 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
     default:
       syst.add_eq_full(d, "H = 0");
       syst.add_def(d, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                      "- B^2 * rsint^2 / 2 / N^2 * scal(grad(w), grad(w))");
+                      "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
       syst.add_def(d, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))"
-                "- 3 * B^2 * rsint^2 / 4 / N^2 * scal(grad(w), grad(w))");
+                "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))");
       syst.add_def(d, "eqbet = lap2(bet)");
       syst.add_def(d, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
       break;
@@ -527,30 +476,25 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   }
     syst.add_eq_full(ndom-1, "H = 0");
     syst.add_def(ndom-1, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                            "- B^2 * rsint^2 / 2 / N^2 * scal(multr(grad(w)), multr(grad(w))) ");
+                            "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(multr(grad(w)), multr(grad(w))) ");
     syst.add_def(ndom-1, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))"
-              "- 3 * B^2 * rsint^2 / 4 / N^2 * scal(multr(grad(w)), multr(grad(w)))");
+              "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(multr(grad(w)), multr(grad(w)))");
     syst.add_def(ndom-1, "eqbet = lap2(bet)");
-    syst.add_def(ndom-1, "eqw = lap(wrsint) - multrsint(scal(multr(grad(w)), grad(nu - 3 * log(B))))");
+    syst.add_def(ndom-1, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
   
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
   space.add_eq(syst, "eqnulogA=0", "nulogA", "dn(nulogA)");
   space.add_eq(syst, "eqbet=0", "bet", "dn(bet)");
-  if(variable_omega)
-    space.add_eq(syst, "eqw=0", "wrsint", "dn(wrsint)");
+  space.add_eq(syst, "eqw=0", "wrsint", "dn(wrsint)");
   
   syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
-  // if(variable_omega)
   syst.add_eq_bc(1, OUTER_BC, "H=0");  
-  // else
-  // syst.add_eq_bc(1, OUTER_BC, "lev=0");  
 
-  // space.add_eq_int_inf(syst, "integ(intMadm) - Madm = 0");
+  space.add_eq_int_inf(syst, "integ(intMadm) - Madm = 0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "nu=0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "nulogA=0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "bet=0");
-  if(variable_omega)
-    syst.add_eq_bc(ndom - 1, OUTER_BC, "wrsint=0");
+  syst.add_eq_bc(ndom - 1, OUTER_BC, "wrsint=0");
   
   // parameters for the solver loop
   bool endloop = false;
@@ -564,7 +508,7 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
 
     // output the data and diagnostics at this particular step
     std::stringstream ss;
-    ss << "rot_3d_testing" << ite - 1 ;
+    ss << "rot_2k_chkpt" << ite - 1 ;
     bconfig.set_filename(ss.str());
 
     if (rank == 0) {
@@ -587,8 +531,7 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
     bconfig.set_field(BCO_FIELDS::SHIFT) = true;
     bconfig.set_field(BCO_FIELDS::NP) = true;
     bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, bet, wrsint);
-  }
-  
+  }  
   
   return EXIT_SUCCESS;
 }
