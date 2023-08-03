@@ -26,7 +26,7 @@ target_link_libraries(${PROG1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES
 set (PROG5 reader)
 set (SOURCES5 src/${PROG5}.cpp)
 add_executable(${PROG5} ${SOURCES5} ${HEADERS})
-target_link_libraries(${PROG1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES})
+target_link_libraries(${PROG5} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES})
 ##Executable 1
 #set (PROG5 increase_resolution)
 #set (SOURCES5 src/${PROG5}.cpp)
