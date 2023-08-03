@@ -231,6 +231,13 @@ Scalar atan (const Scalar& so) {
 	return res ;
 }
 
+Scalar log (const Scalar& so) {
+	Scalar res(so, false) ;
+	for (int i=0 ; i<so.get_nbr_domains() ; i++)
+		res.set_domain(i) = log(so(i)) ;
+	return res ;
+}
+
 double diffmax (const Scalar& aa, const Scalar& bb) {
 	assert (&aa.espace==&bb.espace) ;
 	double res = 0 ;

@@ -54,6 +54,7 @@ Scalar exp (const Scalar&) ;
 Scalar sin (const Scalar&) ;
 Scalar cos (const Scalar&) ;
 Scalar atan (const Scalar&) ;
+Scalar log (const Scalar&) ;
 double diffmax (const Scalar&, const Scalar&) ;
 
 class Vector ;
