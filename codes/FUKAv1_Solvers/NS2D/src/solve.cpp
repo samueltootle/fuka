@@ -206,9 +206,7 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
   syst.add_cst("4piG", bconfig(BCO_QPIG));
 //       syst.add_cst("Mb"  , bconfig(MB));
   
-  syst.add_cst("Hc", loghc);
-  syst.add_var("Madm", bconfig(MADM));
-  
+  syst.add_cst("Hc", loghc);  
 
   // the basic fields, conformal factor, lapse and (log) enthalpy
   syst.add_var("H", logh);
@@ -279,7 +277,6 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
   }
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
   space.add_eq(syst, "eqnulogA=0", "nulogA", "dn(nulogA)");
-  space.add_eq_int_inf(syst, "integ(intMadm) - Madm = 0");
   
   
   if(fixed)
@@ -320,7 +317,8 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
     // count the steps
     ite++;
   }
-  // if(!fixed)  
+  bconfig.set(BCO_PARAMS::MADM) = 
+    space.get_domain(ndom-1)->integ(syst.give_val_def("intMadm")()(ndom-1), OUTER_BC);
   update_config<eos_t>(bconfig, logh);
   bconfig.set_filename(converged_filename(stage_name, bconfig));
   bconfig.control(CONTROLS::SEQUENCES) = false;
@@ -409,7 +407,7 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
 
   // syst.add_cst("Mb"  , bconfig(MB));
-  syst.add_var("Madm", bconfig(MADM));
+  // syst.add_var("Madm", bconfig(MADM));
 
   syst.add_cst("Hc", loghc);
 
@@ -511,7 +509,7 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
   syst.add_eq_bc(1, OUTER_BC, "H=0");  
 
-  space.add_eq_int_inf(syst, "integ(intMadm) - Madm = 0");
+  // space.add_eq_int_inf(syst, "integ(intMadm) - Madm = 0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "nu=0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "nulogA=0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "bet=0");
@@ -541,6 +539,8 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
     ite++;
   }
   update_config<eos_t>(bconfig, logh);
+  bconfig.set(BCO_PARAMS::MADM) = 
+    space.get_domain(ndom-1)->integ(syst.give_val_def("intMadm")()(ndom-1), OUTER_BC);
     // std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
     // stage_enabled.fill(false);
     // stage_enabled[STAGES::TOTAL_BC] = true;
@@ -641,7 +641,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   double Rp = adpt_dom->get_radius()(pos_pole);
 
   // Differential rotation fixing parameters
-  double diffA = 5.9;
+  double diffA = 6;
   double Rratio = Rp / R0;
   int q = 1;
 
@@ -678,7 +678,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   syst.add_cst("4piG", bconfig(BCO_PARAMS::BCO_QPIG));
 
   // syst.add_cst("Mb"  , bconfig(MB));
-  syst.add_var("Madm", bconfig(MADM));
+  // syst.add_var("Madm", bconfig(MADM));
   syst.add_cst("Hc", loghc);
   syst.add_cst("omec", bconfig(BCO_PARAMS::OMEGA));
 
@@ -706,7 +706,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   // define quantity to be integrated at infinity
   // two (in this case) equivalent definitions of ADM mass
   // as well as the Komar mass
-  syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4piG ");
+  syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2)) / 4 / 4piG ");
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
 
   // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
@@ -793,7 +793,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
   syst.add_eq_bc(1, OUTER_BC, "H=0");  
 
-  space.add_eq_int_inf(syst, "integ(intMadm) - Madm = 0");
+  // space.add_eq_int_inf(syst, "integ(intMadm) - Madm = 0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "nu=0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "nulogA=0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "bet=0");
@@ -822,7 +822,9 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
     // count the steps
     ite++;
   }
-      update_config<eos_t>(bconfig, logh);
+    bconfig.set(BCO_PARAMS::MADM) = 
+      space.get_domain(ndom-1)->integ(syst.give_val_def("intMadm")()(ndom-1), OUTER_BC);
+    update_config<eos_t>(bconfig, logh);
     std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
     stage_enabled.fill(false);
     stage_enabled[STAGES::TESTING] = true;
