@@ -32,10 +32,10 @@ namespace Kadath {
 namespace FUKA_Solvers {
 
 template<typename config_t, typename space_t = Space_adapted_bh>
-class bh_3d_xcts_solver : public Solver<config_t, space_t> {
+class bh_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
   public:
-  using typename Solver<config_t, space_t>::base_config_t;
-  using typename Solver<config_t, space_t>::base_space_t;
+  using typename XCTS_Solver<config_t, space_t>::base_config_t;
+  using typename XCTS_Solver<config_t, space_t>::base_space_t;
 
   using scalar_t = Scalar&;
   using vector_t = Vector&;
@@ -48,16 +48,16 @@ class bh_3d_xcts_solver : public Solver<config_t, space_t> {
   std::array<int, 2> excluded_doms{0,1};
 
   // Specify base class members used to avoid this->
-  using Solver<config_t, space_t>::space;
-  using Solver<config_t, space_t>::bconfig;
-  using Solver<config_t, space_t>::basis;
-  using Solver<config_t, space_t>::cfields;
-  using Solver<config_t, space_t>::coord_vectors;
-  using Solver<config_t, space_t>::ndom;
-  using Solver<config_t, space_t>::check_max_iter_exceeded;
-  using Solver<config_t, space_t>::solution_exists;  
-  using Solver<config_t, space_t>::checkpoint;
-  using Solver<config_t, space_t>::solver_stage;
+  using XCTS_Solver<config_t, space_t>::space;
+  using XCTS_Solver<config_t, space_t>::bconfig;
+  using XCTS_Solver<config_t, space_t>::basis;
+  using XCTS_Solver<config_t, space_t>::cfields;
+  using XCTS_Solver<config_t, space_t>::coord_vectors;
+  using XCTS_Solver<config_t, space_t>::ndom;
+  using XCTS_Solver<config_t, space_t>::check_max_iter_exceeded;
+  using XCTS_Solver<config_t, space_t>::solution_exists;  
+  using XCTS_Solver<config_t, space_t>::checkpoint;
+  using XCTS_Solver<config_t, space_t>::solver_stage;
 
   public:
   // solver is not trivially constructable since Kadath containers are not

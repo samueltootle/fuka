@@ -68,24 +68,18 @@ const int RUN_BOOST = 3;
 template<typename config_t, typename space_t>
 class Solver {
   public:
-  using cfgen_t  = CoordFields<space_t>;
-  using cfary_t  = std::array<std::optional<Vector>, NUM_VECTORS>;
   using base_config_t = std::decay_t<config_t>;
   using base_space_t = std::decay_t<space_t>;
  
   protected:
   space_t& space;
 	config_t& bconfig;
-  Base_tensor& basis;
-  cfgen_t cfields;
-  cfary_t coord_vectors;
   const int ndom;
   STAGES solver_stage;
 
   public:
-  Solver(config_t& config_in, space_t& space_in, Base_tensor& base_in) 
-    : space(space_in), basis(base_in), bconfig(config_in), 
-        cfields(space), ndom(space_in.get_nbr_domains()) {}
+  Solver(config_t& config_in, space_t& space_in) 
+    : space(space_in), bconfig(config_in), ndom(space_in.get_nbr_domains()) {}
   virtual ~Solver() = default;
   
   protected:
@@ -215,6 +209,34 @@ class Solver {
 
   public:
   void set_solver_stage(STAGES const _stage) { this->solver_stage = _stage; }
+};
+
+/**
+ * @brief Solver base for FUKA solvers
+ * 
+ * @tparam config_t Configurator type
+ * @tparam space_t Numerical space type
+ */
+template<typename config_t, typename space_t>
+class XCTS_Solver : public Solver<config_t, space_t> {
+  public:
+  using cfgen_t  = CoordFields<space_t>;
+  using cfary_t  = std::array<std::optional<Vector>, NUM_VECTORS>;
+  using base_config_t = std::decay_t<config_t>;
+  using base_space_t = std::decay_t<space_t>;
+ 
+  protected:
+  using Solver<config_t, space_t>::space;
+  using Solver<config_t, space_t>::bconfig;
+  using Solver<config_t, space_t>::solver_stage;
+
+  Base_tensor& basis;
+  cfgen_t cfields;
+  cfary_t coord_vectors;
+
+  public:
+  XCTS_Solver(config_t& config_in, space_t& space_in, Base_tensor& base_in) 
+    : Solver<config_t, space_t>(config_in, space_in), cfields(space), basis(base_in) {}
 };
 /** @}*/
 }}

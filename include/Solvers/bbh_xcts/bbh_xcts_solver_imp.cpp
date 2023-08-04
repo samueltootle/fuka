@@ -41,7 +41,7 @@ template<typename config_t, typename space_t>
 bbh_xcts_solver<config_t, space_t>::bbh_xcts_solver(config_t& config_in, 
   space_t& space_in, Base_tensor& base_in,  
     Scalar& conf_in, Scalar& lapse_in, Vector& shift_in) :
-      Solver<config_t, space_t>(config_in, space_in, base_in), 
+      XCTS_Solver<config_t, space_t>(config_in, space_in, base_in), 
         conf(conf_in), lapse(lapse_in), shift(shift_in), 
           fmet(Metric_flat(space_in, base_in)),
             xc1(bco_u::get_center(space_in,space.BH1)),

@@ -44,7 +44,7 @@ namespace FUKA_Solvers {
  *
  * Also, KADATH at the time of writing, was strict on not allowing trivial
  * construction of base types (Base_tensor, Scalar, Tensor, Space, etc) which
- * means a driver is required to populate the related Solver class.
+ * means a driver is required to populate the related XCTS_Solver class.
  *
  * @tparam config_t Configurator type
  * @param bconfig Configurator object

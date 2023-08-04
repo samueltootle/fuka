@@ -33,10 +33,10 @@ namespace FUKA_Solvers {
 
 
 template<class eos_t, typename config_t, typename space_t = Kadath::Space_bin_ns>
-class bns_xcts_solver : Solver<config_t, space_t> {
+class bns_xcts_solver : XCTS_Solver<config_t, space_t> {
   public:
-  using typename Solver<config_t, space_t>::base_config_t;
-  using typename Solver<config_t, space_t>::base_space_t;
+  using typename XCTS_Solver<config_t, space_t>::base_config_t;
+  using typename XCTS_Solver<config_t, space_t>::base_space_t;
 
   private:
   Scalar& conf;
@@ -51,17 +51,17 @@ class bns_xcts_solver : Solver<config_t, space_t> {
   const double xo{0.};
 
   // Specify base class members used to avoid this->
-  using Solver<config_t, space_t>::space;
-  using Solver<config_t, space_t>::bconfig;
-  using Solver<config_t, space_t>::basis;
-  using Solver<config_t, space_t>::cfields;
-  using Solver<config_t, space_t>::coord_vectors;
-  using Solver<config_t, space_t>::ndom;
-  using Solver<config_t, space_t>::check_max_iter_exceeded;
-  using Solver<config_t, space_t>::solution_exists;
-  using Solver<config_t, space_t>::extract_eos_name;
-  using Solver<config_t, space_t>::checkpoint;
-  using Solver<config_t, space_t>::solver_stage;
+  using XCTS_Solver<config_t, space_t>::space;
+  using XCTS_Solver<config_t, space_t>::bconfig;
+  using XCTS_Solver<config_t, space_t>::basis;
+  using XCTS_Solver<config_t, space_t>::cfields;
+  using XCTS_Solver<config_t, space_t>::coord_vectors;
+  using XCTS_Solver<config_t, space_t>::ndom;
+  using XCTS_Solver<config_t, space_t>::check_max_iter_exceeded;
+  using XCTS_Solver<config_t, space_t>::solution_exists;
+  using XCTS_Solver<config_t, space_t>::extract_eos_name;
+  using XCTS_Solver<config_t, space_t>::checkpoint;
+  using XCTS_Solver<config_t, space_t>::solver_stage;
 
 
   public:
