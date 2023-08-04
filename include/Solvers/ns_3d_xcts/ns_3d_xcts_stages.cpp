@@ -551,7 +551,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   double Rpole= (*coord_scalars[R_BCO1])(1)(pos_pole);
 
   // FIXME should be user driven
-  double A = bconfig(BCO_PARAMS::BVELX) ;//std::pow(10., -3./2.);
+  double diffA = bconfig(BCO_PARAMS::BVELX) ;//std::pow(10., -3./2.);
   double Rratio = bconfig(BCO_PARAMS::BVELY) ; //0.875; //Rpole/R0;
   int q = 1;
   
@@ -577,34 +577,34 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
 
   // \frac{A}{R_0}
 
-  double invA = 1 / A;
+  // double invA = 1 / A;
   Scalar Omega(space);
-  Omega.annule_hard();
-  Omega.set_domain(0) = bconfig(BCO_PARAMS::OMEGA);
-  Omega.set_domain(1) = bconfig(BCO_PARAMS::OMEGA);
+  Omega = bconfig(BCO_PARAMS::OMEGA);
+  // Omega.annule_hard();
+  // Omega.set_domain(0) = bconfig(BCO_PARAMS::OMEGA);
+  // Omega.set_domain(1) = bconfig(BCO_PARAMS::OMEGA);
   Omega.std_base();
 
   std::string jint{};
-  std::string jome{"ome * (omeratio^"+std::to_string(q)+" - 1)"};
-  // std::string eqOme{"eqOme = P^4 * Wsquare * f_ij * U^i * mg^j / N"};
-  std::string eqOme{"eqOme = (P^4 * Wsquare * f_ij * U^i * mg^j / N) / A^2 - " + jome};
+  std::string jome{"diffA^2 * Omega * (omeratio^"+std::to_string(q)+" - 1)"};
+  std::string F{"F = " + jome};
   switch(q) {
     case 2:
-      jint = "ome^2 * (omeratio^2 * log(ome) - 0.5)"; // - omec^2 * (log(omec) - 0.5)";
+      jint = "diffA^2 * Omega^2 * (omeratio^2 * log(Omega) - 0.5)"; // - omec^2 * (log(omec) - 0.5)";
       break;
     default:
-      jint = "ome^2 * ((1 / (2-q)) * omeratio^"+std::to_string(q)+" - 0.5)"; // - omec^2 * q / (4 - 2 * q)";
+      jint = "diffA^2 * Omega^2 * ((1 / (2-q)) * omeratio^"+std::to_string(q)+" - 0.5)"; // - omec^2 * q / (4 - 2 * q)";
       break;
   }
-  std::string firstint{"firstint = invA * invA * (H + log(N) - log(W)) + " + jint};
+  std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsquare)) + " + jint};
   if (rank == 0)
     std::cout << "###################################" << std::endl
               << "Differential Rotating models"      << std::endl
-              << "j(Omega) = " + jome << std::endl
+              << "Law: " << F << std::endl
               << firstint << std::endl
-              << eqOme << std::endl
+              // << eqOme << std::endl
               << "q: " << q << std::endl
-              << "A: " << A << std::endl
+              << "A: " << diffA << std::endl
               << "Rp/Re: " << Rratio << std::endl
               << "R0: " << R0 <<std::endl
               << "###################################" << std::endl;
@@ -615,15 +615,14 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   syst_init(syst);
   
   /// Differential rotation parameters
-  syst.add_var("omec", bconfig(BCO_PARAMS::OMEGA));
-  syst.add_var("ome", Omega); 
+  syst.add_cst("omec", bconfig(BCO_PARAMS::OMEGA));
+  syst.add_var("Omega", Omega); 
   syst.add_cst("R0", R0);
 
-  syst.add_cst("A" , A);
-  syst.add_cst("invA", invA);
+  syst.add_cst("diffA" , diffA);
   syst.add_cst("q", q);
   syst.add_cst("Rratio", Rratio);  
-  syst.add_def("omeratio = omec / ome");
+  syst.add_def("omeratio = omec / Omega");
 
   Index pos_orig (space.get_domain(0)->get_nbr_points());
   
@@ -639,7 +638,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   syst.add_cst("lev", level);
   
   // syst.add_eq_val(1, "lev/R0 - 1", pos_eq);
-  syst.add_eq_val(1, "Rratio - lev / R0", pos_pole);
+  // syst.add_eq_val(1, "Rratio - lev / R0", pos_pole);
   
   // syst.add_eq_val(0, "Rratio * Aratio * Rx / Rz - one", pos_eq);
   
@@ -652,7 +651,16 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
 
   syst.add_var("bet" , shift);
 
-  syst.add_def("omega^i = bet^i + ome * mg^i");
+  syst.add_def("omega^i = bet^i + Omega * mg^i");
+  syst.add_def("U^i = omega^i / N");
+  syst.add_def("Usquare = P^4 * U_i * U^i");
+  syst.add_def("Wsquare = 1. / (1. - Usquare)");
+  syst.add_def("W = sqrt(Wsquare)");
+  
+  syst.add_def(F.c_str());
+  syst.add_def("Fomega = P^4 * Wsquare * f_ij * U^i * mg^j / N");
+  // cout << syst.give_val_def("F")();
+  // cout << syst.give_val_def("Fomega")();
 
   syst.add_def("A^ij = (D^i bet^j + D^j bet^i - 2. / 3.* D_k bet^k * f^ij) / "
                "2. / Ntilde");
@@ -662,13 +670,11 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
   syst.add_def(2,"intS = A_ij * mg^i * sm^j / 2. / 4piG") ;
 
   for (int d = 0; d < ndom; d++) {
+    syst.add_eq_full(d, "Fomega - F = 0");
     switch (d) {
     case 0:
     case 1:
-      syst.add_def(d, "U^i = omega^i / N");
-      syst.add_def(d, "Usquare = P^4 * U_i * U^i");
-      syst.add_def(d, "Wsquare = 1. / (1. - Usquare)");
-      syst.add_def(d, "W = sqrt(Wsquare)");
+
 
       syst.add_def(d, "Etilde = press * h * Wsquare - press * delta") ;
       syst.add_def(d, "Stilde = 3 * press * delta + (Etilde + press * delta) * Usquare") ;
@@ -683,14 +689,11 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
       syst.add_def(d, "intMb = P^6 * rho(h) * W");
       
       syst.add_def(d, firstint.c_str());
-      syst.add_def(d, eqOme.c_str());
       syst.add_def(d, "UH = U^i * D_i H");
 
       break;
     default:
       syst.add_eq_full(d, "H = 0");
-      syst.add_eq_full(d, "ome = 0");
-//      syst.add_eq_full(d, "eqOme = 0");
 
       syst.add_def(d, "eqP = D^i D_i P + A_ij * A^ij / P^7 / 8");
       syst.add_def(d, "eqNP = D^i D_i NP - 7. / 8. * NP / P^8 * A_ij * A^ij");
@@ -699,18 +702,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
       break;
     }
   }
-  
-  // std::cout << syst.give_val_def("UH") << std::endl;
-  // add the equation and the matchings to the system
-  // in case of the stellar domains
-  for(int i = 0; i < 1; ++i) {
-    syst.add_eq_inside(i, "eqOme = 0");
-    syst.add_eq_matching(i, OUTER_BC, "ome");
-    syst.add_eq_matching(i, OUTER_BC, "dn(ome)");
-  }
-  syst.add_eq_inside(1, "eqOme = 0");
-  syst.add_eq_bc(1, OUTER_BC, "U^i * D_i H = 0");
-  // syst.add_eq_bc(1, OUTER_BC, "lev = 0");
 
   space.add_eq(syst, "eqNP= 0", "N", "dn(N)");
   space.add_eq(syst, "eqP= 0", "P", "dn(P)");
@@ -753,9 +744,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
     syst.sec_member();
     if (rank == 0) {
       std::cout << "R0 = " << bconfig(RMID) << std::endl;
-      // std::cout << Omega << std::endl;
       print_diagnostics(syst, ite, conv);
-      std::cout << syst.give_val_def("UH")()(1) << std::endl;
       if(bconfig.control(CHECKPOINT))
         Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, Omega);
     }
