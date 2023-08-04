@@ -109,8 +109,50 @@ void reader_2d(config_t bconfig) {
 	Scalar nulogA   (space, ff1) ;
 	Scalar nu (space, ff1) ;
   Scalar logh   (space, ff1) ;
+  Scalar bet   (space, ff1) ;
+  Scalar wrsint(space,ff1);
 	fclose(ff1) ;
-  auto A(exp(nulogA - nu));
-  std::cout << A;
-  std::cout << space;
+
+  int ndom = space.get_nbr_domains();
+
+  // setup a system of equations
+  System_of_eqs syst(space, 0, ndom - 1);
+  // define numerical constants
+  syst.add_cst("4piG", bconfig(BCO_PARAMS::BCO_QPIG));
+  syst.add_cst("H", logh);
+  syst.add_cst("nu", nu);
+  syst.add_cst("nulogA", nulogA);
+  syst.add_cst("bet", bet);
+  syst.add_cst("wrsint", wrsint);
+
+  syst.add_def("N = exp(nu)");
+  syst.add_def("A = exp(nulogA - nu)");
+  syst.add_def("B = (divrsint(bet) + 1) / N");
+  syst.add_def("w = divrsint(wrsint)");
+
+  syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
+  syst.add_def(ndom - 1, "intMadm2 = - (dr(A)) / 4piG ");
+  syst.add_def(ndom - 1, "intMk = B * (dr(N) - multrsint(multrsint(B^2) / 2 / N * w * dr(w)))  / 4piG");
+  syst.add_def(ndom - 1, "intJ = -multr(multrsint(dr(w)))  / 4/4piG");
+  // std::cout << (*space.get_domain(1));
+  // std::cout << syst.give_val_def("B")()(ndom-1) << endl;
+  cout << space << endl;
+  Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
+  double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
+  Val_domain integMadm2(syst.give_val_def("intMadm2")()(ndom - 1));
+  double Madm2 = space.get_domain(ndom - 1)->integ(integMadm2, OUTER_BC);
+
+  // Komar mass at infinity
+  Val_domain integMk(syst.give_val_def("intMk")()(ndom - 1));
+  double Mk = space.get_domain(ndom - 1)->integ(integMk, OUTER_BC);
+
+  // ADM angular momentum at infinity 
+  Val_domain integJ(syst.give_val_def("intJ")()(ndom - 1));
+  double J = space.get_domain(ndom - 1)->integ(integJ, OUTER_BC);
+  
+  cout << "Madm : " << Madm << ", " << Madm2 << endl;
+  cout << "Mk : " << Mk << " [" 
+      << 2. * (Madm - Mk) / (Madm + Mk) << ", "
+      << 2. * (Madm2 - Mk) / (Madm2 + Mk) << "]" << endl;
+  cout << "Jadm: " << J << endl;
 }
