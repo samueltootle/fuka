@@ -113,6 +113,17 @@ void reader_2d(config_t bconfig) {
   Scalar wrsint(space,ff1);
 	fclose(ff1) ;
 
+  // central values of the matter fields
+  double loghc = bco_utils::get_boundary_val(0, logh, INNER_BC);
+  double hc = std::exp(loghc);
+  double nc = EOS<eos_t,DENSITY>::get(hc);
+  double pc = EOS<eos_t,PRESSURE>::get(hc);
+
+  // minimal and maximal radius of the adapted surface domain
+  auto [ rmin, rmax ] = bco_utils::get_rmin_rmax(space, 1);
+  // inner radius of the nucleus
+  double rin1 = bco_utils::get_radius(space.get_domain(0), OUTER_BC);
+
   int ndom = space.get_nbr_domains();
 
   // setup a system of equations
@@ -134,10 +145,8 @@ void reader_2d(config_t bconfig) {
   syst.add_def(ndom - 1, "intMadm2 = - (dr(A)) / 4piG ");
   syst.add_def(ndom - 1, "intMk = B * (dr(N) - multrsint(multrsint(B^2) / 2 / N * w * dr(w)))  / 4piG");
   syst.add_def(ndom - 1, "intJ = -multr(multrsint(dr(w)))  / 4/4piG");
-  // std::cout << (*space.get_domain(1));
-  // std::cout << syst.give_val_def("B")()(ndom-1) << endl;
-  // cout << space << endl;
-  Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
+ 
+ Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
   double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
   Val_domain integMadm2(syst.give_val_def("intMadm2")()(ndom - 1));
   double Madm2 = space.get_domain(ndom - 1)->integ(integMadm2, OUTER_BC);
@@ -149,11 +158,49 @@ void reader_2d(config_t bconfig) {
   // ADM angular momentum at infinity 
   Val_domain integJ(syst.give_val_def("intJ")()(ndom - 1));
   double J = space.get_domain(ndom - 1)->integ(integJ, OUTER_BC);
-  Index pos(space.get_domain(0)->get_nbr_points());
-  cout << "hc : " << exp(logh(0)(pos)) << '\n';
-  cout << "Madm : " << Madm << ", " << Madm2 << endl;
-  cout << "Mk : " << Mk << " [" 
-      << 2. * (Madm - Mk) / (Madm + Mk) << ", "
-      << 2. * (Madm2 - Mk) / (Madm2 + Mk) << "]" << endl;
-  cout << "Jadm: " << J << endl;
+  
+  #ifdef FORMAT
+    #undef FORMAT
+  #endif
+  #define FORMAT std::setw(25) << std::right << std::setprecision(5) << std::fixed << std::showpos
+  auto print_shells = [&](int dom_min, int dom_max)
+  {
+    int cnt = 1;
+    for(int i = dom_min; i < dom_max; ++i) {
+      std::string shell{"SHELL"+std::to_string(cnt)+" = "};
+      std::cout << FORMAT << shell << bco_utils::get_radius(space.get_domain(i), OUTER_BC) << std::endl;
+      cnt++;
+    }
+  };
+
+  auto res_r = space.get_domain(0)->get_nbr_points()(0);
+  auto res_t = space.get_domain(0)->get_nbr_points()(1);
+
+  // output to stdout
+  std::cout << FORMAT << "RES = "  << "[" << res_r << "," << res_t << "]\n"
+            << FORMAT << "Coord R_IN = "  << rin1 << std::endl
+            << FORMAT << "Coord R = "     << "[" << rmin << ", " << rmax << "]\n";
+  std::cout << FORMAT << "Coord R_OUT = " << bco_utils::get_radius(space.get_domain(2), OUTER_BC) << "\n";
+  print_shells(3, ndom-1); cout << endl;
+
+  // std::cout << FORMAT << "Areal R = "    << AR << " [" << AR * M2km << "km]\n"
+            // << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl
+    std::cout \
+            << FORMAT << "ADM Mass = " << Madm << " [" << Madm2 << "]\n"
+            << FORMAT << "ADM Momentum = " << J << std::endl
+            // << FORMAT << "Chi = " << J / Madm / Madm << " [" << bconfig(CHI) << "]\n"
+            << FORMAT << "Omega = "<< bconfig(OMEGA) << std::endl
+            << FORMAT << std::scientific << "Central Density = " << nc  << std::endl
+            << FORMAT << std::scientific << "Central h = " << hc << std::endl
+            << FORMAT << std::scientific << "Central log(h) = " << loghc << std::endl
+            << FORMAT << std::scientific << "Central Pressure = " << pc << "\n\n";
+            // << FORMAT << std::scientific << "Central dlog(h)/dx = " << central_dHdx << std::endl
+            // << FORMAT << std::scientific << "Central Euler Constant = "<< central_euler << std::endl
+            // << FORMAT << "Integrated log(h) = "    << H_integral << "\n\n";
+
+  std::cout << FORMAT << "Mk = "   << Mk << std::scientific
+            << ", Diff: " << 2. * fabs(Madm-Mk)/(Madm+Mk) << std::endl;
+            // << FORMAT << "Px = "   << Px   << std::endl
+            // << FORMAT << "Py = "   << Py   << std::endl
+            // << FORMAT << "Pz = "   << Pz   << std::endl;
 }
