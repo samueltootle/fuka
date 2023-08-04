@@ -35,8 +35,8 @@ Space_polar_adapted::Space_polar_adapted (int ttype, const Point& center, const 
     ndim = 2 ;
 
     n_shells = bounds.get_size(0) - 3;
-    ADAPTED_OUTER = n_shells + 1;
-    ADAPTED_INNER = n_shells + 2;
+    ADAPTED_OUTER = 1;
+    ADAPTED_INNER = 2;
 
     nbr_domains = bounds.get_size(0)+1 ;
     assert (nbr_domains>=4) ;
@@ -45,12 +45,10 @@ Space_polar_adapted::Space_polar_adapted (int ttype, const Point& center, const 
 
     // Nucleus
     domains[0] = new Domain_polar_nucleus (0, ttype, bounds(0), center, res) ;
-    for (int i=1 ; i<ADAPTED_OUTER ; i++)
-       domains[i] = new Domain_polar_shell(i, ttype, bounds(i-1), bounds(i), center, res) ;
-
     domains[ADAPTED_OUTER] = new Domain_polar_shell_outer_adapted (*this, ADAPTED_OUTER, ttype, bounds(ADAPTED_OUTER-1), bounds(ADAPTED_OUTER), center, res) ;
     domains[ADAPTED_INNER] = new Domain_polar_shell_inner_adapted (*this, ADAPTED_INNER, ttype, bounds(ADAPTED_OUTER), bounds(ADAPTED_INNER), center, res) ;
-
+    for (int i=3 ; i<nbr_domains-1 ; i++)
+       domains[i] = new Domain_polar_shell(i, ttype, bounds(i-1), bounds(i), center, res) ;
    domains[nbr_domains-1] = new Domain_polar_compact (nbr_domains-1, ttype, bounds(nbr_domains-2), center, res) ;
 
    const Domain_polar_shell_outer_adapted* pshell_outer = dynamic_cast<const Domain_polar_shell_outer_adapted*> (domains[ADAPTED_OUTER]) ;
@@ -63,21 +61,21 @@ Space_polar_adapted::Space_polar_adapted (int ttype, const Point& center, const 
 Space_polar_adapted::Space_polar_adapted (FILE* fd) {
 	fread_be (&nbr_domains, sizeof(int), 1, fd) ;
 	fread_be (&ndim, sizeof(int), 1, fd) ;
-	fread_be (&n_shells, sizeof(int), 1, fd) ;
 	fread_be (&type_base, sizeof(int), 1, fd) ;
 
-  ADAPTED_OUTER = n_shells + 1;
-  ADAPTED_INNER = n_shells + 2;
+  ADAPTED_OUTER = 1;
+  ADAPTED_INNER = 2;
 
 	domains = new Domain* [nbr_domains] ;
-	//nucleus :
+	// interior
 	domains[0] = new Domain_polar_nucleus (0, fd) ;
-	//Shells :
-	for (int i=1 ; i<ADAPTED_OUTER ; i++)
-		domains[i] = new Domain_polar_shell(i, fd) ;
-
 	domains[ADAPTED_OUTER] = new Domain_polar_shell_outer_adapted (*this, ADAPTED_OUTER, fd) ;	
 	domains[ADAPTED_INNER] = new Domain_polar_shell_inner_adapted (*this, ADAPTED_INNER, fd) ;
+  
+  //Shells :
+	for (int i=3 ; i<nbr_domains-1 ; i++)
+		domains[i] = new Domain_polar_shell(i, fd) ;
+	
 	// Compactified
 	domains[nbr_domains-1] = new Domain_polar_compact(nbr_domains-1, fd) ;  
 	
@@ -97,7 +95,6 @@ Space_polar_adapted::~Space_polar_adapted() {
 void Space_polar_adapted::save (FILE* fd) const  {
 	fwrite_be (&nbr_domains, sizeof(int), 1, fd) ;
 	fwrite_be (&ndim, sizeof(int), 1, fd) ;	
-	fwrite_be (&n_shells, sizeof(int), 1, fd) ;	
 	fwrite_be (&type_base, sizeof(int), 1, fd) ;
 	for (int i=0 ; i<nbr_domains ; i++)
 		domains[i]->save(fd) ;
