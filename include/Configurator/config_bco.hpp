@@ -346,7 +346,7 @@ class BCO_NS_INFO : public BCO_INFO {
   using EOSArray = std::array<EOSType, NUM_BCO_PARAMS>;
   using EOSMap   = std::map<std::string, EOS_PARAMS>;
 
-private:
+protected:
   std::string node_t{"ns"}; ///< node type
 
   EOSArray eos_params{}; ///< Array storing EOS parameters
@@ -584,6 +584,110 @@ public:
     // start - set NS stages in config file
     bconfig.set_stage(STAGES::NOROT_BC) = true;
     bconfig.set_stage(STAGES::TOTAL_BC) = true;
+    // end   - set NS stages
+  }
+};
+
+class BCO_ISO_NS_INFO : public BCO_NS_INFO {
+  public:
+  /** 
+   * BCO_NS_INFO::BCO_NS_INFO
+   * In addition to the parent constructor, we initialize the
+   * the EOS array to NaN as well. 
+   */
+  BCO_ISO_NS_INFO() : BCO_NS_INFO() {
+    bco_stages = M2DNSSTAGE;
+    eos_params.fill(std::nan("1"));
+  }
+
+  /** 
+   * BCO_NS_INFO::set_defaults
+   * Allow the setting of default configurator values for a base NS setup - do not modify 
+   *
+   * @tparam config_t configuration file type
+   * @param bconfig reference to configuration file to be modified
+   */
+  template <typename config_t>
+  void set_defaults(config_t& bconfig) {
+    // start - set NS properties in config file
+    bconfig.set_eos(EOS_PARAMS::EOSFILE)    = "togashi.lorene";
+    bconfig.set_eos(EOS_PARAMS::EOSTYPE)    = "Cold_Table";
+    bconfig.set_eos(EOS_PARAMS::HCUT)       = 0.0;
+    bconfig.set_eos(EOS_PARAMS::INTERP_PTS) = 2000;
+    
+    bconfig.set(BCO_PARAMS::HC) = 1.26;
+    bconfig.set(BCO_PARAMS::NC) = 1.37e-3;
+
+    // Resolution of the initial setup
+    bconfig.set(BCO_PARAMS::BCO_RES) = 9;
+    bconfig.set(BCO_PARAMS::DIM)     = 2;
+    
+    // Units of the system - 4 * PI * G
+    bconfig.set(BCO_PARAMS::BCO_QPIG) = 4 * M_PI;
+
+    // Additional shells between RMID and ROUT
+    bconfig.set(BCO_PARAMS::NSHELLS)   = 0;
+    
+    // Initial dimensionless spin
+    bconfig.set(BCO_PARAMS::CHI)   = 0;
+    
+    // Initial guess of omega
+    bconfig.set(BCO_PARAMS::OMEGA) = 0;
+
+    // We initialize based on fixed MADM
+    bconfig.set(BCO_PARAMS::MADM)    = 1.4 ;
+    bconfig.set(BCO_PARAMS::MB)      = 1.5 ;
+    // end   - set NS parameters
+
+    // start - set NS stages in config file
+    bconfig.set_stage(STAGES::NOROT_BC) = true;
+    bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
+    // end   - set NS stages
+
+    // start - set NS fields in config file
+    
+    // Make sure all other fields are disabled
+    // Starting from scratch, we only need three fields for the
+    // non-rotating case.
+    for(auto i = 0; i < BCO_FIELDS::NUM_BCO_FIELDS; i++)
+      bconfig.set_field(i) = false;
+    
+    // Document fields that will be stored
+    bconfig.set_field(BCO_FIELDS::LOGH)   = true;
+    bconfig.set_field(BCO_FIELDS::NU)     = true;
+    bconfig.set_field(BCO_FIELDS::LAP_ATERM) = true;    
+    // end   - set NS fields
+
+    bconfig.seq_setting(SEQ_SETTINGS::INIT_RES) = 9;
+    bconfig.control(CONTROLS::SAVE_COS) = false;
+  }
+
+  /** 
+   * BCO_NS_INFO::set_minimal_defaults
+   * Allow the setting of default configurator values for a base NS setup - do not modify 
+   *
+   * @tparam config_t configuration file type
+   * @param bconfig reference to configuration file to be modified
+   */
+  template <typename config_t>
+  void set_minimal_defaults(config_t& bconfig) {
+    // start - set NS properties in config file
+    bconfig.set_eos(EOS_PARAMS::EOSFILE)    = "togashi.lorene";
+    bconfig.set_eos(EOS_PARAMS::EOSTYPE)    = "Cold_Table";
+
+    // Resolution of the initial setup
+    bconfig.set(BCO_PARAMS::BCO_RES) = 9;
+
+    // Initial dimensionless spin
+    bconfig.set(BCO_PARAMS::CHI)     = 0;
+
+    // We initialize based on fixed MADM
+    bconfig.set(BCO_PARAMS::MADM)    = 1.4 ;
+    // end   - set NS parameters
+
+    // start - set NS stages in config file
+    bconfig.set_stage(STAGES::NOROT_BC) = true;
+    bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
     // end   - set NS stages
   }
 };
