@@ -188,15 +188,12 @@ int norot_2dsetup(config_t& bconfig) {
   int ndom      = 4 + bconfig(NSHELLS);
   Array<double> bounds(ndom - 1);
   bounds.set(0) = bconfig(RIN);
-  
-  double delta_r1 = (bconfig(RMID) - bconfig(RIN));
+  bounds.set(1) = bconfig(RMID);
+  bounds.set(2) = bconfig(ROUT);
 
-  for(int shell = 1; shell <= bconfig(NSHELLS); ++shell) {
-    //bounds.set(1+shell) = (delta_r1/(M_PI/2))*atan(shell+1)+bconfig(RMID);  //puts shells closer to router
-    bounds.set(shell) = bconfig(RIN) + delta_r1 /2./ (bconfig(NSHELLS) + 1) * shell;
-  }  
-  bounds.set(1+bconfig(NSHELLS)) = bconfig(RMID);
-  bounds.set(2+bconfig(NSHELLS)) = bconfig(ROUT);
+  for(int shell = 1, b = 3; shell <= bconfig(NSHELLS); ++shell, ++b) {
+    bounds.set(b) = bounds(b-1) * 2;
+  }
 
   Space_polar_adapted space(type_coloc, center, res, bounds);
 
