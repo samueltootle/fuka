@@ -136,7 +136,7 @@ void reader_2d(config_t bconfig) {
   syst.add_def(ndom - 1, "intJ = -multr(multrsint(dr(w)))  / 4/4piG");
   // std::cout << (*space.get_domain(1));
   // std::cout << syst.give_val_def("B")()(ndom-1) << endl;
-  cout << space << endl;
+  // cout << space << endl;
   Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
   double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
   Val_domain integMadm2(syst.give_val_def("intMadm2")()(ndom - 1));
@@ -149,7 +149,8 @@ void reader_2d(config_t bconfig) {
   // ADM angular momentum at infinity 
   Val_domain integJ(syst.give_val_def("intJ")()(ndom - 1));
   double J = space.get_domain(ndom - 1)->integ(integJ, OUTER_BC);
-  
+  Index pos(space.get_domain(0)->get_nbr_points());
+  cout << "hc : " << exp(logh(0)(pos)) << '\n';
   cout << "Madm : " << Madm << ", " << Madm2 << endl;
   cout << "Mk : " << Mk << " [" 
       << 2. * (Madm - Mk) / (Madm + Mk) << ", "
