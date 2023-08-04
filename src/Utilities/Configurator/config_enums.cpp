@@ -105,9 +105,10 @@ const std::map<std::string, BCO_FIELDS> MBCO_FIELDS = {
   {"ndens", NDENS},
   {"phi", PHI},
   {"nu", NU},
-  {"incA", INCA},
-  {"bigA", BIGA},
-  {"np", NP},
+  {"lap_Aterm", LAP_ATERM},
+  {"lap_Bterm", LAP_BTERM},
+  {"lap_wterm", LAP_WTERM},
+  {"diff_omega", DIFF_OMEGA},
   {"ks_metric", KS_METRIC},
   {"ks_lapse", KS_LAPSE},
   {"ks_k", KS_K}
@@ -124,10 +125,6 @@ const std::map<std::string, BCO_FIELDS> MBCO_SFIELDS_1 = {
   {"conf", CONF},
   {"lapse", LAPSE},
   {"enth", ENTH},
-  {"nu", NU},
-  {"incA", INCA},
-  {"bigA", BIGA},
-  {"np", NP}
 };
 
 // Subset of fields that are Vectors - initialized to 0 always

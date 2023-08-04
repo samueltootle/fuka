@@ -51,8 +51,8 @@ enum NODES {
 };
 /** @brief enum BCO_FILEDS enumerator over BCO field types */
 enum BCO_FIELDS {
-  CONF=0, LAPSE, SHIFT, ENTH, LOGH, NDENS, PHI, NU, INCA, BIGA, \
-  NP, KS_METRIC, KS_LAPSE, KS_K, NUM_BCO_FIELDS \
+  CONF=0, LAPSE, SHIFT, ENTH, LOGH, NDENS, PHI, NU, LAP_ATERM, \
+  LAP_BTERM, LAP_WTERM, DIFF_OMEGA, KS_METRIC, KS_LAPSE, KS_K, NUM_BCO_FIELDS \
 };
 
 /** @brief enum STAGES enumerator over solver stages */
