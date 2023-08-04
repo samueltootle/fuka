@@ -135,15 +135,19 @@ const std::map<std::string, BCO_FIELDS> MBCO_VFIELDS = {
 
 // all reserved stage names
 const std::map<std::string, STAGES> MSTAGE = {
-  {"pre",PRE},
+  {"preconditioning",PRE},
   {"norot_bc",NOROT_BC},
-  {"fixed_omega",FIXED_OMEGA},
-  {"corot_equal",COROT_EQUAL},
-  {"total",TOTAL},
-  {"total_bc",TOTAL_BC},
-  {"total_fixed_com",TOTAL_FIXED_COM},
-  {"grav",GRAV},
-  {"vel_pot_only",VEL_POT_ONLY},
+  {"fixed_omega",FIXED_OMEGA}, // Depricate
+  {"corot_equal",COROT_EQUAL}, // Depricate
+  {"total",TOTAL},             // Depricate
+  {"total_bc",TOTAL_BC},       // Depricate
+  {"total_fixed_com",TOTAL_FIXED_COM}, // Depricate
+  {"grav",GRAV},               // Depricate
+  {"quasi_equilibrium", QE},
+  {"hydro_rescaling", HYDRO_RESCALE},
+  {"uniform_rotation", UNIFORM_ROT},
+  {"differential_rotation", DIFF_ROT},
+  {"vel_pot_only",VEL_POT_ONLY}, // Depricate
   {"ecc_red", ECC_RED},
   {"binary_boost", BIN_BOOST},
   {"testing",TESTING}
@@ -176,6 +180,11 @@ const std::map<std::string, STAGES> MBHSTAGE = {
 const std::map<std::string, STAGES> MNSSTAGE = {
   {"norot_bc",NOROT_BC},
   {"total_bc",TOTAL_BC},
+};
+const std::map<std::string, STAGES> M2DNSSTAGE = {
+  {"norot_bc", NOROT_BC},
+  {"uniform_rotation", UNIFORM_ROT},
+  {"differential_rotation", DIFF_ROT},
 };
 
 const std::map<std::string, CONTROLS> MCONTROLS = {

@@ -59,7 +59,8 @@ enum BCO_FIELDS {
 enum STAGES {
   PRE=0, FIXED_OMEGA, NOROT_BC, COROT_EQUAL, \
   TOTAL, TOTAL_BC, TOTAL_FIXED_COM, TESTING, \
-  GRAV,  VEL_POT_ONLY, ECC_RED, BIN_BOOST, LINBOOST, NUM_STAGES \
+  GRAV,  VEL_POT_ONLY, ECC_RED, BIN_BOOST, LINBOOST, \
+  QE, HYDRO_RESCALE, UNIFORM_ROT, DIFF_ROT, NUM_STAGES \
 };
 
 /** @brief enum CONTROLS enumerator over sequence controls */
@@ -97,6 +98,7 @@ extern const std::map<std::string, STAGES> MBHSTAGE;
 extern const std::map<std::string, STAGES> MKSBHSTAGE;
 extern const std::map<std::string, STAGES> MNSSTAGE;
 extern const std::map<std::string, CONTROLS> MMIN_CONTROLS;
+extern const std::map<std::string, STAGES> M2DNSSTAGE;
 /**@} end extern group definition*/
 /**@} end config_enums group*/
 
