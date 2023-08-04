@@ -48,6 +48,17 @@ template <std::size_t s_type, typename config_t>
 void setup_co(config_t& bconfig);
 
 /**
+ * @brief Set the initial guess for 2D Neutron star in
+ * isotropic coordinates based on
+ * arxiv.org:1003.5015
+ * 
+ * @tparam config_t Config object type
+ * @param bconfig Config object
+ */
+template <typename config_t>
+void setup_2dns_isotropic(config_t& bconfig);
+
+/**
  * write_bh_init_setup_tofile_XCTS
  *
  * Takes a numerical space and configuration and constructs the initial guess for the
@@ -73,6 +84,21 @@ void write_bh_init_setup_tofile_XCTS(Space_adapted_bh& space, config_t& bconfig)
  */
 template<typename tov_t, typename config_t>
 void write_ns_init_setup_tofile_XCTS(Space_spheric_adapted& space, config_t& bconfig, tov_t& tov);
+
+/**
+ * write_ns2d_isotropic_init_setup_tofile
+ *
+ * Takes a numerical space and configuration and constructs the initial guess for the
+ * fields associated with a Neutron star in isotropic coordinates
+ * and writes everything to file at the end.
+ *
+ * @tparam config_t configuration file type
+ * @tparam tov_uptr unique_ptr to the given 1D tov solution type
+ * @param [input] space numerical space
+ * @param [input] bconfig the configuration file
+ */
+template<typename tov_t, typename config_t>
+void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space, config_t& bconfig, tov_t& tov);
 
 /**
  * setup_ns_config_from_TOV

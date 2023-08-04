@@ -86,6 +86,61 @@ void setup_co(config_t& bconfig) {
   
 }
 
+template <typename config_t>
+void setup_2dns_isotropic(config_t& bconfig) {
+  auto& fields = bconfig.return_fields();
+
+  int type_coloc = CHEB_TYPE;
+  auto const & dim = bconfig(BCO_PARAMS::DIM);
+  Dim_array res(dim);
+  res.set(0) = bconfig(BCO_PARAMS::BCO_RES);
+  res.set(1) = bconfig(BCO_PARAMS::BCO_RES);
+
+  Point center(dim);
+  for (int i = 1; i <= dim; i++)
+    center.set(i) = 0;
+  
+  const int shells = (int)bconfig(BCO_PARAMS::NSHELLS);
+  int ndom = 4 + bconfig(NSHELLS);
+
+  Array<double> bounds(ndom - 1);
+  bounds.set(0) = bconfig(RIN);
+  bounds.set(1) = bconfig(RMID);
+  bounds.set(2) = bconfig(ROUT);
+
+  for(int shell = 1, b = 3; shell <= shells; ++shell, ++b) {
+    bounds.set(b) = bounds(b-1) * 2;
+  }
+
+  Space_polar_adapted space(type_coloc, center, res, bounds);
+
+  const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
+  const std::string eos_file = bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
+  const std::string eos_type = bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
+
+  if(!bconfig.control(CONTROLS::USE_CONFIG_VARS)) {
+    if(eos_type == "Cold_PWPoly") {
+      using eos_t = ::Kadath::Margherita::Cold_PWPoly;
+      EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
+      auto tov = setup_ns_config_from_TOV<eos_t>(bconfig);
+      write_ns2d_isotropic_init_setup_tofile(space, bconfig, *tov);
+    } else if(eos_type == "Cold_Table") {
+      using eos_t = ::Kadath::Margherita::Cold_Table;
+
+      const int interp_pts = (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0) ? \
+                              2000 : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
+
+      EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
+      auto tov = setup_ns_config_from_TOV<eos_t>(bconfig);
+      write_ns2d_isotropic_init_setup_tofile(space, bconfig, *tov);
+    }
+    else { 
+      std::cerr << eos_type << " is not recognized.\n";
+      std::_Exit(EXIT_FAILURE);
+    }
+  }  
+}
+
 template<typename config_t>
 void write_bh_init_setup_tofile_XCTS(Space_adapted_bh& space, config_t& bconfig) {
   Base_tensor basis(space, CARTESIAN_BASIS);
@@ -167,6 +222,84 @@ void write_ns_init_setup_tofile_XCTS(Space_spheric_adapted& space, config_t& bco
   // end setup fields
   
   Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh);
+}
+
+template<typename tov_t, typename config_t>
+void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space, config_t& bconfig, tov_t& tov) {
+  using eos_t = typename tov_t::eos_t;
+  enum ltpQ { LAPSE=0, RHO, CONF }; 
+  const int ndom = space.get_nbr_domains();
+  
+  // setup fields
+  Scalar lapse(space);
+  lapse = 1.;
+
+  Scalar conf(lapse);
+  
+  // H = log(h), the logarithm of the specific enthalpy
+  Scalar logh(space);
+  logh.annule_hard();
+  
+  // interpolate TOV solution
+  auto lintp = setup_interpolator_from_TOV(tov); 
+  
+  Scalar r_field(space);
+  r_field.annule_hard();
+  for (auto i = 0; i < ndom; ++i)
+    r_field.set_domain(i) = space.get_domain(i)->get_radius();
+  auto npts = space.get_domain(ndom-1)->get_nbr_points();
+  Index pos_c(npts);
+  pos_c.set(0) = npts(0) - 1; // outer_bc
+
+  for(auto i = 0; i < npts(1); ++i) {
+    pos_c.set(1) = i;
+    r_field.set_domain(ndom-1).set(pos_c) = 1e10;
+  }
+  pos_c.set_start();
+
+  // update the fields based on TOV solution for a given domain
+  auto update_fields= [&](const size_t dom) {
+    Index pos(space.get_domain(dom)->get_nbr_points());
+    do {
+      double rval = r_field(dom)(pos);
+      auto all_ltp = lintp.interpolate_all(rval);
+      auto rho = (all_ltp[ltpQ::RHO] <= 0) ? 1e-15 : all_ltp[ltpQ::RHO];
+      auto h = EOS<eos_t, eos_var_t::DENSITY>::h_cold__rho(rho);
+
+      if(dom == 0 && pos(0) == 0 && pos(1) == 0)
+        bconfig.set(BCO_PARAMS::HC) = h;
+      
+      logh.set_domain(dom).set(pos) = (h < 1) ? 0. : std::log(h); 
+      lapse.set_domain(dom).set(pos) = all_ltp[ltpQ::LAPSE];
+      conf.set_domain(dom).set(pos) = all_ltp[ltpQ::CONF];
+    }while(pos.inc());
+  };
+  for(int i = 0; i < ndom; ++i)
+    update_fields(i);
+  
+  for (int d = space.ADAPTED_INNER; d < ndom; ++d)
+    logh.set_domain(d).annule_hard();
+
+  // Fix compactified domain metric variables
+  auto decay_factor = r_field(ndom-1)(pos_c) / r_field(ndom-1);
+  conf.set_domain(ndom-1)  = 1 + ( conf(ndom-1)(pos_c) - 1) * decay_factor;
+  lapse.set_domain(ndom-1) = 1 + (lapse(ndom-1)(pos_c) - 1) * decay_factor;
+
+  Scalar A(conf * conf);
+
+  // We store the quantities that appear in the lapace terms
+  // for solver stability.  These will need to be transformed
+  // to obtain the full metric.
+  Scalar nu(log(lapse));
+  Scalar lap_aterm(nu + log(A));
+
+  logh.std_base();
+  nu.std_base();
+  lap_aterm.std_base();
+  // end setup fields
+  
+  bconfig.set_filename("initns");
+  bco_utils::save_to_file(space, bconfig, lap_aterm, nu, logh);
 }
 
 template<typename eos_t, typename config_t>
