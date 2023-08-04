@@ -2,6 +2,7 @@
 #include "mpi.h"
 #include "bco_utilities.hpp"
 #include "ns_3d_xcts_regrid.hpp"
+#include "Solvers/sequences/sequence_utilities.hpp"
 #include <cmath>
 
 /**
@@ -37,11 +38,25 @@ std::string ns_3d_xcts_solver<eos_t, config_t, space_t>::converged_filename(
   ss << "NS";
   if(stage != "") ss  << "_" << stage << ".";
   else ss << ".";
-  ss << eosname << "."
-     << bconfig(MADM) << "."; 
-  if(stage != "NOROT_BC") ss << bconfig(CHI)<< ".";
+  ss << eosname << ".";
+  
+  if(seq && seq->is_set()) {
+    auto idx{std::get<0>(seq->get_indices())};
+    switch(idx) {
+      case BCO_PARAMS::HC:
+        ss << "HC." << bconfig(BCO_PARAMS::HC) << ".";
+        break;
+      case BCO_PARAMS::NC:
+        ss << "NC." << bconfig(BCO_PARAMS::NC) << ".";
+        break;
+      default:
+        ss << bconfig(BCO_PARAMS::MADM) << "."; 
+    }
+  }
+  
+  if(stage != "NOROT_BC") ss << bconfig(BCO_PARAMS::CHI)<< ".";
   else ss << "0.";
-  ss << bconfig(NSHELLS) << "."
+  ss << bconfig(BCO_PARAMS::NSHELLS) << "."
      <<std::setfill('0') << std::setw(2) << res;
   return ss.str();
 }
@@ -83,6 +98,14 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve() {
   // Barrier needed in case we need to read from the previous output
   MPI_Barrier(MPI_COMM_WORLD);
   return exit_status;
+}
+
+template<class eos_t, typename config_t, typename space_t>
+int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve(Parameter_sequence<BCO_PARAMS> const * sequence_in) {
+  if(sequence_in != nullptr) {
+    this->seq.reset(new Parameter_sequence<BCO_PARAMS>(*sequence_in));
+  }
+  return this->solve();
 }
 
 template<class eos_t, typename config_t, typename space_t>
@@ -211,7 +234,7 @@ void ns_3d_xcts_solver<eos_t, config_t, space_t>::print_diagnostics(System_of_eq
 } // end print diagnostics rot
 
 template<class eos_t, typename config_t, typename space_t>
-void ns_3d_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(const double& loghc) {
+void ns_3d_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(const double loghc) {
   bconfig.set(HC) = std::exp(loghc);
   bconfig.set(NC) = EOS<eos_t,DENSITY>::get(bconfig(HC));
 }

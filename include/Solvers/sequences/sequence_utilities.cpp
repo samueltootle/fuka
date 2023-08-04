@@ -100,6 +100,10 @@ config_t generate_sequence_config (config_t & seqconfig, std::string outputdir) 
     std::filesystem::path cwd = std::filesystem::current_path();
     outputdir = cwd.string();
   }
+  // Activate all controls that are active in the seq config
+  for(auto idx = 0; idx < STAGES::NUM_STAGES; ++idx)
+    bconfig.set_stage(idx) = seqconfig.set_stage(idx);
+    
   if(rank == 0)
     std::cout << "Isolated solutions will be stored in: " << outputdir << "\n" \
               << "Directory will be created if it doesn't exist.\n";

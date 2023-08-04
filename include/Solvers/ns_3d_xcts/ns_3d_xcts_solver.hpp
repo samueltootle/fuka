@@ -21,6 +21,8 @@
  */
 #pragma once
 #include "Solvers/solvers.hpp"
+#include "Solvers/sequences/parameter_sequence.hpp"
+#include <memory>
 
 /**
  * \addtogroup NS_XCTS
@@ -42,6 +44,7 @@ class ns_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
   Scalar& logh;
   Vector& shift;
   Metric_flat fmet;
+  std::unique_ptr<Parameter_sequence<BCO_PARAMS> const> seq;
 
   /// Specify base class members used to avoid this->
   using XCTS_Solver<config_t, space_t>::space;
@@ -82,6 +85,9 @@ class ns_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
   /// solver driver
   int solve();
 
+  /// solver driver
+  int solve(Parameter_sequence<BCO_PARAMS> const * sequence_in);
+
   /// solver stages
   int norot_stage(bool fixed = false);
   int uniform_rot_stage();
@@ -97,7 +103,7 @@ class ns_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
   int binary_boost_stage(kadath_config_boost<BIN_INFO>& binconfig, const size_t bco);
 
   // Update bconfig(HC) and bconfig(NC)
-  void update_config_quantities(const double& loghc);
+  void update_config_quantities(const double loghc);
 };
 /** @}*/
 }}
