@@ -207,13 +207,13 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
 //       syst.add_cst("Mb"  , bconfig(MB));
   
 
-  if(fixed) {
+  // if(fixed) {
     syst.add_cst("Hc", loghc);
     syst.add_var("Madm", bconfig(MADM));
-  } else {
-    syst.add_var("Hc", loghc);
-    syst.add_cst("Madm", bconfig(MADM));
-  }
+  // } else {
+  //   syst.add_var("Hc", loghc);
+  //   syst.add_cst("Madm", bconfig(MADM));
+  // }
   
 
   // the basic fields, conformal factor, lapse and (log) enthalpy
@@ -326,12 +326,22 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
     // count the steps
     ite++;
   }
-  if(!fixed)  
-    update_config<eos_t>(bconfig, logh);
+  // if(!fixed)  
+  update_config<eos_t>(bconfig, logh);
   bconfig.set_filename(converged_filename(stage_name, bconfig));
   bconfig.control(CONTROLS::SEQUENCES) = false;
+  Scalar bet(space);  
+    {  
+    Scalar B(exp(nulogA - nu));
+    Scalar N(exp(nu));
+    Scalar tmp(N * B - 1);
+    bet = Scalar(tmp.mult_sin_theta().mult_r());
+    }
+  Scalar wrsint(space);
+  wrsint.annule_hard();
+  wrsint.std_base();
   if(rank == 0)
-    bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, nulogA);
+    bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, bet, wrsint);
   MPI_Barrier(MPI_COMM_WORLD);
   return EXIT_SUCCESS;
 }
@@ -405,9 +415,9 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
 
   // syst.add_cst("Mb"  , bconfig(MB));
-  syst.add_cst("Madm", bconfig(MADM));
+  syst.add_var("Madm", bconfig(MADM));
 
-  syst.add_var("Hc", loghc);
+  syst.add_cst("Hc", loghc);
 
   // the basic fields, conformal factor, lapse and (log) enthalpy
   syst.add_var("H", logh);
@@ -425,7 +435,7 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   // define quantity to be integrated at infinity
   // two (in this case) equivalent definitions of ADM mass
   // as well as the Komar mass
-  syst.add_def(ndom - 1, "intMadm = -dr(A) / 4piG ");
+  syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
 
   // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
@@ -637,7 +647,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   double Rp = adpt_dom->get_radius()(pos_pole);
 
   // Differential rotation fixing parameters
-  double diffA = 6.5;
+  double diffA = 5.9;
   double Rratio = Rp / R0;
   int q = 1;
 
@@ -702,7 +712,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   // define quantity to be integrated at infinity
   // two (in this case) equivalent definitions of ADM mass
   // as well as the Komar mass
-  syst.add_def(ndom - 1, "intMadm = -dr(A) / 4piG ");
+  syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4piG ");
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
 
   // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
