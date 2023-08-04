@@ -206,14 +206,8 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
   syst.add_cst("4piG", bconfig(BCO_QPIG));
 //       syst.add_cst("Mb"  , bconfig(MB));
   
-
-  // if(fixed) {
-    syst.add_cst("Hc", loghc);
-    syst.add_var("Madm", bconfig(MADM));
-  // } else {
-  //   syst.add_var("Hc", loghc);
-  //   syst.add_cst("Madm", bconfig(MADM));
-  // }
+  syst.add_cst("Hc", loghc);
+  syst.add_var("Madm", bconfig(MADM));
   
 
   // the basic fields, conformal factor, lapse and (log) enthalpy
@@ -467,20 +461,20 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
       
       // sources
       syst.add_def(d, "edens = rho * (1 + eps)");
-      syst.add_def(d, "E = Wsq * (edens + press) - press");
-      syst.add_def(d, "Srrtt = press");
-      syst.add_def(d, "pressp = multrsint(B * (E + Srrtt) * U)");
-      syst.add_def(d, "Spp = press * (1 + Usq) + E * Usq");
+      syst.add_def(d, "E = Wsq * press * h - press * delta");
+      syst.add_def(d, "Srrtt = press * delta");
+      syst.add_def(d, "pressp = delta * multrsint(B * (E + Srrtt) * U)");
+      syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
       syst.add_def(d, "S = 2 * Srrtt + Spp");
       
-      syst.add_def(d, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                            "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
+      syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
+                            "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
                             "- 4piG * A^2 * (E + S)");
-      syst.add_def(d, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))"
-                      "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
+      syst.add_def(d, "eqnulogA = delta * lap2(nulogA) + delta * scal(grad(nu), grad(nu))"
+                      "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
                       "- 2 * 4piG * A^2 * Spp");
-      syst.add_def(d, "eqbet = lap2(bet) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
-      syst.add_def(d, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
+      syst.add_def(d, "eqbet = delta * lap2(bet) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
+      syst.add_def(d, "eqw = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
                           "+ 4 * 4piG * N * A^2 / B^2 * divrsint(pressp)");
       
       // definition for the baryonic mass integral - need a volume integral first
