@@ -129,20 +129,22 @@ template<typename dom_t>
 double get_radius (const dom_t* dom, const int bound) {
     auto const npts = dom->get_nbr_points();
     Index pos(npts);
+    auto dim = pos.get_ndim();
     switch(bound) {
       case INNER_BC:
         break;
       case OUTER_BC:
         pos.set(0) = npts(0) - 1;
         pos.set(1) = npts(1) - 1;
+        if(dim == 3)
         pos.set(2) = npts(2) - 1;
         break;
       case EQUI:
         pos.set(0) = npts(0) - 1;
-        pos.set(2) = npts(2) - 1;
+        pos.set(1) = npts(1) - 1;
         break;
       case INNER_EQUI:
-        pos.set(2) = npts(2) - 1;
+        pos.set(1) = npts(1) - 1;
         break;
       default:
         std::cout << "Unknown bound sent to get_radius: " << bound << std::endl;
