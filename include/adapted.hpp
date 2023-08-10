@@ -110,6 +110,7 @@ class Domain_shell_inner_adapted : public Domain {
   */
   Domain_shell_inner_adapted (const Space& sp, int num, int ttype, const Val_domain& rin, double rout, const Point& cr, const Dim_array& nbr) ;
   Domain_shell_inner_adapted (const Domain_shell_inner_adapted & so) ; ///< Copy constructor.
+  Domain_shell_inner_adapted (const Space& sp, const Domain_shell_inner_adapted & so) ; ///< Copy constructor. New space
  /**
   * Constructor from a file
   * @param sp [input] : the associated \c Space.
@@ -429,6 +430,7 @@ class Domain_shell_outer_adapted : public Domain {
   */
   Domain_shell_outer_adapted (const Space& sp, int num, int ttype, double rin, const Val_domain& rout, const Point& cr, const Dim_array& nbr) ;
   Domain_shell_outer_adapted (const Domain_shell_outer_adapted & so) ; ///< Copy constructor.
+  Domain_shell_outer_adapted (const Space& sp, const Domain_shell_outer_adapted & so) ; ///< Copy constructor, new space.
  /**
   * Constructor from a file
   * @param sp [input] : the associated \c Space.

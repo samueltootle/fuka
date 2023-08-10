@@ -39,6 +39,8 @@ Domain_shell_outer_homothetic::Domain_shell_outer_homothetic (const Space& sss, 
 Domain_shell_outer_homothetic::Domain_shell_outer_homothetic (const Domain_shell_outer_homothetic& so) : Domain_shell_outer_adapted(so) {
 }
 
+Domain_shell_outer_homothetic::Domain_shell_outer_homothetic (const Space& sp, const Domain_shell_outer_homothetic & so) : Domain_shell_outer_adapted(sp,so) {}
+
 Domain_shell_outer_homothetic::Domain_shell_outer_homothetic (const Space& sss, int num, FILE* fd) : Domain_shell_outer_adapted(sss, num, fd) {
 }
 
