@@ -46,6 +46,7 @@ class Space_adapted_bh : public Space {
 	*/
 	Space_adapted_bh (int ttype, const Point& cr, const Dim_array& nbr, const std::vector<double>& BH_bounds) ;
 	Space_adapted_bh (FILE*) ; ///< Constructor from a file
+  Space_adapted_bh (Space_adapted_bh const &) ;
 	void add_eq (System_of_eqs& syst, const char* eq, const char* rac, const char* rac_der, int nused=-1, Array<int>** pused=0x0)  ;
   void add_bc_bh  (System_of_eqs& syst, const char* eq, int nused=-1, Array<int>** pused=0x0)  ;
   void add_bc_inf (System_of_eqs& syst, const char* eq, int nused=-1, Array<int>** pused=0x0)  ;
