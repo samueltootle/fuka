@@ -37,10 +37,18 @@ Vector::Vector (const Vector& source) :
     Tensor(source) {
 }   
 
+Vector::Vector(const Space& sp, const Vector& uu) : Tensor(sp, uu) {
+}
 
 // Constructor from a {\tt Tensor}.
 //--------------------------------
 Vector::Vector(const Tensor& uu) : Tensor(uu) {
+  assert(valence == 1) ;
+}
+
+// Constructor from a {\tt Tensor}.
+//--------------------------------
+Vector::Vector(const Space& sp, const Tensor& uu) : Tensor(sp, uu) {
   assert(valence == 1) ;
 }
 

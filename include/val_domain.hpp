@@ -109,6 +109,17 @@ class Val_domain : public MemoryMappable {
 	void save (FILE*) const ; ///< Saving on a file.
 
 	/**
+	 * @brief Use with Caution! Construct a new Val_domain object by copying
+	 * the coefficients/values, but to a new Val_domain with a different Domain
+	 * pointer.  THIS ASSUMES BOTH DOMAINS ARE THE SAME, but with different
+	 * memory addresses
+	 * 
+	 * @param dom Pointer to new Domain
+	 * @param so Reference to Val_domain to copy
+	 */
+	Val_domain (const Domain* dom, const Val_domain& so) ;
+
+	/**
 	* @returns a pointer on the \c Domain.
 	*/
 	const Domain* get_domain() const  {return zone ;} ;

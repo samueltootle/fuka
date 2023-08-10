@@ -48,6 +48,20 @@ Val_domain::Val_domain (const Val_domain& so, bool copie) : zone(so.zone), base(
 	     }
 }
 
+Val_domain::Val_domain (const Domain* dom, const Val_domain& so) : zone(dom), base(so.base), is_zero(so.is_zero), in_conf(so.in_conf), in_coef(so.in_coef) {
+
+	c = ((so.c!=0x0)) ? new Array<double> (*so.c) : 0x0;
+	cf = ((so.cf!=0x0)) ? new Array<double> (*so.cf) : 0x0 ;
+
+	p_der_var = MemoryMapper::get_memory<Val_domain*>(zone->get_ndim());
+	p_der_abs = MemoryMapper::get_memory<Val_domain*>(zone->get_ndim());
+
+	for (int i=0 ; i<zone->get_ndim() ; i++) {
+	     p_der_var[i] = ((so.p_der_var[i]!=0x0)) ? new Val_domain(*so.p_der_var[i]) : 0x0 ;
+	     p_der_abs[i] = ((so.p_der_abs[i]!=0x0)) ? new Val_domain(*so.p_der_abs[i]) : 0x0 ;
+	     }
+}
+
 Val_domain::Val_domain (const Domain* so, FILE* fd) : zone (so), base(fd) {
 	int indic ;
 	fread_be (&indic, sizeof(int), 1, fd) ;

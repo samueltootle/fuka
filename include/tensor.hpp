@@ -218,6 +218,17 @@ class Tensor : public MemoryMappable {
 	Tensor(const Tensor&, bool copie = true) ;
 	Tensor (const Space& sp, FILE*) ; ///< Constructor from a file.
 	Tensor (const Space& sp, int dim, FILE*) ; ///< Constructor from a file with explicit passing of the dimension
+	
+	/**
+	 * @brief Use with Caution! Construct a new Tensor object by copying
+	 * the coefficients/values/etc, but to a new Tensor with a different Space
+	 * pointer.  THIS ASSUMES BOTH SPACES ARE THE SAME, but with different
+	 * memory addresses
+	 * 
+	 * @param sp New space
+	 * @param source Tensor to copy
+	 */
+	Tensor (const Space& sp, const Tensor& source);
 
     protected:
 	/**
