@@ -57,8 +57,8 @@ Val_domain::Val_domain (const Domain* dom, const Val_domain& so) : zone(dom), ba
 	p_der_abs = MemoryMapper::get_memory<Val_domain*>(zone->get_ndim());
 
 	for (int i=0 ; i<zone->get_ndim() ; i++) {
-	     p_der_var[i] = ((so.p_der_var[i]!=0x0)) ? new Val_domain(*so.p_der_var[i]) : 0x0 ;
-	     p_der_abs[i] = ((so.p_der_abs[i]!=0x0)) ? new Val_domain(*so.p_der_abs[i]) : 0x0 ;
+	     p_der_var[i] = ((so.p_der_var[i]!=0x0)) ? new Val_domain(dom, *so.p_der_var[i]) : 0x0 ;
+	     p_der_abs[i] = ((so.p_der_abs[i]!=0x0)) ? new Val_domain(dom, *so.p_der_abs[i]) : 0x0 ;
 	     }
 }
 
