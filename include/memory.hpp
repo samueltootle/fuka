@@ -32,7 +32,7 @@
 // only do this if really necessary, e.g. using an Intel compiler not capable of compiling the flat_hash_map below
 // this is slower than the hash map
 //#define KADATH_VECTORMAP
-
+#define DEFAULT_KAD_MEM
 #ifndef KADATH_VECTORMAP
 #include "implementation/flat_hash_map.hpp"
 #endif
@@ -59,12 +59,16 @@ class coef_mem {
 
   public:
     static double* get_mem(size_t const num, size_t const len) {
+      #ifndef DEFAULT_KAD_MEM
       if(len > lengths[num]) {
       	mem_ptrs[num].reset(new double[len]);
 
         lengths[num] = len;
       }
       return mem_ptrs[num].get();
+      #else
+      return new double [len];
+      #endif
     }
 };
 
@@ -97,6 +101,7 @@ class MemoryMapper {
 
   public:
 
+    #ifndef DEFAULT_KAD_MEM
     static void* get_memory(size_t const sz) {
 
       if(sz == 0)
@@ -157,9 +162,26 @@ class MemoryMapper {
     static void release_memory(void* raw_mem_ptr, size_t const sz) {
       release_memory(raw_mem_ptr, sz * sizeof(T));
     }
+    #else
+
+    template<typename T>
+    static T* get_memory(size_t const sz) {
+      return new T [sz];
+    }
+   
+    template<typename T>
+    static void release_memory(T* mem_ptr, size_t const sz) {
+      delete mem_ptr ;
+    }
+    template<typename T, size_t ary_sz>
+    static void release_memory(T (*mem_ptr)[ary_sz], size_t const sz) {
+      delete [] mem_ptr ;
+    }
+    #endif
 };
 
 struct MemoryMappable {
+  #ifndef DEFAULT_KAD_MEM
   void* operator new(size_t sz)
   {
     return MemoryMapper::get_memory(sz);
@@ -179,6 +201,7 @@ struct MemoryMappable {
   {
     MemoryMapper::release_memory(mem_ptr, sz);
   }
+  #endif
 };
 }
 #endif
