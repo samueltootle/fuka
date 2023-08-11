@@ -213,7 +213,7 @@ Tensor::Tensor (const Space& sp, const Tensor& source) :
 
     cmp = MemoryMapper::get_memory<Scalar*>(n_comp);
     for (int i=0 ; i<n_comp ; i++)
-	cmp[i] = new Scalar(*source.cmp[i]) ;
+	cmp[i] = new Scalar(sp, *source.cmp[i]) ;
 
     name_indice = (valence==0) ? 0x0 : MemoryMapper::get_memory<char>(valence) ;
     name_affected = false ;
