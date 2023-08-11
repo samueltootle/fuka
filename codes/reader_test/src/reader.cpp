@@ -52,12 +52,19 @@ int main(int argc, char **argv) {
 
   std::string ifilename{argv[1]};
   kadath_config_boost<BCO_BH_INFO> bconfig(ifilename);
-  Kadath::FUKA_Solvers::CFMS_BH_Reader<decltype(bconfig), Space_adapted_bh> reader(ifilename);
+  using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Reader<decltype(bconfig), Space_adapted_bh>;
+  reader_t reader(ifilename);
 
   // Space_adapted_bh bh(*reader.get_space().get());
   auto reader_copy(reader);
   
-  
+  if(reader.is_export_ready()) {
+    std::cout << "Let's export!\n";
+    auto interp = reader.interpolate_pointwise(1.,1.,1.);
+    std::cout << "Psi(1,1,1) = " << interp[reader_t::XCTS_VARS::XCTS_PSI] << '\n';
+    auto out = reader.export_pointwise(1.,1.,1.);
+    std::cout << "GXX(1,1,1) = " << out[reader_t::OUTPUT_VARS::GXX] << '\n';
+  }
   // MPI_Finalize();
   return EXIT_SUCCESS;
 }
