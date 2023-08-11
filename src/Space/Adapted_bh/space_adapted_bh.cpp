@@ -93,7 +93,7 @@ Space_adapted_bh::Space_adapted_bh (Space_adapted_bh const & sp) {
 
   // Copy Nucleus - easy
   const Domain_nucleus* d_nuc = dynamic_cast<const Domain_nucleus*> (sp.get_domain(0)) ;
-  domains[0] = new Domain_nucleus(*d_nuc);
+  domains[0] = new Domain_nucleus(*d_nuc, true);
   
   const Domain_shell_outer_homothetic* pouter = dynamic_cast<const Domain_shell_outer_homothetic*> (sp.get_domain(1)) ;
   domains[1] = new Domain_shell_outer_homothetic(*this, *pouter) ;
@@ -102,18 +102,18 @@ Space_adapted_bh::Space_adapted_bh (Space_adapted_bh const & sp) {
   
   for (int i=3 ; i<nbr_domains-1 ; i++) {
     const Domain_shell* d_shell = dynamic_cast<const Domain_shell*> (sp.get_domain(i)) ;
-    domains[i] = new Domain_shell(*d_shell) ;
+    domains[i] = new Domain_shell(*d_shell, true) ;
   }
 	// Compactified
   const Domain_compact* d_compact = dynamic_cast<const Domain_compact*> (sp.get_domain(nbr_domains-1)) ;
-	domains[nbr_domains-1] = new Domain_compact(*d_compact) ;  
+	domains[nbr_domains-1] = new Domain_compact(*d_compact, true) ;  
 	
-  // const Domain_shell_outer_homothetic* pouter_1 = dynamic_cast<const Domain_shell_outer_homothetic*> (domains[1]) ;
-  pouter->vars_to_terms() ;
-  pouter->update() ;
-  // const Domain_shell_inner_homothetic* pinner_1 = dynamic_cast<const Domain_shell_inner_homothetic*> (domains[2]) ;
-  pinner->vars_to_terms() ;
-  pinner->update() ;
+  const Domain_shell_outer_homothetic* pouter_1 = dynamic_cast<const Domain_shell_outer_homothetic*> (domains[1]) ;
+  pouter_1->vars_to_terms() ;
+  pouter_1->update() ;
+  const Domain_shell_inner_homothetic* pinner_1 = dynamic_cast<const Domain_shell_inner_homothetic*> (domains[2]) ;
+  pinner_1->vars_to_terms() ;
+  pinner_1->update() ;
 }
 
 Space_adapted_bh::~Space_adapted_bh() {
