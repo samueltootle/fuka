@@ -57,6 +57,25 @@ Domain::Domain (const Domain& so) : num_dom (so.num_dom), ndim(so.ndim), nbr_poi
 	radius = (so.radius==0x0) ? 0x0 : new Val_domain(*so.radius) ;
 }
 
+// Constructor by copy to new, identical Space
+Domain::Domain (const Domain& so, bool import) : num_dom (so.num_dom), ndim(so.ndim), nbr_points(so.nbr_points), nbr_coefs(so.nbr_coefs),
+		type_base(so.type_base)  {
+	const Domain& so_copy = *this;
+
+	coloc = new Array<double>* [ndim] ;
+	for (int i=0 ; i<ndim ; i++)
+		coloc[i] = (so.coloc[i] == 0x0) ? 0x0 : new Array<double>(*so.coloc[i]) ;
+	absol = new Val_domain* [ndim] ;
+	for (int i=0 ; i<ndim ; i++)
+		absol[i] = (so.absol[i]==0x0) ? 0x0 : new Val_domain (&so_copy, *so.absol[i]) ;
+	cart = new Val_domain* [ndim] ;
+	for (int i=0 ; i<ndim ; i++)
+		cart[i] = (so.cart[i]==0x0) ? 0x0 : new Val_domain (&so_copy, *so.cart[i]) ;
+	cart_surr = new Val_domain* [ndim] ;
+	for (int i=0 ; i<ndim ; i++)
+		cart_surr[i] = (so.cart_surr[i]==0x0) ? 0x0 : new Val_domain (&so_copy, *so.cart_surr[i]) ;
+	radius = (so.radius==0x0) ? 0x0 : new Val_domain(&so_copy, *so.radius) ;
+}
 
 Domain::Domain (int num, FILE* fd) : num_dom(num), nbr_points(fd), nbr_coefs(fd) {
 	fread_be (&ndim, sizeof(int), 1, fd) ;

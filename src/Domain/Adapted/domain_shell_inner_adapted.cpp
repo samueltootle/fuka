@@ -91,24 +91,21 @@ Domain_shell_inner_adapted::Domain_shell_inner_adapted (const Domain_shell_inner
 }
 
 // Constructor by copy
-Domain_shell_inner_adapted::Domain_shell_inner_adapted (const Space& sp, const Domain_shell_inner_adapted& so) : Domain(so), sp(sp),
+Domain_shell_inner_adapted::Domain_shell_inner_adapted (const Space& sp, const Domain_shell_inner_adapted& so) : 
+	Domain(so, true), sp(sp),
 		  outer_radius (so.outer_radius), center(so.center) {
 
-  inner_radius = new Val_domain (*so.inner_radius) ;
-  if (so.inner_radius_term_eq != 0x0)
-      inner_radius_term_eq = new Term_eq (*so.inner_radius_term_eq) ;
-  if (so.rad_term_eq !=0x0)
-    rad_term_eq = new Term_eq (*so.rad_term_eq) ;
-  if (so.der_rad_term_eq !=0x0)
-    der_rad_term_eq = new Term_eq (*so.der_rad_term_eq) ;
-  if (so.dt_rad_term_eq !=0x0)
-    dt_rad_term_eq = new Term_eq (*so.dt_rad_term_eq) ;
-  if (so.dp_rad_term_eq !=0x0)
-    dp_rad_term_eq = new Term_eq (*so.dp_rad_term_eq) ;
-  if (so.normal_spher !=0x0)
-    normal_spher = new Term_eq (*so.normal_spher) ;
-  if (so.normal_cart !=0x0)
-    normal_cart = new Term_eq (*so.normal_cart) ;
+  inner_radius = new Val_domain (this, *so.inner_radius) ;
+	
+  inner_radius_term_eq = 0x0 ;
+  rad_term_eq = 0x0 ;
+  der_rad_term_eq = 0x0 ;
+  dt_rad_term_eq = 0x0 ;
+  dp_rad_term_eq = 0x0 ;
+  normal_spher = 0x0 ;
+  normal_cart = 0x0 ;
+  
+  do_coloc() ;
 }
 
 Domain_shell_inner_adapted::Domain_shell_inner_adapted (const Space& sss, int num, FILE* fd) : Domain(num, fd), sp(sss), center(fd) {

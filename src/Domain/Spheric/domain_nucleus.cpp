@@ -41,6 +41,11 @@ Domain_nucleus::Domain_nucleus (int num, int ttype, double r, const Point& cr, c
 Domain_nucleus::Domain_nucleus (const Domain_nucleus& so) : Domain(so), alpha(so.alpha), center(so.center) {
 }
 
+// Constructor by copy
+Domain_nucleus::Domain_nucleus (const Domain_nucleus& so, bool import) : 
+	Domain(so, import), alpha(so.alpha), center(so.center) {
+}
+
 Domain_nucleus::Domain_nucleus (int num, FILE* fd) : Domain(num, fd), center(fd) {
 	fread_be (&alpha, sizeof(double), 1, fd) ;
 	do_coloc() ;
