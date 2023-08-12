@@ -291,23 +291,30 @@ double Scalar::val_point(const Point& xx, int sens) const {
 
 	assert ((sens==+1) || (sens==-1)) ;
 
-	bool* inside = MemoryMapper::get_memory<bool>(ndom);
+	// bool* inside = MemoryMapper::get_memory<bool>(ndom);
 
-	for (int l=ndom-1 ; l>=0 ; l--)
-	    inside[l] = get_domain(l)->is_in(xx) ;
+	// for (int l=ndom-1 ; l>=0 ; l--)
+	    // inside[l] = get_domain(l)->is_in(xx) ;
 	// First domain in which the point is :
 	int ld = -1 ;
-	if (sens == -1) {
-	  for (int l=ndom-1 ; l>=0 ; l--)
-	      if ((ld==-1) && (inside[l]))
-		  ld = l ;
+	// if (sens == -1) {
+	//   for (int l=ndom-1 ; l>=0 ; l--)
+	    //   if ((ld==-1) && (inside[l]))
+		//   ld = l ;
+	// }
+	// else {
+	//    for (int l=0 ; l<ndom ; l++)
+	//       if ((ld==-1) && (inside[l]))
+	// 	  ld = l ;
+	// }
+	for (int l=0 ; l<ndom ; l++) {
+		bool isin = get_domain(l)->is_in(xx);
+		if (isin) {
+			ld = l ;
+			break;
+		}
 	}
-	else {
-	   for (int l=0 ; l<ndom ; l++)
-	      if ((ld==-1) && (inside[l]))
-		  ld = l ;
-	}
-
+		  
 	if (ld==-1) {
 	     cout << "Point " << xx << "not found in the computational space..." << endl ;
 	     abort() ;
@@ -319,7 +326,7 @@ double Scalar::val_point(const Point& xx, int sens) const {
 	Point num(get_domain(ld)->absol_to_num(xx)) ;
 
 	coef() ;
-  MemoryMapper::release_memory<bool>(inside, ndom);
+//   MemoryMapper::release_memory<bool>(inside, ndom);
 	return val_zones[ld]->base.summation(num, *val_zones[ld]->cf) ;
 	}
 	}
