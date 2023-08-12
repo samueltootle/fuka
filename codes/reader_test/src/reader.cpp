@@ -36,7 +36,7 @@ using namespace Kadath::FUKA_Config;
   using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Reader<config_t, Space_adapted_bh>;
   using ary_t = std::array<double, reader_t::OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
-constexpr unsigned int Npts = 128;  
+constexpr unsigned int Npts = 258;  
 constexpr double range = 3;
 constexpr double dx = range / Npts;
 
@@ -75,13 +75,10 @@ ary_t interpolate(std::string fn, std::vector<double>& xx, std::vector<double>& 
   std::vector<ary_t> all;
 
   auto interp_points = [&](auto start, auto stop) {
+    reader_t reader(input_reader);
     for(auto i = start; i < stop; ++i) {
-      reader_t reader(input_reader);
       auto vals = reader.export_pointwise(xx[i], yy[i], zz[i]);
       all.push_back(vals);
-      // xx[i]+= i * dx;
-      // yy[i]+= i * dx;
-      // zz[i]+= i * dx;
     }
   };
 
@@ -89,6 +86,7 @@ ary_t interpolate(std::string fn, std::vector<double>& xx, std::vector<double>& 
   for(auto j = 0; j < nthreads; ++j) {
     auto start = chunksize * j;
     auto stop = (chunksize * (j+1) > Npts) ? Npts : chunksize * (j+1);
+
     threads.push_back(std::thread(interp_points, start, stop));
   }
   for(auto j = 0; j < nthreads; ++j) {
@@ -112,29 +110,38 @@ int main(int argc, char **argv) {
   std::vector<double> yy(Npts);
   std::vector<double> zz(Npts);
 
-  fill_coords(xx,yy,zz);
-  auto v = interpolate(ifilename, xx, yy, zz);
+  // fill_coords(xx,yy,zz);
+  // auto v = interpolate(ifilename, xx, yy, zz);
 
 
   
-  // #pragma omp parallel for
-  // for(auto i = 0; i < Npts; ++i) {
-  //   xx[i]+= i * dx;
-  //   yy[i]+= i * dx;
-  //   zz[i]+= i * dx;
-  // }
+  #pragma omp parallel for
+  for(auto i = 0; i < Npts; ++i) {
+    xx[i]+= i * dx;
+    yy[i]+= i * dx;
+    zz[i]+= i * dx;
+  }
+  
+  config_t bconfig(ifilename);  
+  reader_t input_reader(ifilename);
+  
+  std::vector<reader_t::pointwise_ary_t> all_data(Npts);
 
-  // #pragma omp parallel for firstprivate(reader)
-  // for(auto i = 0; i < Npts; ++i) {
-  //   reader_t r(reader);
+  #pragma omp parallel for firstprivate(input_reader)
+  for(auto i = 0; i < Npts; ++i) {
+    // reader_t r(input_reader);
 
-  //   // r = reader;
-  //   // #pragma omp critical 
-  //   // {
-  //   //   r = reader;
-  //   // std::cout << i << "\n";
-  //   std::cout << r.get_space() << "\n";
-  //   auto interp = r.interpolate_pointwise(xx[i], yy[i], zz[i]);
+    // r = reader;
+    // #pragma omp critical 
+    // {
+    //   r = reader;
+    // std::cout << i << "\n";
+    // std::cout << r.get_space() << "\n";
+    // auto interp = input_reader.interpolate_pointwise(xx[i], yy[i], zz[i]);
+    all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
+  }
+  for(auto& p : all_data)
+    std::cout << p[reader_t::OUTPUT_VARS::ALPHA] << '\n';
   //   // std::cout << "Psi(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") = " << interp[reader_t::XCTS_VARS::XCTS_PSI] << '\n';
     
     
