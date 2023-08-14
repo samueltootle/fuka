@@ -22,18 +22,22 @@
 #define DEBUG
 #include "cold_table.hh"
 #include "cold_table_implementation.hh"
+#include "cold_pwpoly.hh"
+#include "cold_pwpoly_implementation.hh"
 #include "setup_cold_table.cc"
+#include "setup_polytrope.cc"
+//#include "/home/user/Downloads/konrad/tov.hh"
 #include "tov.hh"
 #include <memory>
 
 int main() {
   using namespace Kadath::Margherita;
-  setup_Cold_Table("togashi.lorene", 2000);
-  auto tov = std::make_unique<MargheritaTOV<Cold_Table>>();
+  Margherita_setup_polytrope("gam2.polytrope");
+  auto tov = std::make_unique<MargheritaTOV<Cold_PWPoly>>();
 //  tov->adaptive = false;
 //  tov->rk45 = false;
   //tov->solve(1.37e-3);
-  tov->solve_for_MADM(2.225);
+  tov->solve_for_MADM(1.4003505615);
   auto& state = tov->state;
   std::cout << *tov << std::endl;
   return 0;

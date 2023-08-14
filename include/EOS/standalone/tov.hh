@@ -28,7 +28,7 @@ namespace Kadath {
 namespace Margherita {
 template <typename EOS> class MargheritaTOV {
   public:
-  enum {RADIUS=0, RHOB, PRESS, MASSR, MASSB, PHI, RISO, CONF, TIDALH, TIDALBETA, NUMVAR};
+  enum {RADIUS=0, RHOB, PRESS, MASSR, MASSB, PHI, RISO, CONF, ENTHALPY, TIDALH, TIDALBETA, NUMVAR};
   typedef EOS eos_t;
 
   private:
@@ -36,8 +36,9 @@ template <typename EOS> class MargheritaTOV {
   using state_t = std::vector<ary_t>;
   
   static constexpr size_t max_iter = 40000;
-  static constexpr double dr0 = 10. / 10000;
+  static constexpr double dr0 = 10. / 10000.;
   const double loop_eps = 1e-6;
+  const double stop_at_fraction_press_c = 1e-13;
 
   public:
   bool adaptive{true};
@@ -95,7 +96,6 @@ template <typename EOS> class MargheritaTOV {
    */
   inline ary_t evolve(const ary_t& f, const double& h) const {
     typename EOS::error_t err;
-    if(f[RADIUS] == 0) return f;
 
     ary_t res{};
     res.fill(0);
@@ -106,33 +106,53 @@ template <typename EOS> class MargheritaTOV {
     double dedp, press, rho, rhoE;
     press = f[PRESS];
     rho = EOS::rho_energy_dedp__press_cold(rhoE, dedp, press, err);
-    
-    // eq(178) Tichy. https://arxiv.org/abs/1610.03805
-    res[MASSR] = 4. * M_PI * r2 * rhoE * h;
-    // eq(180) Tichy. https://arxiv.org/abs/1610.03805
-    res[PHI] = (m + 4. * M_PI * r3 * press) / (r * (r - 2 * m)) * h;
-    // eq(179) Tichy. https://arxiv.org/abs/1610.03805
-    res[PRESS] = -res[PHI] * (rhoE + press);
+    double sch_fac, mass_taylor;
 
-    double sch_fac = r / (r - 2. * m) ;
-    // eq(18) integral only
-    res[RISO] = (std::sqrt(sch_fac) - 1.) / r * h;
-    res[MASSB] = std::sqrt(sch_fac) * res[MASSR];
-    
     auto H = f[TIDALH];
     auto bet = f[TIDALBETA];
     if(state.size() == 1) {  
       H = r2;
       bet = 2. * r;
     }
+    // eq(178) Tichy. https://arxiv.org/abs/1610.03805
+    res[MASSR] = 4. * M_PI * r2 * rhoE * h;
+
+    // dividing into two regimes based on: https://github.com/zachetienne/nrpytutorial/blob/master/Tutorial-ADM_Initial_Data-TOV.ipynb
+    if(r<1e-4 || m<=0){
+    
+      res[PHI] = (4.*M_PI/3. * rhoE * r + 4. * M_PI * r * press) / (1. - 8. * M_PI * rhoE *r2) * h;
+      res[RISO] = 1./std::sqrt(1. - 8. * M_PI * rhoE * r2) * h;
+      sch_fac = 1./(1. - 8. * M_PI/3. * r2 * rhoE);
+      
+      double mass_taylor_by_r = 4. * M_PI/3. * r2 * rhoE;
+      double mass_taylor_by_r2 = 4. * M_PI/3. * r * rhoE;
+
+      auto tmpvar = mass_taylor_by_r2 + 4. * M_PI * r * press;
+      res[TIDALBETA] = 2. * sch_fac * (
+        -2. * M_PI * (5. * rhoE + 9. * press + dedp * (rhoE + press)) * r2
+        + 3. + 2. * sch_fac * tmpvar * tmpvar)
+        + 2. * (2.0) * sch_fac * (-1. + mass_taylor_by_r+ 2. * M_PI * r2 * (rhoE - press));
+
+    }
+    else{
+      // eq(180) Tichy. https://arxiv.org/abs/1610.03805
+      res[PHI] = (m + 4. * M_PI * r3 * press) / (r * r * (1. - 2 * m/r)) * h;
+      res[RISO] = std::sqrt(1./(1. - 2.*m/r)) * f[RISO] / r  * h;
+      sch_fac = r / (r - 2. * m) ;
+      mass_taylor = m;
+      auto tmpvar = mass_taylor / r2 + 4. * M_PI * r * press;
+      res[TIDALBETA] = 2. * sch_fac * H * (
+        -2. * M_PI * (5. * rhoE + 9. * press + dedp * (rhoE + press))
+        + 3. / r2 + 2. * sch_fac * tmpvar * tmpvar)
+        + 2. * bet / r * sch_fac * (-1. + mass_taylor / r + 2. * M_PI * r2 * (rhoE - press));
+    }
+
+    // eq(179) Tichy. https://arxiv.org/abs/1610.03805
+    res[PRESS] = -res[PHI] * (rhoE + press);
+    res[MASSB] = std::sqrt(sch_fac) * 4. * M_PI * r2 * rho * h;
 
     // eq (11,12) https://arxiv.org/pdf/0911.3535.pdf
     res[TIDALH] = bet * h;
-    auto tmpvar = m / r2 + 4. * M_PI * r * press;
-    res[TIDALBETA] = 2. * sch_fac * H * (
-      -2. * M_PI * (5. * rhoE + 9. * press + dedp * (rhoE + press))
-      + 3. / r2 + 2. * sch_fac * tmpvar * tmpvar)
-      + 2. * bet / r * sch_fac * (-1. + m / r + 2. * M_PI * r2 * (rhoE - press));
     res[TIDALBETA] *= h;
     
     return res;
@@ -280,26 +300,14 @@ template <typename EOS> class MargheritaTOV {
    * on enforcing the Schwarzschild BC
    */
   inline void correct_isotropic_r() {
-    // calculate isotropic radius
-    // eq(18) from Baumgarte notes
+
+     const double R_Schw=state.back()[RADIUS];
+     const double M_Schw=state.back()[MASSR];
+     const double RISO_Schw=state.back()[RISO];
+
+     // based on the notebook of Etienne:
     for(auto& el : state)  
-      el[RISO] = el[RADIUS] * std::exp(el[RISO]);
-      
-    // eq.(19) from Baumgarte notes
-    auto get_factor = [&](double m, double r, double rhat) {
-      double f = std::sqrt(r*r - 2. * m * r) + r - m;
-      f *= 0.5;
-      f /= rhat;
-      return f;
-    };
-    
-    // get correction factor
-    const double factor = 
-      get_factor(state.back()[MASSR], state.back()[RADIUS], state.back()[RISO]);
-    
-    // apply correction
-    for(auto& el : state) 
-      el[RISO] *= factor;
+      el[RISO] *= (1./2.) * (std::sqrt(R_Schw * ( R_Schw - 2.0 * M_Schw)) + R_Schw - M_Schw)/ RISO_Schw;
   }
 
   /**
@@ -338,6 +346,55 @@ template <typename EOS> class MargheritaTOV {
       + 3. * tmp2 * (2. - y + 2. * C * (y - 1.)) * std::log(tmp));
   }
 
+
+  /**
+   * calculate enthalpy (e.g. to determine the actual areal radius by log(h)=0)
+   *
+   */
+  void fillout_enthalpy(){
+    for (auto &el: state ){
+      typename EOS::error_t err;
+      double rhoE, dedp;
+      double press = el[PRESS];
+      double rho = EOS::rho_energy_dedp__press_cold(rhoE, dedp, press, err);
+      double eps;
+      typename EOS::error_t err2,press_c;
+      double rhoc=rho;
+      press_c = EOS::press_cold_eps_cold__rho(eps, rhoc, err);
+      el[ENTHALPY]=1+eps + press/rho ;
+    }
+  }
+
+    /**
+   * determine areal radius based on the h=1)
+   *
+   */
+  void determine_ArealR_from_enthalpy(){
+    double ArealR;
+    for (auto &el: state ){
+        if(el[ENTHALPY]<1){
+          ArealR=el[RADIUS];
+          break;
+        }
+    }
+    //std::cout << ArealR << std::endl;
+  }
+
+  void determine_ArealR_from_integral(){
+    double ArealR, IsotropicR, ConfAtR,Conf2AtR;//,Psi4AtR;
+    for (auto &el: state ){
+
+        if(el[ENTHALPY]<1){
+            IsotropicR=el[RISO];
+            ConfAtR=el[CONF];
+            Conf2AtR=ConfAtR*ConfAtR;
+            ArealR=IsotropicR*Conf2AtR;
+            break;
+        }
+    }
+    //std::cout << ArealR << std::endl;
+  }
+
   /**
    * solve
    *
@@ -368,10 +425,15 @@ template <typename EOS> class MargheritaTOV {
     while(true && count < max_iter) {
       auto res = rk_iteration(state.back(), dr);
       
-      double delm = 2. * std::abs(res[MASSR] - state.back()[MASSR]) / (res[MASSR] + state.back()[MASSR]);
-      if((delm < loop_eps && state.back()[PRESS] < loop_eps) ||
-          res[PRESS] < 0)
-        break;
+      typename EOS::error_t err;
+      double dedp, press, rho, rhoE;
+      press = state.back()[PRESS];
+      rho = EOS::rho_energy_dedp__press_cold(rhoE, dedp, press, err);
+      
+      // similar condition to the Etienne's TOV solver 
+      // (https://github.com/zachetienne/nrpytutorial/blob/master/Tutorial-ADM_Initial_Data-TOV.ipynb)
+      if(press < press_c*stop_at_fraction_press_c) 
+        break; 
       state.push_back(res);
       count++;
     }
@@ -398,11 +460,13 @@ template <typename EOS> class MargheritaTOV {
       calculate_conformal_factor();
       radius = state.back()[RISO];
       calculate_k2();
+      fillout_enthalpy();
+      determine_ArealR_from_enthalpy();
+      determine_ArealR_from_integral();
     }
     arealr = state.back()[RADIUS];
     mass = state.back()[MASSR];
     baryon_mass = state.back()[MASSB];
-
   }
   
   /**
@@ -457,7 +521,7 @@ template <typename EOS> class MargheritaTOV {
           break;
         }
       }
-      std::cout << rho_min << ", " << rho_max << std::endl;
+      // std::cout << rho_min << ", " << rho_max << std::endl;
     };
     rho_bracketing();
    
@@ -509,6 +573,7 @@ template <typename EOS> class MargheritaTOV {
     correct_isotropic_r();
     calculate_conformal_factor();
     calculate_k2();
+    fillout_enthalpy();
     radius = state.back()[RISO];
     
     return use_Mmax;
@@ -524,7 +589,7 @@ template <typename EOS> class MargheritaTOV {
            << tov.radius << "\t"
            << tov.tidal_love_k2 <<std::endl;
     }else{
-
+    stream << std::setprecision(12);
     stream << " Central pressure: " << tov.press_c << std::endl;
     stream << " Central density: " << tov.rhoc << std::endl;
     stream << " Mass: " << tov.mass << std::endl;
