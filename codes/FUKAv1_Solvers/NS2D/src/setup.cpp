@@ -72,6 +72,10 @@ int main(int argc, char** argv) {
       bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
       bconfig.set(BCO_PARAMS::DIM) = 2;
       set_2dfields(bconfig);
+      bconfig.set(BCO_PARAMS::DIFF_LAWQ) = 1;
+      bconfig.set(BCO_PARAMS::DIFF_ARATIO) = 1.;
+      bconfig.set(BCO_PARAMS::DIFF_RRATIO) = 0.875;
+      bconfig.set_stage(STAGES::DIFF_ROT) = true;
       bconfig.write_config();
     }
   } else {
@@ -152,9 +156,9 @@ void set_2dfields(config_t& bconfig) {
   for(auto i = 0; i < BCO_FIELDS::NUM_BCO_FIELDS; i++)
     bconfig.set_field(i) = false;
 
-  bconfig.set_field(BCO_FIELDS::LAPSE)  = true;
-  bconfig.set_field(BCO_FIELDS::BIGA)   = true;
-  bconfig.set_field(BCO_FIELDS::LOGH)   = true;
+  bconfig.set_field(BCO_FIELDS::LAPSE) = true;
+  bconfig.set_field(BCO_FIELDS::LAP_ATERM) = true;
+  bconfig.set_field(BCO_FIELDS::LOGH)  = true;
 }
 
 template<class eos_t, class config_t>
