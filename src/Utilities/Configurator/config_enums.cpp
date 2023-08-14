@@ -73,6 +73,9 @@ const std::map<std::string, BCO_PARAMS> MBCO_PARAMS = {
   {"kerr_chi", KERR_CHI},       // Kerr parameter a=J/M
   {"kerr_mch", KERR_MCH},       // Mass given to the analytical kerr background
   {"n_inner_shells",NINSHELLS}, // Shells inside a NS - binary only
+  {"ratio_A_R-equitorial",DIFF_ARATIO}, // Ratio of the differential rotation parameter A to equitoral radius
+  {"ratio_R-pole_R-equitorial",DIFF_RRATIO}, // Ratio of the polar to equitoral radius
+  {"q-diff_rot_law",DIFF_LAWQ}, // q parameter in various differential rotation laws
 };
 
 const std::map<std::string, EOS_PARAMS> MEOS_PARAMS = {
