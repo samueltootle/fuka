@@ -149,7 +149,7 @@ int driver(config_t& bconfig, std::string outputdir) {
   }
   if(stage_enabled[STAGES::TOTAL_BC])
     exit_status = NS_solver_2d_uniform_rot<eos_t>(bconfig);
-  if(stage_enabled[STAGES::TESTING])
+  if(stage_enabled[STAGES::DIFF_ROT])
     exit_status = NS_solver_2d_differential_rot<eos_t>(bconfig);
   return exit_status;
 }
@@ -165,7 +165,11 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
 		TESTING_CHECK(magma_init());
 		magma_print_environment();
 	}
-#endif
+  #endif
+  if (rank == 0)
+    std::cout << "###################################" << std::endl
+              << "Non-rotating TOV Solver"      << std::endl
+              << "###################################" << "\n\n";
 
   // convergence threshold
   // FIXME should this be part of the config?
@@ -351,6 +355,12 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
 	}
   #endif
 
+  if (rank == 0)
+    std::cout << "###################################" << std::endl
+              << "Uniformly Rotating models"      << std::endl
+              << "Omega: " << bconfig(BCO_PARAMS::OMEGA) <<std::endl
+              << "###################################" << "\n\n";
+
   // convergence threshold
   // FIXME should this be part of the config?
   double& conv_thres = bconfig.seq_setting(SEQ_SETTINGS::PREC);
@@ -376,7 +386,7 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
 	Scalar nu  (space, ff1) ;
   Scalar logh   (space, ff1) ;
   
-  if(bconfig.set_field(BCO_FIELDS::SHIFT) && bconfig.set_field(BCO_FIELDS::NP)) {
+  if(bconfig.set_field(BCO_FIELDS::LAP_BTERM) && bconfig.set_field(BCO_FIELDS::LAP_WTERM)) {
     if(rank == 0)
     std::cout << "Starting from shift and omega fields from file\n";
     bet = Scalar(space, ff1);
@@ -545,8 +555,8 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
     // stage_enabled.fill(false);
     // stage_enabled[STAGES::TOTAL_BC] = true;
     bconfig.set_filename(converged_filename(stage_name, bconfig));
-    bconfig.set_field(BCO_FIELDS::SHIFT) = true;
-    bconfig.set_field(BCO_FIELDS::NP) = true;
+    bconfig.set_field(BCO_FIELDS::LAP_BTERM) = true;
+    bconfig.set_field(BCO_FIELDS::LAP_WTERM) = true;
   if(rank == 0) {
     std::cout << "Success!\n";
     bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, bet, wrsint);
@@ -586,26 +596,33 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   // number of domains defining the space
   int ndom = space.get_nbr_domains();
 
+  // Sad tool to make system of equations work with constants
+  Scalar one(space);
+  one = 1;
+  one.std_base();
+
+  // Initialize fields in main scope before
+  // checking if they should be loaded from file
   Scalar bet(space);
   Scalar wrsint(space);
   Scalar Omega(space);
-  Omega = bconfig(BCO_PARAMS::OMEGA);
-  // Omega.annule_hard();
-  // Omega.set_domain(0) = bconfig(BCO_PARAMS::OMEGA);
-  // Omega.set_domain(1) = bconfig(BCO_PARAMS::OMEGA);
+  Omega = (std::fabs(bconfig(BCO_PARAMS::OMEGA)) < 1e-7) ? 1e-7 : bconfig(BCO_PARAMS::OMEGA);
   Omega.std_base();
 
-  // load the fields defined on the space
+  // load the fields defined on the space - these should be there since NOROT stage
 	Scalar nulogA   (space, ff1) ;
 	Scalar nu  (space, ff1) ;
   Scalar logh   (space, ff1) ;
   
-  if(bconfig.set_field(BCO_FIELDS::SHIFT) && bconfig.set_field(BCO_FIELDS::NP)) {
+  // If we start from a previous uniform or differential rotation solution
+  // then we can load these fields
+  if(bconfig.set_field(BCO_FIELDS::LAP_BTERM) && bconfig.set_field(BCO_FIELDS::LAP_WTERM)) {
     if(rank == 0)
       std::cout << "Starting from shift and omega fields from file\n";
     bet = Scalar(space, ff1);
     wrsint = Scalar(space, ff1);
-    if(bconfig.set_field(BCO_FIELDS::PHI)) {
+    // If we have a previous differential rotation solution...
+    if(bconfig.set_field(BCO_FIELDS::DIFF_OMEGA)) {
       if(rank == 0)
         std::cout << "Starting from Omega field from file\n";
       Omega = Scalar(space, ff1);
@@ -629,27 +646,38 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   wrsint.std_base();
 
   auto npts = space.get_domain(1)->get_nbr_points();
+
+  //FIXME Something is really weird.  Sometimes the equitorial
+  // radius is at r = n -1, theta = n-1 and other times
+  // it is r = n -1, theta = 0. Opposite for polar radius.  Unknown..
+  Index pos_origin (npts);
   Index pos_eq (npts);
   pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
-  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+  // pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
 
   Index pos_pole (npts);
   pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
+  pos_pole.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+
+  // Point origin(2);
 
   auto adpt_dom = space.get_domain(1);
   double R0 = adpt_dom->get_radius()(pos_eq);
   double Rp = adpt_dom->get_radius()(pos_pole);
+  
+  // Initial Guess
+  bconfig.set(BCO_PARAMS::RMID) = R0;
 
   // Differential rotation fixing parameters
-  double diffA = 6;
-  double Rratio = Rp / R0;
-  int q = 1;
+  double& diffAratio = bconfig(BCO_PARAMS::DIFF_ARATIO);
+  double& Rratio = bconfig(BCO_PARAMS::DIFF_RRATIO);
+  double diffA = diffAratio * R0;
+  int q = int(bconfig(BCO_PARAMS::DIFF_LAWQ));
 
   std::string jint{};
   std::string jome{"diffA^2 * Omega * (omeratio^"+std::to_string(q)+" - 1)"};
   std::string F{"F = " + jome};
-  // std::string eqOme{"eqOme = P^4 * Wsquare * f_ij * U^i * mg^j / N"};
-  // std::string eqOme{"eqOme = (P^4 * Wsq * U * mg^j / N) / A^2 - " + jome};
+
   switch(q) {
     case 2:
       jint = "diffA^2 * Omega^2 * (omeratio^2 * log(Omega) - 0.5)"; // - omec^2 * (log(omec) - 0.5)";
@@ -666,10 +694,10 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
               << firstint << std::endl
               // << eqOme << std::endl
               << "q: " << q << std::endl
-              << "A: " << diffA << std::endl
-              << "Rp/Re: " << Rratio << std::endl
-              << "R0: " << R0 <<std::endl
-              << "###################################" << std::endl;
+              << "Fixed A / R0: " << diffAratio << std::endl
+              << "Initial Rp/Re: " << Rp / R0 << " {" << Rratio << "}\n"
+              << "Initial R0: " << R0 <<std::endl
+              << "###################################" << "\n\n";
 
   // setup a system of equations
   System_of_eqs syst(space, 0, ndom - 1);
@@ -680,7 +708,13 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   // syst.add_cst("Mb"  , bconfig(MB));
   // syst.add_var("Madm", bconfig(MADM));
   syst.add_cst("Hc", loghc);
-  syst.add_cst("omec", bconfig(BCO_PARAMS::OMEGA));
+  syst.add_cst("q", q);
+  syst.add_cst("diffAratio", diffAratio);
+  syst.add_cst("Rratio", Rratio);
+  
+  syst.add_var("diffA", diffA);
+  syst.add_var("omec", bconfig(BCO_PARAMS::OMEGA));
+  syst.add_var("R0", bconfig(BCO_PARAMS::RMID));
 
   // the basic fields, conformal factor, lapse and (log) enthalpy
   syst.add_var("H", logh);
@@ -689,9 +723,10 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   syst.add_var("bet", bet);
   syst.add_var("wrsint", wrsint);
   syst.add_var("Omega", Omega);
-
-  syst.add_cst("q", q);
-  syst.add_cst("diffA", diffA);
+  
+  syst.add_cst("one", one);
+  syst.add_def("diffAField = one * diffA");
+  syst.add_def("r = multr(one)");
   syst.add_def("omeratio = omec / Omega");
   syst.add_def(F.c_str());
 
@@ -789,6 +824,11 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   space.add_eq(syst, "eqnulogA=0", "nulogA", "dn(nulogA)");
   space.add_eq(syst, "eqbet=0", "bet", "dn(bet)");
   space.add_eq(syst, "eqw=0", "wrsint", "dn(wrsint)");
+
+  // syst.add_eq_point(0, "diffAField/R0 - diffAratio", origin);
+  syst.add_eq_val(0, "diffAField/R0 - diffAratio", pos_origin);
+  syst.add_eq_val(1, "r/R0 - 1", pos_eq);
+  syst.add_eq_val(1, "r/R0 - Rratio", pos_pole);
   
   syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
   syst.add_eq_bc(1, OUTER_BC, "H=0");  
@@ -829,9 +869,9 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
     stage_enabled.fill(false);
     stage_enabled[STAGES::TESTING] = true;
     bconfig.set_filename(converged_filename(stage_name, bconfig));
-    bconfig.set_field(BCO_FIELDS::SHIFT) = true;
-    bconfig.set_field(BCO_FIELDS::NP) = true;
-    bconfig.set_field(BCO_FIELDS::PHI) = true;
+    bconfig.set_field(BCO_FIELDS::LAP_BTERM) = true;
+    bconfig.set_field(BCO_FIELDS::LAP_WTERM) = true;
+    bconfig.set_field(BCO_FIELDS::DIFF_OMEGA) = true;
   if(rank == 0) {
     std::cout << "Success!\n";
     bco_utils::save_to_file(space, bconfig, nulogA, nu, logh, bet, wrsint, Omega);
@@ -847,7 +887,7 @@ void update_config(config_t& bconfig, Scalar& logh) {
   auto rs = bco_utils::get_rmin_rmax(space, 1);
   auto loghc = bco_utils::get_boundary_val(0, logh, INNER_BC);
 
-  bconfig.set(BCO_PARAMS::RMID) = rs[0];
+  // bconfig.set(BCO_PARAMS::RMID) = rs[0];
   bconfig.set(BCO_PARAMS::HC) = std::exp(loghc);
   bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
 }
@@ -893,7 +933,7 @@ void print_diagnostics_norot(space_t const & space, syst_t const & syst,
             // << " [" << std::abs(Madm - Madmalt) / Madm << "]" << std::endl
             << FORMAT << "Mk: " << Mk << " [" 
             << std::abs(Madm - Mk) / Madm << "]" << std::endl;
-  std::cout << FORMAT << "R: " << rs[0] << " " << rs[1] << "\n";
+  std::cout << FORMAT << "R: " << rs[0] << " " << rs[1] << "\n\n";
   std::cout.flags(f);
 } // end print diagnostics norot
 
