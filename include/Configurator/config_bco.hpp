@@ -672,17 +672,18 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
   template <typename config_t>
   void set_minimal_defaults(config_t& bconfig) {
     // start - set NS properties in config file
-    bconfig.set_eos(EOS_PARAMS::EOSFILE)    = "togashi.lorene";
-    bconfig.set_eos(EOS_PARAMS::EOSTYPE)    = "Cold_Table";
+    bconfig.set_eos(EOS_PARAMS::EOSFILE)    = "gam2.polytrope";
+    bconfig.set_eos(EOS_PARAMS::EOSTYPE)    = "Cold_PWPoly";
 
     // Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
 
-    // Initial dimensionless spin
-    bconfig.set(BCO_PARAMS::CHI)     = 0;
+    // Initial omega
+    bconfig.set(BCO_PARAMS::OMEGA)   = 0;
 
-    // We initialize based on fixed MADM
+    // Currently only HC is reliable...
     bconfig.set(BCO_PARAMS::MADM)    = 1.4 ;
+    bconfig.set(BCO_PARAMS::HC) = 1.26;
     // end   - set NS parameters
 
     // start - set NS stages in config file
