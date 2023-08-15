@@ -46,22 +46,9 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::solve() {
   int exit_status = EXIT_SUCCESS;
   
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
-  auto [ last_stage, last_stage_idx ] = get_last_enabled_no_throw(MSTAGE, stage_enabled);
-  if(rank == 0) std::cout << "Last stage: " << last_stage << "\n";
 
-  double const initial_chi = bconfig(BCO_PARAMS::CHI);
-  double const initial_omega = bconfig(BCO_PARAMS::OMEGA);
-  
-  if(stage_enabled[STAGES::NOROT_BC]) {
-    bconfig(BCO_PARAMS::CHI) = 0.;
-    bconfig(BCO_PARAMS::OMEGA) = 0.;
-    
-    this->solver_stage = STAGES::NOROT_BC;
-    exit_status = norot_stage(false);
-    
-    bconfig(BCO_PARAMS::CHI) = initial_chi;
-    bconfig(BCO_PARAMS::OMEGA) = initial_omega;
-  }
+  this->solver_stage = STAGES::NOROT_BC;
+  exit_status = norot_stage(false);
 
   // Barrier needed in case we need to read from the previous output
   MPI_Barrier(MPI_COMM_WORLD);
@@ -73,7 +60,7 @@ void ns_isotropic_norot_solver<eos_t, config_t, space_t>::syst_init(System_of_eq
   using namespace ::Kadath::Margherita;
    
   // define numerical constants
-  syst.add_cst("4piG", bconfig(BCO_QPIG));
+  syst.add_cst("4piG", bconfig(BCO_PARAMS::BCO_QPIG));
   
   // the basic fields, conformal factor, lapse and (log) enthalpy
   syst.add_var("H", logh);
@@ -98,13 +85,11 @@ void ns_isotropic_norot_solver<eos_t, config_t, space_t>::syst_init(System_of_eq
   syst.add_ope("eps", &EOS<eos_t,EPSILON>::action, &p);
   syst.add_ope("press", &EOS<eos_t,PRESSURE>::action, &p);
   syst.add_ope("rho", &EOS<eos_t,DENSITY>::action, &p);
-  syst.add_ope("dHdlnrho", &EOS<eos_t,DHDRHO>::action, &p);
  
   // define rest-mass density, internal energy and pressure through the enthalpy
   syst.add_def("rho = rho(h)");
   syst.add_def("eps = eps(h)");
   syst.add_def("press = press(h)");
-  syst.add_def("dHdlnrho = dHdlnrho(h)");
 
   // definition to rescale the equations
   // delta = p / rho
@@ -142,7 +127,7 @@ void ns_isotropic_norot_solver<eos_t, config_t, space_t>::print_diagnostics(cons
             << FORMAT << "Madm: " << Madm << std::endl
             << FORMAT << "Mk: " << Mk << " [" 
             << std::abs(Madm - Mk) / Madm << "]" << std::endl;
-  std::cout << FORMAT << "R: " << rs[0] << " " << rs[1] << "\n";
+  std::cout << FORMAT << "R: " << rs[0] << " " << rs[1] << "\n\n";
   std::cout.flags(f);
 } // end print diagnostics
 /** @}*/
