@@ -1,7 +1,7 @@
 #include "Solvers/solvers.hpp"
 #include "mpi.h"
 #include "bco_utilities.hpp"
-#include "ns_isotropic_norot_regrid.hpp"
+// #include "ns_isotropic_norot_regrid.hpp"
 #include <cmath>
 
 /**
@@ -17,7 +17,7 @@ template<class eos_t, typename config_t, typename space_t>
 ns_isotropic_norot_solver<eos_t, config_t, space_t>::ns_isotropic_norot_solver(config_t& config_in, 
   space_t& space_in, Scalar& nu_in, Scalar& lap_Aterm_in, Scalar& logh_in) :
       Solver<config_t, space_t>(config_in, space_in), 
-        nu(nu_in), lap_Aterm_in(lap_Aterm), logh(logh_in)
+        nu(nu_in), lap_Aterm(lap_Aterm_in), logh(logh_in)
 { }
 
 // standardized filename for each converged dataset at the end of each stage.
@@ -48,6 +48,11 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::solve() {
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
 
   this->solver_stage = STAGES::NOROT_BC;
+  // If we start from scratch, we currently need
+  // to fix the stellar surface otherwise the solver
+  // more often than not diverges.
+  if(bconfig.control(CONTROLS::SEQUENCES))
+    exit_status = norot_stage(true);
   exit_status = norot_stage(false);
 
   // Barrier needed in case we need to read from the previous output
@@ -65,7 +70,7 @@ void ns_isotropic_norot_solver<eos_t, config_t, space_t>::syst_init(System_of_eq
   // the basic fields, conformal factor, lapse and (log) enthalpy
   syst.add_var("H", logh);
   syst.add_var("nu", nu);
-  syst.add_var("nulogA", nulogA);
+  syst.add_var("nulogA", lap_Aterm);
 
   // Useful definitions
   syst.add_def("N = exp(nu)");
