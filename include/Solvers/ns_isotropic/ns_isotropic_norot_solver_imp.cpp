@@ -31,10 +31,10 @@ std::string ns_isotropic_norot_solver<eos_t, config_t, space_t>::converged_filen
   if(stage != "") ss  << "_" << stage << ".";
   else ss << ".";
   ss << eosname << "."
-     << bconfig(MADM) << "."; 
-  if(stage != "NOROT_BC") ss << bconfig(CHI)<< ".";
+     << bconfig(BCO_PARAMS::HC) << "."; 
+  if(stage != "NOROT_BC") ss << bconfig(BCO_PARAMS::OMEGA)<< ".";
   else ss << "0.";
-  ss << bconfig(NSHELLS) << "."
+  ss << bconfig(BCO_PARAMS::NSHELLS) << "."
      <<std::setfill('0') << std::setw(2) << res;
   return ss.str();
 }
