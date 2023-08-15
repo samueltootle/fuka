@@ -20,7 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "mpi.h"
-// #include "Solvers/ns_3d_xcts/ns_3d_xcts_driver.hpp"
+#include "Solvers/ns_isotropic/ns_isotropic_norot_driver.hpp"
 #include "Solvers/solver_startup.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
       auto [ branch_name, key, val ] = find_leaf(tree, "N");
       if(!key.empty()) seq.set_N(std::stoi(val));
 
-  //     ns_3d_xcts_sequence(bconfig, seq, resolution, InitSolver::outputdir);
+      ns_isotropic_norot_sequence(bconfig, seq, resolution, InitSolver::outputdir);
   //   }
   }
   MPI_Finalize();
