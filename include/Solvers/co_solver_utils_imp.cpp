@@ -269,7 +269,7 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space, config_t
       if(dom == 0 && pos(0) == 0 && pos(1) == 0)
         bconfig.set(BCO_PARAMS::HC) = h;
       
-      logh.set_domain(dom).set(pos) = (h < 1) ? 0. : std::log(h); 
+      logh.set_domain(dom).set(pos) = (h <= 1) ? 0. : std::log(h); 
       lapse.set_domain(dom).set(pos) = all_ltp[ltpQ::LAPSE];
       conf.set_domain(dom).set(pos) = all_ltp[ltpQ::CONF];
     }while(pos.inc());
