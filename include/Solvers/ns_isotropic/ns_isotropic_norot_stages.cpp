@@ -179,15 +179,6 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
       std::cout << "############################" << std::endl;
     }
   }
-  
-  // The 2D solver is very sensitive so a 'fixed' stage is always needed
-  // in order to stabalize convergence based on a fixed radius
-  // Scalar level(space);
-  // for (int d = 0; d < ndom - 1; d++)
-  //   level.set_domain(d) = space.get_domain(d)->get_radius() * space.get_domain(d)->get_radius() 
-  //                        - bconfig(RMID) * bconfig(RMID);
-  // level.set_domain(ndom - 1) = 1;
-  // level.std_base();
 
   Scalar one(space);
   one = 1.;
@@ -222,7 +213,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   if(fixed) {
   syst.add_cst("one", one);
   syst.add_cst("fixedR", bconfig(BCO_PARAMS::RMID));
-  syst.add_cst("lev = multr(multr(one)) - fixedR * fixedR");
+  syst.add_def("lev = multr(multr(one)) - fixedR * fixedR");
   }
  
   for (int d = 0; d < ndom; d++) {
@@ -231,8 +222,9 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
     case 0:
     case 1:
       // sources
-      syst.add_def(d, "Etilde = press * h - press * delta") ;
-      syst.add_def(d, "Stilde = 3 * press * delta") ;
+      syst.add_def(d, "E = press * h - press * delta");
+      syst.add_def(d, "S = delta * 3 * press");
+      syst.add_def(d, "Spp = press * delta");
  
       // constraint equations
       syst.add_def(d, "eqnu = delta * ( lap(nu) + scal(grad(nu), grad(nulogA)) ) - 4piG * A^2 * (E + S)") ;
@@ -294,7 +286,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
     // do exactly one newton step, given the system above
     endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
  
-    update_config_quantities(loghc);
+    update_config_quantities(logh);
     // output files at this iteration and print diagnostics
     std::stringstream ss;
     ss << "norot_2d_";
@@ -318,7 +310,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   bconfig.set(BCO_PARAMS::MADM) = 
     space.get_domain(ndom-1)->integ(syst.give_val_def("intMadm")()(ndom-1), OUTER_BC);
   
-  update_config(bconfig, logh);
+  update_config_quantities(logh);
   bconfig.set_filename(converged_filename(stagename));
   bconfig.control(CONTROLS::SEQUENCES) = false;
   if (rank == 0) {
