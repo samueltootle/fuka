@@ -252,7 +252,7 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
     case 0:
     case 1:
       // sources
-      syst.add_def(d, "E = press * (1 + eps)");
+      syst.add_def(d, "E = press * h - press * delta");
       syst.add_def(d, "S = delta * 3 * press");
       syst.add_def(d, "Spp = press * delta");
       
@@ -918,10 +918,6 @@ void print_diagnostics_norot(space_t const & space, syst_t const & syst,
   // i.e. the adapted domain boundary
   auto rs = bco_utils::get_rmin_rmax(space, 1);
 
-  // alternative, equivalent ADM mass integral
-  // Val_domain integMadmalt(syst.give_val_def("intMadmalt")()(ndom - 1));
-  // double Madmalt = space.get_domain(ndom - 1)->integ(integMadmalt, OUTER_BC);
-
   // output to standard output  
   std::ios_base::fmtflags f( std::cout.flags() );
   std::cout << "=======================================" << std::endl
@@ -929,8 +925,6 @@ void print_diagnostics_norot(space_t const & space, syst_t const & syst,
             << FORMAT << "Error: " << err << std::endl
             // << FORMAT << "Mb: " << baryonic_mass << std::endl
             << FORMAT << "Madm: " << Madm << std::endl
-            // << FORMAT << "Madm_ql: " << Madmalt 
-            // << " [" << std::abs(Madm - Madmalt) / Madm << "]" << std::endl
             << FORMAT << "Mk: " << Mk << " [" 
             << std::abs(Madm - Mk) / Madm << "]" << std::endl;
   std::cout << FORMAT << "R: " << rs[0] << " " << rs[1] << "\n\n";
