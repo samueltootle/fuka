@@ -104,15 +104,22 @@ void setup_2dns_isotropic(config_t& bconfig) {
   int ndom = 4 + bconfig(NSHELLS);
 
   Array<double> bounds(ndom - 1);
-  bounds.set(0) = bconfig(RIN);
-  bounds.set(1) = bconfig(RMID);
-  bounds.set(2) = bconfig(ROUT);
 
-  for(int shell = 1, b = 3; shell <= shells; ++shell, ++b) {
-    bounds.set(b) = bounds(b-1) * 2;
-  }
+  // Lambda to reduce code based on EOSTYPE
+  auto gen_NS = [&](auto tov) {
+    bounds.set(0) = bconfig(RIN);
+    bounds.set(1) = bconfig(RMID);
+    bounds.set(2) = bconfig(ROUT);
 
-  Space_polar_adapted space(type_coloc, center, res, bounds);
+    for(int shell = 1, b = 3; shell <= shells; ++shell, ++b) {
+      bounds.set(b) = bounds(b-1) * 2;
+    }
+    
+    // generate a full single star space including compactification to infinity
+    Space_polar_adapted space(type_coloc, center, res, bounds);
+    
+    write_ns2d_isotropic_init_setup_tofile(space, bconfig, *tov);
+  };  
 
   const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
   const std::string eos_file = bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
@@ -122,8 +129,9 @@ void setup_2dns_isotropic(config_t& bconfig) {
     if(eos_type == "Cold_PWPoly") {
       using eos_t = ::Kadath::Margherita::Cold_PWPoly;
       EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
+
       auto tov = setup_ns_config_from_TOV<eos_t>(bconfig);
-      write_ns2d_isotropic_init_setup_tofile(space, bconfig, *tov);
+      gen_NS(std::move(tov));
     } else if(eos_type == "Cold_Table") {
       using eos_t = ::Kadath::Margherita::Cold_Table;
 
@@ -131,8 +139,9 @@ void setup_2dns_isotropic(config_t& bconfig) {
                               2000 : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
 
       EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
+      
       auto tov = setup_ns_config_from_TOV<eos_t>(bconfig);
-      write_ns2d_isotropic_init_setup_tofile(space, bconfig, *tov);
+      gen_NS(std::move(tov));
     }
     else { 
       std::cerr << eos_type << " is not recognized.\n";
