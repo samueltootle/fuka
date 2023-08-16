@@ -20,9 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "norot/ns_isotropic_norot_solver.hpp"
-#include "norot/ns_isotropic_norot_driver.hpp"
-#include "uniform_rot/ns_isotropic_uniform_rot_driver.hpp"
+#include "ns_isotropic_uniform_rot_solver.hpp"
 #include "Solvers/co_solver_utils.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"
@@ -44,7 +42,7 @@ namespace FUKA_Solvers {
  * @return config_t 
  */
 template<class config_t>
-config_t ns_isotropic_sequence_setup (config_t & seqconfig, std::string outputdir);
+config_t ns_isotropic_uniform_rot_sequence_setup (config_t & seqconfig, std::string outputdir);
 
 
 /**
@@ -59,7 +57,7 @@ config_t ns_isotropic_sequence_setup (config_t & seqconfig, std::string outputdi
  * @param outputdir output location
  */
 template<class Seq_t, class Res_t, class config_t>
-config_t ns_isotropic_sequence (config_t & seqconfig, 
+config_t ns_isotropic_uniform_rot_sequence (config_t & seqconfig, 
                           Seq_t const & seq,
                           Res_t const & resolution,
                           std::string outputdir);
@@ -73,18 +71,7 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
  * @return int error code
  */
 template<typename config_t>
-int ns_isotropic_stationary_driver (config_t& bconfig, std::string outputdir);
-
-/**
- * @brief Driver to compute a stationary solution for a given resolution
- * 
- * @tparam config_t Config file type
- * @param bconfig NS config file
- * @param outputdir directory to store solutions in
- * @return int error code
- */
-template<typename config_t>
-int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir);
+int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig, std::string outputdir);
 
 /**
  * @brief Driver for computing a NS solution including increasing resolution
@@ -97,7 +84,7 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir)
  * @return int error code
  */
 template<class config_t, class Res_t>
-inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::string outputdir);
+inline int ns_isotropic_uniform_rot_driver (config_t& bconfig, Res_t& resolution, std::string outputdir);
 /** @}*/
 }}
-#include "ns_isotropic_driver_imp.cpp"
+#include "ns_isotropic_uniform_rot_driver_imp.cpp"

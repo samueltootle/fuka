@@ -1,0 +1,275 @@
+/**
+ * \addtogroup NS_XCTS
+ * \ingroup FUKA
+ * @{*/
+namespace Kadath {
+namespace FUKA_Solvers {
+
+template<class Seq_t, class Res_t, class config_t>
+config_t ns_isotropic_uniform_rot_sequence (config_t & seqconfig, 
+                          Seq_t const & seq,
+                          Res_t const & resolution,
+                          std::string outputdir) {
+  
+  int rank = 0, exit_status = EXIT_SUCCESS;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  // Initialize sequence variables
+  auto sequence_var_indices = seq.get_indices();
+  auto resolution_indices   = resolution.get_indices();
+  
+  auto const & dx = seq.step_size();
+
+  // Initialize full configurator
+  config_t base_config = ns_isotropic_uniform_rot_sequence_setup(seqconfig, outputdir);
+  base_config.set(resolution_indices) = resolution.init();
+
+  // Save this in case an invalid ADM mass is given for the EOS used
+  const double final_MADM = base_config(BCO_PARAMS::MADM);
+  config_t bconfig{};
+  #ifdef DEBUG
+  std::cout << seq << std::endl;
+  std::cout << resolution << std::endl;
+  #endif
+  auto single_seq = [&](auto val) {
+    bconfig = base_config;
+    if(seq.is_set())
+      bconfig.set(sequence_var_indices) = val;
+
+    if(bconfig.control(CONTROLS::SEQUENCES)) {
+      if(rank == 0) {
+        setup_2dns_isotropic(bconfig);
+      }
+      MPI_Barrier(MPI_COMM_WORLD);
+      // make sure all ranks have the same config
+      bconfig.open_config();
+      MPI_Barrier(MPI_COMM_WORLD);
+      bconfig.control(CONTROLS::ITERATIVE_M) = 
+        (bconfig(BCO_PARAMS::MADM) < final_MADM);
+
+      if(bconfig.control(CONTROLS::ITERATIVE_M)) {
+        if(rank == 0)
+        std::cerr << "Cannot solve TOV for Madm = " << final_MADM
+                  << " without spin.\n";
+        std::_Exit(EXIT_FAILURE);
+      }
+    }
+
+    exit_status = ns_isotropic_uniform_rot_driver(bconfig, resolution, outputdir); 
+    return exit_status;
+  };
+
+  // Loop if a valid sequence is set
+  if(seq.is_set()) {
+    for(auto val = seq.init(); seq.loop_condition(val); val+=dx) {
+      exit_status = single_seq(val);
+    }
+  } else {
+    exit_status = single_seq(0);
+  }
+  return bconfig;
+}
+
+template<typename config_t>
+void initialize_fields(config_t& bconfig) {
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  std::string spacein = bconfig.space_filename();
+  FILE* ff1 = fopen (spacein.c_str(), "r") ;
+  if(ff1 == NULL){
+    // mainly for debugging MPI bugs
+    std::cerr << spacein.c_str() << " failed to open for rank " << rank << "\n";
+    std::_Exit(EXIT_FAILURE);
+  }
+  Space_polar_adapted space (ff1) ;
+
+  // load the fields from non-rotating solution
+  Scalar lap_Aterm   (space, ff1) ;
+  Scalar nu  (space, ff1) ;
+  Scalar logh   (space, ff1) ;
+  fclose(ff1) ;
+  
+  // Construct initial guess for lap_Bterm and lap_wterm
+  Scalar lap_Bterm(space);  
+    {  
+    Scalar B(exp(lap_Aterm - nu));
+    Scalar N(exp(nu));
+    Scalar tmp(N * B - 1);
+    lap_Bterm = Scalar(tmp.mult_sin_theta().mult_r());
+    }
+  Scalar lap_wterm(space);
+  lap_wterm.annule_hard();
+  lap_wterm.std_base();
+  bconfig.set_filename("initns_rot");
+  bconfig.set_field(BCO_FIELDS::LAP_BTERM) = true;
+  bconfig.set_field(BCO_FIELDS::LAP_WTERM) = true;
+  if(rank == 0)
+    bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh, lap_Bterm, lap_wterm);
+  MPI_Barrier(MPI_COMM_WORLD);
+}
+
+/**
+ * @brief Driver to compute a stationary solution for a given resolution
+ * 
+ * @tparam config_t Config file type
+ * @param bconfig NS config file
+ * @param outputdir directory to store solutions in
+ * @return int error code
+ */
+template<typename config_t>
+int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig, std::string outputdir){
+  int exit_status = RELOAD_FILE;
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  // make sure NS directory exists for outputs
+  if(outputdir == "./") {
+    std::filesystem::path cwd = std::filesystem::current_path();
+    outputdir = cwd.string();
+  }
+  if(rank == 0)
+    std::cout << "Solutions will be stored in: " << outputdir << "\n" \
+              << "Directory will be created if it doesn't exist.\n";
+  fs::create_directory(outputdir);
+
+  // Make sure fields needed for rotating solution are initialized before opening files
+  if(!bconfig.field(BCO_FIELDS::LAP_BTERM) || !bconfig.field(BCO_FIELDS::LAP_WTERM))
+    initialize_fields(bconfig);
+
+  // Not important atm
+  // if(std::isnan(bconfig.set(BCO_PARAMS::MADM)) && std::isnan(bconfig.set(BCO_PARAMS::MB))){
+  //   if(rank == 0)
+  //     std::cout << "Config error.  No madm nor mb found. \n\n";
+  //   std::_Exit(EXIT_FAILURE);
+  // }
+  
+  std::string spacein = bconfig.space_filename();
+  if(!fs::exists(spacein)) {
+    // mainly for debugging MPI bugs
+    if(rank == 0) {
+      std::cerr << "File: " << spacein << " not found.\n\n";
+    } else {
+      std::cerr << "File: " << spacein << " not found for another rank.\n\n";
+    }
+    std::_Exit(EXIT_FAILURE);
+  }
+
+  while(exit_status == RELOAD_FILE) { 
+    spacein = bconfig.space_filename();
+    // just so you really know
+    if(rank == 0) {
+      std::cout << "Config File: " 
+                << bconfig.config_filename_abs() << std::endl
+                << "Fields File: " << spacein << std::endl
+                << bconfig << std::endl;
+    }
+    FILE* ff1 = fopen (spacein.c_str(), "r") ;
+    if(ff1 == NULL){
+      // mainly for debugging MPI bugs
+      std::cerr << spacein.c_str() << " failed to open for rank " << rank << "\n";
+      std::_Exit(EXIT_FAILURE);
+    }
+    Space_polar_adapted space (ff1) ;
+
+    // load the fields defined on the space
+    Scalar lap_Aterm  (space, ff1) ;
+    Scalar nu         (space, ff1) ;
+    Scalar logh       (space, ff1) ;
+    Scalar lap_Bterm  (space, ff1) ;
+    Scalar lap_wterm  (space, ff1) ;
+    fclose(ff1) ;
+    
+    if(outputdir != "") bconfig.set_outputdir(outputdir) ;
+
+    // load and setup the EOS
+    const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
+    const std::string eos_file = bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
+    const std::string eos_type = bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
+
+    if(eos_type == "Cold_PWPoly") {
+      using eos_t = Kadath::Margherita::Cold_PWPoly;
+
+      EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
+      ns_isotropic_uniform_rot_solver<eos_t, decltype(bconfig), decltype(space)> 
+        ns_solver(bconfig, space, nu, lap_Aterm, logh, lap_Bterm, lap_wterm);
+      exit_status = ns_solver.solve();
+
+    } else if(eos_type == "Cold_Table") {
+      using eos_t = Kadath::Margherita::Cold_Table;
+
+      const int interp_pts = (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0) ? 
+        2000 : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
+
+      EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
+      ns_isotropic_uniform_rot_solver<eos_t, decltype(bconfig), decltype(space)> 
+        ns_solver(bconfig, space, nu, lap_Aterm, logh, lap_Bterm, lap_wterm);
+      
+      exit_status = ns_solver.solve();
+    } else { 
+      std::cerr << "Unknown EOSTYPE." << endl;
+      std::_Exit(EXIT_FAILURE);
+    }
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  return exit_status;
+}
+
+template<class config_t, class Res_t>
+inline int ns_isotropic_uniform_rot_driver (config_t& bconfig, Res_t& resolution, std::string outputdir) {
+  int exit_status = RELOAD_FILE;
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  std::string spacein = bconfig.space_filename();
+  if(!fs::exists(spacein)) {
+    // mainly for debugging MPI bugs
+    if(rank == 0) {
+      std::cerr << "File: " << spacein << " not found.\n\n";
+    } else {
+      std::cerr << "File: " << spacein << " not found for another rank.\n\n";
+    }
+    std::_Exit(EXIT_FAILURE);
+  }
+
+  bool res_inc = (resolution.final() > resolution.init());
+  auto resolution_indices = resolution.get_indices();
+  auto const & final_res = resolution.final();
+  
+  std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
+  auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
+
+  exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir);
+  // We now have a "low" resolution solution for the NS of interest
+  // Set this to false to avoid iterative M and CHI
+  bconfig.control(CONTROLS::SEQUENCES) = false;
+
+  // auto regrid = [&]() {
+  //   std::string fname{"ns_regrid"};
+
+  //   if(rank == 0)
+  //     exit_status = ns_isotropic_uniform_rot_regrid(bconfig, fname);
+  //   MPI_Barrier(MPI_COMM_WORLD);
+  //   bconfig.set_filename(fname);
+  //   bconfig.open_config();
+    
+  //   stage_enabled.fill(false);
+  //   stage_enabled[STAGES::UNIFORM_ROT] = true;
+  // };
+
+  // while(res_inc) {        
+
+  //   // iterative res increase
+  //   if(bconfig(BCO_PARAMS::BCO_RES) + 2 >= final_res) {
+  //     bconfig.set(BCO_PARAMS::BCO_RES) = final_res;
+  //     res_inc = false;
+  //   } else {
+  //     bconfig.set(BCO_PARAMS::BCO_RES) += 2;
+  //   }
+  //   regrid();
+
+  //   exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir);
+  // }
+  return exit_status;
+}
+/** @}*/
+}}
