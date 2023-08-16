@@ -32,7 +32,7 @@ config_t ns_isotropic_norot_sequence (config_t & seqconfig,
   
   auto const & dx = seq.step_size();
 
-  // // Initialize full configurator
+  // Initialize full configurator
   config_t base_config = ns_isotropic_norot_sequence_setup(seqconfig, outputdir);
   base_config.set(resolution_indices) = resolution.init();
 
