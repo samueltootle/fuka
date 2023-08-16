@@ -94,12 +94,12 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
   #endif
   auto single_seq = [&](auto val) {
     // bconfig = base_config;
-    auto tval = bconfig(sequence_var_indices);
+    auto old_val = bconfig(sequence_var_indices);
     if(seq.is_set())
       bconfig.set(sequence_var_indices) = val;
     if(std::get<0>(sequence_var_indices) == BCO_PARAMS::CHI) {
       bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI) = bconfig(BCO_PARAMS::CHI);
-      if(std::fabs(tval) < 0.1 && bconfig(BCO_PARAMS::CHI) > 0.2) {
+      if(std::fabs(old_val) < 0.1 && val > 0.2) {
         bconfig.control(CONTROLS::SEQUENCES) = true;
         exit_status = ns_3d_xcts_base_solution_driver(bconfig, outputdir);
       }
