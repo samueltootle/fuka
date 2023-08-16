@@ -313,7 +313,6 @@ void interp_adapted_mapping(const adapted_t* new_shell, const int old_outer_adap
   } while(new_pos.inc());
 
   new_mapping.std_base();
-  std::cout << new_mapping << "\n\n";
   new_shell->set_mapping(new_mapping);
 }
 
