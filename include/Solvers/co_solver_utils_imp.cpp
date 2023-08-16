@@ -327,7 +327,7 @@ auto setup_ns_config_from_TOV(config_t& bconfig) {
   // update surface radius estimate
   bconfig.set(BCO_PARAMS::RMID) = tov->radius;
   bconfig.set(BCO_PARAMS::RIN) = 0.5 * bconfig(BCO_PARAMS::RMID);
-  bconfig.set(BCO_PARAMS::ROUT) = 2.0 * bconfig(BCO_PARAMS::RMID);
+  bconfig.set(BCO_PARAMS::ROUT) = bco_utils::gold_ratio * bconfig(BCO_PARAMS::RMID);
 
   return std::move(tov);
 }
