@@ -276,6 +276,7 @@ void update_adapted_field (Scalar& res, const int from_dom, const int to_dom, co
 template<typename adapted_t>
 void interp_adapted_mapping(const adapted_t* new_shell, const int old_outer_adapted_dom, const Scalar& old_radius_field) {
   Val_domain new_mapping = new_shell->get_radius();
+  int const ndim = new_shell->get_ndim();
 
   //Need to normalize by the constant radius at the INNER_BC of the outer_adapted shell in the old space
   auto old_shell = old_radius_field.get_space().get_domain(old_outer_adapted_dom);
@@ -287,24 +288,32 @@ void interp_adapted_mapping(const adapted_t* new_shell, const int old_outer_adap
   do {
     double x = new_shell->get_cart(1)(new_pos) - xc_new;
     double y = new_shell->get_cart(2)(new_pos);
-    double z = new_shell->get_cart(3)(new_pos);
+    double rsq = x*x + y*y;
+    double z{};
+    if(ndim == 3) {
+      z = new_shell->get_cart(3)(new_pos);
+      rsq += z*z;
+    }
 
-    double r = std::sqrt(x*x + y*y + z*z);
+    double r = std::sqrt(rsq);
 
     x /= r / rinner;
     y /= r / rinner;
-    z /= r / rinner;
-
-    Kadath::Point absol(3);
+    
+    Kadath::Point absol(ndim);
     absol.set(1) = x + xc_old;
     absol.set(2) = y;
-    absol.set(3) = z;
 
+    if(ndim == 3) {
+      z /= r / rinner;
+      absol.set(3) = z;
+    }
     new_mapping.set(new_pos) = old_radius_field.val_point(absol);
 
   } while(new_pos.inc());
 
   new_mapping.std_base();
+  std::cout << new_mapping << "\n\n";
   new_shell->set_mapping(new_mapping);
 }
 
