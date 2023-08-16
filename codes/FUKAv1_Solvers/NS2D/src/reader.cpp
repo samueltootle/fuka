@@ -51,14 +51,6 @@ void reader_2d_norot(config_t bconfig);
 constexpr double M2km = 1.4769994423016508;
 
 int main(int argc, char **argv) {
-  // initialize MPI
-  //int rc = MPI_Init(&argc, &argv);
-
-  //if (rc != MPI_SUCCESS) {
-  //  cerr << "Error starting MPI" << endl;
-  //  MPI_Abort(MPI_COMM_WORLD, rc);
-  //}
-
   // expecting a configuration file on execution
   if(argc < 2) {
     std::cerr << "Usage: ./reader /<path>/<ID base name>.info" << std::endl;
@@ -97,7 +89,6 @@ int main(int argc, char **argv) {
     std::_Exit(EXIT_FAILURE);
   }
 
-  //MPI_Finalize();
   return EXIT_SUCCESS;
 }
 
@@ -227,21 +218,23 @@ void reader_2d_diffrot(config_t bconfig) {
   syst.add_cst("4piG", bconfig(BCO_PARAMS::BCO_QPIG));
   syst.add_cst("H", logh);
   syst.add_cst("nu", nu);
-  syst.add_cst("lap_Aterm", lap_Aterm);
-  syst.add_cst("lap_Bterm", lap_Bterm);
-  syst.add_cst("lap_wterm", lap_wterm);
+  syst.add_cst("lapAterm", lap_Aterm);
+  syst.add_cst("lapBterm", lap_Bterm);
+  syst.add_cst("lapwterm", lap_wterm);
 
   syst.add_def("N = exp(nu)");
-  syst.add_def("A = exp(lap_Aterm - nu)");
-  syst.add_def("B = (divrsint(lap_Bterm) + 1) / N");
-  syst.add_def("w = divrsint(lap_wterm)");
+  syst.add_def("A = exp(lapAterm - nu)");
+  syst.add_def("B = (divrsint(lapBterm) + 1) / N");
+  syst.add_def("w = divrsint(lapwterm)");
 
+  syst.add_def("diffAB = B^2 - A^2");
   syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
   syst.add_def(ndom - 1, "intMadm2 = - (dr(A)) / 4piG ");
   syst.add_def(ndom - 1, "intMk = B * (dr(N) - multrsint(multrsint(B^2) / 2 / N * w * dr(w)))  / 4piG");
-  syst.add_def(ndom - 1, "intJ = -multr(multrsint(dr(w)))  / 4/4piG");
+  syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w)))  / 4/4piG");
  
- Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
+  Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
+
   double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
   Val_domain integMadm2(syst.give_val_def("intMadm2")()(ndom - 1));
   double Madm2 = space.get_domain(ndom - 1)->integ(integMadm2, OUTER_BC);
