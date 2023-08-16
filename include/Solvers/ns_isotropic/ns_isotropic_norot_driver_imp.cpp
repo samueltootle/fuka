@@ -212,39 +212,32 @@ inline int ns_isotropic_norot_driver (config_t& bconfig, Res_t& resolution, std:
   // Set this to false to avoid iterative M and CHI
   bconfig.control(CONTROLS::SEQUENCES) = false;
 
-  // auto regrid = [&]() {
-  //   std::string fname{"ns_regrid"};
+  auto regrid = [&]() {
+    std::string fname{"ns_regrid"};
 
-  //   if(rank == 0)
-  //     exit_status = ns_isotropic_norot_regrid(bconfig, fname);
-  //   MPI_Barrier(MPI_COMM_WORLD);
-  //   bconfig.set_filename(fname);
-  //   bconfig.open_config();
+    if(rank == 0)
+      exit_status = ns_isotropic_norot_regrid(bconfig, fname);
+    MPI_Barrier(MPI_COMM_WORLD);
+    bconfig.set_filename(fname);
+    bconfig.open_config();
     
-  //   stage_enabled.fill(false);
-  //   stage_enabled[last_stage_idx] = true;
-  // };
+    stage_enabled.fill(false);
+    stage_enabled[STAGES::NOROT_BC] = true;
+  };
 
-  // while(res_inc) {        
+  while(res_inc) {        
 
-  //   // iterative res increase
-  //   if(bconfig(BCO_PARAMS::BCO_RES) + 2 >= final_res) {
-  //     bconfig.set(BCO_PARAMS::BCO_RES) = final_res;
-  //     res_inc = false;
-  //   } else {
-  //     bconfig.set(BCO_PARAMS::BCO_RES) += 2;
-  //   }
-  //   regrid();
-  
-  //   // Placeholder
-  //   // Rerun with new grid
-  //   // if(stage_enabled[STAGES::LINBOOST]) {
-  //   //   exit_status = bh_3d_xcts_linear_boost_driver(bconfig, outputdir);
-  //   // } else {
-  //   //   exit_status = bh_3d_xcts_stationary_driver(bconfig, outputdir);
-  //   // }
-  //   exit_status = ns_isotropic_norot_stationary_driver(bconfig, outputdir);
-  // }
+    // iterative res increase
+    if(bconfig(BCO_PARAMS::BCO_RES) + 2 >= final_res) {
+      bconfig.set(BCO_PARAMS::BCO_RES) = final_res;
+      res_inc = false;
+    } else {
+      bconfig.set(BCO_PARAMS::BCO_RES) += 2;
+    }
+    regrid();
+
+    exit_status = ns_isotropic_norot_stationary_driver(bconfig, outputdir);
+  }
   return exit_status;
 }
 /** @}*/
