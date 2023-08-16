@@ -31,13 +31,12 @@
  * \addtogroup NS_XCTS
  * \ingroup FUKA
  * @{*/
-
 namespace Kadath {
 namespace FUKA_Solvers {
-using space_t = Space_spheric_adapted;
 
 template<typename config_t>
 int ns_3d_xcts_regrid(config_t& bconfig, std::string outputfile) {
+  using space_t = Space_spheric_adapted;
   int exit_status = 0;
 
   std::string kadath_filename = bconfig.space_filename();
