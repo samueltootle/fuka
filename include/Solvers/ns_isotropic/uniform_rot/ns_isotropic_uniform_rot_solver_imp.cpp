@@ -1,7 +1,6 @@
 #include "Solvers/solvers.hpp"
 #include "mpi.h"
 #include "bco_utilities.hpp"
-// #include "ns_isotropic_norot_regrid.hpp"
 #include <cmath>
 
 /**

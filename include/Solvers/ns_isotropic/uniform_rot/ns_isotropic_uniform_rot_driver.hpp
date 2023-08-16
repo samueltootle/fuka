@@ -21,6 +21,7 @@
  */
 #pragma once
 #include "ns_isotropic_uniform_rot_solver.hpp"
+#include "ns_isotropic_uniform_rot_regrid.hpp"
 #include "Solvers/co_solver_utils.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"

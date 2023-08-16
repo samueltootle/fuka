@@ -243,32 +243,32 @@ inline int ns_isotropic_uniform_rot_driver (config_t& bconfig, Res_t& resolution
   // Set this to false to avoid iterative M and CHI
   bconfig.control(CONTROLS::SEQUENCES) = false;
 
-  // auto regrid = [&]() {
-  //   std::string fname{"ns_regrid"};
+  auto regrid = [&]() {
+    std::string fname{"ns_regrid"};
 
-  //   if(rank == 0)
-  //     exit_status = ns_isotropic_uniform_rot_regrid(bconfig, fname);
-  //   MPI_Barrier(MPI_COMM_WORLD);
-  //   bconfig.set_filename(fname);
-  //   bconfig.open_config();
+    if(rank == 0)
+      exit_status = ns_isotropic_uniform_rot_regrid(bconfig, fname);
+    MPI_Barrier(MPI_COMM_WORLD);
+    bconfig.set_filename(fname);
+    bconfig.open_config();
     
-  //   stage_enabled.fill(false);
-  //   stage_enabled[STAGES::UNIFORM_ROT] = true;
-  // };
+    stage_enabled.fill(false);
+    stage_enabled[STAGES::UNIFORM_ROT] = true;
+  };
 
-  // while(res_inc) {        
+  while(res_inc) {        
 
-  //   // iterative res increase
-  //   if(bconfig(BCO_PARAMS::BCO_RES) + 2 >= final_res) {
-  //     bconfig.set(BCO_PARAMS::BCO_RES) = final_res;
-  //     res_inc = false;
-  //   } else {
-  //     bconfig.set(BCO_PARAMS::BCO_RES) += 2;
-  //   }
-  //   regrid();
+    // iterative res increase
+    if(bconfig(BCO_PARAMS::BCO_RES) + 2 >= final_res) {
+      bconfig.set(BCO_PARAMS::BCO_RES) = final_res;
+      res_inc = false;
+    } else {
+      bconfig.set(BCO_PARAMS::BCO_RES) += 2;
+    }
+    regrid();
 
-  //   exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir);
-  // }
+    exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir);
+  }
   return exit_status;
 }
 /** @}*/
