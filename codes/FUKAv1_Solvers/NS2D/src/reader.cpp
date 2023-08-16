@@ -42,7 +42,10 @@ using namespace Kadath;
 using namespace Kadath::FUKA_Config;
 
 template<class eos_t, typename config_t>
-void reader_2d(config_t bconfig);
+void reader_2d_diffrot(config_t bconfig);
+
+template<class eos_t, typename config_t>
+void reader_2d_norot(config_t bconfig);
 
 // conversion from solar mass to km
 constexpr double M2km = 1.4769994423016508;
@@ -78,7 +81,7 @@ int main(int argc, char **argv) {
     EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
 
     // call reader to output diagnostics
-    reader_2d<eos_t>(bconfig);
+    reader_2d_norot<eos_t>(bconfig);
   } else if(eos_type == "Cold_Table") {
     using eos_t = Kadath::Margherita::Cold_Table;
 
@@ -88,7 +91,7 @@ int main(int argc, char **argv) {
     EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
 
     // call reader to output diagnostics
-    reader_2d<eos_t>(bconfig);
+    reader_2d_norot<eos_t>(bconfig);
   } else {
     std::cerr << "Unknown EOSTYPE." << endl;
     std::_Exit(EXIT_FAILURE);
@@ -99,18 +102,18 @@ int main(int argc, char **argv) {
 }
 
 template<class eos_t, typename config_t>
-void reader_2d(config_t bconfig) {
+void reader_2d_norot(config_t bconfig) {
+  if(bconfig.set_field(BCO_FIELDS::LAP_BTERM) && bconfig.set_field(BCO_FIELDS::LAP_WTERM))
+    return reader_2d_diffrot<eos_t>(bconfig);
   // load the space (and thus the domain setup)
   auto spacein = bconfig.space_filename();
 	FILE* ff1 = fopen (spacein.c_str(), "r") ;
 	Space_polar_adapted space (ff1) ;
 
   // load the fields defined on the space
-	Scalar nulogA   (space, ff1) ;
+	Scalar lap_Aterm   (space, ff1) ;
 	Scalar nu (space, ff1) ;
   Scalar logh   (space, ff1) ;
-  Scalar bet   (space, ff1) ;
-  Scalar wrsint(space,ff1);
 	fclose(ff1) ;
 
   // central values of the matter fields
@@ -132,14 +135,106 @@ void reader_2d(config_t bconfig) {
   syst.add_cst("4piG", bconfig(BCO_PARAMS::BCO_QPIG));
   syst.add_cst("H", logh);
   syst.add_cst("nu", nu);
-  syst.add_cst("nulogA", nulogA);
-  syst.add_cst("bet", bet);
-  syst.add_cst("wrsint", wrsint);
+  syst.add_cst("lapAterm", lap_Aterm);
 
   syst.add_def("N = exp(nu)");
-  syst.add_def("A = exp(nulogA - nu)");
-  syst.add_def("B = (divrsint(bet) + 1) / N");
-  syst.add_def("w = divrsint(wrsint)");
+  syst.add_def("A = exp(lapAterm - nu)");
+
+  syst.add_def(ndom - 1, "intMadm = -dr(A) / 4piG ");
+  syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
+ 
+ Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
+  double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
+
+  // Komar mass at infinity
+  Val_domain integMk(syst.give_val_def("intMk")()(ndom - 1));
+  double Mk = space.get_domain(ndom - 1)->integ(integMk, OUTER_BC);
+  
+  #ifdef FORMAT
+    #undef FORMAT
+  #endif
+  #define FORMAT std::setw(25) << std::right << std::setprecision(5) << std::fixed << std::showpos
+  auto print_shells = [&](int dom_min, int dom_max)
+  {
+    int cnt = 1;
+    for(int i = dom_min; i < dom_max; ++i) {
+      std::string shell{"SHELL"+std::to_string(cnt)+" = "};
+      std::cout << FORMAT << shell << bco_utils::get_radius(space.get_domain(i), OUTER_BC) << std::endl;
+      cnt++;
+    }
+  };
+
+  auto res_r = space.get_domain(0)->get_nbr_points()(0);
+  auto res_t = space.get_domain(0)->get_nbr_points()(1);
+
+  // output to stdout
+  std::cout << FORMAT << "RES = "  << "[" << res_r << "," << res_t << "]\n"
+            << FORMAT << "Coord R_IN = "  << rin1 << std::endl
+            << FORMAT << "Coord R = "     << "[" << rmin << ", " << rmax << "]\n";
+  std::cout << FORMAT << "Coord R_OUT = " << bco_utils::get_radius(space.get_domain(2), OUTER_BC) << "\n";
+  print_shells(3, ndom-1); cout << endl;
+
+  // std::cout << FORMAT << "Areal R = "    << AR << " [" << AR * M2km << "km]\n"
+            // << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl
+    std::cout \
+            << FORMAT << "ADM Mass = " << Madm << "\n"
+            << FORMAT << std::scientific << "Central Density = " << nc  << std::endl
+            << FORMAT << std::scientific << "Central h = " << hc << std::endl
+            << FORMAT << std::scientific << "Central log(h) = " << loghc << std::endl
+            << FORMAT << std::scientific << "Central Pressure = " << pc << "\n\n";
+            // << FORMAT << std::scientific << "Central dlog(h)/dx = " << central_dHdx << std::endl
+            // << FORMAT << std::scientific << "Central Euler Constant = "<< central_euler << std::endl
+            // << FORMAT << "Integrated log(h) = "    << H_integral << "\n\n";
+
+  std::cout << FORMAT << "Mk = "   << Mk << std::scientific
+            << ", Diff: " << 2. * fabs(Madm-Mk)/(Madm+Mk) << std::endl;
+            // << FORMAT << "Px = "   << Px   << std::endl
+            // << FORMAT << "Py = "   << Py   << std::endl
+            // << FORMAT << "Pz = "   << Pz   << std::endl;
+}
+
+template<class eos_t, typename config_t>
+void reader_2d_diffrot(config_t bconfig) {
+  // load the space (and thus the domain setup)
+  auto spacein = bconfig.space_filename();
+	FILE* ff1 = fopen (spacein.c_str(), "r") ;
+	Space_polar_adapted space (ff1) ;
+
+  // load the fields defined on the space
+	Scalar lap_Aterm   (space, ff1) ;
+	Scalar nu (space, ff1) ;
+  Scalar logh   (space, ff1) ;
+  Scalar lap_Bterm   (space, ff1) ;
+  Scalar lap_wterm(space,ff1);
+	fclose(ff1) ;
+
+  // central values of the matter fields
+  double loghc = bco_utils::get_boundary_val(0, logh, INNER_BC);
+  double hc = std::exp(loghc);
+  double nc = EOS<eos_t,DENSITY>::get(hc);
+  double pc = EOS<eos_t,PRESSURE>::get(hc);
+
+  // minimal and maximal radius of the adapted surface domain
+  auto [ rmin, rmax ] = bco_utils::get_rmin_rmax(space, 1);
+  // inner radius of the nucleus
+  double rin1 = bco_utils::get_radius(space.get_domain(0), OUTER_BC);
+
+  int ndom = space.get_nbr_domains();
+
+  // setup a system of equations
+  System_of_eqs syst(space, 0, ndom - 1);
+  // define numerical constants
+  syst.add_cst("4piG", bconfig(BCO_PARAMS::BCO_QPIG));
+  syst.add_cst("H", logh);
+  syst.add_cst("nu", nu);
+  syst.add_cst("lap_Aterm", lap_Aterm);
+  syst.add_cst("lap_Bterm", lap_Bterm);
+  syst.add_cst("lap_wterm", lap_wterm);
+
+  syst.add_def("N = exp(nu)");
+  syst.add_def("A = exp(lap_Aterm - nu)");
+  syst.add_def("B = (divrsint(lap_Bterm) + 1) / N");
+  syst.add_def("w = divrsint(lap_wterm)");
 
   syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
   syst.add_def(ndom - 1, "intMadm2 = - (dr(A)) / 4piG ");
