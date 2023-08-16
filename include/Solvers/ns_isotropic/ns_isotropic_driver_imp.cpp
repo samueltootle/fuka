@@ -225,7 +225,8 @@ inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::strin
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
 
   std::function<int(config_t&, Res_t&, std::string)> final_stage_driver;
-  std::cout << "Last stage: " << last_stage << '\n';
+  if(rank == 0)
+    std::cout << "Last stage: " << last_stage << '\n';
   switch(last_stage_idx) {
     case STAGES::NOROT_BC:
       final_stage_driver = &ns_isotropic_norot_driver<config_t, Res_t>;
