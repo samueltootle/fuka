@@ -188,13 +188,13 @@ tree_t build_branch(const map_t& storage_map, const ary_t& storage, const bool i
   return branch;
 }
 
-template <typename map_t, typename key_t>
-std::tuple<std::string, int> get_key_val_pair_from_key(map_t enum_map, key_t key) {
+template <typename map_t, typename val_t>
+std::tuple<std::string, int> get_key_val_pair_from_val(map_t enum_map, val_t val) {
   
   auto name = std::find_if(
             enum_map.begin(),
             enum_map.end(),
-            [key](const auto& kvpair) {return kvpair.first == key; });
+            [val](const auto& kvpair) {return kvpair.second == val; });
   
   if(name != enum_map.end()) {
     return std::make_tuple(name->first, name->second);
