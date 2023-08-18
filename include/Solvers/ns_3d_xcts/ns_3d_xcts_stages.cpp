@@ -234,7 +234,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
   std::string spin_fixing_definition{"integ(intJ) - chi * Madm * Madm = 0"};
   
   if(seq && seq->is_set()) {
-    std::cout << *seq << endl;
     auto idx{std::get<0>(seq->get_indices())};
     switch(idx) {
       case BCO_PARAMS::HC:
