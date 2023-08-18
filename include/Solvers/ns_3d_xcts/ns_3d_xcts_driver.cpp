@@ -88,6 +88,8 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
   stage_enabled[last_stage_idx] = true;
 
   base_config = bconfig;
+  if(seq.is_set() && std::isnan(bconfig.set(sequence_var_indices)))
+    bconfig.set(sequence_var_indices) = seq.init();
   #ifdef DEBUG
   std::cout << seq << std::endl;
   std::cout << resolution << std::endl;
