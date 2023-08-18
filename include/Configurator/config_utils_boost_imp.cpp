@@ -38,11 +38,13 @@ bool check_for_nan(const map_t& map, const T& var, const int idx) {
         map.end(),
         [idx](const auto& pair) {return pair.second == idx; });
 
+    std::string msg;
     if(var_name == map.end())
-      std::cerr << "No var found matching index: " << idx << "\n";
+      msg = "No var found matching index: " + std::to_string(idx);
     else
-			std::cerr << "Var \"" << var_name->first << "\" is undefined.\n";
-		std::_Exit(EXIT_FAILURE);
+			msg = "Var \"" + var_name->first +"\" is undefined.";
+  
+    throw std::runtime_error(msg.c_str());
   }
   return true;
 }
