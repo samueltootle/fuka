@@ -109,23 +109,25 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
         syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
         central_fixing_definition = "rho - Nc";
         break;
-      default:
+      case BCO_PARAMS::MADM:
         syst.add_var("Hc", loghc);
         syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
         syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
         break;
+      case BCO_PARAMS::MB:
+        syst.add_var("Hc", loghc);
+        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+        break;
+      default:
+        std::string msg{"Sequence initialized, but not implemented for BCO_PARAMS index = " + std::to_string(int(idx))};
+        throw std::runtime_error(msg.c_str());
+        break;
     }
   } else {
     syst.add_var("Hc", loghc);
-    /// Future deprecate
-    if(bconfig.control(MB_FIXING)) {
-      syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
-      syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-    }
-    else {
-      syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-      syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
-    }
+    syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+    syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
   }
   // first integral in the innermost domains with non-zero matter content
   // and condition on the central value, either fixed directly or by the
@@ -194,7 +196,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
   // We use `config_filename()` vs `config_filename_abs()` since
   // `solution_exists` will probe the HOME_KADATH/COs directory
   auto const current = bconfig.config_filename();
-  if(!bconfig.control(RESOLVE) && !seq && solution_exists("TOTAL_BC")) {
+  if(!bconfig.control(RESOLVE) && solution_exists("TOTAL_BC")) {
     if(rank == 0)
       std::cout << "Solved previously: " \
                 << bconfig.config_filename_abs() << std::endl;
@@ -240,57 +242,65 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
         syst.add_cst("Hc", loghc);
         syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
         syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_cst("chi" , bconfig(CHI));
-        syst.add_var("ome" , bconfig(OMEGA));
+        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
+        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
         break;
       case BCO_PARAMS::NC:
         syst.add_cst("Nc", bconfig(BCO_PARAMS::NC));
         syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
         syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_cst("chi" , bconfig(CHI));
-        syst.add_var("ome" , bconfig(OMEGA));
+        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
+        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
         central_fixing_definition = "rho - Nc";
         break;
-      case BCO_PARAMS::OMEGA:
-        syst.add_cst("Nc", bconfig(BCO_PARAMS::NC));
+      case BCO_PARAMS::MADM:
+        syst.add_var("Hc", loghc);
         syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
+        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
+        break;
+      case BCO_PARAMS::MB:
+        syst.add_var("Hc", loghc);
+        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
         syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_var("chi" , bconfig(CHI));
-        syst.add_cst("ome" , bconfig(OMEGA));
-        central_fixing_definition = "rho - Nc";
+        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
+        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
+        break;
+      case BCO_PARAMS::OMEGA:
+        syst.add_var("Hc", loghc);
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+        syst.add_var("chi" , bconfig(BCO_PARAMS::CHI));
+        syst.add_cst("ome" , bconfig(BCO_PARAMS::OMEGA));
         break;
       case BCO_PARAMS::JADM:
         spin_fixing_definition = "integ(intJ) - Jadm = 0";
-        // Fixed MADM and CHI
         syst.add_var("Hc", loghc);
         syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
         syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
         syst.add_cst("Jadm", bconfig(BCO_PARAMS::JADM));
-        syst.add_var("ome" , bconfig(OMEGA));
+        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
         bconfig.set(BCO_PARAMS::CHI) = bconfig(BCO_PARAMS::JADM) / bconfig(BCO_PARAMS::MADM) / bconfig(BCO_PARAMS::MADM);
         break;
-      default:
-        // Fixed MADM and CHI
+      case BCO_PARAMS::CHI:
         syst.add_var("Hc", loghc);
         syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
         syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_cst("chi" , bconfig(CHI));
-        syst.add_var("ome" , bconfig(OMEGA));
+        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
+        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
+        break;
+      default:
+        std::string msg{"Sequence initialized, but not implemented for BCO_PARAMS index = " + std::to_string(int(idx))};
+        throw std::runtime_error(msg.c_str());
         break;
     }
   } else {
     syst.add_var("Hc", loghc);
-    syst.add_cst("chi" , bconfig(CHI));
-    syst.add_var("ome" , bconfig(OMEGA));
-    /// Future deprecate
-    if(bconfig.control(MB_FIXING)) {
-      syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
-      syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-    }
-    else {
-      syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-      syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
-    }
+    syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
+    syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
+    syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+    syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
   }
 
   syst.add_def("omega^i = bet^i + ome * mg^i");

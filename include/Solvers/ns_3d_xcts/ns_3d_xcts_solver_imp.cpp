@@ -40,34 +40,45 @@ std::string ns_3d_xcts_solver<eos_t, config_t, space_t>::converged_filename(
   else ss << ".";
   ss << eosname << ".";
   
+  // Add mass fixing parameter to filename
   if(seq && seq->is_set()) {
     auto idx{std::get<0>(seq->get_indices())};
+    auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, idx);
+
     switch(idx) {
       case BCO_PARAMS::HC:
-        ss << "HC." << bconfig(BCO_PARAMS::HC) << ".";
-        break;
       case BCO_PARAMS::NC:
-        ss << "NC." << bconfig(BCO_PARAMS::NC) << ".";
+      case BCO_PARAMS::MADM:
+      case BCO_PARAMS::MB:      
+        ss << seq_key << "." << bconfig(idx);
         break;
       default:
-        ss << bconfig(BCO_PARAMS::MADM) << "."; 
+        ss << "madm." << bconfig(BCO_PARAMS::MADM) << ".";
     }
+  } else {
+    ss << "madm." << bconfig(BCO_PARAMS::MADM) << "."; 
   }
   
-  if(stage != "NOROT_BC") { 
+  // Add spin fixing parameter to filename
+  if(stage != "NOROT_BC") {
     if(seq && seq->is_set()) {
       auto idx{std::get<0>(seq->get_indices())};
+      auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, idx);
       switch(idx) {
         case BCO_PARAMS::OMEGA:
-          ss << "OME." << bconfig(idx) << ".";
-          break;
-        case BCO_PARAMS::NC:
-          ss << "JADM." << bconfig(idx) << ".";
+        case BCO_PARAMS::JADM:
+        case BCO_PARAMS::CHI:
+          ss << seq_key << "." << bconfig(idx);
           break;
         default:
-          ss << "CHI." << bconfig(idx)<< ".";
+          ss << "chi." << bconfig(BCO_PARAMS::CHI) << "."; 
+          break;
+        break;
       }
     }    
+    else {
+    ss << "chi." << bconfig(BCO_PARAMS::CHI) << "."; 
+  }
   }
   else ss << "0.";
   ss << bconfig(BCO_PARAMS::NSHELLS) << "."
