@@ -76,6 +76,8 @@ const std::map<std::string, BCO_PARAMS> MBCO_PARAMS = {
   {"ratio_A_R-equitorial",DIFF_ARATIO}, // Ratio of the differential rotation parameter A to equitoral radius
   {"ratio_R-pole_R-equitorial",DIFF_RRATIO}, // Ratio of the polar to equitoral radius
   {"q-diff_rot_law",DIFF_LAWQ}, // q parameter in various differential rotation laws
+  {"jadm", JADM},
+  {"ql_jadm", QLJADM},
 };
 
 const std::map<std::string, EOS_PARAMS> MEOS_PARAMS = {

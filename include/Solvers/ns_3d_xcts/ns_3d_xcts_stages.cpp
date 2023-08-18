@@ -194,7 +194,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
   // We use `config_filename()` vs `config_filename_abs()` since
   // `solution_exists` will probe the HOME_KADATH/COs directory
   auto const current = bconfig.config_filename();
-  if(!bconfig.control(RESOLVE) && solution_exists("TOTAL_BC")) {
+  if(!bconfig.control(RESOLVE) && !seq && solution_exists("TOTAL_BC")) {
     if(rank == 0)
       std::cout << "Solved previously: " \
                 << bconfig.config_filename_abs() << std::endl;
@@ -220,29 +220,81 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
   System_of_eqs syst(space, 0, ndom - 1);
   syst.add_var("H"   , logh);
   syst_init(syst);
-
-  syst.add_cst("chi" , bconfig(CHI));
-  syst.add_var("ome" , bconfig(OMEGA));
-  syst.add_var("Hc"  , loghc);
-  
-  if(bconfig.control(MB_FIXING)) {
-    syst.add_cst("Mb"  , bconfig(MB));
-    syst.add_var("Madm", bconfig(MADM));
-  } else {
-    syst.add_var("Mb"  , bconfig(MB));
-    syst.add_cst("Madm", bconfig(MADM));
-  }
-
   syst.add_var("bet" , shift);
-
-  syst.add_def("omega^i = bet^i + ome * mg^i");
-
+  
   syst.add_def("A^ij = (D^i bet^j + D^j bet^i - 2. / 3.* D_k bet^k * f^ij) / "
                "2. / Ntilde");
 
+  // ADM Angular momentum
   syst.add_def(ndom - 1, "intJ = multr(A_ij * mg^j * einf^i) / 2. / 4piG");
-
+  // Quasi-local spin angular momentum
   syst.add_def(2,"intS = A_ij * mg^i * sm^j / 2. / 4piG") ;
+  
+  std::string central_fixing_definition{"H - Hc"};
+  std::string spin_fixing_definition{"integ(intJ) - chi * Madm * Madm = 0"};
+  
+  if(seq && seq->is_set()) {
+    std::cout << *seq << endl;
+    auto idx{std::get<0>(seq->get_indices())};
+    switch(idx) {
+      case BCO_PARAMS::HC:
+        syst.add_cst("Hc", loghc);
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+        syst.add_cst("chi" , bconfig(CHI));
+        syst.add_var("ome" , bconfig(OMEGA));
+        break;
+      case BCO_PARAMS::NC:
+        syst.add_cst("Nc", bconfig(BCO_PARAMS::NC));
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+        syst.add_cst("chi" , bconfig(CHI));
+        syst.add_var("ome" , bconfig(OMEGA));
+        central_fixing_definition = "rho - Nc";
+        break;
+      case BCO_PARAMS::OMEGA:
+        syst.add_cst("Nc", bconfig(BCO_PARAMS::NC));
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+        syst.add_var("chi" , bconfig(CHI));
+        syst.add_cst("ome" , bconfig(OMEGA));
+        central_fixing_definition = "rho - Nc";
+        break;
+      case BCO_PARAMS::JADM:
+        spin_fixing_definition = "integ(intJ) - Jadm = 0";
+        // Fixed MADM and CHI
+        syst.add_var("Hc", loghc);
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+        syst.add_cst("Jadm", bconfig(BCO_PARAMS::JADM));
+        syst.add_var("ome" , bconfig(OMEGA));
+        bconfig.set(BCO_PARAMS::CHI) = bconfig(BCO_PARAMS::JADM) / bconfig(BCO_PARAMS::MADM) / bconfig(BCO_PARAMS::MADM);
+        break;
+      default:
+        // Fixed MADM and CHI
+        syst.add_var("Hc", loghc);
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+        syst.add_cst("chi" , bconfig(CHI));
+        syst.add_var("ome" , bconfig(OMEGA));
+        break;
+    }
+  } else {
+    syst.add_var("Hc", loghc);
+    syst.add_cst("chi" , bconfig(CHI));
+    syst.add_var("ome" , bconfig(OMEGA));
+    /// Future deprecate
+    if(bconfig.control(MB_FIXING)) {
+      syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
+      syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+    }
+    else {
+      syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+      syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+    }
+  }
+
+  syst.add_def("omega^i = bet^i + ome * mg^i");
 
   for (int d = 0; d < ndom; d++) {
     switch (d) {
@@ -288,10 +340,10 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
 
   syst.add_eq_bc(1, OUTER_BC, "H = 0");
 
-  syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
+  syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
   space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
 
-  space.add_eq_int_inf(syst, "integ(intJ) - chi * Madm * Madm = 0");
+  space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
   space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
 
   if (rank == 0)

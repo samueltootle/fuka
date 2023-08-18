@@ -54,7 +54,21 @@ std::string ns_3d_xcts_solver<eos_t, config_t, space_t>::converged_filename(
     }
   }
   
-  if(stage != "NOROT_BC") ss << bconfig(BCO_PARAMS::CHI)<< ".";
+  if(stage != "NOROT_BC") { 
+    if(seq && seq->is_set()) {
+      auto idx{std::get<0>(seq->get_indices())};
+      switch(idx) {
+        case BCO_PARAMS::OMEGA:
+          ss << "OME." << bconfig(idx) << ".";
+          break;
+        case BCO_PARAMS::NC:
+          ss << "JADM." << bconfig(idx) << ".";
+          break;
+        default:
+          ss << "CHI." << bconfig(idx)<< ".";
+      }
+    }    
+  }
   else ss << "0.";
   ss << bconfig(BCO_PARAMS::NSHELLS) << "."
      <<std::setfill('0') << std::setw(2) << res;
