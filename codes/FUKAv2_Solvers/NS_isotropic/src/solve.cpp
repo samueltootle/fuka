@@ -82,16 +82,15 @@ int main(int argc, char** argv) {
 
     auto seq = find_sequence(tree, MBCO_PARAMS, "ns");
 
-  //   if(!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES)) {
-  //     int err = ns_3d_xcts_driver(bconfig, resolution, InitSolver::outputdir);
-  ns_isotropic_driver(bconfig, resolution, InitSolver::outputdir);
-  //   } else {
+    if(!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES)) {
+      ns_isotropic_driver(bconfig, resolution, InitSolver::outputdir);
+    } else {
       
       auto [ branch_name, key, val ] = find_leaf(tree, "N");
       if(!key.empty()) seq.set_N(std::stoi(val));
 
-      // ns_isotropic_sequence(bconfig, seq, resolution, InitSolver::outputdir);
-  //   }
+      ns_isotropic_sequence(bconfig, seq, resolution, InitSolver::outputdir);
+    }
   }
   MPI_Finalize();
   return EXIT_SUCCESS;
