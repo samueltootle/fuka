@@ -40,6 +40,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
   const double final_MADM = base_config(BCO_PARAMS::MADM);
   base_config.control(CONTROLS::ITERATIVE_M) = false;
   config_t bconfig{base_config};
+
   if(bconfig.control(CONTROLS::SEQUENCES) || bconfig.control(CONTROLS::RESOLVE)) {
     if(rank == 0) {
       setup_co<NODES::NS>(bconfig);
@@ -96,6 +97,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
   #endif
   auto single_seq = [&](auto val) {
     // bconfig = base_config;
+    stage_enabled[last_stage_idx] = true;
     auto old_val = bconfig(sequence_var_indices);
     if(seq.is_set())
       bconfig.set(sequence_var_indices) = val;
@@ -107,15 +109,16 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
       }
     }
     exit_status = ns_3d_xcts_driver(bconfig, resolution, outputdir, &seq); 
-    stage_enabled[last_stage_idx] = true;
     return exit_status;
   };
 
   // Loop if a valid sequence is set
-  if(seq.is_set()) {
+  if(seq.is_set() && std::fabs(dx) > 0) {
     for(auto val = seq.init(); seq.loop_condition(val); val+=dx) {
       exit_status = single_seq(val);
     }
+  } else if(seq.is_set()) {
+    exit_status = single_seq(seq.init());
   } else {
     exit_status = single_seq(0);
   }
