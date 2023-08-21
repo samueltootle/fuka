@@ -88,24 +88,29 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   stage_enabled.fill(false);
   stage_enabled[last_stage_idx] = true;
 
+  base_config = bconfig;
+  if(seq.is_set() && std::isnan(bconfig.set(sequence_var_indices)))
+    bconfig.set(sequence_var_indices) = seq.init();
   #ifdef DEBUG
   std::cout << seq << std::endl;
   std::cout << resolution << std::endl;
   #endif
   auto single_seq = [&](auto val) {
+    stage_enabled[last_stage_idx] = true;
     if(seq.is_set())
       bconfig.set(sequence_var_indices) = val;
 
     exit_status = ns_isotropic_driver(bconfig, resolution, outputdir); 
-    stage_enabled[last_stage_idx] = true;
     return exit_status;
   };
 
   // Loop if a valid sequence is set
-  if(seq.is_set()) {
+  if(seq.is_set() && std::fabs(dx) > 0) {
     for(auto val = seq.init(); seq.loop_condition(val); val+=dx) {
       exit_status = single_seq(val);
     }
+  } else if(seq.is_set()) {
+    exit_status = single_seq(seq.init());
   } else {
     exit_status = single_seq(0);
   }
@@ -186,14 +191,19 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir)
       stage_enabled[STAGES::NOROT_BC] = false;
       bconfig(BCO_PARAMS::OMEGA) = omega;
       bconfig(BCO_PARAMS::CHI) = chi;
-      bconfig.return_stages() = stage_enabled;
-      if(last_stage_idx != STAGES::NOROT_BC)
+      if(last_stage_idx != STAGES::NOROT_BC) {
+        stage_enabled[STAGES::NOROT_BC] = false;
         exit_status = RELOAD_FILE;
+      }
+      bconfig.return_stages() = stage_enabled;
     } else if(stage_enabled[STAGES::UNIFORM_ROT]) {
       exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir);
       // exit_status = EXIT_FAILURE;
-      if(last_stage_idx != STAGES::UNIFORM_ROT)
+      if(last_stage_idx != STAGES::UNIFORM_ROT) {
         stage_enabled[STAGES::UNIFORM_ROT] = false;
+        exit_status = RELOAD_FILE;
+      }
+      bconfig.return_stages() = stage_enabled;
     }
     MPI_Barrier(MPI_COMM_WORLD);
   }
