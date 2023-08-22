@@ -230,6 +230,7 @@ inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::strin
   bool res_inc = (resolution.final() > resolution.init());
   auto resolution_indices = resolution.get_indices();
   auto const & final_res = resolution.final();
+  bconfig.set(resolution_indices) = resolution.init();
   
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
