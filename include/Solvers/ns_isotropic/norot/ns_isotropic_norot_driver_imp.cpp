@@ -55,7 +55,7 @@ config_t ns_isotropic_norot_sequence (config_t & seqconfig,
       MPI_Barrier(MPI_COMM_WORLD);
       // make sure all ranks have the same config
       bconfig.open_config();
-      MPI_Barrier(MPI_COMM_WORLD);
+      
       bconfig.control(CONTROLS::ITERATIVE_M) = 
         (bconfig(BCO_PARAMS::MADM) < final_MADM);
 
