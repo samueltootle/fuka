@@ -101,7 +101,7 @@ void setup_2dns_isotropic(config_t& bconfig) {
     center.set(i) = 0;
   
   const int shells = (int)bconfig(BCO_PARAMS::NSHELLS);
-  int ndom = 4 + bconfig(NSHELLS);
+  int ndom = 4 + shells;
 
   Array<double> bounds(ndom - 1);
 
@@ -307,7 +307,6 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space, config_t
   lap_aterm.std_base();
   // end setup fields
   
-  bconfig.set_filename("initns");
   bco_utils::save_to_file(space, bconfig, lap_aterm, nu, logh);
 }
 
