@@ -72,12 +72,12 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
     case 1:
       syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
       syst.add_def(d, "Usq = U*U");
-      syst.add_def(d, "Wsq = 1 / 1 - Usq");
+      syst.add_def(d, "Wsq = 1 / (1 - Usq)");
 
       // sources
       syst.add_def(d, "E = Wsq * press * h - press * delta");
       syst.add_def(d, "Srrtt = press * delta");
-      syst.add_def(d, "pressp = delta * multrsint(B * (E + Srrtt) * U)");
+      syst.add_def(d, "pphi = delta * multrsint(B * (E + Srrtt) * U)");
       syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
       syst.add_def(d, "S = 2 * Srrtt + Spp");
  
@@ -90,7 +90,7 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
                       "- 2 * 4piG * A^2 * Spp");
       syst.add_def(d, "eqbet = delta * lap2(bet) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
       syst.add_def(d, "eqw = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                          "+ 4 * 4piG * N * A^2 / B^2 * divrsint(pressp)");
+                          "+ 4 * 4piG * N * A^2 / B^2 * divrsint(pphi)");
  
       // definition for the baryonic mass integral
       // syst.add_def(d, "intMb = P^6 * rho");
