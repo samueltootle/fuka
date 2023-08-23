@@ -5,69 +5,6 @@
 namespace Kadath {
 namespace FUKA_Solvers {
 
-template<class Seq_t, class Res_t, class config_t>
-config_t ns_isotropic_uniform_rot_sequence (config_t & seqconfig, 
-                          Seq_t const & seq,
-                          Res_t const & resolution,
-                          std::string outputdir) {
-  
-  int rank = 0, exit_status = EXIT_SUCCESS;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  // Initialize sequence variables
-  auto sequence_var_indices = seq.get_indices();
-  auto resolution_indices   = resolution.get_indices();
-  
-  auto const & dx = seq.step_size();
-
-  // Initialize full configurator
-  config_t base_config = ns_isotropic_uniform_rot_sequence_setup(seqconfig, outputdir);
-  base_config.set(resolution_indices) = resolution.init();
-
-  // Save this in case an invalid ADM mass is given for the EOS used
-  const double final_MADM = base_config(BCO_PARAMS::MADM);
-  config_t bconfig{};
-  #ifdef DEBUG
-  std::cout << seq << std::endl;
-  std::cout << resolution << std::endl;
-  #endif
-  auto single_seq = [&](auto val) {
-    bconfig = base_config;
-    if(seq.is_set())
-      bconfig.set(sequence_var_indices) = val;
-
-    if(bconfig.control(CONTROLS::SEQUENCES)) {
-      if(rank == 0) {
-        setup_2dns_isotropic(bconfig);
-      }
-      MPI_Barrier(MPI_COMM_WORLD);
-      // make sure all ranks have the same config
-      bconfig.open_config();
-      MPI_Barrier(MPI_COMM_WORLD);
-      bconfig.control(CONTROLS::ITERATIVE_M) = 
-        (bconfig(BCO_PARAMS::MADM) < final_MADM);
-
-      if(bconfig.control(CONTROLS::ITERATIVE_M)) {
-        if(rank == 0)
-        std::cerr << "Cannot solve TOV for Madm = " << final_MADM
-                  << " without spin.\n";
-        std::_Exit(EXIT_FAILURE);
-      }
-    }
-
-    exit_status = ns_isotropic_uniform_rot_driver(bconfig, resolution, outputdir); 
-    return exit_status;
-  };
-
-  // Loop if a valid sequence is set
-  if(seq.is_set()) {
-    for(auto val = seq.init(); seq.loop_condition(val); val+=dx) {
-      exit_status = single_seq(val);
-    }
-  } else {
-    exit_status = single_seq(0);
-  }
-  return bconfig;
-}
 
 template<typename config_t>
 void initialize_fields(config_t& bconfig) {

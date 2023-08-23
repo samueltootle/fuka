@@ -32,35 +32,6 @@
 
 namespace Kadath {
 namespace FUKA_Solvers {
-  
-/**
- * @brief Setup complete Config file for an NS sequence
- * 
- * @tparam config_t Configurator type
- * @param seqconfig Sequence Config object
- * @param outputdir output location
- * @return config_t 
- */
-template<class config_t>
-config_t ns_isotropic_norot_sequence_setup (config_t & seqconfig, std::string outputdir);
-
-
-/**
- * @brief Sequence driver for an NS solution
- * 
- * @tparam Seq_t Parameter_sequence for an NS sequence
- * @tparam Res_t Parameter_sequence for resolution
- * @tparam config_t Configurator type
- * @param seqconfig Sequence Config object
- * @param seq Parameter sequence
- * @param resolution Resolution sequence
- * @param outputdir output location
- */
-template<class Seq_t, class Res_t, class config_t>
-config_t ns_isotropic_norot_sequence (config_t & seqconfig, 
-                          Seq_t const & seq,
-                          Res_t const & resolution,
-                          std::string outputdir);
 
 /**
  * @brief Driver to compute a stationary solution for a given resolution
