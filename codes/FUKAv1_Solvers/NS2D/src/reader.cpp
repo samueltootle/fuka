@@ -130,16 +130,94 @@ void reader_2d_norot(config_t bconfig) {
 
   syst.add_def("N = exp(nu)");
   syst.add_def("A = exp(lapAterm - nu)");
+    // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
+  syst.add_def("h = exp(H)");
+
+  // define the EOS operators
+  Param p;
+  syst.add_ope ("eps", &EOS<eos_t,EPSILON>::action, &p);
+  syst.add_ope ("press", &EOS<eos_t,PRESSURE>::action, &p);
+  syst.add_ope ("rho", &EOS<eos_t,DENSITY>::action, &p);
+
+  // define rest-mass density, internal energy and pressure through the enthalpy
+  syst.add_def("rho = rho(h)");
+  syst.add_def("eps = eps(h)");
+  syst.add_def("press = press(h)");
+  syst.add_def("delta = h - eps - 1.");
 
   syst.add_def(ndom - 1, "intMadm = -dr(A) / 4piG ");
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
+
+  for (int d = 0; d < ndom; d++) {
+    switch (d) {
+    // in the star the constraint equations are sourced by the matter
+    case 0:
+    case 1:
+      // sources
+      syst.add_def(d, "E = press * h - press * delta");
+      syst.add_def(d, "S = delta * 3 * press");
+      syst.add_def(d, "Spp = press * delta");
+      
+      // constraint equations
+      syst.add_def(d, "eqnu = delta * ( lap(nu) + scal(grad(nu), grad(lapAterm)) ) - 4piG * A^2 * (E + S)") ;
+      syst.add_def(d, "eqlapAterm = delta * ( lap2(lapAterm) + scal(grad(nu), grad(nu)) ) - 2 * 4piG * A^2 * Spp") ;
+      // Extra...
+      // syst.add_def(d, "eqNA = dr(drNA) + 3 * divr(drNA) - 4 * 4piG * NA * A^2 * press") ;
+
+
+      // // definition for the baryonic mass integral
+      syst.add_def(d, "intMb = rho * A^3 * 4piG / 2");
+      syst.add_def(d, "intDDA = - lap2(A) * multrsint(A^2) * multr(A)") ;
+      
+      
+      // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
+      syst.add_def(d, "firstint = H + log(N)");
+
+      break;
+    // outside the matter is absent and the sources are zero
+    default:
+      syst.add_eq_full(d, "H = 0");
+
+      syst.add_def(d, "eqnu = lap(nu) + scal(grad(nu), grad(lapAterm))") ;
+      syst.add_def(d, "eqlapAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))") ;
+      break;
+    }
+  }
+
+  double baryonic_mass=0;
+  Scalar intMb(syst.give_val_def("intMb")());
+  intMb.coef_i();
+  
+  double VMadm=0;
+  Scalar intDDA(syst.give_val_def("intDDA")());
+  intDDA.coef_i();
+  
+  for(int i = 0; i < 2; ++i) {
+    VMadm += intDDA(i).integ_volume();
+    baryonic_mass += intMb(i).integ_volume();
+  }
+  cout << "VMadm: " << VMadm << endl;
  
- Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
+  Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
   double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
 
   // Komar mass at infinity
   Val_domain integMk(syst.give_val_def("intMk")()(ndom - 1));
   double Mk = space.get_domain(ndom - 1)->integ(integMk, OUTER_BC);
+
+  auto npts = space.get_domain(1)->get_nbr_points();
+
+  Index pos_eq (npts);
+  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+
+  Index pos_pole (npts);
+  pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
+
+  auto B(syst.give_val_def("A")()(1));
+  auto r(space.get_domain(1)->get_radius());
+  // cout << B(pos_eq) << ", " << r(pos_eq) << endl;
+  double AR = B(pos_eq) * r(pos_eq);
   
   #ifdef FORMAT
     #undef FORMAT
@@ -165,10 +243,9 @@ void reader_2d_norot(config_t bconfig) {
   std::cout << FORMAT << "Coord R_OUT = " << bco_utils::get_radius(space.get_domain(2), OUTER_BC) << "\n";
   print_shells(3, ndom-1); cout << endl;
 
-  // std::cout << FORMAT << "Areal R = "    << AR << " [" << AR * M2km << "km]\n"
-            // << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl
-    std::cout \
-            << FORMAT << "ADM Mass = " << Madm << "\n"
+  std::cout << FORMAT << "Areal R = "    << AR << " [" << AR * M2km << "km]\n"
+            << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl;
+  std::cout << FORMAT << "ADM Mass = " << Madm << "\n"
             << FORMAT << std::scientific << "Central Density = " << nc  << std::endl
             << FORMAT << std::scientific << "Central h = " << hc << std::endl
             << FORMAT << std::scientific << "Central log(h) = " << loghc << std::endl
@@ -231,6 +308,7 @@ void reader_2d_diffrot(config_t bconfig) {
   syst.add_cst("lapAterm", lap_Aterm);
   syst.add_cst("lapBterm", lap_Bterm);
   syst.add_cst("lapwterm", lap_wterm);
+  syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
   syst.add_cst("one", one);
 
   // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
@@ -258,44 +336,78 @@ void reader_2d_diffrot(config_t bconfig) {
   syst.add_def(ndom - 1, "intMadmB = - (dr(B)) / 4piG ");
   syst.add_def(ndom - 1, "intMadmA = - (dr(A)) / 4piG ");
   syst.add_def(ndom - 1, "intMk = B * (dr(N) - multrsint(multrsint(B^2) / 2 / N * w * dr(w)))  / 4piG");
-  syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(B^3 * dr(w) / N / 4 / 4piG))");
+  syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 2 / 4piG");
+	
+  for (int d = 0; d < ndom; d++) {
+    switch (d) {
+    // in the star the constraint equations are sourced by the matter
+    case 0:
+    case 1:
+      // sources
+      syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
+      syst.add_def(d, "Usq = U*U");
+      syst.add_def(d, "Wsq = 1 / (1 - Usq)");
+      syst.add_def(d, "W = sqrt(Wsq)");
 
-  // for (int d = 0; d < ndom; d++) {
-  //   switch (d) {
-  //   // in the star the constraint equations are sourced by the matter
-  //   case 0:
-  //   case 1:
-  //     // sources
-  //     syst.add_def(d, "E = press * h - press * delta");
-  //     syst.add_def(d, "S = delta * 3 * press");
-  //     syst.add_def(d, "Spp = press * delta");
+      // sources
+      syst.add_def(d, "E = Wsq * press * h - press * delta");
+      syst.add_def(d, "Srrtt = press * delta");
+      syst.add_def(d, "pphi = multrsint(B * (E + Srrtt) * U)");
+      syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
+      syst.add_def(d, "S = 2 * Srrtt + Spp");
+      syst.add_def(d, "Ereg = Wsq * (rho * (1 + eps) + press) - press");
+      syst.add_def(d, "Sreg = 3 * press + (Ereg + press) * Usq");
+
+      // Volume integral for Angular momentum 4.38
+      syst.add_def(d, "intJV = pphi / delta * A^2 * B * 4piG / 2");
+
+      // syst.add_def(d, "intEkin = (4piG * S / delta - 1 / A^2 * (scal(grad(nu), grad(nu)) - 1 / 2 / A / B * scal(grad(A), grad(B)))"
+      // "+divr(0.5) * (1/A^2 - 1/B^2) * (1/A * (dr(A) + divr(multsint(divcost(dt(A))))) - 1/2/B * (dr(B) + divr(multsint(divcost(dt(B)))))))");
+      // "+ divr(divr(3)) * multsint(multsint(B^2)) / 8 / A^2 / N^2 * scal(grad(w), grad(w))) * A^2 * B");
       
-  //     // constraint equations
-  //     syst.add_def(d, "DDA = -delta * scal(grad(nu), grad(nu)) + 2 * 4piG * A^2 * Spp") ;
-  //     // Extra...
-  //     // syst.add_def(d, "eqNA = dr(drNA) + 3 * divr(drNA) - 4 * 4piG * NA * A^2 * press") ;
+      // constraint equations
+      syst.add_def(d, "DDA = -delta * scal(grad(nu), grad(nu)) + 2 * 4piG * A^2 * Spp") ;
+      // Extra...
+      // syst.add_def(d, "eqNA = dr(drNA) + 3 * divr(drNA) - 4 * 4piG * NA * A^2 * press") ;
 
 
-  //     // // definition for the baryonic mass integral
-  //     // syst.add_def(d, "intMb = P^6 * rho");
-  //     syst.add_def(d, "intDDA = - lap2(A) / 2 / 4piG") ;
+      // // definition for the baryonic mass integral
+      // syst.add_def(d, "intMb = P^6 * rho");
+      syst.add_def(d, "intDDA = - lap(A) * multrsint(A^2) * multr(B)") ;
+      // syst.add_def(d, "intDDA = (N * (Ereg + Sreg) + 2 * w * B * (Ereg + press) * multrsint(U)) * multrsint(A^2) * multr(B)") ;
+      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
       
-  //     // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
-  //     syst.add_def(d, "firstint = H + log(N)");
+      // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
+      syst.add_def(d, "firstint = H + log(N)");
 
-  //     break;
-  //   // outside the matter is absent and the sources are zero
-  //   default:
-  //     // syst.add_def(d, "eqnu = lap(nu) + scal(grad(nu), grad(nulogA))") ;
-  //     syst.add_def(d, "DDA = -delta * scal(grad(nu), grad(nu))") ;
-  //     syst.add_def(d, "intDDA = - lap2(A) / 2 / 4piG") ;
-  //     break;
-  //   }
-  // }
+      break;
+    // outside the matter is absent and the sources are zero
+    default:
+      // syst.add_def(d, "eqnu = lap(nu) + scal(grad(nu), grad(lapAterm))") ;
+      syst.add_def(d, "DDA = -delta * scal(grad(nu), grad(nu))") ;
+      syst.add_def(d, "intDDA = - lap2(A) * 2 / 4piG") ;
+      break;
+    }
+  }
   
-  // double VMadm=0;
-  // for(int i = 0; i < ndom-1; ++i)
-  //   VMadm +=syst.give_val_def("intDDA")()(i).integ_volume();
+  double VMadm=0;
+  Scalar intDDA(syst.give_val_def("intDDA")());
+  intDDA.coef_i();
+
+  double VJadm=0;
+  Scalar intJV(syst.give_val_def("intJV")());
+  intJV.coef_i();
+
+  double baryonic_mass=0;
+  Scalar intMb(syst.give_val_def("intMb")());  
+  intMb.coef_i();
+  
+  for(int i = 0; i < 2; ++i) {
+    VMadm += intDDA(i).integ_volume();
+    VJadm += intJV(i).integ_volume();
+    baryonic_mass += intMb(i).integ_volume();
+  }
+  // cout << "VMadm: " << VMadm << endl;
 
   Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
   double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
@@ -311,6 +423,26 @@ void reader_2d_diffrot(config_t bconfig) {
   // ADM angular momentum at infinity 
   Val_domain integJ(syst.give_val_def("intJ")()(ndom - 1));
   double J = space.get_domain(ndom - 1)->integ(integJ, OUTER_BC);
+
+  auto npts = space.get_domain(1)->get_nbr_points();
+
+  Index pos_eq (npts);
+  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+
+  Index pos_pole (npts);
+  pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
+
+  auto B(syst.give_val_def("B")()(1));
+  auto r(space.get_domain(1)->get_radius());
+  // cout << B(pos_eq) << ", " << r(pos_eq) << endl;
+  double AR = B(pos_eq) * r(pos_eq);
+
+  // cout << space.get_domain(1)->get_cart(1)(pos_pole) << ", "
+  //       << space.get_domain(1)->get_cart(2)(pos_pole)<< endl;
+  // cout << space.get_domain(1)->get_cart(1)(pos_eq) << ", "
+  //       << space.get_domain(1)->get_cart(2)(pos_eq)<< endl;
+  // pos_pole.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
   // std::cout << std::setprecision(15)
   //   << Madm << '\t'
   //   << MadmA << '\t'
@@ -341,11 +473,11 @@ void reader_2d_diffrot(config_t bconfig) {
   std::cout << FORMAT << "Coord R_OUT = " << bco_utils::get_radius(space.get_domain(2), OUTER_BC) << "\n";
   print_shells(3, ndom-1); cout << endl;
 
-  // std::cout << FORMAT << "Areal R = "    << AR << " [" << AR * M2km << "km]\n"
-            // << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl
+  std::cout << FORMAT << "Areal R = "    << AR << " [" << AR * M2km << "km]\n"
+            << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl;
     std::cout \
             << FORMAT << "ADM Mass = " << Madm << " [" << MadmA << ", " << MadmB << "]\n"
-            << FORMAT << "ADM Momentum = " << J << std::endl
+            << FORMAT << "ADM Momentum = " << J << " [" << VJadm << "]\n"
             // << FORMAT << "Chi = " << J / Madm / Madm << " [" << bconfig(CHI) << "]\n"
             << FORMAT << "Omega = "<< bconfig(OMEGA) << std::endl
             << FORMAT << std::scientific << "Central Density = " << nc  << std::endl
