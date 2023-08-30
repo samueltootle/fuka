@@ -69,14 +69,14 @@ void ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::syst_init(System
   // the basic fields, conformal factor, lapse and (log) enthalpy
   syst.add_var("H", logh);
   syst.add_var("nu", nu);
-  syst.add_var("nulogA", lap_Aterm);
-  syst.add_var("bet", lap_Bterm);
+  syst.add_var("lapAterm", lap_Aterm);
+  syst.add_var("lapBterm", lap_Bterm);
   syst.add_var("wrsint", lap_wterm);  
 
   // Useful definitions
   syst.add_def("N = exp(nu)");
-  syst.add_def("A = exp(nulogA - nu)");
-  syst.add_def("B = (divrsint(bet) + 1) / N");
+  syst.add_def("A = exp(lapAterm - nu)");
+  syst.add_def("B = (divrsint(lapBterm) + 1) / N");
   syst.add_def("w = divrsint(wrsint)");
  
   // define quantity to be integrated at infinity
