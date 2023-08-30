@@ -801,5 +801,37 @@ int Domain_polar_shell_inner_adapted::give_place_var (char* p) const {
 	res = 1 ;
     return res ;
 }
+
+double Domain_polar_shell_inner_adapted::integ (const Val_domain& so, int bound) const {
+	double res = 0 ;
+	Val_domain rrso (mult_r(mult_r(mult_sin_theta(so)))) ;
+
+	int baset = (*so.base.bases_1d[1]) (0) ;
+	if (baset != COS_EVEN) {
+		// Odd function
+		return res ;
+	}
+	else {
+		// For now only at infinity
+		if (bound!=OUTER_BC) {
+		  cerr << "Domain_polar_shell_inner_adapted::integ only defined for outer boundary" << endl ;
+		  abort() ;
+		}
+
+		//Loop on theta :
+		Index pos (get_nbr_coefs()) ;
+		for (int j=0 ; j<nbr_coefs(1) ; j++) {
+			pos.set(1) = j ;
+			res += 2./(2*double(j)+1) * val_boundary(bound, rrso, pos) ;
+			// double fact_tet = 2./double(1-4*j*j) ;
+			// // Loop on r :
+			// for (int i=0 ; i<nbr_coefs(0) ; i++) {
+			// 	pos.set(0) = i ;
+			// 	res += fact_tet*(*auxi.cf)(pos) ;
+			// }
+		}
+		return res*2*M_PI ;
+	}
+}
 }
 

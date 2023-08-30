@@ -180,6 +180,9 @@ class Domain_polar_shell_inner_adapted : public Domain {
      virtual Val_domain laplacian (const Val_domain&, int) const ;
      virtual Val_domain laplacian2 (const Val_domain&, int) const ;
      virtual Val_domain der_r (const Val_domain&) const ;
+     virtual double integrale (const Val_domain&) const ;
+     virtual double integ_volume (const Val_domain&) const ;
+     virtual double integ (const Val_domain& so, int bound) const;
 
 
      virtual double val_boundary (int, const Val_domain&, const Index&) const ;
@@ -463,6 +466,8 @@ class Domain_polar_shell_outer_adapted : public Domain {
      virtual Val_domain laplacian (const Val_domain&, int) const ;
      virtual Val_domain laplacian2 (const Val_domain&, int) const ;
      virtual Val_domain der_r (const Val_domain&) const ;
+     virtual double integrale (const Val_domain&) const ;
+     virtual double integ_volume (const Val_domain&) const ;
 
     /**
       * Computes the flat gradient of a field, in orthonormal spherical coordinates.
