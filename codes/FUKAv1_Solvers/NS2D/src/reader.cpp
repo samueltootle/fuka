@@ -336,7 +336,7 @@ void reader_2d_diffrot(config_t bconfig) {
   syst.add_def(ndom - 1, "intMadmB = - (dr(B)) / 4piG ");
   syst.add_def(ndom - 1, "intMadmA = - (dr(A)) / 4piG ");
   syst.add_def(ndom - 1, "intMk = B * (dr(N) - multrsint(multrsint(B^2) / 2 / N * w * dr(w)))  / 4piG");
-  syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 2 / 4piG");
+  syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
 	
   for (int d = 0; d < ndom; d++) {
     switch (d) {
