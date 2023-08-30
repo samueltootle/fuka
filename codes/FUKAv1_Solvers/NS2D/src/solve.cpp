@@ -465,13 +465,13 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
     case 1:
       syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
       syst.add_def(d, "Usq = U*U");
-      syst.add_def(d, "Wsq = 1 / 1 - Usq");
+      syst.add_def(d, "Wsq = 1 / (1 - Usq)");
       
       // sources
       syst.add_def(d, "edens = rho * (1 + eps)");
       syst.add_def(d, "E = Wsq * press * h - press * delta");
       syst.add_def(d, "Srrtt = press * delta");
-      syst.add_def(d, "pressp = delta * multrsint(B * (E + Srrtt) * U)");
+      syst.add_def(d, "pressp = multrsint(B * (E + Srrtt) * U)");
       syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
       syst.add_def(d, "S = 2 * Srrtt + Spp");
       
@@ -653,11 +653,11 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   Index pos_origin (npts);
   Index pos_eq (npts);
   pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
-  // pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
 
   Index pos_pole (npts);
   pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
-  pos_pole.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+  // pos_pole.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
 
   // Point origin(2);
 
@@ -709,8 +709,6 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   // syst.add_var("Madm", bconfig(MADM));
   syst.add_cst("Hc", loghc);
   syst.add_cst("q", q);
-  syst.add_cst("diffAratio", diffAratio);
-  syst.add_cst("Rratio", Rratio);
   
   syst.add_var("diffA", diffA);
   syst.add_var("omec", bconfig(BCO_PARAMS::OMEGA));
@@ -735,8 +733,6 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   syst.add_def("A = exp(nulogA - nu)");
   syst.add_def("B = (divrsint(bet) + 1) / N");
   syst.add_def("w = divrsint(wrsint)");
-  syst.add_def("Fomega = B^2 * multrsint(multrsint(Omega - w)) "
-                      "/ (N^2 - multrsint(B * (Omega - w))^2)");
 
   // define quantity to be integrated at infinity
   // two (in this case) equivalent definitions of ADM mass
@@ -770,7 +766,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
     case 1:
       syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
       syst.add_def(d, "Usq = U*U");
-      syst.add_def(d, "Wsq = 1 / 1 - Usq");
+      syst.add_def(d, "Wsq = 1 /( 1 - Usq)");
       
       // sources
       syst.add_def(d, "edens = rho * (1 + eps)");

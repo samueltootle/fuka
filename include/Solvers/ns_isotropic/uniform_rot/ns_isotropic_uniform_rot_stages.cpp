@@ -65,7 +65,7 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
   syst.add_cst("Hc", loghc);
   syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
  
-  for (int d = 0; d < ndom-1; d++) {
+  for (int d = 0; d < ndom; d++) {
     switch (d) {
     // in the star the constraint equations are sourced by the matter
     case 0:
@@ -77,7 +77,7 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
       // sources
       syst.add_def(d, "E = Wsq * press * h - press * delta");
       syst.add_def(d, "Srrtt = press * delta");
-      syst.add_def(d, "pphi = delta * multrsint(B * (E + Srrtt) * U)");
+      syst.add_def(d, "pphi = (E + Srrtt) * U");
       syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
       syst.add_def(d, "S = 2 * Srrtt + Spp");
  
@@ -85,12 +85,12 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
       syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
                             "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
                             "- 4piG * A^2 * (E + S)");
-      syst.add_def(d, "eqnulogA = delta * lap2(nulogA) + delta * scal(grad(nu), grad(nu))"
+      syst.add_def(d, "eqAterm = delta * lap2(lapAterm) + delta * scal(grad(nu), grad(nu))"
                       "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
                       "- 2 * 4piG * A^2 * Spp");
-      syst.add_def(d, "eqbet = delta * lap2(bet) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
-      syst.add_def(d, "eqw = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                          "+ 4 * 4piG * N * A^2 / B^2 * divrsint(pphi)");
+      syst.add_def(d, "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
+      syst.add_def(d, "eqwrsint = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
+                          "+ 4 * 4piG * N * A^2 / B * pphi");
  
       // definition for the baryonic mass integral
       // syst.add_def(d, "intMb = P^6 * rho");
@@ -105,31 +105,24 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
 
       syst.add_def(d, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
                       "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
-      syst.add_def(d, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))"
+      syst.add_def(d, "eqAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
                 "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))");
-      syst.add_def(d, "eqbet = lap2(bet)");
-      syst.add_def(d, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
+      syst.add_def(d, "eqBterm = lap2(lapBterm)");
+      syst.add_def(d, "eqwrsint = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
       break;
     }
   }
-    syst.add_eq_full(ndom-1, "H = 0");
-    syst.add_def(ndom-1, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                            "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(multr(grad(w)), multr(grad(w))) ");
-    syst.add_def(ndom-1, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))"
-              "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(multr(grad(w)), multr(grad(w)))");
-    syst.add_def(ndom-1, "eqbet = lap2(bet)");
-    syst.add_def(ndom-1, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
  
   // add the constraint equations and demand continuity their normal derivative across domain boundaries
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
-  space.add_eq(syst, "eqnulogA=0", "nulogA", "dn(nulogA)");
-  space.add_eq(syst, "eqbet=0", "bet", "dn(bet)");
-  space.add_eq(syst, "eqw=0", "wrsint", "dn(wrsint)");
+  space.add_eq(syst, "eqAterm=0", "lapAterm", "dn(lapAterm)");
+  space.add_eq(syst, "eqBterm=0", "lapBterm", "dn(lapBterm)");
+  space.add_eq(syst, "eqwrsint=0", "wrsint", "dn(wrsint)");
   
   // boundary conditions at infinity
   syst.add_eq_bc(ndom - 1, OUTER_BC, "nu=0");
-  syst.add_eq_bc(ndom - 1, OUTER_BC, "nulogA=0");
-  syst.add_eq_bc(ndom - 1, OUTER_BC, "bet=0");
+  syst.add_eq_bc(ndom - 1, OUTER_BC, "lapAterm=0");
+  syst.add_eq_bc(ndom - 1, OUTER_BC, "lapBterm=0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "wrsint=0");
 
   // Fix surface based on vanishing log specific enthalpy
@@ -160,11 +153,6 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
     // output files at this iteration and print diagnostics
     std::stringstream ss;
     ss << "uniform_rot_ckpt_";
-    if(fixed) {
-      ss << "fixed";
-    }else {
-      ss << "norot_bc";
-    }
     ss << "_" << ite - 1;
     bconfig.set_filename(ss.str());
     if (rank == 0) {
