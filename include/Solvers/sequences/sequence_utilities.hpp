@@ -196,6 +196,16 @@ void update_filename_from_mass_fixing(config_t& bconfig, seq_t seq, std::strings
  */
 template<class config_t, class seq_t>
 void update_filename_from_spin_fixing(config_t& bconfig, seq_t seq, std::stringstream& ss);
+
+/**
+ * @brief Determine if a sequence is based on fixing the mass
+ * 
+ * @tparam seq_t Sequence type
+ * @param seq sequence
+ * @return bool
+ */
+template<class seq_t>
+bool seq_is_mass_fixing(seq_t& seq);
 /** @}*/
 }}
 #include "sequence_utilities.cpp"
