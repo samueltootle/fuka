@@ -2,6 +2,7 @@
 #include "mpi.h"
 #include "bco_utilities.hpp"
 #include "ns_isotropic_norot_regrid.hpp"
+#include "Solvers/sequences/sequence_utilities.hpp"
 #include <cmath>
 
 /**
@@ -30,11 +31,20 @@ std::string ns_isotropic_norot_solver<eos_t, config_t, space_t>::converged_filen
   ss << "NS_ISO";
   if(stage != "") ss  << "_" << stage << ".";
   else ss << ".";
-  ss << eosname << "."
-     << bconfig(BCO_PARAMS::HC) << "."; 
-  if(stage != "NOROT_BC") ss << bconfig(BCO_PARAMS::OMEGA)<< ".";
-  else ss << "0.";
-  ss << bconfig(BCO_PARAMS::NSHELLS) << "."
+  ss << eosname << ".";
+
+  // Add mass fixing parameter to filename
+  auto default_idx = BCO_PARAMS::MADM;
+  if(seq && seq->is_set()) {
+    update_filename_from_mass_fixing(bconfig, *seq, ss);
+  } else {
+    auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
+    ss << seq_key << "." << bconfig(default_idx) << "."; 
+  }  
+  
+  // Set spin to 0
+  ss << "0."
+     << bconfig(BCO_PARAMS::NSHELLS) << "."
      <<std::setfill('0') << std::setw(2) << res;
   return ss.str();
 }
