@@ -168,6 +168,34 @@ std::ostream& operator<< (std::ostream& os, const std::tuple<T...>& _tup);
  */
 template<class config_t, class Res_t>
 void verify_resolution_sequence(config_t& bconfig, Res_t& resolution);
+
+/**
+ * @brief Modify the output filename based on the initialized sequence
+ * FIXME: This is currently configured for NS initial data.  Needs to be
+ * more generic
+ * 
+ * @tparam config_t Configurator type
+ * @tparam seq_t Sequence type
+ * @param bconfig Config
+ * @param seq Sequence
+ * @param ss output filename stringstream
+ */
+template<class config_t, class seq_t>
+void update_filename_from_mass_fixing(config_t& bconfig, seq_t seq, std::stringstream& ss);
+
+/**
+ * @brief Modify the output filename based on the initialized sequence
+ * FIXME: This is currently configured for NS initial data.  Needs to be
+ * more generic
+ * 
+ * @tparam config_t Configurator type
+ * @tparam seq_t Sequence type
+ * @param bconfig Config
+ * @param seq Sequence
+ * @param ss output filename stringstream
+ */
+template<class config_t, class seq_t>
+void update_filename_from_spin_fixing(config_t& bconfig, seq_t seq, std::stringstream& ss);
 /** @}*/
 }}
 #include "sequence_utilities.cpp"

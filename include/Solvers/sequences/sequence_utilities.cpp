@@ -290,5 +290,45 @@ void verify_resolution_sequence(config_t& bconfig, Res_t& resolution) {
   
   resolution.set(final_res, init_res, final_res);
 }
+
+template<class config_t, class seq_t>
+void update_filename_from_mass_fixing(config_t& bconfig, seq_t seq, std::stringstream& ss) {
+  auto default_idx = BCO_PARAMS::MADM;
+  
+  auto idx{std::get<0>(seq.get_indices())};
+  auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, idx);
+
+  switch(idx) {
+    case BCO_PARAMS::HC:
+    case BCO_PARAMS::NC:
+    case BCO_PARAMS::MADM:
+    case BCO_PARAMS::MB:      
+      ss << seq_key << "." << bconfig(idx);
+      break;
+    default:
+      auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
+      ss << seq_key << "." << bconfig(default_idx) << "."; 
+  }
+}
+
+template<class config_t, class seq_t>
+void update_filename_from_spin_fixing(config_t& bconfig, seq_t seq, std::stringstream& ss) {
+  auto default_idx = BCO_PARAMS::CHI;
+
+  auto idx{std::get<0>(seq.get_indices())};
+  auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, idx);
+  switch(idx) {
+    case BCO_PARAMS::OMEGA:
+    case BCO_PARAMS::JADM:
+    case BCO_PARAMS::CHI:
+      ss << seq_key << "." << bconfig(idx);
+      break;
+    default:
+      auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
+      ss << seq_key << "." << bconfig(default_idx) << ".";
+      break;
+    break;
+  }
+}
 /** @}*/
 }}
