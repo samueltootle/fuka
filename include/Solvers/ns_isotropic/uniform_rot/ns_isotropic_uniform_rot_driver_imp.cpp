@@ -53,7 +53,8 @@ void initialize_fields(config_t& bconfig) {
  * @return int error code
  */
 template<typename config_t>
-int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig, std::string outputdir){
+int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig, 
+  std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq){
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -128,7 +129,7 @@ int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig, std::string o
       EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
       ns_isotropic_uniform_rot_solver<eos_t, decltype(bconfig), decltype(space)> 
         ns_solver(bconfig, space, nu, lap_Aterm, logh, lap_Bterm, lap_wterm);
-      exit_status = ns_solver.solve();
+      exit_status = ns_solver.solve(seq);
 
     } else if(eos_type == "Cold_Table") {
       using eos_t = Kadath::Margherita::Cold_Table;
@@ -140,7 +141,7 @@ int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig, std::string o
       ns_isotropic_uniform_rot_solver<eos_t, decltype(bconfig), decltype(space)> 
         ns_solver(bconfig, space, nu, lap_Aterm, logh, lap_Bterm, lap_wterm);
       
-      exit_status = ns_solver.solve();
+      exit_status = ns_solver.solve(seq);
     } else { 
       std::cerr << "Unknown EOSTYPE." << endl;
       std::_Exit(EXIT_FAILURE);
@@ -152,7 +153,8 @@ int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig, std::string o
 }
 
 template<class config_t, class Res_t>
-inline int ns_isotropic_uniform_rot_driver (config_t& bconfig, Res_t& resolution, std::string outputdir) {
+inline int ns_isotropic_uniform_rot_driver (config_t& bconfig, 
+  Res_t& resolution, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq) {
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);

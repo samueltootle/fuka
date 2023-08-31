@@ -61,6 +61,14 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::solve() {
 }
 
 template<class eos_t, typename config_t, typename space_t>
+int ns_isotropic_norot_solver<eos_t, config_t, space_t>::solve(Parameter_sequence<BCO_PARAMS> const * sequence_in) {
+  if(sequence_in != nullptr) {
+    this->seq.reset(new Parameter_sequence<BCO_PARAMS>(*sequence_in));
+  }
+  return this->solve();
+}
+
+template<class eos_t, typename config_t, typename space_t>
 void ns_isotropic_norot_solver<eos_t, config_t, space_t>::syst_init(System_of_eqs& syst) {
   using namespace ::Kadath::Margherita;
    

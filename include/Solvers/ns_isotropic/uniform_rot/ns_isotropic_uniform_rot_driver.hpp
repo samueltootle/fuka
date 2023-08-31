@@ -43,7 +43,8 @@ namespace FUKA_Solvers {
  * @return int error code
  */
 template<typename config_t>
-int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig, std::string outputdir);
+int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig,
+    std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq = nullptr);
 
 /**
  * @brief Driver for computing a NS solution including increasing resolution
@@ -56,7 +57,8 @@ int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig, std::string o
  * @return int error code
  */
 template<class config_t, class Res_t>
-inline int ns_isotropic_uniform_rot_driver (config_t& bconfig, Res_t& resolution, std::string outputdir);
+inline int ns_isotropic_uniform_rot_driver (config_t& bconfig, 
+    Res_t& resolution, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq = nullptr);
 /** @}*/
 }}
 #include "ns_isotropic_uniform_rot_driver_imp.cpp"

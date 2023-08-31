@@ -100,7 +100,7 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
     if(seq.is_set())
       bconfig.set(sequence_var_indices) = val;
 
-    exit_status = ns_isotropic_driver(bconfig, resolution, outputdir); 
+    exit_status = ns_isotropic_driver(bconfig, resolution, outputdir, &seq); 
     return exit_status;
   };
 
@@ -211,7 +211,9 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir)
 }
 
 template<class config_t, class Res_t>
-inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::string outputdir) {
+inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, 
+  std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq) {
+  
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -235,7 +237,7 @@ inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::strin
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
 
-  std::function<int(config_t&, Res_t&, std::string)> final_stage_driver;
+  std::function<int(config_t&, Res_t&, std::string, Parameter_sequence<BCO_PARAMS> const *)> final_stage_driver;
   if(rank == 0)
     std::cout << "Last stage: " << last_stage << '\n';
   switch(last_stage_idx) {
@@ -247,7 +249,7 @@ inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::strin
       break;
   }
   
-  exit_status = final_stage_driver(bconfig, resolution, outputdir);
+  exit_status = final_stage_driver(bconfig, resolution, outputdir, seq);
   
   return exit_status;
 }

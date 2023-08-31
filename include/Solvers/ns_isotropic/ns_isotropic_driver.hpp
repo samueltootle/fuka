@@ -97,7 +97,7 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir)
  * @return int error code
  */
 template<class config_t, class Res_t>
-inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::string outputdir);
+inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq=nullptr);
 /** @}*/
 }}
 #include "ns_isotropic_driver_imp.cpp"

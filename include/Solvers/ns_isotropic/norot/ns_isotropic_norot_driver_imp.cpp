@@ -6,7 +6,8 @@ namespace Kadath {
 namespace FUKA_Solvers {
 
 template<typename config_t>
-int ns_isotropic_norot_stationary_driver (config_t& bconfig, std::string outputdir){
+int ns_isotropic_norot_stationary_driver (config_t& bconfig, 
+  std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq) {
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -75,7 +76,7 @@ int ns_isotropic_norot_stationary_driver (config_t& bconfig, std::string outputd
       EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
       ns_isotropic_norot_solver<eos_t, decltype(bconfig), decltype(space)> 
         ns_solver(bconfig, space, nu, lap_Aterm, logh);
-      exit_status = ns_solver.solve();
+      exit_status = ns_solver.solve(seq);
 
     } else if(eos_type == "Cold_Table") {
       using eos_t = Kadath::Margherita::Cold_Table;
@@ -87,7 +88,7 @@ int ns_isotropic_norot_stationary_driver (config_t& bconfig, std::string outputd
       ns_isotropic_norot_solver<eos_t, decltype(bconfig), decltype(space)> 
         ns_solver(bconfig, space, nu, lap_Aterm, logh);
       
-      exit_status = ns_solver.solve();
+      exit_status = ns_solver.solve(seq);
     } else { 
       std::cerr << "Unknown EOSTYPE." << endl;
       std::_Exit(EXIT_FAILURE);
@@ -99,7 +100,8 @@ int ns_isotropic_norot_stationary_driver (config_t& bconfig, std::string outputd
 }
 
 template<class config_t, class Res_t>
-inline int ns_isotropic_norot_driver (config_t& bconfig, Res_t& resolution, std::string outputdir) {
+inline int ns_isotropic_norot_driver (config_t& bconfig, 
+  Res_t& resolution, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq) {
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -122,7 +124,7 @@ inline int ns_isotropic_norot_driver (config_t& bconfig, Res_t& resolution, std:
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
 
-  exit_status = ns_isotropic_norot_stationary_driver(bconfig, outputdir);
+  exit_status = ns_isotropic_norot_stationary_driver(bconfig, outputdir, seq);
   // We now have a "low" resolution solution for the NS of interest
   // Set this to false to avoid iterative M and CHI
   bconfig.control(CONTROLS::SEQUENCES) = false;
@@ -151,7 +153,7 @@ inline int ns_isotropic_norot_driver (config_t& bconfig, Res_t& resolution, std:
     }
     regrid();
 
-    exit_status = ns_isotropic_norot_stationary_driver(bconfig, outputdir);
+    exit_status = ns_isotropic_norot_stationary_driver(bconfig, outputdir, seq);
   }
   return exit_status;
 }
