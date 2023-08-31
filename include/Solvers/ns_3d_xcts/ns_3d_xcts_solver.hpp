@@ -91,6 +91,7 @@ class ns_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
   /// solver stages
   int norot_stage(bool fixed = false);
   int uniform_rot_stage();
+  int differential_rot_stage();
   
   /**
    * binary_boost_stage

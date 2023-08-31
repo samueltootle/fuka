@@ -311,8 +311,8 @@ inline int ns_3d_xcts_driver (config_t& bconfig,
   // Placeholder
   // These need to be zero prior to computing
   // a stationary solution
-  bconfig.set(BCO_PARAMS::BVELX) = 0.;
-  bconfig.set(BCO_PARAMS::BVELY) = 0.;
+  // bconfig.set(BCO_PARAMS::BVELX) = 0.;
+  // bconfig.set(BCO_PARAMS::BVELY) = 0.;
 
   exit_status = ns_3d_xcts_stationary_driver(bconfig, outputdir, seq);
   // We now have a "low" resolution solution for the NS of interest

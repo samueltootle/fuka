@@ -568,5 +568,258 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::binary_boost_stage(
   }
   return EXIT_SUCCESS;
 }
+
+template<class eos_t, typename config_t, typename space_t>
+int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  // We use `config_filename()` vs `config_filename_abs()` since
+  // `solution_exists` will probe the HOME_KADATH/COs directory
+  auto const current = bconfig.config_filename();
+  if(!bconfig.control(RESOLVE) && solution_exists("TOTAL_BC")) {
+    if(rank == 0)
+      std::cout << "Solved previously: " \
+                << bconfig.config_filename_abs() << std::endl;
+    return (current == bconfig.config_filename()) ? \
+      EXIT_SUCCESS : RELOAD_FILE;
+  }
+
+  const int max_iter = bconfig.seq_setting(MAX_ITER);
+
+  double loghc = bco_utils::get_boundary_val(0, logh, INNER_BC);
+  double hc = exp(loghc);
+  double xo = 0.0;
+
+  Scalar ones(space);
+  ones = 1;
+  ones.std_base();
+
+  scalar_ary_t coord_scalars;
+  coord_scalars[R_BCO1] = Scalar(space);
+  
+  update_fields_co(cfields, coord_vectors, coord_scalars, xo);
+  
+  auto npts = space.get_domain(1)->get_nbr_points();
+  Index pos_eq (npts);
+  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+
+  Index pos_pole (npts);
+  pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
+  
+  double R0 = (*coord_scalars[R_BCO1])(1)(pos_eq);
+  double Rpole= (*coord_scalars[R_BCO1])(1)(pos_pole);
+
+  // FIXME should be user driven
+  double diffA = bconfig(BCO_PARAMS::BVELX) ;//std::pow(10., -3./2.);
+  double Rratio = bconfig(BCO_PARAMS::BVELY) ; //0.875; //Rpole/R0;
+  int q = 1;
+  
+  Scalar level(space);
+  auto update_level = [&] () {
+    Scalar x(space.get_cart_field(1));
+    Scalar y(space.get_cart_field(2));
+    Scalar z(space.get_cart_field(3));
+    // level = (*coord_scalars[R_BCO1]) * (*coord_scalars[R_BCO1]) -  bconfig(RMID) * bconfig(RMID);
+    
+    
+    // only valid for equator and pole
+    // level = (x*x + y*y) / Rx / Rx + z*z / Rz / Rz - 1.;
+    // level = sqrt(level);
+    level = sqrt(x*x + y*y + z*z);
+    level.set_domain(ndom-1).annule_hard();
+    level.std_base();
+    // if(rank == 0)
+    //   std::cout << level << std::endl;
+  };
+  update_level();
+
+
+  // \frac{A}{R_0}
+
+  // double invA = 1 / A;
+  Scalar Omega(space);
+  Omega = bconfig(BCO_PARAMS::OMEGA);
+  // Omega.annule_hard();
+  // Omega.set_domain(0) = bconfig(BCO_PARAMS::OMEGA);
+  // Omega.set_domain(1) = bconfig(BCO_PARAMS::OMEGA);
+  Omega.std_base();
+
+  std::string jint{};
+  std::string jome{"diffA^2 * Omega * (omeratio^"+std::to_string(q)+" - 1)"};
+  std::string F{"F = " + jome};
+  switch(q) {
+    case 2:
+      jint = "diffA^2 * Omega^2 * (omeratio^2 * log(Omega) - 0.5)"; // - omec^2 * (log(omec) - 0.5)";
+      break;
+    default:
+      jint = "diffA^2 * Omega^2 * ((1 / (2-q)) * omeratio^"+std::to_string(q)+" - 0.5)"; // - omec^2 * q / (4 - 2 * q)";
+      break;
+  }
+  std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsquare)) + " + jint};
+  if (rank == 0)
+    std::cout << "###################################" << std::endl
+              << "Differential Rotating models"      << std::endl
+              << "Law: " << F << std::endl
+              << firstint << std::endl
+              // << eqOme << std::endl
+              << "q: " << q << std::endl
+              << "A: " << diffA << std::endl
+              << "Rp/Re: " << Rratio << std::endl
+              << "R0: " << R0 <<std::endl
+              << "###################################" << std::endl;
+
+  System_of_eqs syst(space, 0, ndom - 1);
+  syst.add_var("H"   , logh);
+
+  syst_init(syst);
+  
+  /// Differential rotation parameters
+  syst.add_cst("omec", bconfig(BCO_PARAMS::OMEGA));
+  syst.add_var("Omega", Omega); 
+  syst.add_cst("R0", R0);
+
+  syst.add_cst("diffA" , diffA);
+  syst.add_cst("q", q);
+  syst.add_cst("Rratio", Rratio);  
+  syst.add_def("omeratio = omec / Omega");
+
+  Index pos_orig (space.get_domain(0)->get_nbr_points());
+  
+  for (auto [ P, str ] : {std::make_tuple(pos_pole,"pole"), std::make_tuple(pos_eq, "equ")}) {
+    if(rank == 0)
+      std::cout << "Coord at " + std::string{str} + " ["
+                << space.get_domain(1)->get_cart(1)(P) << ", "
+                << space.get_domain(1)->get_cart(2)(P) << ", "
+                << space.get_domain(1)->get_cart(3)(P) << "]" << std::endl;
+  }
+  
+  
+  syst.add_cst("lev", level);
+  
+  // syst.add_eq_val(1, "lev/R0 - 1", pos_eq);
+  // syst.add_eq_val(1, "Rratio - lev / R0", pos_pole);
+  
+  // syst.add_eq_val(0, "Rratio * Aratio * Rx / Rz - one", pos_eq);
+  
+
+  syst.add_cst("Hc"  , loghc);
+  // syst.add_cst("rhoc",bconfig(BCO_PARAMS::NC));
+  
+  syst.add_var("Mb"  , bconfig(MB));
+  // syst.add_var("Madm", bconfig(MADM));
+
+  syst.add_var("bet" , shift);
+
+  syst.add_def("omega^i = bet^i + Omega * mg^i");
+  syst.add_def("U^i = omega^i / N");
+  syst.add_def("Usquare = P^4 * U_i * U^i");
+  syst.add_def("Wsquare = 1. / (1. - Usquare)");
+  syst.add_def("W = sqrt(Wsquare)");
+  
+  syst.add_def(F.c_str());
+  syst.add_def("Fomega = P^4 * Wsquare * f_ij * U^i * mg^j / N");
+  // cout << syst.give_val_def("F")();
+  // cout << syst.give_val_def("Fomega")();
+
+  syst.add_def("A^ij = (D^i bet^j + D^j bet^i - 2. / 3.* D_k bet^k * f^ij) / "
+               "2. / Ntilde");
+
+  syst.add_def(ndom - 1, "intJ = multr(A_ij * mg^j * einf^i) / 2. / 4piG");
+
+  syst.add_def(2,"intS = A_ij * mg^i * sm^j / 2. / 4piG") ;
+
+  for (int d = 0; d < ndom; d++) {
+    syst.add_eq_full(d, "Fomega - F = 0");
+    switch (d) {
+    case 0:
+    case 1:
+
+
+      syst.add_def(d, "Etilde = press * h * Wsquare - press * delta") ;
+      syst.add_def(d, "Stilde = 3 * press * delta + (Etilde + press * delta) * Usquare") ;
+      syst.add_def(d, "ptilde^i = press * h * Wsquare * U^i") ;
+
+      syst.add_def(d, "eqP    = delta * D^i D_i P + A_ij * A^ij / P^7 / 8 * delta + 4piG / 2. * P^5 * Etilde") ;
+      syst.add_def(d, "eqNP   = delta * D^i D_i NP - 7. / 8. * NP / P^8 * delta * A_ij *A^ij "
+                             "- 4piG / 2. * N * P^5 * (Etilde + 2. * Stilde)");
+      syst.add_def(d, "eqbet^i= delta * D_j D^j bet^i + delta * D^i D_j bet^j / 3. "
+                             "- 2. * delta * A^ij * D_j Ntilde - 4. * 4piG * N * P^4 * ptilde^i");
+
+      syst.add_def(d, "intMb = P^6 * rho(h) * W");
+      
+      syst.add_def(d, firstint.c_str());
+      syst.add_def(d, "UH = U^i * D_i H");
+
+      break;
+    default:
+      syst.add_eq_full(d, "H = 0");
+
+      syst.add_def(d, "eqP = D^i D_i P + A_ij * A^ij / P^7 / 8");
+      syst.add_def(d, "eqNP = D^i D_i NP - 7. / 8. * NP / P^8 * A_ij * A^ij");
+      syst.add_def(d, "eqbet^i = D_j D^j bet^i + D^i D_j bet^j / 3. - 2. * "
+                      "A^ij * D_j Ntilde");
+      break;
+    }
+  }
+
+  space.add_eq(syst, "eqNP= 0", "N", "dn(N)");
+  space.add_eq(syst, "eqP= 0", "P", "dn(P)");
+  space.add_eq(syst, "eqbet^i= 0", "bet^i", "dn(bet^i)");
+
+  syst.add_eq_bc(ndom - 1, OUTER_BC, "N=1");
+  syst.add_eq_bc(ndom - 1, OUTER_BC, "P=1");
+  syst.add_eq_bc(ndom - 1, OUTER_BC, "bet^i=0");
+
+  syst.add_eq_bc(1, OUTER_BC, "H = 0");
+
+  syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
+  // syst.add_eq_first_integral(0, 1, "firstint", "rho - rhoc");
+  space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+
+  // space.add_eq_int_inf(syst, "integ(intJ) - chi * Madm * Madm = 0");
+  // space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+
+  if (rank == 0)
+      print_diagnostics(syst, 0, 0);
+  bool endloop = false;
+  int ite = 1;
+  double conv;
+  while (!endloop) {
+    endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
+
+    // update_config_quantities(bco_utils::get_boundary_val(0, logh, INNER_BC));
+    std::stringstream ss;
+    ss << "diffrot_3d_total" << ite - 1 ;
+    bconfig.set(QLMADM) = bconfig(MADM);
+    bconfig.set_filename(ss.str());
+    update_fields_co(cfields, coord_vectors, coord_scalars, xo, &syst);
+    update_level();
+    // bconfig(RMID) = level(1)(pos_eq);
+    R0 = (*coord_scalars[R_BCO1])(1)(pos_eq);
+    for(int d = 0; d < ndom; ++d) {
+      update_field(syst, d, "lev", level);
+      //update_field(syst, d, "r", coord_dist);
+    }
+    syst.sec_member();
+    if (rank == 0) {
+      std::cout << "R0 = " << bconfig(RMID) << std::endl;
+      print_diagnostics(syst, ite, conv);
+      if(bconfig.control(CHECKPOINT))
+        Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, Omega);
+    }
+    
+    ite++;
+    check_max_iter_exceeded(rank, ite, conv);
+  }
+  
+  bconfig.set_filename(converged_filename("DIFF_ROT"));
+  if (rank == 0) {
+    Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, Omega);
+  }
+  return EXIT_SUCCESS;
+}
+
 /** @}*/
 }}
