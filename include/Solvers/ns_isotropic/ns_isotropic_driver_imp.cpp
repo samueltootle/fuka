@@ -33,9 +33,17 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   
   auto const & dx = seq.step_size();
 
-  // // Initialize full configurator
+  // Initialize full configurator
   config_t base_config = ns_isotropic_sequence_setup(seqconfig, outputdir);
   base_config.set(resolution_indices) = resolution.init();
+
+  auto mass_fixing = BCO_PARAMS::HC;
+
+  if(seq.is_set() && std::isnan(base_config.set(sequence_var_indices))) {
+    base_config.set(sequence_var_indices) = seq.init();
+    if(seq_is_mass_fixing(seq))
+      mass_fixing = std::get<0>(sequence_var_indices);
+  }
 
   // Save this in case an invalid ADM mass is given for the EOS used
   const double final_MADM = base_config(BCO_PARAMS::MADM);
@@ -44,7 +52,7 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   
   if(bconfig.control(CONTROLS::SEQUENCES) || bconfig.control(CONTROLS::RESOLVE)) {
     if(rank == 0) {
-      setup_2dns_isotropic(bconfig);
+      setup_2dns_isotropic(bconfig, mass_fixing);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     // make sure all ranks have the same config
@@ -89,8 +97,7 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   stage_enabled[last_stage_idx] = true;
 
   base_config = bconfig;
-  if(seq.is_set() && std::isnan(bconfig.set(sequence_var_indices)))
-    bconfig.set(sequence_var_indices) = seq.init();
+
   #ifdef DEBUG
   std::cout << seq << std::endl;
   std::cout << resolution << std::endl;
