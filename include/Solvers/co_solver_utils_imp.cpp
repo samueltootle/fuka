@@ -288,11 +288,17 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space, config_t
     logh.set_domain(d).annule_hard();
 
   // Fix compactified domain and additional shells
-  // This only helps a little...
-  for(auto d = 2; d < ndom;++d) {
-    auto decay_factor = r_field(ndom-1)(pos_c) / r_field(ndom-1);
-    conf.set_domain(ndom-1)  = 1 + ( conf(ndom-1)(pos_c) - 1) * decay_factor;
-    lapse.set_domain(ndom-1) = 1 + (lapse(ndom-1)(pos_c) - 1) * decay_factor;
+  for(auto d = 3; d < ndom;++d) {
+    pos_c.set_start();
+    auto decay_factor = r_field(d)(pos_c) / r_field(d);
+    if(d > 3) {
+      pos_c.set(0) = npts(0) - 1;
+      conf.set_domain(d)  = 1 + ( conf(d-1)(pos_c) - 1) * decay_factor;
+      lapse.set_domain(d) = 1 + (lapse(d-1)(pos_c) - 1) * decay_factor;
+    }else {
+      conf.set_domain(d)  = 1 + ( conf(d)(pos_c) - 1) * decay_factor;
+      lapse.set_domain(d) = 1 + (lapse(d)(pos_c) - 1) * decay_factor;
+    }
   }
 
   Scalar A(conf * conf);
