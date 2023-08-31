@@ -659,6 +659,7 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
     // end   - set NS fields
 
     bconfig.seq_setting(SEQ_SETTINGS::INIT_RES) = 9;
+    bconfig.seq_setting(SEQ_SETTINGS::MAX_ITER) = 20;
     bconfig.control(CONTROLS::SAVE_COS) = false;
   }
 
@@ -690,6 +691,8 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
     bconfig.set_stage(STAGES::NOROT_BC) = true;
     bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
     // end   - set NS stages
+
+    bconfig.seq_setting(SEQ_SETTINGS::MAX_ITER) = 20;
   }
 };
 
