@@ -87,7 +87,7 @@ void setup_co(config_t& bconfig) {
 }
 
 template <typename config_t>
-void setup_2dns_isotropic(config_t& bconfig) {
+void setup_2dns_isotropic(config_t& bconfig, size_t mass_fixing_idx) {
   auto& fields = bconfig.return_fields();
 
   int type_coloc = CHEB_TYPE;
@@ -125,29 +125,27 @@ void setup_2dns_isotropic(config_t& bconfig) {
   const std::string eos_file = bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
   const std::string eos_type = bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
 
-  if(!bconfig.control(CONTROLS::USE_CONFIG_VARS)) {
-    if(eos_type == "Cold_PWPoly") {
-      using eos_t = ::Kadath::Margherita::Cold_PWPoly;
-      EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
+  if(eos_type == "Cold_PWPoly") {
+    using eos_t = ::Kadath::Margherita::Cold_PWPoly;
+    EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
 
-      auto tov = setup_ns_config_from_TOV<eos_t>(bconfig);
-      gen_NS(std::move(tov));
-    } else if(eos_type == "Cold_Table") {
-      using eos_t = ::Kadath::Margherita::Cold_Table;
+    std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov = setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
+    gen_NS(std::move(tov));
+  } else if(eos_type == "Cold_Table") {
+    using eos_t = ::Kadath::Margherita::Cold_Table;
 
-      const int interp_pts = (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0) ? \
-                              2000 : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
+    const int interp_pts = (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0) ? \
+                            2000 : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
 
-      EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
-      
-      auto tov = setup_ns_config_from_TOV<eos_t>(bconfig);
-      gen_NS(std::move(tov));
-    }
-    else { 
-      std::cerr << eos_type << " is not recognized.\n";
-      std::_Exit(EXIT_FAILURE);
-    }
-  }  
+    EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
+    
+    std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov = setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
+    gen_NS(std::move(tov));
+  }
+  else { 
+    std::cerr << eos_type << " is not recognized.\n";
+    std::_Exit(EXIT_FAILURE);
+  }
 }
 
 template<typename config_t>
@@ -289,10 +287,13 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space, config_t
   for (int d = space.ADAPTED_INNER; d < ndom; ++d)
     logh.set_domain(d).annule_hard();
 
-  // Fix compactified domain metric variables
-  auto decay_factor = r_field(ndom-1)(pos_c) / r_field(ndom-1);
-  conf.set_domain(ndom-1)  = 1 + ( conf(ndom-1)(pos_c) - 1) * decay_factor;
-  lapse.set_domain(ndom-1) = 1 + (lapse(ndom-1)(pos_c) - 1) * decay_factor;
+  // Fix compactified domain and additional shells
+  // This only helps a little...
+  for(auto d = 2; d < ndom;++d) {
+    auto decay_factor = r_field(ndom-1)(pos_c) / r_field(ndom-1);
+    conf.set_domain(ndom-1)  = 1 + ( conf(ndom-1)(pos_c) - 1) * decay_factor;
+    lapse.set_domain(ndom-1) = 1 + (lapse(ndom-1)(pos_c) - 1) * decay_factor;
+  }
 
   Scalar A(conf * conf);
 
@@ -311,17 +312,33 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space, config_t
 }
 
 template<typename eos_t, typename config_t>
-auto setup_ns_config_from_TOV(config_t& bconfig) {
+auto setup_ns_config_from_TOV(config_t& bconfig, size_t mass_fixing_idx) {
   using namespace Kadath::Margherita;
   auto tov = std::make_unique<MargheritaTOV<eos_t>>();
-  bool use_Mmax = tov->solve_for_MADM(bconfig(BCO_PARAMS::MADM));
+
+  bool adm_mass_fixing = (mass_fixing_idx == BCO_PARAMS::MADM);
+  bool nc_mass_fixing = (mass_fixing_idx == BCO_PARAMS::NC);
+  bool hc_mass_fixing = (mass_fixing_idx == BCO_PARAMS::HC);
+
+  if(adm_mass_fixing) {
+    bool use_Mmax = tov->solve_for_MADM(bconfig(mass_fixing_idx));
+    
+    if(use_Mmax)
+      bconfig.set(BCO_PARAMS::MADM) = tov->mass;
+  } else if(nc_mass_fixing) {
+    tov->solve(bconfig(mass_fixing_idx));
+  } else if(hc_mass_fixing) {
+    bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+    tov->solve(bconfig(BCO_PARAMS::NC));
+  } else {
+    std::string msg{"1D TOV solver not implemented for sequences using idx " + std::to_string(mass_fixing_idx)};
+    throw std::runtime_error(msg.c_str());
+  }
   
-  if(use_Mmax)
-    bconfig.set(BCO_PARAMS::MADM) = tov->mass;
-  
-  bconfig.set(BCO_PARAMS::NC) = tov->rhoc;
-  bconfig.set(BCO_PARAMS::HC) = EOS<eos_t, eos_var_t::PRESSURE>::h_cold__rho(bconfig(BCO_PARAMS::NC));
+  bconfig.set(BCO_PARAMS::NC) = (nc_mass_fixing) ? bconfig(BCO_PARAMS::NC) : tov->rhoc;
+  bconfig.set(BCO_PARAMS::HC) = (hc_mass_fixing) ? bconfig(BCO_PARAMS::HC) : EOS<eos_t, eos_var_t::PRESSURE>::h_cold__rho(bconfig(BCO_PARAMS::NC));
   bconfig.set(BCO_PARAMS::MB) = tov->baryon_mass;
+  bconfig.set(BCO_PARAMS::MADM) = (adm_mass_fixing) ? bconfig(BCO_PARAMS::MADM) : tov->mass;
 
   // update surface radius estimate
   bconfig.set(BCO_PARAMS::RMID) = tov->radius;

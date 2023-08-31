@@ -56,7 +56,7 @@ void setup_co(config_t& bconfig);
  * @param bconfig Config object
  */
 template <typename config_t>
-void setup_2dns_isotropic(config_t& bconfig);
+void setup_2dns_isotropic(config_t& bconfig, size_t mass_fixing_idx);
 
 /**
  * write_bh_init_setup_tofile_XCTS
@@ -112,7 +112,7 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space, config_t
  * @return tov the 1D tov solution
  */
 template<typename eos_t, typename config_t>
-auto setup_ns_config_from_TOV(config_t& bconfig);
+auto setup_ns_config_from_TOV(config_t& bconfig, size_t mass_fixing_idx=BCO_PARAMS::MADM);
 
 /**
  * setup_interpolator_from_TOV
