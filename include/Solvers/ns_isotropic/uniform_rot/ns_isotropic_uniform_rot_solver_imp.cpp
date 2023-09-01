@@ -34,9 +34,26 @@ std::string ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::converged
   ss << "NS_ISO";
   if(stage != "") ss  << "_" << stage << ".";
   else ss << ".";
-  ss << eosname << "."
-     << bconfig(BCO_PARAMS::HC) << "."; 
-  ss << bconfig(BCO_PARAMS::OMEGA)<< ".";
+  ss << eosname << ".";
+  
+  // Add mass fixing parameter to filename
+  auto default_idx = BCO_PARAMS::HC;
+  if(seq) {
+    update_filename_from_mass_fixing(bconfig, seq, ss);
+  } else {
+    auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
+    ss << seq_key << "." << bconfig(default_idx) << "."; 
+  }
+  
+  // Add spin fixing parameter to filename
+  default_idx = BCO_PARAMS::CHI;
+  if(seq) {
+    update_filename_from_spin_fixing(bconfig, seq, ss);
+  } else {
+    auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
+    ss << seq_key << "." << bconfig(default_idx) << "."; 
+  }
+
   ss << bconfig(BCO_PARAMS::NSHELLS) << "."
      <<std::setfill('0') << std::setw(2) << res;
   return ss.str();

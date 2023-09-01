@@ -34,9 +34,9 @@ std::string ns_isotropic_norot_solver<eos_t, config_t, space_t>::converged_filen
   ss << eosname << ".";
 
   // Add mass fixing parameter to filename
-  auto default_idx = BCO_PARAMS::MADM;
-  if(seq && seq->is_set()) {
-    update_filename_from_mass_fixing(bconfig, *seq, ss);
+  auto default_idx = BCO_PARAMS::HC;
+  if(seq) {
+    update_filename_from_mass_fixing(bconfig, seq, ss);
   } else {
     auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
     ss << seq_key << "." << bconfig(default_idx) << "."; 
