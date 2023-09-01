@@ -31,6 +31,13 @@
 namespace Kadath {
 namespace FUKA_Solvers {
 
+// Forward declarations for ostream operators
+template<class... Ts>
+struct Parameter_sequence ;
+
+template<class... Ts>
+std::ostream& operator<<(std::ostream& out, const Parameter_sequence<Ts...>& Seq);
+
 /**
  * @brief Base class for storing sequences for different parameters
  * 
@@ -48,6 +55,7 @@ struct Parameter_sequence_base {
 
   public:
   Parameter_sequence_base() = default;
+  Parameter_sequence_base(Parameter_sequence_base const &) = default;
   Parameter_sequence_base(std::string _str) : parameter_str(_str) {}
   /// Determine if a sequence has been initialized
   bool is_set() const {
@@ -83,6 +91,7 @@ struct Parameter_sequence : public Parameter_sequence_base {
   public:
   
   Parameter_sequence() = default;
+  Parameter_sequence(Parameter_sequence const &) = default;
   /**
    * @brief Construct a new Parameter_sequence object from a string and tuple objects
    * 
@@ -142,7 +151,7 @@ struct Parameter_sequence : public Parameter_sequence_base {
   /// Evaluate conditional to determine, e.g. if a loop should end
   bool loop_condition(double const & val) const { return conditional(val, seqfinal); }  
   /// Formatted output
-  friend std::ostream &operator<<(std::ostream &, const BIN_INFO &);
+  friend std::ostream &operator<< <Ts...>(std::ostream &, const Parameter_sequence<Ts...> &);
 };
 
 /**
@@ -183,7 +192,7 @@ struct Resolution_sequence : public Parameter_sequence_base {
   /// Getter
   std::tuple<Ts...> const & get_indices() const { return parameter_indices; }
   /// Formatted output
-  friend std::ostream &operator<<(std::ostream &, const BIN_INFO &);
+  friend std::ostream &operator<< <ndom, Ts...>(std::ostream &, const Resolution_sequence<ndom, Ts...> &);
 };
 /** @}*/
 }}
