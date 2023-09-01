@@ -331,18 +331,5 @@ void update_filename_from_spin_fixing(config_t& bconfig, seq_t seq, std::strings
   }
 }
 
-template<class seq_t>
-bool seq_is_mass_fixing(seq_t& seq) {
-  auto seq_indicies = seq.get_indices();
-  auto seq_idx = std::get<0>(seq_indicies);
-  switch(seq_idx) {
-    case BCO_PARAMS::HC:
-    case BCO_PARAMS::NC:
-    case BCO_PARAMS::MADM:
-    case BCO_PARAMS::MB:    
-      return true;
-  }
-  return false;
-}
 /** @}*/
 }}
