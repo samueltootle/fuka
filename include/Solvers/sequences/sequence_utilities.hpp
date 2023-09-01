@@ -181,7 +181,7 @@ void verify_resolution_sequence(config_t& bconfig, Res_t& resolution);
  * @param ss output filename stringstream
  */
 template<class config_t, class seq_t>
-void update_filename_from_mass_fixing(config_t& bconfig, seq_t seq, std::stringstream& ss);
+void update_filename_from_mass_fixing(config_t& bconfig, seq_t & seq, std::stringstream& ss);
 
 /**
  * @brief Modify the output filename based on the initialized sequence
@@ -195,7 +195,7 @@ void update_filename_from_mass_fixing(config_t& bconfig, seq_t seq, std::strings
  * @param ss output filename stringstream
  */
 template<class config_t, class seq_t>
-void update_filename_from_spin_fixing(config_t& bconfig, seq_t seq, std::stringstream& ss);
+void update_filename_from_spin_fixing(config_t& bconfig, seq_t& seq, std::stringstream& ss);
 
 /**
  * @brief Determine if a sequence is based on fixing the mass

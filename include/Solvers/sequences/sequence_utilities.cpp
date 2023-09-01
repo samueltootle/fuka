@@ -292,10 +292,8 @@ void verify_resolution_sequence(config_t& bconfig, Res_t& resolution) {
 }
 
 template<class config_t, class seq_t>
-void update_filename_from_mass_fixing(config_t& bconfig, seq_t seq, std::stringstream& ss) {
-  auto default_idx = BCO_PARAMS::MADM;
-  
-  auto idx{std::get<0>(seq.get_indices())};
+void update_filename_from_mass_fixing(config_t& bconfig, seq_t& seq, std::stringstream& ss) { 
+  auto idx{seq->mass_idx()};
   auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, idx);
 
   switch(idx) {
@@ -306,17 +304,17 @@ void update_filename_from_mass_fixing(config_t& bconfig, seq_t seq, std::strings
       ss << seq_key << "." << bconfig(idx);
       break;
     default:
-      auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
-      ss << seq_key << "." << bconfig(default_idx) << "."; 
+      std::string msg{"Sequence initialized, but not implemented for Mass index = " + std::to_string(int(idx))};
+      throw std::runtime_error(msg.c_str());
+      break;
   }
 }
 
 template<class config_t, class seq_t>
-void update_filename_from_spin_fixing(config_t& bconfig, seq_t seq, std::stringstream& ss) {
-  auto default_idx = BCO_PARAMS::CHI;
-
-  auto idx{std::get<0>(seq.get_indices())};
+void update_filename_from_spin_fixing(config_t& bconfig, seq_t& seq, std::stringstream& ss) {
+  auto idx{seq->spin_idx()};
   auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, idx);
+
   switch(idx) {
     case BCO_PARAMS::OMEGA:
     case BCO_PARAMS::JADM:
@@ -324,8 +322,8 @@ void update_filename_from_spin_fixing(config_t& bconfig, seq_t seq, std::strings
       ss << seq_key << "." << bconfig(idx);
       break;
     default:
-      auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
-      ss << seq_key << "." << bconfig(default_idx) << ".";
+      std::string msg{"Sequence initialized, but not implemented for Mass index = " + std::to_string(int(idx))};
+      throw std::runtime_error(msg.c_str());
       break;
     break;
   }
