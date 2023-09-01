@@ -256,11 +256,38 @@ inline std::string set_ns_mass_fixing(System_of_eqs& syst, config_t& bconfig, st
         syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
         break;
       default:
-        std::string msg{"Sequence initialized, but not implemented for BCO_PARAMS index = " + std::to_string(int(idx))};
+        std::string msg{"Sequence initialized, but not implemented for Mass index = " + std::to_string(int(idx))};
         throw std::runtime_error(msg.c_str());
         break;
     }
     return central_fixing_definition;
+}
+
+template<class config_t>
+inline std::string set_ns_spin_fixing(System_of_eqs& syst, config_t& bconfig, std::unique_ptr<Kadath::FUKA_Solvers::ns_sequence const>& seq) {
+    std::string spin_fixing_definition{"integ(intJ) - chi * Madm * Madm = 0"};
+    auto idx{seq->spin_idx()};
+    switch(idx) {
+      case BCO_PARAMS::OMEGA:
+        syst.add_var("chi" , bconfig(BCO_PARAMS::CHI));
+        syst.add_cst("ome" , bconfig(BCO_PARAMS::OMEGA));
+        break;
+      case BCO_PARAMS::JADM:
+        spin_fixing_definition = "integ(intJ) - Jadm = 0";
+        syst.add_cst("Jadm", bconfig(BCO_PARAMS::JADM));
+        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
+        bconfig.set(BCO_PARAMS::CHI) = bconfig(BCO_PARAMS::JADM) / bconfig(BCO_PARAMS::MADM) / bconfig(BCO_PARAMS::MADM);
+        break;
+      case BCO_PARAMS::CHI:
+        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
+        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
+        break;
+      default:
+        std::string msg{"Sequence initialized, but not implemented for Spin index = " + std::to_string(int(idx))};
+        throw std::runtime_error(msg.c_str());
+        break;
+    }
+    return spin_fixing_definition;
 }
 /** @}*/
 }}
