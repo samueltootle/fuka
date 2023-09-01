@@ -1,5 +1,6 @@
 #include "mpi.h"
 #include "bco_utilities.hpp"
+#include "Solvers/fuka_syst/fuka_syst_setup.hpp"
 
 /**
  * \addtogroup Stages

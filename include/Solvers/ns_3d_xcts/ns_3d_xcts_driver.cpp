@@ -18,9 +18,9 @@ config_t ns_3d_xcts_sequence_setup (config_t & seqconfig, std::string outputdir)
   return bconfig;
 }
 
-template<class Seq_t, class Res_t, class config_t>
+template<class Res_t, class config_t>
 config_t ns_3d_xcts_sequence (config_t & seqconfig, 
-                          Seq_t const & seq,
+                          ns_sequence const & seq,
                           Res_t const & resolution,
                           std::string outputdir) {
   
@@ -134,7 +134,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
  * @return int error code
  */
 template<typename config_t>
-int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq){
+int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, ns_sequence const * seq){
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -283,7 +283,7 @@ int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir){
 
 template<class config_t, class Res_t>
 inline int ns_3d_xcts_driver (config_t& bconfig, 
-  Res_t& resolution, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq) {
+  Res_t& resolution, std::string outputdir, ns_sequence const * seq) {
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -376,7 +376,7 @@ inline int ns_3d_xcts_binary_boost_driver (config_t& bconfig,
   bconfig.set(BCO_PARAMS::BCO_RES) = resolution.init();
 
   // Obtain stationary solution
-  Parameter_sequence<BCO_PARAMS> tmp_seq{};
+  ns_sequence tmp_seq{};
   bconfig = ns_3d_xcts_sequence(bconfig, tmp_seq, resolution, outputdir);
   
   while(exit_status == RUN_BOOST) { 

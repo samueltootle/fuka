@@ -22,7 +22,9 @@
 #include "mpi.h"
 #include "Solvers/ns_3d_xcts/ns_3d_xcts_driver.hpp"
 #include "Solvers/solver_startup.hpp"
+#include "Solvers/sequences/ns_sequence.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
+#include "Solvers/sequences/sequence_utilities.hpp"
 
 using namespace Kadath::FUKA_Config;
 using namespace Kadath::FUKA_Solvers;
@@ -78,7 +80,8 @@ int main(int argc, char** argv) {
     auto resolution = parse_seq_tree(tree, "ns", "res", BCO_PARAMS::BCO_RES);
     verify_resolution_sequence(bconfig, resolution);
 
-    auto seq = find_sequence(tree, MBCO_PARAMS, "ns");
+    ns_sequence seq = find_ns_sequence(tree);
+    verify_ns_fixing_values(bconfig, seq);
 
     if(!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES)) {
       int err = ns_3d_xcts_driver(bconfig, resolution, InitSolver::outputdir);

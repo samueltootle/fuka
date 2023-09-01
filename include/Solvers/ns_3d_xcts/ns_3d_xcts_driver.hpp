@@ -24,6 +24,7 @@
 #include "Solvers/co_solver_utils.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"
+#include "Solvers/sequences/ns_sequence.hpp"
 
 /**
  * \addtogroup NS_XCTS
@@ -48,7 +49,7 @@ config_t ns_3d_xcts_sequence_setup (config_t & seqconfig, std::string outputdir)
 /**
  * @brief Sequence driver for an NS solution
  * 
- * @tparam Seq_t Parameter_sequence for an NS sequence
+ * @tparam ns_sequence Parameter_sequence for an NS sequence
  * @tparam Res_t Parameter_sequence for resolution
  * @tparam config_t Configurator type
  * @param seqconfig Sequence Config object
@@ -56,9 +57,9 @@ config_t ns_3d_xcts_sequence_setup (config_t & seqconfig, std::string outputdir)
  * @param resolution Resolution sequence
  * @param outputdir output location
  */
-template<class Seq_t, class Res_t, class config_t>
+template<class Res_t, class config_t>
 config_t ns_3d_xcts_sequence (config_t & seqconfig, 
-                          Seq_t const & seq,
+                          ns_sequence const & seq,
                           Res_t const & resolution,
                           std::string outputdir);
 
@@ -72,7 +73,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
  * @return int error code
  */
 template<typename config_t>
-int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq = nullptr);
+int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, ns_sequence const * seq = nullptr);
 
 /**
  * @brief Driver to compute a base solution for a given resolution to build on
@@ -97,7 +98,7 @@ int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir);
  * @return int error code
  */
 template<class config_t, class Res_t>
-inline int ns_3d_xcts_driver (config_t& bconfig, Res_t& resolution, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq=nullptr);
+inline int ns_3d_xcts_driver (config_t& bconfig, Res_t& resolution, std::string outputdir, ns_sequence const * seq=nullptr);
 
 /**
  * @brief Driver for computing a boosted NS solution based on binary parameters

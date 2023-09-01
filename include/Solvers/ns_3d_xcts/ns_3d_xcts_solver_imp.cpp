@@ -42,8 +42,8 @@ std::string ns_3d_xcts_solver<eos_t, config_t, space_t>::converged_filename(
   
   // Add mass fixing parameter to filename
   auto default_idx = BCO_PARAMS::MADM;
-  if(seq && seq->is_set()) {
-    update_filename_from_mass_fixing(bconfig, *seq, ss);
+  if(seq) {
+    update_filename_from_mass_fixing(bconfig, seq, ss);
   } else {
     auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
     ss << seq_key << "." << bconfig(default_idx) << "."; 
@@ -52,8 +52,8 @@ std::string ns_3d_xcts_solver<eos_t, config_t, space_t>::converged_filename(
   // Add spin fixing parameter to filename
   if(stage != "NOROT_BC") {
     default_idx = BCO_PARAMS::CHI;
-    if(seq && seq->is_set()) {
-      update_filename_from_spin_fixing(bconfig, *seq, ss);
+    if(seq) {
+      update_filename_from_spin_fixing(bconfig, seq, ss);
     } else {
       auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
       ss << seq_key << "." << bconfig(default_idx) << "."; 
@@ -111,9 +111,9 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve() {
 }
 
 template<class eos_t, typename config_t, typename space_t>
-int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve(Parameter_sequence<BCO_PARAMS> const * sequence_in) {
+int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve(ns_sequence const * sequence_in) {
   if(sequence_in != nullptr) {
-    this->seq.reset(new Parameter_sequence<BCO_PARAMS>(*sequence_in));
+    this->seq.reset(new ns_sequence(*sequence_in));
   }
   return this->solve();
 }
