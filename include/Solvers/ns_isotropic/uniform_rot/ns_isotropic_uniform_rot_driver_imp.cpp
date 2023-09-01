@@ -64,10 +64,6 @@ int ns_isotropic_uniform_rot_stationary_driver (config_t& bconfig,
     std::filesystem::path cwd = std::filesystem::current_path();
     outputdir = cwd.string();
   }
-  if(rank == 0)
-    std::cout << "Solutions will be stored in: " << outputdir << "\n" \
-              << "Directory will be created if it doesn't exist.\n";
-  fs::create_directory(outputdir);
 
   // Make sure fields needed for rotating solution are initialized before opening files
   if(!bconfig.field(BCO_FIELDS::LAP_BTERM) || !bconfig.field(BCO_FIELDS::LAP_WTERM))
@@ -177,7 +173,7 @@ inline int ns_isotropic_uniform_rot_driver (config_t& bconfig,
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
 
-  exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir);
+  exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir, seq);
   // We now have a "low" resolution solution for the NS of interest
   // Set this to false to avoid iterative M and CHI
   bconfig.control(CONTROLS::SEQUENCES) = false;
@@ -206,7 +202,7 @@ inline int ns_isotropic_uniform_rot_driver (config_t& bconfig,
     }
     regrid();
 
-    exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir);
+    exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir, seq);
   }
   return exit_status;
 }
