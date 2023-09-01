@@ -60,9 +60,9 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::solve() {
 }
 
 template<class eos_t, typename config_t, typename space_t>
-int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::solve(Parameter_sequence<BCO_PARAMS> const * sequence_in) {
+int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::solve(ns_sequence const * sequence_in) {
   if(sequence_in != nullptr) {
-    this->seq.reset(new Parameter_sequence<BCO_PARAMS>(*sequence_in));
+    this->seq.reset(new ns_sequence(*sequence_in));
   }
   return this->solve();
 }

@@ -21,7 +21,7 @@
  */
 #pragma once
 #include "Solvers/solvers.hpp"
-#include "Solvers/sequences/parameter_sequence.hpp"
+#include "Solvers/sequences/ns_sequence.hpp"
 #include <memory>
 
 /**
@@ -44,7 +44,7 @@ class ns_isotropic_uniform_rot_solver : public Solver<config_t, space_t> {
   Scalar& logh;
   Scalar& lap_Bterm;
   Scalar& lap_wterm;
-  std::unique_ptr<Parameter_sequence<BCO_PARAMS> const> seq;
+  std::unique_ptr<ns_sequence const> seq;
 
   /// Specify base class members used to avoid this->
   using Solver<config_t, space_t>::space;
@@ -79,7 +79,7 @@ class ns_isotropic_uniform_rot_solver : public Solver<config_t, space_t> {
   
   /// solver driver
   int solve();
-  int solve(Parameter_sequence<BCO_PARAMS> const * sequence_in);
+  int solve(ns_sequence const * sequence_in);
 
   /// solver stages
   int uniform_rot_stage();
