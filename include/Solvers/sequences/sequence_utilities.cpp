@@ -301,7 +301,7 @@ void update_filename_from_mass_fixing(config_t& bconfig, seq_t& seq, std::string
     case BCO_PARAMS::NC:
     case BCO_PARAMS::MADM:
     case BCO_PARAMS::MB:      
-      ss << seq_key << "." << bconfig(idx);
+      ss << seq_key << "." << bconfig(idx) << ".";
       break;
     default:
       std::string msg{"Sequence initialized, but not implemented for Mass index = " + std::to_string(int(idx))};
@@ -319,7 +319,7 @@ void update_filename_from_spin_fixing(config_t& bconfig, seq_t& seq, std::string
     case BCO_PARAMS::OMEGA:
     case BCO_PARAMS::JADM:
     case BCO_PARAMS::CHI:
-      ss << seq_key << "." << bconfig(idx);
+      ss << seq_key << "." << bconfig(idx) << ".";
       break;
     default:
       std::string msg{"Sequence initialized, but not implemented for Mass index = " + std::to_string(int(idx))};

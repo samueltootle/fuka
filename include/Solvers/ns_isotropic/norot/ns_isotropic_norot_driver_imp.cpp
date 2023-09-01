@@ -17,10 +17,6 @@ int ns_isotropic_norot_stationary_driver (config_t& bconfig,
     std::filesystem::path cwd = std::filesystem::current_path();
     outputdir = cwd.string();
   }
-  if(rank == 0)
-    std::cout << "Solutions will be stored in: " << outputdir << "\n" \
-              << "Directory will be created if it doesn't exist.\n";
-  fs::create_directory(outputdir);
 
   // Not important atm
   // if(std::isnan(bconfig.set(BCO_PARAMS::MADM)) && std::isnan(bconfig.set(BCO_PARAMS::MB))){
