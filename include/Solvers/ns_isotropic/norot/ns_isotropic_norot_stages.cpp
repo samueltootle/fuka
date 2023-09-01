@@ -1,5 +1,6 @@
 #include "mpi.h"
 #include "bco_utilities.hpp"
+#include "Solvers/fuka_syst/fuka_syst_setup.hpp"
 
 /**
  * \addtogroup Stages
@@ -38,12 +39,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   } else {
     if (rank == 0) {
       std::cout << "############################" << std::endl
-                << "TOV with a resolved surface" << std::endl;
-      // if(bconfig.control(MB_FIXING))
-      //   std::cout << "with Baryonic Mass fixing\n";
-      // else
-      //   std::cout << "with ADM Mass fixing\n";
-                
+                << "TOV with a resolved surface" << std::endl;                
       std::cout << "############################" << std::endl;
     }
   }
@@ -55,26 +51,6 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   // setup a system of equations
   System_of_eqs syst(space, 0, ndom - 1);
   syst_init(syst);
-
-  // Fixing based on Mb/Madm not working/implemented
-  // if(bconfig.control(MB_FIXING)) {
-  //   syst.add_cst("Mb"  , bconfig(MB));
-  //   syst.add_var("Madm", bconfig(MADM));
-  // }
-  // else {
-  //   syst.add_var("Mb"  , bconfig(MB));
-  //   syst.add_cst("Madm", bconfig(MADM));
-  // }
-
-  // in case of a fixed radius solve the TOV with the given fixed central enthalpy
-  // in case of a resolved surface, solve for the central enthalpy
-  // if(fixed){
-  //   syst.add_cst("Hc", loghc);
-  // }else {
-  //   syst.add_var("Hc", loghc);
-  // }
-  // FIXME can only fix based on Hc at the moment
-  syst.add_cst("Hc", loghc);
 
   // in case of "fixed" domain radii
   // syst.add_cst("lev", level); 
@@ -103,6 +79,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
 
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
       syst.add_def(d, "firstint = H + log(N)");
+      syst.add_def(d, "intMb = rho * A^3 * 4piG / 2");
  
       break;
     // outside the matter is absent and the sources are zero
@@ -113,6 +90,13 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
       syst.add_def(d, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))") ;
       break;
     }
+  }
+
+  std::string central_fixing_definition{"h - hc"};
+  if(seq && !fixed) {
+    central_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_mass_fixing(syst, bconfig, seq);
+  } else {
+    syst.add_cst("hc", bconfig(BCO_PARAMS::HC));
   }
  
   // add the constraint equations and demand continuity their normal derivative across domain boundaries
@@ -136,13 +120,13 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   // first integral in the innermost domains with non-zero matter content
   // and condition on the central value, either fixed directly or by the
   // integral below
-  syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
+  syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
  
   // if surface is resolved, fix the central enthalpy by one of these integrals
-  // if(!fixed) {
-  //   space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
-  //   space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
-  // }
+  if(!fixed && seq) {
+    space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+    space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+  }
  
   // parameters for the solver loop
   bool endloop = false;
@@ -154,7 +138,6 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
     // do exactly one newton step, given the system above
     endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
  
-    update_config_quantities(logh);
     // output files at this iteration and print diagnostics
     std::stringstream ss;
     ss << "norot_2d_";
@@ -175,10 +158,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
     ite++;
     check_max_iter_exceeded(rank, ite, conv);
   }
-  bconfig.set(BCO_PARAMS::MADM) = 
-    space.get_domain(ndom-1)->integ(syst.give_val_def("intMadm")()(ndom-1), OUTER_BC);
   
-  update_config_quantities(logh);
   bconfig.set_filename(converged_filename(stagename));
   bconfig.control(CONTROLS::SEQUENCES) = false;
   if (rank == 0) {
