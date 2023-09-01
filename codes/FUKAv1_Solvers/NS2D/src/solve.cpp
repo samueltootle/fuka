@@ -709,6 +709,8 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   // syst.add_var("Madm", bconfig(MADM));
   syst.add_cst("Hc", loghc);
   syst.add_cst("q", q);
+  syst.add_cst("diffAratio", diffAratio);
+  syst.add_cst("Rratio", Rratio);
   
   syst.add_var("diffA", diffA);
   syst.add_var("omec", bconfig(BCO_PARAMS::OMEGA));
@@ -733,6 +735,8 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   syst.add_def("A = exp(nulogA - nu)");
   syst.add_def("B = (divrsint(bet) + 1) / N");
   syst.add_def("w = divrsint(wrsint)");
+  syst.add_def("Fomega = B^2 * multrsint(multrsint(Omega - w)) "
+                      "/ (N^2 - multrsint(B * (Omega - w))^2)");
 
   // define quantity to be integrated at infinity
   // two (in this case) equivalent definitions of ADM mass
