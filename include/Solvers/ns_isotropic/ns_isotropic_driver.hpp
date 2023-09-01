@@ -26,6 +26,7 @@
 #include "Solvers/co_solver_utils.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"
+#include "Solvers/sequences/ns_sequence.hpp"
 
 /**
  * \addtogroup NS_XCTS
@@ -58,9 +59,9 @@ config_t ns_isotropic_sequence_setup (config_t & seqconfig, std::string outputdi
  * @param resolution Resolution sequence
  * @param outputdir output location
  */
-template<class Seq_t, class Res_t, class config_t>
+template<class Res_t, class config_t>
 config_t ns_isotropic_sequence (config_t & seqconfig, 
-                          Seq_t const & seq,
+                          ns_sequence const & seq,
                           Res_t const & resolution,
                           std::string outputdir);
 
@@ -73,7 +74,7 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
  * @return int error code
  */
 template<typename config_t>
-int ns_isotropic_stationary_driver (config_t& bconfig, std::string outputdir);
+int ns_isotropic_stationary_driver (config_t& bconfig, std::string outputdir, ns_sequence const * seq=nullptr);
 
 /**
  * @brief Driver to compute a stationary solution for a given resolution
@@ -97,7 +98,7 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir)
  * @return int error code
  */
 template<class config_t, class Res_t>
-inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq=nullptr);
+inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::string outputdir, ns_sequence const * seq=nullptr);
 /** @}*/
 }}
 #include "ns_isotropic_driver_imp.cpp"

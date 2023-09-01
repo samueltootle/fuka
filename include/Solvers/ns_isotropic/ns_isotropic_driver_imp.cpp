@@ -1,4 +1,5 @@
 #include<functional>
+#include"Solvers/sequences/ns_sequence.hpp"
 /**
  * \addtogroup NS_XCTS
  * \ingroup FUKA
@@ -19,17 +20,22 @@ config_t ns_isotropic_sequence_setup (config_t & seqconfig, std::string outputdi
   return bconfig;
 }
 
-template<class Seq_t, class Res_t, class config_t>
+template<class Res_t, class config_t>
 config_t ns_isotropic_sequence (config_t & seqconfig, 
-                          Seq_t const & seq,
+                          ns_sequence const & seq,
                           Res_t const & resolution,
                           std::string outputdir) {
   
   int rank = 0, exit_status = EXIT_SUCCESS;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  // Ensure fixed values are initialized
+  seqconfig.set(seq.mass_idx()) = seq.mass_val();
+  seqconfig.set(seq.spin_idx()) = seq.spin_val();
+
   // Initialize sequence variables
-  auto sequence_var_indices = seq.get_indices();
-  auto resolution_indices   = resolution.get_indices();
+  auto sequence_idx = seq.get_sequence_idx();
+  auto resolution_indices = resolution.get_indices();
   
   auto const & dx = seq.step_size();
 
@@ -37,19 +43,21 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   config_t base_config = ns_isotropic_sequence_setup(seqconfig, outputdir);
   base_config.set(resolution_indices) = resolution.init();
 
-  auto mass_fixing = BCO_PARAMS::HC;
+  auto mass_fixing = seq.mass_idx();
 
-  if(seq.is_set() && std::isnan(base_config.set(sequence_var_indices))) {
-    base_config.set(sequence_var_indices) = seq.init();
-    if(seq_is_mass_fixing(seq))
-      mass_fixing = std::get<0>(sequence_var_indices);
+  // Should be deprecated...
+  if(seq.is_set() && std::isnan(base_config.set(sequence_idx))) {
+    base_config.set(sequence_idx) = seq.init();
+    if(ns_seq_is_mass_fixing(seq))
+      mass_fixing = sequence_idx;
   }
 
   // Save this in case an invalid ADM mass is given for the EOS used
-  const double final_MADM = base_config(BCO_PARAMS::MADM);
+  const double final_MADM = (seq.mass_idx() == BCO_PARAMS::MADM) ? base_config(BCO_PARAMS::MADM) : std::nan("1");
   base_config.control(CONTROLS::ITERATIVE_M) = false;
   config_t bconfig{base_config};
   
+  // Not tested...
   if(bconfig.control(CONTROLS::SEQUENCES) || bconfig.control(CONTROLS::RESOLVE)) {
     if(rank == 0) {
       setup_2dns_isotropic(bconfig, mass_fixing);
@@ -57,14 +65,14 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
     MPI_Barrier(MPI_COMM_WORLD);
     // make sure all ranks have the same config
     bconfig.open_config();
-    MPI_Barrier(MPI_COMM_WORLD);
-    bconfig.control(CONTROLS::ITERATIVE_M) = 
-      (bconfig(BCO_PARAMS::MADM) < final_MADM);
+
+    bconfig.control(CONTROLS::ITERATIVE_M) = !std::isnan(final_MADM) &&
+      (std::fabs(1. - bconfig(BCO_PARAMS::MADM)/final_MADM) > 1e-3);
 
     if(bconfig.control(CONTROLS::ITERATIVE_M)) {
       if(rank == 0)
       std::cerr << "Cannot solve TOV for Madm = " << final_MADM
-                << " without spin.\n";
+                << " without spin. " << bconfig(BCO_PARAMS::MADM) << '\n';
       std::_Exit(EXIT_FAILURE);
     }
     bconfig.control(CONTROLS::SEQUENCES) = true;
@@ -82,14 +90,14 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
     tmp_res.set(res_init,res_init,res_init);
 
     // exit_status = ns_3d_xcts_driver(bconfig, tmp_res, outputdir);
-    exit_status = ns_isotropic_base_solution_driver(bconfig, outputdir);
+    exit_status = ns_isotropic_base_solution_driver(bconfig, outputdir, &seq);
 
     // Update config such that the next solving round uses
     // the final ADM mass and spin
     bconfig(BCO_PARAMS::MADM) = final_MADM;
     bconfig.control(CONTROLS::SEQUENCES) = false;
   }
-  exit_status = ns_isotropic_base_solution_driver(bconfig, outputdir);
+  exit_status = ns_isotropic_base_solution_driver(bconfig, outputdir, &seq);
   
   // Ensure only the final stage is used
   // e.g. avoid NOROT stage
@@ -105,7 +113,7 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   auto single_seq = [&](auto val) {
     stage_enabled[last_stage_idx] = true;
     if(seq.is_set())
-      bconfig.set(sequence_var_indices) = val;
+      bconfig.set(sequence_idx) = val;
 
     exit_status = ns_isotropic_driver(bconfig, resolution, outputdir, &seq); 
     return exit_status;
@@ -133,7 +141,7 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
  * @return int error code
  */
 template<typename config_t>
-int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir){
+int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir, ns_sequence const * seq=nullptr){
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -194,7 +202,7 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir)
       bconfig(BCO_PARAMS::OMEGA) = 0.;
       bconfig(BCO_PARAMS::CHI) = 0.;
 
-      exit_status = ns_isotropic_norot_stationary_driver(bconfig, outputdir);
+      exit_status = ns_isotropic_norot_stationary_driver(bconfig, outputdir, seq);
       stage_enabled[STAGES::NOROT_BC] = false;
       bconfig(BCO_PARAMS::OMEGA) = omega;
       bconfig(BCO_PARAMS::CHI) = chi;
@@ -204,7 +212,7 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir)
       }
       bconfig.return_stages() = stage_enabled;
     } else if(stage_enabled[STAGES::UNIFORM_ROT]) {
-      exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir);
+      exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir, seq);
       // exit_status = EXIT_FAILURE;
       if(last_stage_idx != STAGES::UNIFORM_ROT) {
         stage_enabled[STAGES::UNIFORM_ROT] = false;
@@ -219,7 +227,7 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir)
 
 template<class config_t, class Res_t>
 inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, 
-  std::string outputdir, Parameter_sequence<BCO_PARAMS> const * seq) {
+  std::string outputdir, ns_sequence const * seq) {
   
   int exit_status = RELOAD_FILE;
   int rank = 0;
@@ -244,7 +252,7 @@ inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution,
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
 
-  std::function<int(config_t&, Res_t&, std::string, Parameter_sequence<BCO_PARAMS> const *)> final_stage_driver;
+  std::function<int(config_t&, Res_t&, std::string, ns_sequence const *)> final_stage_driver;
   if(rank == 0)
     std::cout << "Last stage: " << last_stage << '\n';
   switch(last_stage_idx) {

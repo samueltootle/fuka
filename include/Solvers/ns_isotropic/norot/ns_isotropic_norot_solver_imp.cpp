@@ -71,9 +71,9 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::solve() {
 }
 
 template<class eos_t, typename config_t, typename space_t>
-int ns_isotropic_norot_solver<eos_t, config_t, space_t>::solve(Parameter_sequence<BCO_PARAMS> const * sequence_in) {
+int ns_isotropic_norot_solver<eos_t, config_t, space_t>::solve(ns_sequence const * sequence_in) {
   if(sequence_in != nullptr) {
-    this->seq.reset(new Parameter_sequence<BCO_PARAMS>(*sequence_in));
+    this->seq.reset(new ns_sequence(*sequence_in));
   }
   return this->solve();
 }
@@ -125,9 +125,9 @@ void ns_isotropic_norot_solver<eos_t, config_t, space_t>::print_diagnostics(cons
     const int ite, const double conv) const {
 
   // compute the baryonic mass at volume integral from the given integrant
-  // double baryonic_mass =
-  //     syst.give_val_def("intMb")()(0).integ_volume() +
-  //     syst.give_val_def("intMb")()(1).integ_volume();
+  double baryonic_mass =
+      syst.give_val_def("intMb")()(0).integ_volume() +
+      syst.give_val_def("intMb")()(1).integ_volume();
 
   // compute the ADM mass as surface integral at infinity  
   Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
@@ -146,7 +146,7 @@ void ns_isotropic_norot_solver<eos_t, config_t, space_t>::print_diagnostics(cons
   std::cout << "=======================================" << std::endl
             << FORMAT << "Iter: " << ite << std::endl
             << FORMAT << "Error: " << conv << std::endl
-            // << FORMAT << "Mb: " << baryonic_mass << std::endl
+            << FORMAT << "Mb: " << baryonic_mass << std::endl
             << FORMAT << "Madm: " << Madm << std::endl
             << FORMAT << "Mk: " << Mk << " [" 
             << std::abs(Madm - Mk) / Madm << "]" << std::endl;
