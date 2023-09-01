@@ -2,6 +2,7 @@
 #include "coord_fields.hpp"
 #include "Configurator/config_bco.hpp"
 #include "Configurator/config_binary.hpp"
+#include "Solvers/sequences/ns_sequence.hpp"
 
 /**
  * \addtogroup Syst_tools
@@ -226,6 +227,40 @@ void syst_init_eqdefs_vac(System_of_eqs& syst, std::vector<int> doms) {
     syst.add_def(d,"eqbet^i = D_j D^j bet^i \
                           + D^i D_j bet^j / 3. - 2. * A^ij * D_j Ntilde");
   }
+}
+
+template<class config_t>
+inline std::string set_ns_mass_fixing(System_of_eqs& syst, config_t& bconfig, std::unique_ptr<Kadath::FUKA_Solvers::ns_sequence const>& seq) {
+    std::string central_fixing_definition{"h - hc"};
+    auto idx{seq->mass_idx()};
+    switch(idx) {
+      case BCO_PARAMS::HC:
+        syst.add_cst("hc"  , bconfig(BCO_PARAMS::HC));
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+        break;
+      case BCO_PARAMS::NC:
+        syst.add_cst("Nc", bconfig(BCO_PARAMS::NC));
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+        central_fixing_definition = "rho - Nc";
+        break;
+      case BCO_PARAMS::MADM:
+        syst.add_var("hc", bconfig(BCO_PARAMS::HC));
+        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+        break;
+      case BCO_PARAMS::MB:
+        syst.add_var("hc", bconfig(BCO_PARAMS::HC));
+        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
+        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+        break;
+      default:
+        std::string msg{"Sequence initialized, but not implemented for BCO_PARAMS index = " + std::to_string(int(idx))};
+        throw std::runtime_error(msg.c_str());
+        break;
+    }
+    return central_fixing_definition;
 }
 /** @}*/
 }}
