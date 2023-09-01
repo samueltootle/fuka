@@ -65,7 +65,7 @@ class ns_sequence : public seq_t {
         return mass_key;
     }
     std::string spin_str() const {
-        auto [ spin_key, mass_idx ] = get_key_val_pair_from_val(MBCO_PARAMS, mass_fixing_idx);
+        auto [ spin_key, spin_idx ] = get_key_val_pair_from_val(MBCO_PARAMS, spin_fixing_idx);
         return spin_key;
     }
 
