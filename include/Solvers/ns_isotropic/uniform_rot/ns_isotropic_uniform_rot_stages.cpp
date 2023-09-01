@@ -14,9 +14,7 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   const int max_iter = bconfig.seq_setting(MAX_ITER);
-  
-  // logarithm of the central enthalpy, a variable in the system of equations 
-  double loghc = std::log(bconfig(BCO_PARAMS::HC));
+
   std::string stagename = "UNIFORM_ROT";
 
   // We use `config_filename()` vs `config_filename_abs()` since
@@ -44,35 +42,28 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
   System_of_eqs syst(space, 0, ndom - 1);
   syst_init(syst);
 
-  // Fixing based on Mb/Madm not working/implemented
-  // if(bconfig.control(MB_FIXING)) {
-  //   syst.add_cst("Mb"  , bconfig(MB));
-  //   syst.add_var("Madm", bconfig(MADM));
-  // }
-  // else {
-  //   syst.add_var("Mb"  , bconfig(MB));
-  //   syst.add_cst("Madm", bconfig(MADM));
-  // }
-
-  // in case of a fixed radius solve the TOV with the given fixed central enthalpy
-  // in case of a resolved surface, solve for the central enthalpy
-  // if(fixed){
-  //   syst.add_cst("Hc", loghc);
-  // }else {
-  //   syst.add_var("Hc", loghc);
-  // }
-  // FIXME can only fix based on Hc at the moment
-  syst.add_cst("Hc", loghc);
-  syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
+  std::string central_fixing_definition{"h - hc"};
+  std::string spin_fixing_definition{"integ(intJ) - chi * Madm * Madm = 0"};
+  if(seq) {
+    central_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_mass_fixing(syst, bconfig, seq);
+    spin_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_spin_fixing(syst, bconfig, seq);
+  } else {
+    syst.add_cst("hc" , bconfig(BCO_PARAMS::HC));
+    syst.add_cst("ome", bconfig(BCO_PARAMS::OMEGA));
+    syst.add_var("chi" , bconfig(BCO_PARAMS::CHI));
+    syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+    syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+  }
  
   for (int d = 0; d < ndom; d++) {
     switch (d) {
     // in the star the constraint equations are sourced by the matter
     case 0:
     case 1:
-      syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
+      syst.add_def(d, "U = multrsint(B / N * (ome - w))");
       syst.add_def(d, "Usq = U*U");
       syst.add_def(d, "Wsq = 1 / (1 - Usq)");
+      syst.add_def(d, "W = sqrt(Wsq)");
 
       // sources
       syst.add_def(d, "E = Wsq * press * h - press * delta");
@@ -93,7 +84,7 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
                           "+ 4 * 4piG * N * A^2 / B * pphi");
  
       // definition for the baryonic mass integral
-      // syst.add_def(d, "intMb = P^6 * rho");
+      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
 
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
       syst.add_def(d, "firstint = H + log(N) - 0.5 * log(Wsq)");
@@ -131,13 +122,11 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
   // first integral in the innermost domains with non-zero matter content
   // and condition on the central value, either fixed directly or by the
   // integral below
-  syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
+  syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
  
-  // if surface is resolved, fix the central enthalpy by one of these integrals
-  // if(!fixed) {
-  //   space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
-  //   space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
-  // }
+  space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+  space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+  space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
  
   // parameters for the solver loop
   bool endloop = false;

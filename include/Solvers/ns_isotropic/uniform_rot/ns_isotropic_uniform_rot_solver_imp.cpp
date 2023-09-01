@@ -36,8 +36,7 @@ std::string ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::converged
   else ss << ".";
   ss << eosname << "."
      << bconfig(BCO_PARAMS::HC) << "."; 
-  if(stage != "NOROT_BC") ss << bconfig(BCO_PARAMS::OMEGA)<< ".";
-  else ss << "0.";
+  ss << bconfig(BCO_PARAMS::OMEGA)<< ".";
   ss << bconfig(BCO_PARAMS::NSHELLS) << "."
      <<std::setfill('0') << std::setw(2) << res;
   return ss.str();
@@ -92,6 +91,7 @@ void ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::syst_init(System
   // as well as the Komar mass
   syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
+  syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
   
   // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
   syst.add_def("h = exp(H)");
@@ -118,9 +118,9 @@ void ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::print_diagnostic
     const int ite, const double conv) const {
 
   // compute the baryonic mass at volume integral from the given integrant
-  // double baryonic_mass =
-  //     syst.give_val_def("intMb")()(0).integ_volume() +
-  //     syst.give_val_def("intMb")()(1).integ_volume();
+  double baryonic_mass =
+      syst.give_val_def("intMb")()(0).integ_volume() +
+      syst.give_val_def("intMb")()(1).integ_volume();
 
   // compute the ADM mass as surface integral at infinity  
   Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
@@ -129,6 +129,10 @@ void ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::print_diagnostic
   // compute the Komar mass as surface integral at infinity
   Val_domain integMk(syst.give_val_def("intMk")()(ndom - 1));
   double Mk = space.get_domain(ndom - 1)->integ(integMk, OUTER_BC);
+
+  // compute the ADM Angular Momentum as surface integral at infinity
+  Val_domain integJ(syst.give_val_def("intJ")()(ndom - 1));
+  double Jadm = space.get_domain(ndom - 1)->integ(integJ, OUTER_BC);
 
   // get the maximum and minimum coordinate radius along the surface,
   // i.e. the adapted domain boundary
@@ -139,10 +143,11 @@ void ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::print_diagnostic
   std::cout << "=======================================" << std::endl
             << FORMAT << "Iter: " << ite << std::endl
             << FORMAT << "Error: " << conv << std::endl
-            // << FORMAT << "Mb: " << baryonic_mass << std::endl
+            << FORMAT << "Mb: " << baryonic_mass << std::endl
             << FORMAT << "Madm: " << Madm << std::endl
             << FORMAT << "Mk: " << Mk << " [" 
-            << std::abs(Madm - Mk) / Madm << "]" << std::endl;
+            << std::abs(Madm - Mk) / Madm << "]" << std::endl
+            << FORMAT << "Jadm: " << Jadm << endl;
   std::cout << FORMAT << "R: " << rs[0] << " " << rs[1] << "\n\n";
   std::cout.flags(f);
 } // end print diagnostics
