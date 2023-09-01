@@ -16,8 +16,6 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   const int max_iter = bconfig.seq_setting(MAX_ITER);
   
-  // logarithm of the central enthalpy, a variable in the system of equations 
-  double loghc = std::log(bconfig(BCO_PARAMS::HC));
   std::string stagename = (fixed) ? "NOROT_FIXED" : "NOROT_BC";
 
   // We use `config_filename()` vs `config_filename_abs()` since
@@ -158,7 +156,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
     ite++;
     check_max_iter_exceeded(rank, ite, conv);
   }
-  
+  update_config_quantities(logh);
   bconfig.set_filename(converged_filename(stagename));
   bconfig.control(CONTROLS::SEQUENCES) = false;
   if (rank == 0) {
