@@ -59,4 +59,29 @@ void Space_polar_adapted::add_eq_int_inf (System_of_eqs& sys, const char* nom) {
 	}
 	sys.nbr_conditions = -1 ;
 }
+
+void Space_polar_adapted::add_eq_int_volume (System_of_eqs& sys, int nz, const char* nom) {
+
+	// Get the lhs and rhs
+	char p1[LMAX] ;
+	char p2[LMAX] ;
+	bool indic = sys.is_ope_bin(nom, p1, p2, '=') ;
+	if (!indic) {
+		cerr << "= needed for equations" << endl ;
+		abort() ;
+	}
+	else {
+    sys.eq_int_list.push_back(std::make_tuple(nom, 0, -1));
+		// Construction of the equation
+		sys.eq_int[sys.neq_int] = new Eq_int(nz+1) ;
+
+		// Affectation of the intregrale parts
+		for (int d=0 ; d<nz ; d++)
+		  sys.eq_int[sys.neq_int]->set_part(d, sys.give_ope(d, p1)) ;
+		// Affectation of the second member (constant value)
+		sys.eq_int[sys.neq_int]->set_part(nz, new Ope_minus(&sys, sys.give_ope(0, p2))) ;
+		sys.neq_int ++ ;
+	}
+	sys.nbr_conditions = -1 ;
+}
 }

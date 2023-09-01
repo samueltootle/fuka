@@ -651,6 +651,7 @@ class Space_polar_adapted : public Space {
 	*/
 	void add_eq_matter (System_of_eqs& syst, const char* eq, const char* rac, const char* rac_der, int nused=-1, Array<int>** pused=0x0) const ;
      void add_eq_int_inf (System_of_eqs& sys, const char* nom);
+     void add_eq_int_volume (System_of_eqs& syst, int nz, const char* eq) ;
 } ;
 }
 #endif
