@@ -219,6 +219,14 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir,
         exit_status = RELOAD_FILE;
       }
       bconfig.return_stages() = stage_enabled;
+    } else if(stage_enabled[STAGES::DIFF_ROT]) {
+      exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
+      // exit_status = EXIT_FAILURE;
+      if(last_stage_idx != STAGES::DIFF_ROT) {
+        stage_enabled[STAGES::DIFF_ROT] = false;
+        exit_status = RELOAD_FILE;
+      }
+      bconfig.return_stages() = stage_enabled;
     }
     MPI_Barrier(MPI_COMM_WORLD);
   }
@@ -261,6 +269,9 @@ inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution,
       break;
     case STAGES::UNIFORM_ROT:
       final_stage_driver = &ns_isotropic_uniform_rot_driver<config_t, Res_t>;
+      break;
+    case STAGES::DIFF_ROT:
+      final_stage_driver = &ns_isotropic_diff_rot_driver<config_t, Res_t>;
       break;
   }
   

@@ -63,7 +63,7 @@ class ns_isotropic_diff_rot_solver : public Solver<config_t, space_t> {
   ns_isotropic_diff_rot_solver() = delete;
 
   ns_isotropic_diff_rot_solver(config_t& config_in, space_t& space_in,  
-    Scalar& nu_in, Scalar& lap_Aterm_in, Scalar& logh_in, Scalar& lap_Bterm_in, Scalar& lap_wterm_in);
+    Scalar& nu_in, Scalar& lap_Aterm_in, Scalar& logh_in, Scalar& lap_Bterm_in, Scalar& lap_wterm_in, Scalar& Omega_in);
   
   /// syst always requires the same initialization for the stages
   void syst_init(System_of_eqs& syst);
@@ -84,6 +84,9 @@ class ns_isotropic_diff_rot_solver : public Solver<config_t, space_t> {
 
   /// solver stages
   int differential_rot_stage();
+
+  /// Differential rotation laws
+  void KEH_law(System_of_eqs& syst);
 
   // Update bconfig(HC) and bconfig(NC)
   void update_config_quantities(Scalar& logh) {

@@ -7,7 +7,7 @@ namespace FUKA_Solvers {
 
 
 template<typename config_t>
-void initialize_fields(config_t& bconfig) {
+void initialize_fields_diff(config_t& bconfig) {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   std::string spacein = bconfig.space_filename();
@@ -62,7 +62,7 @@ int ns_isotropic_diff_rot_stationary_driver (config_t& bconfig,
 
   // Make sure fields needed for rotating solution are initialized before opening files
   if(!bconfig.field(BCO_FIELDS::DIFF_OMEGA))
-    initialize_fields(bconfig);
+    initialize_fields_diff(bconfig);
 
   // Not important atm
   // if(std::isnan(bconfig.set(BCO_PARAMS::MADM)) && std::isnan(bconfig.set(BCO_PARAMS::MB))){

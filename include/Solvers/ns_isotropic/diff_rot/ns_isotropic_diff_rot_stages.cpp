@@ -33,7 +33,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
   if (rank == 0)
     std::cout << "############################" << std::endl
               << "Differentially Rotating NS Solver" << std::endl
-              << "Omega: " << bconfig(BCO_PARAMS::OMEGA) <<std::endl
+              << "Omega_c: " << bconfig(BCO_PARAMS::OMEGA) <<std::endl
               << "############################" << std::endl;
 
   // Sad tool to make system of equations work with constants
@@ -45,43 +45,27 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
   System_of_eqs syst(space, 0, ndom - 1);
   syst_init(syst);
 
+  std::string central_fixing_definition{"h - hc"};
+  if(seq) {
+    central_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_mass_fixing(syst, bconfig, seq);
+  } else {
+    syst.add_cst("hc" , bconfig(BCO_PARAMS::HC));
+    syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+    syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+  }
+
   syst.add_cst("one", one);
-  KEH_law(syst);
 
-  // Fixing based on Mb/Madm not working/implemented
-  // if(bconfig.control(MB_FIXING)) {
-  //   syst.add_cst("Mb"  , bconfig(MB));
-  //   syst.add_var("Madm", bconfig(MADM));
-  // }
-  // else {
-  //   syst.add_var("Mb"  , bconfig(MB));
-  //   syst.add_cst("Madm", bconfig(MADM));
-  // }
-
-  // in case of a fixed radius solve the TOV with the given fixed central enthalpy
-  // in case of a resolved surface, solve for the central enthalpy
-  // if(fixed){
-  //   syst.add_cst("Hc", loghc);
-  // }else {
-  //   syst.add_var("Hc", loghc);
-  // }
-  // FIXME can only fix based on Hc at the moment
-  syst.add_cst("Hc", loghc);
-  syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
- 
-  for (int d = 0; d < ndom-1; d++) {
+  for (int d = 0; d < ndom; d++) {
     switch (d) {
     // in the star the constraint equations are sourced by the matter
     case 0:
     case 1:
-      syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
-      syst.add_def(d, "Usq = U*U");
-      syst.add_def(d, "Wsq = 1 / (1 - Usq)");
 
       // sources
       syst.add_def(d, "E = Wsq * press * h - press * delta");
       syst.add_def(d, "Srrtt = press * delta");
-      syst.add_def(d, "pphi = delta * multrsint(B * (E + Srrtt) * U)");
+      syst.add_def(d, "pphi = B * (E + Srrtt) * U");
       syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
       syst.add_def(d, "S = 2 * Srrtt + Spp");
  
@@ -94,7 +78,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
                       "- 2 * 4piG * A^2 * Spp");
       syst.add_def(d, "eqbet = delta * lap2(bet) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
       syst.add_def(d, "eqw = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                          "+ 4 * 4piG * N * A^2 / B^2 * divrsint(pphi)");
+                          "+ 4 * 4piG * N * A^2 / B^2 * pphi");
  
       // definition for the baryonic mass integral
       // syst.add_def(d, "intMb = P^6 * rho");
@@ -117,13 +101,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
       break;
     }
   }
-    syst.add_eq_full(ndom-1, "H = 0");
-    syst.add_def(ndom-1, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                            "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) ");
-    syst.add_def(ndom-1, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))"
-              "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))");
-    syst.add_def(ndom-1, "eqbet = lap2(bet)");
-    syst.add_def(ndom-1, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
+  KEH_law(syst);
  
   // add the constraint equations and demand continuity their normal derivative across domain boundaries
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
@@ -143,13 +121,11 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
   // first integral in the innermost domains with non-zero matter content
   // and condition on the central value, either fixed directly or by the
   // integral below
-  syst.add_eq_first_integral(0, 1, "firstint", "H - Hc");
+  syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
  
   // if surface is resolved, fix the central enthalpy by one of these integrals
-  // if(!fixed) {
-  //   space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
-  //   space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
-  // }
+  space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+  space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
  
   // parameters for the solver loop
   bool endloop = false;
@@ -177,8 +153,6 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
     ite++;
     check_max_iter_exceeded(rank, ite, conv);
   }
-  bconfig.set(BCO_PARAMS::MADM) = 
-    space.get_domain(ndom-1)->integ(syst.give_val_def("intMadm")()(ndom-1), OUTER_BC);
   
   update_config_quantities(logh);
   bconfig.set_filename(converged_filename(stagename));

@@ -23,6 +23,7 @@
 #include "norot/ns_isotropic_norot_solver.hpp"
 #include "norot/ns_isotropic_norot_driver.hpp"
 #include "uniform_rot/ns_isotropic_uniform_rot_driver.hpp"
+#include "diff_rot/ns_isotropic_diff_rot_driver.hpp"
 #include "Solvers/co_solver_utils.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"

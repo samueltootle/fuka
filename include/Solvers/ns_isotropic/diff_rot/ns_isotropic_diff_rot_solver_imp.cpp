@@ -87,12 +87,15 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::syst_init(System_of
   syst.add_def("A = exp(lapAterm - nu)");
   syst.add_def("B = (divrsint(lapBterm) + 1) / N");
   syst.add_def("w = divrsint(wrsint)");
+  syst.add_def("Fomega = B^2 * multrsint(multrsint(ome - w)) "
+                      "/ (N^2 - multrsint(B * (ome - w))^2)");
  
   // define quantity to be integrated at infinity
   // two (in this case) equivalent definitions of ADM mass
   // as well as the Komar mass
   syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
+  syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
   
   // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
   syst.add_def("h = exp(H)");
@@ -112,6 +115,69 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::syst_init(System_of
   // delta = p / rho
   syst.add_def("delta = h - eps - 1.");
 
+  syst.add_def("U = multrsint(B / N * (ome - w))");
+  syst.add_def("Usq = U*U");
+  syst.add_def("Wsq = 1 / (1 - Usq)");
+}
+
+template<class eos_t, typename config_t, typename space_t>
+void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::KEH_law(System_of_eqs& syst) {
+  auto npts = space.get_domain(1)->get_nbr_points();
+  Index pos_origin (npts);
+  Index pos_eq (npts);
+  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+
+  Index pos_pole (npts);
+  pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
+
+  auto adpt_dom = space.get_domain(1);
+  double R0 = adpt_dom->get_radius()(pos_eq);
+  double Rp = adpt_dom->get_radius()(pos_pole);
+
+  bconfig.set(BCO_PARAMS::RMID) = R0;
+  int q = int(bconfig(BCO_PARAMS::DIFF_LAWQ));
+
+  std::string jint{};
+  std::string jome{"diffA^2 * ome * (omeratio^"+std::to_string(q)+" - 1)"};
+  std::string F{"F = " + jome};
+
+  switch(q) {
+    case 2:
+      jint = "diffA^2 * ome^2 * (omeratio^2 * log(ome) - 0.5)"; // - omec^2 * (log(omec) - 0.5)";
+      break;
+    default:
+      jint = "diffA^2 * ome^2 * ((1 / (2-q)) * omeratio^"+std::to_string(q)+" - 0.5)"; // - omec^2 * q / (4 - 2 * q)";
+      break;
+  }
+  std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsq)) + " + jint};
+
+  syst.add_cst("q", bconfig(BCO_PARAMS::DIFF_LAWQ));
+  syst.add_cst("diffAratio", bconfig(BCO_PARAMS::DIFF_ARATIO));
+  syst.add_cst("Rratio", bconfig(BCO_PARAMS::DIFF_RRATIO));
+  
+  double diffA = bconfig(BCO_PARAMS::DIFF_ARATIO) * R0;
+  syst.add_var("diffA", diffA);
+  syst.add_var("omec", bconfig(BCO_PARAMS::OMEGA));
+  syst.add_var("R0", bconfig(BCO_PARAMS::RMID));
+
+  syst.add_def("diffAField = one * diffA");
+  syst.add_def("r = multr(one)");
+  syst.add_def("omeratio = omec / ome");
+  syst.add_def(F.c_str());
+  syst.add_def("Fomega = P^4 * Wsquare * f_ij * U^i * mg^j / N");
+
+  for (int d = 0; d < ndom; d++) {
+    syst.add_eq_full(d, "Fomega - F = 0");
+    switch(d) {
+      case 0:
+      case 1:
+        syst.add_def(d, firstint.c_str());
+    }
+  }
+  syst.add_eq_val(0, "diffAField/R0 - diffAratio", pos_origin);
+  syst.add_eq_val(1, "r/R0 - 1", pos_eq);
+  syst.add_eq_val(1, "r/R0 - Rratio", pos_pole);
 }
 
 template<class eos_t, typename config_t, typename space_t>
