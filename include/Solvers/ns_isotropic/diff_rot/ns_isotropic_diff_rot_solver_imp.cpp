@@ -160,7 +160,7 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::KEH_law(System_of_e
       break;
   }
   std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsq)) + " + jint};
-  syst.sec_member();
+
   syst.add_cst("q",q);
   syst.add_cst("diffAratio", diffAratio);
   syst.add_cst("Rratio", diffRratio);  

@@ -131,6 +131,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
   bool endloop = false;
   int ite = 1;
   double conv;
+    syst.sec_member();
  
   // solve until convergence is achieved
   while (!endloop) {  
