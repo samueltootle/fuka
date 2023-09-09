@@ -250,7 +250,7 @@ constexpr inline bool is_storage_all_nan(ary_t& storage) {
     }
     return false;
   };
-  for(auto ele : storage) {
+  for(auto& ele : storage) {
     bool isnan = true;
     if constexpr (!std::is_fundamental<var_t>::value) {
       isnan = std::visit(check,ele);
