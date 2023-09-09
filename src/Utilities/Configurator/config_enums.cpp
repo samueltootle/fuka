@@ -234,8 +234,8 @@ const std::map<std::string, CONTROLS> MMIN_CONTROLS = {
 
 const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS = {
   {"law", DIFF_LAW}, // str differential rotation law
-  {"ratio_A_R-equitorial",DIFF_ARATIO}, // Ratio of the differential rotation parameter A to equitoral radius
-  {"ratio_R-pole_R-equitorial",DIFF_RRATIO}, // Ratio of the polar to equitoral radius
+  {"A_ratio",DIFF_ARATIO}, // Ratio of the differential rotation parameter A to equitoral radius
+  {"R_ratio",DIFF_RRATIO}, // Ratio of the polar to equitoral radius
   {"q",DIFF_Q}, // q parameter in various differential rotation laws
   {"p",DIFF_P}, // p parameter in various differential rotation laws
   {"lambda1",DIFF_LAMBDA1}, // Lambda_1 parameter in various differential rotation laws
