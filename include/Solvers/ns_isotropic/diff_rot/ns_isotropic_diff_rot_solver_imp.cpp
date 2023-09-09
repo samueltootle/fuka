@@ -118,6 +118,7 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::syst_init(System_of
   syst.add_def("U = multrsint(B / N * (ome - w))");
   syst.add_def("Usq = U*U");
   syst.add_def("Wsq = 1 / (1 - Usq)");
+  syst.add_def("W = sqrt(Wsq)");
 }
 
 template<class eos_t, typename config_t, typename space_t>
@@ -136,7 +137,15 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::KEH_law(System_of_e
   double Rp = adpt_dom->get_radius()(pos_pole);
 
   bconfig.set(BCO_PARAMS::RMID) = R0;
-  int q = int(bconfig(BCO_PARAMS::DIFF_LAWQ));
+
+  // Extract Constants
+  int q = bconfig.template diffrot<int>(DIFFROT_PARAMS::DIFF_Q);
+  double diffAratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
+  double diffRratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
+  // cout << q << ", " << diffAratio << ", " << diffRratio << ", " << R0 << '\n';
+  
+  // Initialize diffA var - shouldn't need to be saved to file
+  double diffA = diffAratio * R0;
 
   std::string jint{};
   std::string jome{"diffA^2 * ome * (omeratio^"+std::to_string(q)+" - 1)"};
@@ -151,12 +160,11 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::KEH_law(System_of_e
       break;
   }
   std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsq)) + " + jint};
+  syst.sec_member();
+  syst.add_cst("q",q);
+  syst.add_cst("diffAratio", diffAratio);
+  syst.add_cst("Rratio", diffRratio);  
 
-  syst.add_cst("q", bconfig(BCO_PARAMS::DIFF_LAWQ));
-  syst.add_cst("diffAratio", bconfig(BCO_PARAMS::DIFF_ARATIO));
-  syst.add_cst("Rratio", bconfig(BCO_PARAMS::DIFF_RRATIO));
-  
-  double diffA = bconfig(BCO_PARAMS::DIFF_ARATIO) * R0;
   syst.add_var("diffA", diffA);
   syst.add_var("omec", bconfig(BCO_PARAMS::OMEGA));
   syst.add_var("R0", bconfig(BCO_PARAMS::RMID));
@@ -165,7 +173,8 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::KEH_law(System_of_e
   syst.add_def("r = multr(one)");
   syst.add_def("omeratio = omec / ome");
   syst.add_def(F.c_str());
-  syst.add_def("Fomega = P^4 * Wsquare * f_ij * U^i * mg^j / N");
+  syst.add_def("Fomega = B^2 * multrsint(multrsint(ome - w)) "
+                      "/ (N^2 - multrsint(B * (ome - w))^2)");
 
   for (int d = 0; d < ndom; d++) {
     syst.add_eq_full(d, "Fomega - F = 0");
