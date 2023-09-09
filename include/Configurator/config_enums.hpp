@@ -37,11 +37,33 @@ enum BIN_PARAMS {
 };
 /** @brief enum BCO_PARAMS enumerator over BCO parameters */
 enum BCO_PARAMS {
-  RIN=0, BCO_RES, BCO_QPIG, RMID, FIXED_R, ROUT, NSHELLS, OMEGA, CHI, \
-  MIRR, MCH, MB, NC, HC, FIXED_LAPSE, MADM, JADM, QLJADM, \
-  QLMADM, DIM, USE_TOV1D, FIXED_BCOMEGA, BVELX, BVELY, 
-  DECAY, KERR_CHI, KERR_MCH, NINSHELLS, DIFF_ARATIO, DIFF_RRATIO, 
-  DIFF_LAWQ, NUM_BCO_PARAMS
+  RIN=0, 
+  BCO_RES, 
+  BCO_QPIG, 
+  RMID, 
+  FIXED_R,
+  ROUT, 
+  NSHELLS, 
+  OMEGA, 
+  CHI, 
+  MIRR, 
+  MCH, 
+  MB, 
+  NC, 
+  HC, 
+  FIXED_LAPSE, 
+  MADM, 
+  JADM, 
+  QLJADM, 
+  QLMADM, 
+  DIM, 
+  USE_TOV1D, 
+  FIXED_BCOMEGA, 
+  BVELX, 
+  BVELY, 
+  DECAY, 
+  KERR_CHI, KERR_MCH, 
+  NINSHELLS, NUM_BCO_PARAMS
 };
 /** @brief enum EOS_PARAMS enumerator over EOS parameters */
 enum EOS_PARAMS {EOSTYPE, EOSFILE, HCUT, INTERP_PTS, NUM_EOS_PARAMS};
@@ -76,6 +98,21 @@ enum SEQ_SETTINGS {
   PREC, MAX_ITER, INIT_RES, FINAL_CHI, NUM_SEQ_SETTINGS
 };
 
+enum DIFFROT_PARAMS {
+  DIFF_LAW=0, 
+  DIFF_ARATIO, 
+  DIFF_RRATIO, 
+  DIFF_Q, 
+  DIFF_P, 
+  DIFF_LAMBDA1, 
+  DIFF_LAMBDA2,
+  MC_BETA, 
+  MC_GAMMA, 
+  DIFF_A, 
+  DIFF_B,
+  NUM_DIFFROT_PARAMS
+};
+
 /**@{
   * extern definitions of maps containing the maps of strings for each parameter
   * name to the associated enumerator index
@@ -100,6 +137,7 @@ extern const std::map<std::string, STAGES> MKSBHSTAGE;
 extern const std::map<std::string, STAGES> MNSSTAGE;
 extern const std::map<std::string, CONTROLS> MMIN_CONTROLS;
 extern const std::map<std::string, STAGES> M2DNSSTAGE;
+extern const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS;
 /**@} end extern group definition*/
 /**@} end config_enums group*/
 

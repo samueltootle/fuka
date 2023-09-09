@@ -73,9 +73,6 @@ const std::map<std::string, BCO_PARAMS> MBCO_PARAMS = {
   {"kerr_chi", KERR_CHI},       // Kerr parameter a=J/M
   {"kerr_mch", KERR_MCH},       // Mass given to the analytical kerr background
   {"n_inner_shells",NINSHELLS}, // Shells inside a NS - binary only
-  {"ratio_A_R-equitorial",DIFF_ARATIO}, // Ratio of the differential rotation parameter A to equitoral radius
-  {"ratio_R-pole_R-equitorial",DIFF_RRATIO}, // Ratio of the polar to equitoral radius
-  {"q-diff_rot_law",DIFF_LAWQ}, // q parameter in various differential rotation laws
   {"jadm", JADM},
   {"ql_jadm", QLJADM},
 };
@@ -233,6 +230,20 @@ const std::map<std::string, CONTROLS> MMIN_CONTROLS = {
   {"fixed_lapse", USE_FIXED_LAPSE}, ///< Use fixed lapse BC on black holes
   {"resolve", RESOLVE}, ///<Force resolve of ID even if a checkpoint exists
   {"centralized_cos", SAVE_COS},///< Save CO solutions to a central location for reuse
+};
+
+const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS = {
+  {"law", DIFF_LAW}, // str differential rotation law
+  {"ratio_A_R-equitorial",DIFF_ARATIO}, // Ratio of the differential rotation parameter A to equitoral radius
+  {"ratio_R-pole_R-equitorial",DIFF_RRATIO}, // Ratio of the polar to equitoral radius
+  {"q",DIFF_Q}, // q parameter in various differential rotation laws
+  {"p",DIFF_P}, // p parameter in various differential rotation laws
+  {"lambda1",DIFF_LAMBDA1}, // Lambda_1 parameter in various differential rotation laws
+  {"lambda2",DIFF_LAMBDA2}, // Lambda_2 parameter in various differential rotation laws
+  {"MC_gamma",MC_GAMMA}, // Gamma parameter for the MC law
+  {"MC_beta",MC_BETA}, // Beta parameter for the MC law
+  {"A", DIFF_A}, // Parameter in various laws
+  {"B", DIFF_B}, // Parameter in various laws
 };
 /** @}*/
 }}
