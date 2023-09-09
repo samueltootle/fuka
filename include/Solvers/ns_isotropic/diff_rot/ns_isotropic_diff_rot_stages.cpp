@@ -51,7 +51,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
   } else {
     syst.add_cst("hc" , bconfig(BCO_PARAMS::HC));
     syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-    syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+    syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
   }
 
   syst.add_cst("one", one);
