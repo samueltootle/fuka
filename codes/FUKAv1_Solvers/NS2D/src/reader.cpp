@@ -350,23 +350,23 @@ void reader_2d_diffrot(config_t bconfig) {
       syst.add_def(d, "W = sqrt(Wsq)");
 
       // sources
-      syst.add_def(d, "E = Wsq * press * h - press * delta");
-      syst.add_def(d, "Srrtt = press * delta");
+      syst.add_def(d, "E = Wsq * (1 + eps) * rho - press");
+      syst.add_def(d, "Srrtt = press");
       syst.add_def(d, "pphi = multrsint(B * (E + Srrtt) * U)");
-      syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
+      syst.add_def(d, "Spp = press * (1 + Usq) + E * Usq");
       syst.add_def(d, "S = 2 * Srrtt + Spp");
       syst.add_def(d, "Ereg = Wsq * (rho * (1 + eps) + press) - press");
       syst.add_def(d, "Sreg = 3 * press + (Ereg + press) * Usq");
 
       // Volume integral for Angular momentum 4.38
-      syst.add_def(d, "intJV = pphi / delta * A^2 * B * 4piG / 2");
+      syst.add_def(d, "intJV = pphi * A^2 * B * 4piG / 2");
 
       // syst.add_def(d, "intEkin = (4piG * S / delta - 1 / A^2 * (scal(grad(nu), grad(nu)) - 1 / 2 / A / B * scal(grad(A), grad(B)))"
       // "+divr(0.5) * (1/A^2 - 1/B^2) * (1/A * (dr(A) + divr(multsint(divcost(dt(A))))) - 1/2/B * (dr(B) + divr(multsint(divcost(dt(B)))))))");
       // "+ divr(divr(3)) * multsint(multsint(B^2)) / 8 / A^2 / N^2 * scal(grad(w), grad(w))) * A^2 * B");
       
       // constraint equations
-      syst.add_def(d, "DDA = -delta * scal(grad(nu), grad(nu)) + 2 * 4piG * A^2 * Spp") ;
+      syst.add_def(d, "DDA = -scal(grad(nu), grad(nu)) + 2 * 4piG * A^2 * Spp") ;
       // Extra...
       // syst.add_def(d, "eqNA = dr(drNA) + 3 * divr(drNA) - 4 * 4piG * NA * A^2 * press") ;
 
