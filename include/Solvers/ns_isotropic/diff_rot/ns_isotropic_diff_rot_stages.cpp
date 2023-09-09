@@ -73,15 +73,15 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
       syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
                             "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
                             "- 4piG * A^2 * (E + S)");
-      syst.add_def(d, "eqnulogA = delta * lap2(nulogA) + delta * scal(grad(nu), grad(nu))"
+      syst.add_def(d, "eqAterm = delta * lap2(lapAterm) + delta * scal(grad(nu), grad(nu))"
                       "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
                       "- 2 * 4piG * A^2 * Spp");
-      syst.add_def(d, "eqbet = delta * lap2(bet) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
-      syst.add_def(d, "eqw = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                          "+ 4 * 4piG * N * A^2 / B^2 * pphi");
+      syst.add_def(d, "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
+      syst.add_def(d, "eqwrsint = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
+                          "+ 4 * 4piG * N * A^2 / B * pphi");
  
       // definition for the baryonic mass integral
-      // syst.add_def(d, "intMb = P^6 * rho");
+      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
 
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
       // This MUST be populated by the differential rotation law, ie KEH_Law(syst)
@@ -94,10 +94,10 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
 
       syst.add_def(d, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
                       "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
-      syst.add_def(d, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))"
+      syst.add_def(d, "eqAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
                 "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))");
-      syst.add_def(d, "eqbet = lap2(bet)");
-      syst.add_def(d, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
+      syst.add_def(d, "eqBterm = lap2(lapBterm)");
+      syst.add_def(d, "eqwrsint = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
       break;
     }
   }
@@ -105,14 +105,14 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::differential_rot_sta
  
   // add the constraint equations and demand continuity their normal derivative across domain boundaries
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
-  space.add_eq(syst, "eqnulogA=0", "nulogA", "dn(nulogA)");
-  space.add_eq(syst, "eqbet=0", "bet", "dn(bet)");
-  space.add_eq(syst, "eqw=0", "wrsint", "dn(wrsint)");
+  space.add_eq(syst, "eqAterm=0", "lapAterm", "dn(lapAterm)");
+  space.add_eq(syst, "eqBterm=0", "lapBterm", "dn(lapBterm)");
+  space.add_eq(syst, "eqwrsint=0", "wrsint", "dn(wrsint)");
   
   // boundary conditions at infinity
   syst.add_eq_bc(ndom - 1, OUTER_BC, "nu=0");
-  syst.add_eq_bc(ndom - 1, OUTER_BC, "nulogA=0");
-  syst.add_eq_bc(ndom - 1, OUTER_BC, "bet=0");
+  syst.add_eq_bc(ndom - 1, OUTER_BC, "lapAterm=0");
+  syst.add_eq_bc(ndom - 1, OUTER_BC, "lapBterm=0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "wrsint=0");
 
   // Fix surface based on vanishing log specific enthalpy
