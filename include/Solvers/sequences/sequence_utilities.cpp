@@ -117,6 +117,12 @@ void update_eos_parameters (config_t & seqconfig, config_t& bconfig, bco_t... bc
     bconfig.set_eos(idx, bco...) = seqconfig.set_eos(idx, bco...);
 }
 
+template<class config_t, class... bco_t>
+void update_diffrot_parameters (config_t & seqconfig, config_t& bconfig, bco_t... bco) {
+  for(int idx = 0; idx < DIFFROT_PARAMS::NUM_DIFFROT_PARAMS; ++idx) 
+    bconfig.set_diffrot(idx, bco...) = seqconfig.set_diffrot(idx, bco...);
+}
+
 inline bool extract_seq(Tree& branch, std::string seqkey, double& storage) {
     auto [ branch_name, key, val ] = find_leaf(branch, seqkey);
     if(!key.empty()) {
