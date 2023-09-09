@@ -282,6 +282,57 @@ struct kadath_config_boost : public configurator_base {
       return var;
     }
 
+    /**
+      * kadath_config_boost::set_diffrot()
+      * set funct to set parameters of the diffrot for base or child parameter container
+      * @tparam idx_t parameter pack type of indexes
+      * @param[input] idxs: index/indices of eos parameter to set
+     */
+    template<typename... idx_t>
+    constexpr auto& set_diffrot(const idx_t... idxs) { 
+      return container.set_diffrot_param(idxs...); 
+    }
+
+    /**
+      * kadath_config_boost::diffrot()
+      * get parameter value of the std::variant eos_parameter for base or child parameter container
+      * (see config_bco.hpp for expected types) 
+      *
+      * here we use template 'specializations' based on type traits to determine
+      * how to extract data from a std::variant container.
+      * @tparam T type of called parameter
+      * @tparam idx_t type of index parameter pack
+      * @param[input] idxs: index/indices of eos parameter to read
+     */
+    template<typename T, typename... idx_t,
+    std::enable_if_t<std::is_arithmetic_v<T>, bool> = true>
+    constexpr const T diffrot(idx_t... idx) {
+      T var{};
+      auto set_var = [&](auto&& v) mutable {
+        using v_t = std::decay_t<decltype(v)>;  
+        if constexpr (std::is_arithmetic_v<v_t>) {
+          if(!std::isnan(v))
+            var = v;
+        } 
+      };  
+      std::visit(set_var, this->set_diffrot(idx...));
+      return var;
+    }
+
+    template<typename T, typename... idx_t,
+    std::enable_if_t<std::is_same_v<T, std::string>, bool> = true>
+    constexpr const T diffrot(idx_t... idx) {
+      T var{};
+      auto set_var = [&](auto&& v) mutable {
+        using v_t = std::decay_t<decltype(v)>;  
+        if constexpr (std::is_same_v<v_t, std::string>) {   
+            var = v;    
+        }    
+      };  
+      std::visit(set_var, this->set_diffrot(idx...));
+      return var;
+    }
+
     template<typename... idx_t>
     auto get_name_string(idx_t... BCOidx) {
       return container.get_name_string(BCOidx...);
