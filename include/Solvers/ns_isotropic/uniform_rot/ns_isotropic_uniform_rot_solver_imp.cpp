@@ -66,9 +66,22 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::solve() {
   int exit_status = EXIT_SUCCESS;
   
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
+  
+  double const & final_chi = (!bconfig.control(CONTROLS::ITERATIVE_CHI)) ?
+    bconfig(BCO_PARAMS::CHI) : bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI);
+  double const initial_chi = bconfig(BCO_PARAMS::CHI);
 
-  this->solver_stage = STAGES::UNIFORM_ROT;  
-  exit_status = uniform_rot_stage();  
+  this->solver_stage = STAGES::UNIFORM_ROT;
+  if(bconfig.control(CONTROLS::ITERATIVE_CHI)) {
+    exit_status = uniform_rot_stage();
+    bconfig.control(CONTROLS::ITERATIVE_CHI) = false;
+    stage_enabled[solver_stage] = true;
+  }
+
+  if(exit_status != RELOAD_FILE) {
+    bconfig(BCO_PARAMS::CHI) = final_chi;
+    exit_status = uniform_rot_stage();
+  } 
 
   // Barrier needed in case we need to read from the previous output
   MPI_Barrier(MPI_COMM_WORLD);
@@ -164,7 +177,8 @@ void ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::print_diagnostic
             << FORMAT << "Madm: " << Madm << std::endl
             << FORMAT << "Mk: " << Mk << " [" 
             << std::abs(Madm - Mk) / Madm << "]" << std::endl
-            << FORMAT << "Jadm: " << Jadm << endl;
+            << FORMAT << "Jadm: " << Jadm << endl
+            << FORMAT << "CHI: " << Jadm / Madm / Madm << endl;
   std::cout << FORMAT << "R: " << rs[0] << " " << rs[1] << "\n\n";
   std::cout.flags(f);
 } // end print diagnostics
