@@ -15,6 +15,7 @@ config_t ns_isotropic_sequence_setup (config_t & seqconfig, std::string outputdi
   config_t bconfig = generate_sequence_config(seqconfig, outputdir);
 
   update_eos_parameters(seqconfig, bconfig);
+  update_diffrot_parameters(seqconfig, bconfig);
 
   if(rank == 0) bconfig.write_config();
   return bconfig;
