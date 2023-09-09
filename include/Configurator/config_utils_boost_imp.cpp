@@ -236,6 +236,34 @@ map_t append_map (const map_t& full_map, const map_t& partial_map, const boolary
   return map;
 }
 
+template<class ary_t>
+constexpr inline bool is_storage_all_nan(ary_t& storage) {
+  using constvar_t = typename std::remove_pointer<decltype(storage.begin())>::type; 
+  using var_t = typename std::remove_cv<constvar_t>::type;
+  auto check = [&](auto&& arg) {
+    using CONSTTYPE = typename std::remove_reference<decltype(arg)>::type;
+    using ARGTYPE = typename std::remove_cv<CONSTTYPE>::type;
+    if constexpr (std::is_same<ARGTYPE,double>::value){
+      if(std::isnan(arg)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  for(auto ele : storage) {
+    bool isnan = true;
+    if constexpr (!std::is_fundamental<var_t>::value) {
+      isnan = std::visit(check,ele);
+    }
+    else if constexpr(std::is_fundamental<var_t>::value) {
+      isnan = check(ele);
+    }
+    if(!isnan)
+        return false;
+  }
+  return true;
+}
+
 /**
   * @} */
 

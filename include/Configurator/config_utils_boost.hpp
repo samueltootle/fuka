@@ -230,6 +230,18 @@ auto find_leaf(tree_t const & tree, std::string key) {
   return res;
 }
 
+/**
+ * @brief Checks if all storage elements are std::nan.  Works
+ * for fundamental and variant types
+ * 
+ * @tparam ary_t Template argument for storage array
+ * @param storage storage array
+ * @return true if all elements are std::nan
+ * @return false 
+ */
+template<class ary_t>
+constexpr inline bool is_storage_all_nan(ary_t& storage);
+
 /** @} end config_utils group */
 
 #include "config_utils_boost_imp.cpp"
