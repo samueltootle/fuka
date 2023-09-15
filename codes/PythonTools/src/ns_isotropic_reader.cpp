@@ -96,6 +96,8 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
 
   	// Setup system of equations and definitions
     System_of_eqs syst (space, 0, ndom-1) ;
+    // define numerical constants
+    syst.add_cst("4piG", bconfig(BCO_PARAMS::BCO_QPIG));
 
     // Fields - must be initialized before common setup
     syst.add_cst("H", logh);
@@ -107,20 +109,13 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
 
     syst.add_cst("omec", bconfig(OMEGA));
 
-    // define quantity to be integrated at infinity
-    // two (in this case) equivalent definitions of ADM mass
-    // as well as the Komar mass
-    syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
-    syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
-    syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
-
     syst.add_def("N = exp(nu)");
     syst.add_def("A = exp(lapAterm - nu)");
     syst.add_def("B = (divrsint(lapBterm) + 1) / N");
     syst.add_def("w = divrsint(wrsint)");
     syst.add_def("Fomega = B^2 * multrsint(multrsint(ome - w)) "
                         "/ (N^2 - multrsint(B * (ome - w))^2)");
-   
+
     // define quantity to be integrated at infinity
     // two (in this case) equivalent definitions of ADM mass
     // as well as the Komar mass
@@ -152,10 +147,10 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     syst.add_def("W = sqrt(Wsq)");
 
     // Avoid excision region (d=0,1) and compactified (d=ndom-1)
-    for(auto d = 2; d < ndom-1; ++d) {
-      syst.add_def(d, "drP = dr(P)");
-      syst.add_def(d, "ddrP = dr(drP)");
-    }
+    // for(auto d = 2; d < ndom-1; ++d) {
+    //   syst.add_def(d, "drP = dr(P)");
+    //   syst.add_def(d, "ddrP = dr(drP)");
+    // }
 
     for (int d = 0; d < ndom; d++) {
       
@@ -184,6 +179,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
   
         // definition for the baryonic mass integral
         syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
+        syst.add_def(d, "intH  = W * H * A^2 * B * 4piG / 2") ;
               break;
         // outside the matter is absent and the sources are zero
         default:
@@ -197,6 +193,14 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
           break;
       }
     }
+    auto add_surf_integ = [&](auto varstr, auto defstr, auto dom, auto bc) {
+      vars[varstr]  = syst.get_space().get_domain(dom)->integ(
+        syst.give_val_def(defstr)()(dom), bc
+      );
+    };
+    add_surf_integ("Jadm", "intJ"   , ndom-1, OUTER_BC);
+    add_surf_integ("Madm", "intMadm"   , ndom-1, OUTER_BC);
+    add_surf_integ("Mk", "intMk"   , ndom-1, OUTER_BC);
 
     // Populate vars dictionary
     // FUKA_Syst_tools::syst_vars(vars, syst);
@@ -207,7 +211,9 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     // );
 
     // double Madm = boost::python::extract<double>(vars["Madm"]);
-    // FUKA_Syst_tools::syst_vars_NS(vars, syst, 2, Madm, matter_Domains);
+    FUKA_Syst_tools::syst_vars_NS_isotropic(vars, syst, 2);
+    vars["nc"] = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+    vars["hc"] = bconfig(BCO_PARAMS::HC);
   }
 };
 
