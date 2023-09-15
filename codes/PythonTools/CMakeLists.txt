@@ -64,6 +64,15 @@ if(Python3_FOUND)
     target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
     set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
+    
+    #Library 1
+    set (LIB1 ns_isotropic_reader)
+    set (LIB1MOD ns)    
+    set (SOURCESLIB src/${LIB1}.cpp)
+    add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    set_target_properties(${LIB1} PROPERTIES PREFIX "_")
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
 
   else()
     message("Boost/Boost Python libraries not found. pyconfig cannot be built.")
