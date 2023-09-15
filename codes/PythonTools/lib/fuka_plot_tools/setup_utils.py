@@ -64,14 +64,16 @@ def get_reader_args(args, filepathabs):
     bbh = args.bbh,
     bns = args.bns,
     ns = args.ns,
-    bh = args.bh)
+    bh = args.bh,
+    isotropic= args.isotropic)
   
 def get_reader(filepathabs,
                bhns=False,
                bns=False,
                bbh=False,
                ns=False,
-               bh=False):
+               bh=False,
+               isotropic=False):
   reader = None
   if bhns:
     from fukaID_readers.bhns import bhns_reader
@@ -86,8 +88,12 @@ def get_reader(filepathabs,
     from fukaID_readers.bns import bns_reader
     reader = bns_reader(filepathabs)
   elif ns:
-    from fukaID_readers.ns import ns_reader
-    reader = ns_reader(filepathabs)
+    if isotropic:
+      from fukaID_readers.ns import ns_isotropic_reader
+      reader = ns_isotropic_reader(filepathabs)
+    else:
+      from fukaID_readers.ns import ns_reader
+      reader = ns_reader(filepathabs)
     
   return reader
 

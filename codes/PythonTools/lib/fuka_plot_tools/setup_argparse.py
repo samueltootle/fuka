@@ -59,6 +59,7 @@ def add_base_arguments(parser):
   parser.add_argument('--bns' , action='store_true', help='Use BNS ID reader')
   parser.add_argument('--bh'  , action='store_true', help='Use BH ID reader')  
   parser.add_argument('--ns'  , action='store_true', help='Use NS ID reader')
+  parser.add_argument('--isotropic'  , action='store_true', help='Isotropic solution')
   parser.add_argument('--pickle', 
     action='store_true', 
     help='Disable creation of pickle file after data extraction',
