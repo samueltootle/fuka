@@ -103,7 +103,10 @@ void kadath_config_boost<ParamC>::write_config(std::string ofile)
       new_tree.push_back(std::make_pair(s,key.second));
     } else {
       std::string news=s+"."+key.first;
-      new_tree.put(news.c_str(),key.second.data());
+      if(key.second.empty())
+        new_tree.put(news.c_str(),key.second.data());
+      else
+        add_branch_data(new_tree, key.second, news);
     }
   }
 
@@ -142,7 +145,10 @@ void kadath_config_boost<ParamC>::write_minimal_config(std::string ofile)
       new_tree.push_back(std::make_pair(s,key.second));
     } else {
       std::string news=s+"."+key.first;
-      new_tree.put(news.c_str(),key.second.data());
+      if(key.second.empty())
+        new_tree.put(news.c_str(),key.second.data());
+      else
+        add_branch_data(new_tree, key.second, news);
     }
   }
 
