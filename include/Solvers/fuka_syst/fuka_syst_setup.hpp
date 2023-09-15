@@ -236,13 +236,9 @@ inline std::string set_ns_mass_fixing(System_of_eqs& syst, config_t& bconfig, st
     switch(idx) {
       case BCO_PARAMS::HC:
         syst.add_cst("hc"  , bconfig(BCO_PARAMS::HC));
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
         break;
       case BCO_PARAMS::NC:
         syst.add_cst("Nc", bconfig(BCO_PARAMS::NC));
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
         central_fixing_definition = "rho - Nc";
         break;
       case BCO_PARAMS::MADM:
@@ -253,7 +249,6 @@ inline std::string set_ns_mass_fixing(System_of_eqs& syst, config_t& bconfig, st
       case BCO_PARAMS::MB:
         syst.add_var("hc", bconfig(BCO_PARAMS::HC));
         syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
         break;
       default:
         std::string msg{"Sequence initialized, but not implemented for Mass index = " + std::to_string(int(idx))};
@@ -269,7 +264,6 @@ inline std::string set_ns_spin_fixing(System_of_eqs& syst, config_t& bconfig, st
     auto idx{seq->spin_idx()};
     switch(idx) {
       case BCO_PARAMS::OMEGA:
-        syst.add_var("chi" , bconfig(BCO_PARAMS::CHI));
         syst.add_cst("ome" , bconfig(BCO_PARAMS::OMEGA));
         break;
       case BCO_PARAMS::JADM:
