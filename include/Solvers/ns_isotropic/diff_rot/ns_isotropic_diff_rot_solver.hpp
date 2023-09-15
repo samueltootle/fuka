@@ -76,7 +76,7 @@ class ns_isotropic_diff_rot_solver : public Solver<config_t, space_t> {
   std::string converged_filename(const std::string stage="") const override;
   
   void save_to_file() const override {
-    Kadath::bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh, lap_Bterm, lap_wterm);
+    Kadath::bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh, lap_Bterm, lap_wterm, Omega);
   }
   
   /// solver driver
