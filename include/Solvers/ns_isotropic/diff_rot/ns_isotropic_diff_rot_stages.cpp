@@ -30,12 +30,6 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   //     EXIT_SUCCESS : RELOAD_FILE;
   // }
 
-  if (rank == 0)
-    std::cout << "############################" << std::endl
-              << "Differentially Rotating NS Solver" << std::endl
-              << "Omega_c: " << bconfig(BCO_PARAMS::OMEGA) <<std::endl
-              << "############################" << std::endl;
-
   // Sad tool to make system of equations work with constants
   Scalar one(space);
   one = 1;
@@ -78,6 +72,18 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   }
   std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsq)) + " + jint};
 
+  if (rank == 0)
+    std::cout << "###################################" << std::endl
+              << "Differential Rotating models"      << std::endl
+              << "Law: " << F << std::endl
+              << firstint << std::endl
+              // << eqOme << std::endl
+              << "q: " << q << std::endl
+              << "Fixed A / R0: " << diffAratio << std::endl
+              << "Initial Rp/Re: " << Rp / R0 << "\n"
+              << "Initial R0: " << R0 <<std::endl
+              << "###################################" << "\n\n";
+
   // setup a system of equations
   System_of_eqs syst(space, 0, ndom - 1);
   syst_init(syst);
@@ -87,8 +93,6 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
     central_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_mass_fixing(syst, bconfig, seq);
   } else {
     syst.add_cst("hc" , bconfig(BCO_PARAMS::HC));
-    syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-    syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
   }
 
   syst.add_cst("one", one);
@@ -186,8 +190,6 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
         space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
         break;
       case BCO_PARAMS::MB:
-        syst.add_var("hc", bconfig(BCO_PARAMS::HC));
-        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
         space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         break;
       default:
