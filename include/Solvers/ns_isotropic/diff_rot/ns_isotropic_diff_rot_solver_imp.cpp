@@ -23,6 +23,7 @@ ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::ns_isotropic_diff_rot_so
   lap_wterm.set_parameters()->set_m_quant() = 1 ;
   lap_wterm.std_base();
 
+  law = str_tolower(bconfig.template diffrot<std::string>(DIFFROT_PARAMS::DIFF_LAW));
 }
 
 // standardized filename for each converged dataset at the end of each stage.
@@ -32,15 +33,22 @@ std::string ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::converged_fi
   auto res = space.get_domain(0)->get_nbr_points()(0);
   const std::string eosname{extract_eos_name()};
   std::stringstream ss;
-  ss << "NS_ISO";
-  if(stage != "") ss  << "_" << stage << ".";
-  else ss << ".";
-  ss << eosname << "."
-     << bconfig(BCO_PARAMS::HC) << "."; 
-  if(stage != "NOROT_BC") ss << bconfig(BCO_PARAMS::OMEGA)<< ".";
-  else ss << "0.";
+  ss << "NS_ISO"
+     << "_" << stage << "." 
+     << eosname << "."
+     << law << ".";
+  
+  // Add mass fixing parameter to filename
+  auto default_idx = BCO_PARAMS::HC;
+  if(seq) {
+    update_filename_from_mass_fixing(bconfig, seq, ss);
+  } else {
+    auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
+    ss << seq_key << "." << bconfig(default_idx) << "."; 
+  }
+  ss << bconfig(BCO_PARAMS::OMEGA)<< ".";
   ss << bconfig(BCO_PARAMS::NSHELLS) << "."
-     <<std::setfill('0') << std::setw(2) << res;
+     << std::setfill('0') << std::setw(2) << res;
   return ss.str();
 }
 
