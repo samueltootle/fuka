@@ -95,4 +95,61 @@ void syst_vars_NS(dict_t& vars, System_of_eqs & syst,
     double Chi = S / Madm / Madm;
     vars[std::string{iden+"Chi"}.c_str()] = Chi;
 }
+
+/**
+ * @brief Fill vars dict with Neutron star details
+ * 
+ * @tparam dict_t boost dictionary type
+ * @param vars dictionary
+ * @param syst system of equations
+ * @param adapt_d INNER adapted domain index
+ * @param Madm ADM mass to use when computing chi
+ * @param iden string identifier for the dictionary
+ */
+template<class dict_t>
+void syst_vars_NS_isotropic(dict_t& vars, System_of_eqs & syst, 
+  int const adapt_d) {
+    std::string iden{};
+    #ifdef DEBUG
+      std::cout << "Loading NS vars into dictionary.\n";
+    #endif
+    auto& space = syst.get_space();
+
+    std::vector<double> baryonic_mass{};
+    std::vector<double> int_H{};
+    // std::vector<double> qladm_mass{};
+    for(auto d = 0; d < adapt_d; ++d){
+      baryonic_mass.push_back(syst.give_val_def("intMb")()(d).integ_volume());
+      int_H.push_back(syst.give_val_def("intH")()(d).integ_volume());
+      // qladm_mass.push_back(syst.give_val_def("intqlMadm")()(d).integ_volume());
+    }
+    vars[iden+"Mb"] = std::accumulate(baryonic_mass.begin(),baryonic_mass.end(),0.);
+    // vars[iden+"qlMADM"] = std::accumulate(qladm_mass.begin(),qladm_mass.end(),0.);
+    vars[iden+"Hvol"] = std::accumulate(int_H.begin(), int_H.end(),0.);
+
+    auto radii=bco_utils::get_rmin_rmax(space, adapt_d-1);
+    vars[iden+"coordR-pole"] = radii[0] ;
+    vars[iden+"coordR-equi"] = radii[1] ;
+    
+    auto npts = space.get_domain(1)->get_nbr_points();
+
+    Index pos_eq (npts);
+    pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+    pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+
+    auto B(syst.give_val_def("B")()(adapt_d-1));
+    auto r(space.get_domain(1)->get_radius());
+    double AR = B(pos_eq) * r(pos_eq);
+
+    // Area radius
+    vars[std::string{iden+"ArealR"}.c_str()] = AR;
+
+    vars["rho"] = syst.give_val_def("rho");
+    vars["eps"] = syst.give_val_def("eps");
+    vars["press"] = syst.give_val_def("press");
+    vars["P/rho"] = syst.give_val_def("delta");
+
+    vars["W"] = syst.give_val_def("W");
+    vars["h"] = syst.give_val_def("h");
+}
 }}
