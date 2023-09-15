@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
   int rank = 0 ;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
 
-  using config_t = kadath_config_boost<BCO_NS_INFO>;
+  using config_t = kadath_config_boost<BCO_ISO_NS_INFO>;
   using InitSolver = Initialize_Solver<config_t>;
   
   // Initialize static member variables
@@ -147,7 +147,7 @@ int driver(config_t& bconfig, std::string outputdir) {
       exit_status = NS_solver_2d_norot<eos_t>(bconfig, true);
     exit_status = NS_solver_2d_norot<eos_t>(bconfig);
   }
-  if(stage_enabled[STAGES::TOTAL_BC])
+  if(stage_enabled[STAGES::UNIFORM_ROT])
     exit_status = NS_solver_2d_uniform_rot<eos_t>(bconfig);
   if(stage_enabled[STAGES::DIFF_ROT])
     exit_status = NS_solver_2d_differential_rot<eos_t>(bconfig);
