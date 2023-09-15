@@ -267,6 +267,9 @@ void reader_2d_diffrot(config_t bconfig) {
   auto spacein = bconfig.space_filename();
 	FILE* ff1 = fopen (spacein.c_str(), "r") ;
 	Space_polar_adapted space (ff1) ;
+  Scalar ome(space);
+  ome = bconfig(BCO_PARAMS::OMEGA);
+  ome.std_base();
 
   // load the fields defined on the space
 	Scalar lap_Aterm   (space, ff1) ;
@@ -274,6 +277,8 @@ void reader_2d_diffrot(config_t bconfig) {
   Scalar logh   (space, ff1) ;
   Scalar lap_Bterm   (space, ff1) ;
   Scalar lap_wterm(space,ff1);
+  if(bconfig.set_field(BCO_FIELDS::DIFF_OMEGA))
+    ome = Scalar(space, ff1);
 	fclose(ff1) ;
 
   // central values of the matter fields
@@ -308,7 +313,7 @@ void reader_2d_diffrot(config_t bconfig) {
   syst.add_cst("lapAterm", lap_Aterm);
   syst.add_cst("lapBterm", lap_Bterm);
   syst.add_cst("lapwterm", lap_wterm);
-  syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
+  syst.add_cst("Omega", ome);
   syst.add_cst("one", one);
 
   // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
