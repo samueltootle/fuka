@@ -264,6 +264,19 @@ constexpr inline bool is_storage_all_nan(ary_t& storage) {
   return true;
 }
 
+template <typename tree_t>
+void add_branch_data(tree_t& tree, tree_t& branch, std::string path) {
+  for(auto& key : branch) {
+    // Update path
+    std::string news=path+"."+key.first;
+    if(key.second.empty())
+      tree.put(news.c_str(),key.second.data());
+    else
+      // new_tree.put_child(news.c_str(), key.second);
+      add_branch_data(tree, key.second, news);
+  }
+}
+
 /**
   * @} */
 

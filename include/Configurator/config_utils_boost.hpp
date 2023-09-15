@@ -242,6 +242,18 @@ auto find_leaf(tree_t const & tree, std::string key) {
 template<class ary_t>
 constexpr inline bool is_storage_all_nan(ary_t& storage);
 
+/**
+ * @brief Recursively add branch data and update the data
+ * path
+ * 
+ * @tparam tree_t Boost tree type by default
+ * @param tree Tree to add data to
+ * @param branch Branch to read data from
+ * @param path base path to add data to
+ */
+template <typename tree_t>
+void add_branch_data(tree_t& tree, tree_t& branch, std::string path = "");
+
 /** @} end config_utils group */
 
 #include "config_utils_boost_imp.cpp"
