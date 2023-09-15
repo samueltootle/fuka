@@ -120,10 +120,22 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   // integral below
   syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
  
-  // if surface is resolved, fix the central enthalpy by one of these integrals
+  // if surface is resolved, add relevant equations
   if(!fixed && seq) {
-    space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
-    space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+    auto idx{seq->mass_idx()};
+    switch(idx) {
+      case BCO_PARAMS::MADM:
+        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+        space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+        break;
+      case BCO_PARAMS::MB:
+        syst.add_var("hc", bconfig(BCO_PARAMS::HC));
+        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
+        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+        break;
+      default:
+        break;
+    }
   }
  
   // parameters for the solver loop
@@ -135,6 +147,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   while (!endloop) {  
     // do exactly one newton step, given the system above
     endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
+    update_config_quantities(syst);
  
     // output files at this iteration and print diagnostics
     std::stringstream ss;
@@ -156,7 +169,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
     ite++;
     check_max_iter_exceeded(rank, ite, conv);
   }
-  update_config_quantities(logh);
+  update_config_quantities(syst);
   bconfig.set_filename(converged_filename(stagename));
   bconfig.control(CONTROLS::SEQUENCES) = false;
   if (rank == 0) {

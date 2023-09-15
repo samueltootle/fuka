@@ -178,9 +178,34 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   // integral below
   syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
  
-  // if surface is resolved, fix the central enthalpy by one of these integrals
-  space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
-  space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+  if(seq) {
+    auto idx{seq->mass_idx()};
+    switch(idx) {
+      case BCO_PARAMS::MADM:
+        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+        space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+        break;
+      case BCO_PARAMS::MB:
+        syst.add_var("hc", bconfig(BCO_PARAMS::HC));
+        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
+        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+        break;
+      default:
+        break;
+    }
+
+    // idx = seq->spin_idx();
+    // switch(idx) {
+    //   case BCO_PARAMS::JADM:
+    //     space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
+    //     break;
+    //   case BCO_PARAMS::CHI:
+    //     space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
+    //     break;
+    //   default:
+    //     break;
+    // }
+  }
 
   syst.add_eq_val(0, "diffAField/R0 - diffAratio", pos_origin);
   syst.add_eq_val(1, "r/R0 - 1", pos_eq);
@@ -197,7 +222,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
     // do exactly one newton step, given the system above
     endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
  
-    update_config_quantities(logh);
+    update_config_quantities(syst);
     // output files at this iteration and print diagnostics
     std::stringstream ss;
     ss << "diff_rot_ckpt_";
@@ -214,7 +239,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
     check_max_iter_exceeded(rank, ite, conv);
   }
   
-  update_config_quantities(logh);
+  update_config_quantities(syst);
   bconfig.set_filename(converged_filename(stagename));
   if (rank == 0) {
     checkpoint();

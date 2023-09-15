@@ -50,9 +50,6 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
   } else {
     syst.add_cst("hc" , bconfig(BCO_PARAMS::HC));
     syst.add_cst("ome", bconfig(BCO_PARAMS::OMEGA));
-    syst.add_var("chi" , bconfig(BCO_PARAMS::CHI));
-    syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-    syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
   }
  
   for (int d = 0; d < ndom; d++) {
@@ -124,9 +121,35 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
   // integral below
   syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
  
-  space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
-  space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
-  space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
+  // Add relevant equations based on Mass and Spin fixing
+  if(seq) {
+    auto idx{seq->mass_idx()};
+    switch(idx) {
+      case BCO_PARAMS::MADM:
+        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+        space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+        break;
+      case BCO_PARAMS::MB:
+        syst.add_var("hc", bconfig(BCO_PARAMS::HC));
+        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
+        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+        break;
+      default:
+        break;
+    }
+
+    idx = seq->spin_idx();
+    switch(idx) {
+      case BCO_PARAMS::JADM:
+        space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
+        break;
+      case BCO_PARAMS::CHI:
+        space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
+        break;
+      default:
+        break;
+    }
+  }
  
   // parameters for the solver loop
   bool endloop = false;
@@ -138,7 +161,7 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
     // do exactly one newton step, given the system above
     endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
  
-    update_config_quantities(logh);
+    update_config_quantities(syst);
     // output files at this iteration and print diagnostics
     std::stringstream ss;
     ss << "uniform_rot_ckpt_";
@@ -154,10 +177,7 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
     ite++;
     check_max_iter_exceeded(rank, ite, conv);
   }
-  bconfig.set(BCO_PARAMS::MADM) = 
-    space.get_domain(ndom-1)->integ(syst.give_val_def("intMadm")()(ndom-1), OUTER_BC);
-  
-  update_config_quantities(logh);
+  update_config_quantities(syst);
   bconfig.set_filename(converged_filename(stagename));
   if (rank == 0) {
     checkpoint();
