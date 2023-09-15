@@ -21,6 +21,7 @@
 #include "name_tools.hpp"
 #include "tensor.hpp"
 #include <string>
+#include <algorithm>
 namespace Kadath {
 // Removes the spaces in excess from a string
 void trim_spaces (char* dest, const char* name) {
@@ -280,6 +281,16 @@ std::string extract_path(std::string fullvar) {
 
 std::string extract_filename(std::string fullvar) {
   return fullvar.substr(fullvar.rfind("/")+1, fullvar.size());
+}
+
+// This is taken from cppreference
+// https://en.cppreference.com/w/cpp/string/byte/tolower
+std::string str_tolower(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(), 
+                   [](unsigned char c){ return std::tolower(c); }
+                  );
+    return s;
 }
 
 }

@@ -34,5 +34,6 @@ void get_parts (const char*,char*,char*, char, int place = 0) ;
 bool is_tensor (const char*, const char*, int&, char*&, Array<int>*&) ;
 std::string extract_path(std::string fullvar);
 std::string extract_filename(std::string fullvar);
+std::string str_tolower(std::string s);
 }
 #endif
