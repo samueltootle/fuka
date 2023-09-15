@@ -147,11 +147,15 @@ int ns_isotropic_diff_rot_regrid(config_t& bconfig, std::string outputfile) {
   lap_Aterm.annule_hard();
   lap_Aterm.std_base();
 
-  Scalar lap_Bterm(lap_Aterm);
-  lap_Bterm.std_base();
+  Scalar one(space);
+  one = 1.;
+  one.std_base();
 
-  Scalar lap_wterm(lap_Aterm);
-  lap_wterm.std_base();
+  Scalar rsint = Scalar(one.mult_sin_theta().mult_r());
+
+  Scalar lap_Bterm(rsint);
+
+  Scalar lap_wterm(lap_Bterm);
   
   Scalar nu(space);
   nu.annule_hard();
@@ -163,7 +167,6 @@ int ns_isotropic_diff_rot_regrid(config_t& bconfig, std::string outputfile) {
 
   Scalar Omega(space);
   Omega.annule_hard();
-  Omega.std_base();
   // end setup new fields
   
   // import data from fields in the old space
@@ -175,12 +178,6 @@ int ns_isotropic_diff_rot_regrid(config_t& bconfig, std::string outputfile) {
   Omega.import(old_Omega);
   // end import old fields
 
-  Scalar one(space);
-  one = 1.;
-  one.std_base();
-
-  Scalar rsint = Scalar(one.mult_r().mult_sin_theta());
-
   // enforce spectral decomposition compatible with the parities
   lap_Aterm.std_base();
   nu.std_base();
@@ -188,11 +185,23 @@ int ns_isotropic_diff_rot_regrid(config_t& bconfig, std::string outputfile) {
 
   for(int d = 0; d < ndom; ++d) {
     lap_Bterm.set_domain(d).set_base() = rsint(d).get_base();
-    lap_wterm.set_domain(d).set_base() = rsint(d).get_base();  
+    lap_wterm.set_domain(d).set_base() = rsint(d).get_base();
   }
-  // lap_Bterm.set_base() = rsint.get_base();
-  // lap_wterm.set_base() = rsint.get_base();
   
+  Omega.std_base();
+  
+  // Fix outer boundary value for Omega
+  auto npts_compact = space.get_domain(ndom-1)->get_nbr_points();
+  Index pos(npts_compact);
+  pos.set(0) = npts_compact(0) - 1;
+  Index posrminus1(pos);
+  posrminus1.set(0) = npts_compact(0) - 2;
+  for(auto i = 0; i < npts_compact(1); ++i) {
+    pos.set(1) = i;    
+    posrminus1.set(1) = i;
+    Omega.set_domain(ndom-1).set(pos) = Omega(ndom-1)(posrminus1);
+  }
+
   // output data  
   bconfig.set_filename(outputfile);
   bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh, lap_Bterm, lap_wterm, Omega);
