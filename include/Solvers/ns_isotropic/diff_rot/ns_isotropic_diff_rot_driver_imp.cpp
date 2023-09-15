@@ -169,7 +169,7 @@ inline int ns_isotropic_diff_rot_driver (config_t& bconfig,
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
 
-  exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir);
+  exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
   // We now have a "low" resolution solution for the NS of interest
   // Set this to false to avoid iterative M and CHI
   bconfig.control(CONTROLS::SEQUENCES) = false;
@@ -198,7 +198,7 @@ inline int ns_isotropic_diff_rot_driver (config_t& bconfig,
     }
     regrid();
 
-    exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir);
+    exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
   }
   return exit_status;
 }
