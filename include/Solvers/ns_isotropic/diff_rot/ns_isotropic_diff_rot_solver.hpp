@@ -82,11 +82,8 @@ class ns_isotropic_diff_rot_solver : public Solver<config_t, space_t> {
   int solve();
   int solve(ns_sequence const * sequence_in);
 
-  /// solver stages
-  int differential_rot_stage();
-
-  /// Differential rotation laws
-  void KEH_law(System_of_eqs& syst);
+  /// solver stage - depending on rotation law
+  int keh_stage();
 
   // Update bconfig(HC) and bconfig(NC)
   void update_config_quantities(Scalar& logh) {

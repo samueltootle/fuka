@@ -1,6 +1,7 @@
 #include "Solvers/solvers.hpp"
 #include "mpi.h"
 #include "bco_utilities.hpp"
+#include "name_tools.hpp"
 #include <cmath>
 
 /**
@@ -51,8 +52,10 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::solve() {
   
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
 
-  this->solver_stage = STAGES::DIFF_ROT;  
-  exit_status = differential_rot_stage();  
+  this->solver_stage = STAGES::DIFF_ROT;
+  std::string law = str_tolower(bconfig.template diffrot<std::string>(DIFFROT_PARAMS::DIFF_LAW));
+  if(law == "keh")
+    exit_status = keh_stage();  
 
   // Barrier needed in case we need to read from the previous output
   MPI_Barrier(MPI_COMM_WORLD);
@@ -119,74 +122,6 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::syst_init(System_of
   syst.add_def("Usq = U*U");
   syst.add_def("Wsq = 1 / (1 - Usq)");
   syst.add_def("W = sqrt(Wsq)");
-}
-
-template<class eos_t, typename config_t, typename space_t>
-void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::KEH_law(System_of_eqs& syst) {
-  auto npts = space.get_domain(1)->get_nbr_points();
-  Index pos_origin (npts);
-  Index pos_eq (npts);
-  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
-  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
-
-  Index pos_pole (npts);
-  pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
-
-  auto adpt_dom = space.get_domain(1);
-  double R0 = adpt_dom->get_radius()(pos_eq);
-  double Rp = adpt_dom->get_radius()(pos_pole);
-
-  bconfig.set(BCO_PARAMS::RMID) = R0;
-
-  // Extract Constants
-  int q = bconfig.template diffrot<int>(DIFFROT_PARAMS::DIFF_Q);
-  double diffAratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
-  double diffRratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
-  // cout << q << ", " << diffAratio << ", " << diffRratio << ", " << R0 << '\n';
-  
-  // Initialize diffA var - shouldn't need to be saved to file
-  double diffA = diffAratio * R0;
-
-  std::string jint{};
-  std::string jome{"diffA^2 * ome * (omeratio^"+std::to_string(q)+" - 1)"};
-  std::string F{"F = " + jome};
-
-  switch(q) {
-    case 2:
-      jint = "diffA^2 * ome^2 * (omeratio^2 * log(ome) - 0.5)"; // - omec^2 * (log(omec) - 0.5)";
-      break;
-    default:
-      jint = "diffA^2 * ome^2 * ((1 / (2-q)) * omeratio^"+std::to_string(q)+" - 0.5)"; // - omec^2 * q / (4 - 2 * q)";
-      break;
-  }
-  std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsq)) + " + jint};
-
-  syst.add_cst("q",q);
-  syst.add_cst("diffAratio", diffAratio);
-  syst.add_cst("Rratio", diffRratio);  
-
-  syst.add_var("diffA", diffA);
-  syst.add_var("omec", bconfig(BCO_PARAMS::OMEGA));
-  syst.add_var("R0", bconfig(BCO_PARAMS::RMID));
-
-  syst.add_def("diffAField = one * diffA");
-  syst.add_def("r = multr(one)");
-  syst.add_def("omeratio = omec / ome");
-  syst.add_def(F.c_str());
-  syst.add_def("Fomega = B^2 * multrsint(multrsint(ome - w)) "
-                      "/ (N^2 - multrsint(B * (ome - w))^2)");
-
-  for (int d = 0; d < ndom; d++) {
-    syst.add_eq_full(d, "Fomega - F = 0");
-    switch(d) {
-      case 0:
-      case 1:
-        syst.add_def(d, firstint.c_str());
-    }
-  }
-  syst.add_eq_val(0, "diffAField/R0 - diffAratio", pos_origin);
-  syst.add_eq_val(1, "r/R0 - 1", pos_eq);
-  syst.add_eq_val(1, "r/R0 - Rratio", pos_pole);
 }
 
 template<class eos_t, typename config_t, typename space_t>
