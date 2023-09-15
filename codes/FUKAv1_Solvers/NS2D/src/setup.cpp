@@ -53,7 +53,7 @@ void set_2dfields(config_t& bconfig);
 
 int main(int argc, char** argv) {
   int rank = 0;
-  using config_t = kadath_config_boost<BCO_NS_INFO>;
+  using config_t = kadath_config_boost<BCO_ISO_NS_INFO>;
   using InitSolver = Initialize_Solver<config_t>;
   
   // Initialize static member variables
@@ -72,9 +72,9 @@ int main(int argc, char** argv) {
       bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
       bconfig.set(BCO_PARAMS::DIM) = 2;
       set_2dfields(bconfig);
-      bconfig.set(BCO_PARAMS::DIFF_LAWQ) = 1;
-      bconfig.set(BCO_PARAMS::DIFF_ARATIO) = 1.;
-      bconfig.set(BCO_PARAMS::DIFF_RRATIO) = 0.875;
+      bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_Q) = 1;
+      bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_ARATIO) = 1.;
+      bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_RRATIO) = 0.875;
       bconfig.set_stage(STAGES::DIFF_ROT) = true;
       bconfig.write_config();
     }

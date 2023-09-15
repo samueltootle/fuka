@@ -669,10 +669,10 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   bconfig.set(BCO_PARAMS::RMID) = R0;
 
   // Differential rotation fixing parameters
-  double& diffAratio = bconfig(BCO_PARAMS::DIFF_ARATIO);
-  double& Rratio = bconfig(BCO_PARAMS::DIFF_RRATIO);
+  int q = bconfig.template diffrot<int>(DIFFROT_PARAMS::DIFF_Q);
+  double diffAratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
+  double Rratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
   double diffA = diffAratio * R0;
-  int q = int(bconfig(BCO_PARAMS::DIFF_LAWQ));
 
   std::string jint{};
   std::string jome{"diffA^2 * Omega * (omeratio^"+std::to_string(q)+" - 1)"};
