@@ -458,7 +458,7 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   // delta = p / rho
   syst.add_def("delta = h - eps - 1.");
 
-  for (int d = 0; d < ndom-1; d++) {
+  for (int d = 0; d < ndom; d++) {
     switch (d) {
     // in the star the constraint equations are sourced by the matter
     case 0:
@@ -503,13 +503,6 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
       break;
     }
   }
-    syst.add_eq_full(ndom-1, "H = 0");
-    syst.add_def(ndom-1, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                            "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(multr(grad(w)), multr(grad(w))) ");
-    syst.add_def(ndom-1, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))"
-              "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(multr(grad(w)), multr(grad(w)))");
-    syst.add_def(ndom-1, "eqbet = lap2(bet)");
-    syst.add_def(ndom-1, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
   
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
   space.add_eq(syst, "eqnulogA=0", "nulogA", "dn(nulogA)");
@@ -762,7 +755,7 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   // delta = p / rho
   syst.add_def("delta = h - eps - 1.");
 
-  for (int d = 0; d < ndom-1; d++) {
+  for (int d = 0; d < ndom; d++) {
     syst.add_eq_full(d, "Fomega - F = 0");
     switch (d) {
     // in the star the constraint equations are sourced by the matter
@@ -810,15 +803,6 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
       break;
     }
   }
-    syst.add_eq_full(ndom-1, "Fomega - F = 0");
-    syst.add_eq_full(ndom-1, "H = 0");
-
-    syst.add_def(ndom-1, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                            "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(multr(grad(w)), multr(grad(w))) ");
-    syst.add_def(ndom-1, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))"
-              "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(multr(grad(w)), multr(grad(w)))");
-    syst.add_def(ndom-1, "eqbet = lap2(bet)");
-    syst.add_def(ndom-1, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
   
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
   space.add_eq(syst, "eqnulogA=0", "nulogA", "dn(nulogA)");
