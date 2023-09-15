@@ -75,6 +75,7 @@ int main(int argc, char** argv) {
       bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_Q) = 1;
       bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_ARATIO) = 1.;
       bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_RRATIO) = 0.875;
+      bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
       bconfig.set_stage(STAGES::DIFF_ROT) = true;
       bconfig.write_config();
     }
