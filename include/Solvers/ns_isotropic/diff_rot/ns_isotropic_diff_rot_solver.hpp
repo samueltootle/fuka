@@ -46,6 +46,7 @@ class ns_isotropic_diff_rot_solver : public Solver<config_t, space_t> {
   Scalar& lap_wterm;
   Scalar& Omega;
   std::unique_ptr<ns_sequence const> seq;
+  std::string law{};
 
   /// Specify base class members used to avoid this->
   using Solver<config_t, space_t>::space;
@@ -87,8 +88,10 @@ class ns_isotropic_diff_rot_solver : public Solver<config_t, space_t> {
 
   void update_config_quantities(System_of_eqs& syst) {
 
-    auto rs = bco_utils::get_rmin_rmax(space, 1);
-    bconfig.set(BCO_PARAMS::RMID) = rs[0];
+    // if(law != "keh") {
+    //   auto rs = bco_utils::get_rmin_rmax(space, 1);
+    //   bconfig.set(BCO_PARAMS::RMID) = rs[0];
+    // }    
 
     // compute the ADM mass as surface integral at infinity
     Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));

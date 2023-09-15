@@ -61,7 +61,6 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::solve() {
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
 
   this->solver_stage = STAGES::DIFF_ROT;
-  std::string law = str_tolower(bconfig.template diffrot<std::string>(DIFFROT_PARAMS::DIFF_LAW));
   if(law == "keh")
     exit_status = keh_stage();  
 
