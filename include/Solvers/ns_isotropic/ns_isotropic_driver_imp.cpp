@@ -24,7 +24,7 @@ config_t ns_isotropic_sequence_setup (config_t & seqconfig, std::string outputdi
 template<class Res_t, class config_t>
 config_t ns_isotropic_sequence (config_t & seqconfig, 
                           ns_sequence const & seq,
-                          Res_t const & resolution,
+                          Res_t & resolution,
                           std::string outputdir) {
   
   int rank = 0, exit_status = EXIT_SUCCESS;
@@ -44,6 +44,11 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   config_t base_config = ns_isotropic_sequence_setup(seqconfig, outputdir);
   base_config.set(resolution_indices) = resolution.init();
 
+  if(!(base_config.control(CONTROLS::SEQUENCES) || base_config.control(CONTROLS::RESOLVE))) {
+    base_config = seqconfig;
+    base_config.set(BCO_PARAMS::CHI) = 0;
+  }
+  cout << base_config;
   auto mass_fixing = seq.mass_idx();
 
   // Should be deprecated...
@@ -116,7 +121,8 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
     if(seq.is_set())
       bconfig.set(sequence_idx) = val;
 
-    exit_status = ns_isotropic_driver(bconfig, resolution, outputdir, &seq); 
+    exit_status = ns_isotropic_driver(bconfig, resolution, outputdir, &seq);
+    resolution.set(resolution.final(), resolution.final(), resolution.final());
     return exit_status;
   };
 
