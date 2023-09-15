@@ -72,9 +72,18 @@ int main(int argc, char** argv) {
       bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
       bconfig.set(BCO_PARAMS::DIM) = 2;
       set_2dfields(bconfig);
+      
+      // Testing Defaults
+      // EOS
+      bconfig.set_eos(EOS_PARAMS::EOSFILE) = "gam2.polytrope";
+      bconfig.set_eos(EOS_PARAMS::EOSTYPE) = "Cold_PWPoly";
+      // Uniform rotation
+      bconfig.set(BCO_PARAMS::OMEGA) = 0.01;
+      // Differential Rotation
       bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_Q) = 1;
       bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_ARATIO) = 1.;
       bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_RRATIO) = 0.875;
+      // Stages
       bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
       bconfig.set_stage(STAGES::DIFF_ROT) = true;
       bconfig.write_config();
@@ -231,7 +240,8 @@ int norot_2dsetup(config_t& bconfig) {
     do {
       double rval = r_field(dom)(pos);
       auto all_ltp = lintp.interpolate_all(rval);
-      auto h = EOS<eos_t,DENSITY>::h_cold__rho(all_ltp[ltpQ::RHO]);
+      auto rho = (all_ltp[ltpQ::RHO] <= 0) ? 1e-15 : all_ltp[ltpQ::RHO];
+      auto h = EOS<eos_t,DENSITY>::h_cold__rho(rho);
       if(dom == 0 && pos(0) == 0 && pos(1) == 0)
         bconfig.set(HC) = h;
       logh.set_domain(dom).set(pos) = (std::log(h) <= 0) ? 0. : std::log(h); 
