@@ -359,10 +359,22 @@ void reader_2d_diffrot(config_t bconfig) {
   syst.add_cst("psi", psi);
 
   syst.add_def("diffAB = B^2 - A^2");
-  syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
-  syst.add_def(ndom - 1, "intMadmB = - (dr(B)) / 4piG ");
+
+  // eq. 4.21 - Full ADM surface integral at spatial infinity.  This does not give accurate
+  // values.
+  syst.add_def(ndom - 1, "intMadmFULL = - (dr(A^2 + B^2) + divr(B^2 - A^2)) / 4 / 4piG ");
+  
+  // If we assume that at infinity A = B = 1, we can obtain two "equivalent expressions"
+  // However, we find that intMadmA does not give as accurate of results as intMadmB
+  // intMadmB, however, gives very accurate results as compared to Mkomar and MADM that
+  // has been computed for the same configuration using the full 3D code.
   syst.add_def(ndom - 1, "intMadmA = - (dr(A)) / 4piG ");
+  syst.add_def(ndom - 1, "intMadmB = - (dr(B)) / 4piG ");
+
+  // eq. 4.14 Gourgoulhon (4.15 can also be used)
   syst.add_def(ndom - 1, "intMk = B * (dr(N) - multrsint(multrsint(B^2) / 2 / N * w * dr(w)))  / 4piG");
+
+  // eq 4.40 evaluated at spatial infinity, Gourgoulhon
   syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
 	
   for (int d = 0; d < ndom; d++) {
@@ -375,15 +387,17 @@ void reader_2d_diffrot(config_t bconfig) {
       syst.add_def(d, "Wsq = 1 / (1 - Usq)");
       syst.add_def(d, "W = sqrt(Wsq)");
 
-      // sources
+      // sources rescaled by p/rho as in Papenfort2021
       syst.add_def(d, "E = Wsq * (press * h - Wsq * press * delta / Wsq)");
       syst.add_def(d, "Srrtt = press * delta");
-
-      syst.add_def(d, "pphi = multrsint(B * (E + Srrtt) * U)");
       syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
       syst.add_def(d, "S = 2 * Srrtt + Spp");
 
-      // Volume integral for Angular momentum 4.38
+      // Phi component of the pressure
+      syst.add_def(d, "pphi = multrsint(B * (E + Srrtt) * U)");
+
+
+      // Volume integral for Angular momentum, eq 4.38 Gourgoulhon
       syst.add_def(d, "intJV = pphi * A^2 * B * 4piG / 2");
 
 
@@ -393,20 +407,14 @@ void reader_2d_diffrot(config_t bconfig) {
       
       // constraint equations
       syst.add_def(d, "DDA = -scal(grad(nu), grad(nu)) + 2 * 4piG * A^2 * Spp") ;
-
-
-      // Extra...
-      // syst.add_def(d, "eqNA = dr(drNA) + 3 * divr(drNA) - 4 * 4piG * NA * A^2 * press") ;
-
-
-      // definition for the baryonic mass integral
-      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
       syst.add_def(d, "intDDA = - lap(A) * multrsint(A^2) * multr(B)") ;
       // syst.add_def(d, "intDDA = (N * (Ereg + Sreg) + 2 * w * B * (Ereg + press) * multrsint(U)) * multrsint(A^2) * multr(B)") ;
-      
+
+      // definition for the baryonic mass integral, eq 4.5
+      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");     
       
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
-      syst.add_def(d, "firstint = H + log(N)");
+      syst.add_def(d, "firstint = H + log(N) - 0.5 * log(Wsq)");
 
       break;
     // outside the matter is absent and the sources are zero
@@ -465,8 +473,8 @@ void reader_2d_diffrot(config_t bconfig) {
     baryonic_mass += intMb(i).integ_volume();
   }
 
-  Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
-  double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
+  Val_domain integMadm(syst.give_val_def("intMadmFULL")()(ndom - 1));
+  double MadmFULL = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
   Val_domain integMadmA(syst.give_val_def("intMadmA")()(ndom - 1));
   double MadmA = space.get_domain(ndom - 1)->integ(integMadmA, OUTER_BC);
   Val_domain integMadmB(syst.give_val_def("intMadmB")()(ndom - 1));
@@ -538,9 +546,9 @@ void reader_2d_diffrot(config_t bconfig) {
   std::cout << FORMAT << "Circumferential R = "    << CR << " [" << CR * M2km << "km]\n"
             << FORMAT << "Mass Shedding = " << mass_shedding_parameter << "\n"
             << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl
-            << FORMAT << "ADM Mass = " << Madm << " [" << MadmA << ", " << MadmB << "]\n"
+            << FORMAT << "ADM Mass = " << MadmB << " [" << MadmA << ", " << MadmFULL << "]\n"
             << FORMAT << "ADM Momentum = " << J << " [" << VJadm << "]\n"
-            // << FORMAT << "Chi = " << J / Madm / Madm << " [" << bconfig(CHI) << "]\n"
+            << FORMAT << "Chi = " << J / MadmB / MadmB << " [" << bconfig(CHI) << "]\n"
             << FORMAT << "Omega = "<< bconfig(OMEGA) << std::endl
             << FORMAT << std::scientific << "Central Density = " << nc  << std::endl
             << FORMAT << std::scientific << "Central h = " << hc << std::endl
@@ -551,8 +559,8 @@ void reader_2d_diffrot(config_t bconfig) {
             // << FORMAT << "Integrated log(h) = "    << H_integral << "\n\n";
 
   std::cout << FORMAT << "Mk = "   << Mk << std::scientific
-            << ", Diff: " << 2. * fabs(Madm-Mk)/(Madm+Mk) << " [" <<  2. * fabs(MadmA-Mk)/(MadmA+Mk) 
-            <<  ", " << 2. * fabs(MadmB-Mk)/(MadmB+Mk) << "]\n";
+            << ", Diff: " << 2. * fabs(MadmB-Mk)/(MadmB+Mk) << " [" <<  2. * fabs(MadmA-Mk)/(MadmA+Mk) 
+            <<  ", " << 2. * fabs(MadmFULL-Mk)/(MadmFULL+Mk) << "]\n";
             // << FORMAT << "Px = "   << Px   << std::endl
             // << FORMAT << "Py = "   << Py   << std::endl
             // << FORMAT << "Pz = "   << Pz   << std::endl;
