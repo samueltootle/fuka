@@ -165,6 +165,7 @@ double get_radius (const dom_t* dom, const int bound) {
  */
 inline std::array<double,2> get_field_min_max(const Scalar& field, const int dom, const int bound = OUTER_BC) {
   const int npts_r = field.get_domain(dom)->get_nbr_points()(0);
+  const int dim = field.get_domain(dom)->get_ndim();
   
   // position index to loop over
   Index pos(field.get_domain(dom)->get_nbr_points());
@@ -190,7 +191,8 @@ inline std::array<double,2> get_field_min_max(const Scalar& field, const int dom
   do {
       bpos.set(0) = r_bound;
       bpos.set(1) = pos(1);
-      bpos.set(2) = pos(2);
+      if(dim == 3)
+        bpos.set(2) = pos(2);
   		double f = field(dom)(bpos);
 
   		if(f > fmax)
