@@ -45,6 +45,7 @@ enum BCO_PARAMS {
   ROUT, 
   NSHELLS, 
   OMEGA, 
+  KEPLERIAN,
   CHI, 
   MIRR, 
   MCH, 

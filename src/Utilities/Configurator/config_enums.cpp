@@ -75,6 +75,7 @@ const std::map<std::string, BCO_PARAMS> MBCO_PARAMS = {
   {"n_inner_shells",NINSHELLS}, // Shells inside a NS - binary only
   {"jadm", JADM},
   {"ql_jadm", QLJADM},
+  {"keplerian", KEPLERIAN},
 };
 
 const std::map<std::string, EOS_PARAMS> MEOS_PARAMS = {

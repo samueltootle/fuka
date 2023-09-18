@@ -45,6 +45,7 @@ class ns_isotropic_uniform_rot_solver : public Solver<config_t, space_t> {
   Scalar& lap_Bterm;
   Scalar& lap_wterm;
   std::unique_ptr<ns_sequence const> seq;
+  bool keplerian{false};
 
   /// Specify base class members used to avoid this->
   using Solver<config_t, space_t>::space;
@@ -82,7 +83,8 @@ class ns_isotropic_uniform_rot_solver : public Solver<config_t, space_t> {
   int solve(ns_sequence const * sequence_in);
 
   /// solver stages
-  int uniform_rot_stage();
+  int uniform_rot_stage(bool slowrot = false);
+  int keplerian_rot_stage();
 
   // Update bconfig(HC) and bconfig(NC)
   void update_config_quantities(System_of_eqs& syst) {

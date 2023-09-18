@@ -22,6 +22,7 @@ ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::ns_isotropic_uniform_
   lap_wterm.set_parameters()->set_m_quant() = 1 ;
   lap_wterm.std_base();
 
+  keplerian = !std::isnan(bconfig.set(BCO_PARAMS::KEPLERIAN));
 }
 
 // standardized filename for each converged dataset at the end of each stage.
@@ -72,7 +73,7 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::solve() {
   double const initial_chi = bconfig(BCO_PARAMS::CHI);
 
   this->solver_stage = STAGES::UNIFORM_ROT;
-  if(bconfig.control(CONTROLS::ITERATIVE_CHI)) {
+  if(bconfig.control(CONTROLS::ITERATIVE_CHI) || keplerian) {
     exit_status = uniform_rot_stage();
     bconfig.control(CONTROLS::ITERATIVE_CHI) = false;
     stage_enabled[solver_stage] = true;
@@ -115,11 +116,18 @@ void ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::syst_init(System
   syst.add_def("A = exp(lapAterm - nu)");
   syst.add_def("B = (divrsint(lapBterm) + 1) / N");
   syst.add_def("w = divrsint(wrsint)");
+  syst.add_def("Brsint = multrsint(B)");
+  syst.add_def("psi = log(Brsint)");
  
   // define quantity to be integrated at infinity
   // two (in this case) equivalent definitions of ADM mass
   // as well as the Komar mass
-  syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
+  
+  // This expression does not give accurate results when compared to M_komar and the computed
+  // ADM Mass from the 3D code.  The deviation from the correct answer is not large, but the
+  // source of the error is unknown
+  // syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
+  syst.add_def(ndom - 1, "intMadm = - (dr(B)) / 4piG ");
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
   syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
   
