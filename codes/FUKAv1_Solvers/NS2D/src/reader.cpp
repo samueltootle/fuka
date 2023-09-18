@@ -342,6 +342,7 @@ void reader_2d_diffrot(config_t bconfig) {
   syst.add_def("eps = eps(h)");
   syst.add_def("press = press(h)");
   syst.add_def("delta = h - eps - 1.");
+  syst.add_def("edens = rho * (1 + eps)");
 
   syst.add_def("N = exp(nu)");
   syst.add_def("A = exp(lapAterm - nu)");
@@ -400,6 +401,8 @@ void reader_2d_diffrot(config_t bconfig) {
       // Volume integral for Angular momentum, eq 4.38 Gourgoulhon
       syst.add_def(d, "intJV = pphi * A^2 * B * 4piG / 2");
 
+      // syst.add_def(d, "Ekin = 0.5 * rho * U^2");
+
 
       // syst.add_def(d, "intEkin = (4piG * S / delta - 1 / A^2 * (scal(grad(nu), grad(nu)) - 1 / 2 / A / B * scal(grad(A), grad(B)))"
       // "+divr(0.5) * (1/A^2 - 1/B^2) * (1/A * (dr(A) + divr(multsint(divcost(dt(A))))) - 1/2/B * (dr(B) + divr(multsint(divcost(dt(B)))))))");
@@ -416,12 +419,18 @@ void reader_2d_diffrot(config_t bconfig) {
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
       syst.add_def(d, "firstint = H + log(N) - 0.5 * log(Wsq)");
 
+      syst.add_def(d, "GRV2 = divrsint(2 * 4piG * A^2 * Spp"
+                      " + delta * 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
+                      " - delta * scal(grad(nu), grad(nu))) / 2");
+
+      // syst.add_def(d, "lam3 = 4piG * (3 * press + (edens + press) * Usq * Wsq) * A^2 * B");
       break;
     // outside the matter is absent and the sources are zero
     default:
       // syst.add_def(d, "eqnu = lap(nu) + scal(grad(nu), grad(lapAterm))") ;
       syst.add_def(d, "DDA = -delta * scal(grad(nu), grad(nu))") ;
       syst.add_def(d, "intDDA = - lap2(A) * 2 / 4piG") ;
+      syst.add_def(d, "GRV2 = divrsint(3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w)) - scal(grad(nu), grad(nu))) / 2");
       break;
     }
   }
@@ -447,9 +456,18 @@ void reader_2d_diffrot(config_t bconfig) {
   double baryonic_mass=0;
   Scalar intMb(syst.give_val_def("intMb")());  
   intMb.coef_i();
+
+  double GRV2=0;
+  Scalar intGRV2(syst.give_val_def("GRV2")());
+  intGRV2.coef_i();
+
+  // double LAM3=0;
+  // Scalar intLAM3(syst.give_val_def("lam3")());
+  // intLAM3.coef_i();
   
   for(int i = 0; i < 2; ++i) {
     VMadm += intDDA(i).integ_volume();
+    // LAM3 += intLAM3(i).integ_volume();
 
     // To obtain the rescaled angular momentum
     // We need to compute pphi / (P / rho)
@@ -458,20 +476,39 @@ void reader_2d_diffrot(config_t bconfig) {
     // that we can assert that P/rho on the boundary is zero
     Val_domain J(intJV(i));
     Val_domain Porho(P_o_rho(i));
+    Val_domain GRV2_vd(intGRV2(i));
 
     Index pos(space.get_domain(i)->get_nbr_points());
     Val_domain J_o_Porho(J);
     do {
       double j = J(pos);
       double porho = Porho(pos);
-      if(std::fabs(porho) <= 1e-15)
+      double grv2_val = GRV2_vd(pos);
+      if(std::fabs(porho) <= 1e-15) {
         J_o_Porho.set(pos) = 0.;
-      else
+        // GRV2_vd.set(pos) = 0.;
+      }
+      else {
         J_o_Porho.set(pos) = j / porho;
+        // GRV2_vd.set(pos) = grv2_val / porho;
+      }
     }while(pos.inc());
     VJadm += J_o_Porho.integ_volume();
     baryonic_mass += intMb(i).integ_volume();
+    double tmp = GRV2_vd.integ_volume();
+    cout << i << ": " << tmp << '\n';
+    GRV2 += tmp;
   }
+
+  intGRV2.coef_i();
+  for(int i = 2; i < ndom; ++i) {
+    auto tmp = intGRV2(i).integ_volume();
+    cout << i << ": " << tmp << '\n';
+    GRV2 += tmp;
+  }
+    
+  cout << "GRV2: " << GRV2 << '\n';
+  // cout << "LAM3: " << LAM3 << '\n';
 
   Val_domain integMadm(syst.give_val_def("intMadmFULL")()(ndom - 1));
   double MadmFULL = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
