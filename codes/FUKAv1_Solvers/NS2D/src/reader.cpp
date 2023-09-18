@@ -280,6 +280,9 @@ void reader_2d_diffrot(config_t bconfig) {
   if(bconfig.set_field(BCO_FIELDS::DIFF_OMEGA))
     ome = Scalar(space, ff1);
 	fclose(ff1) ;
+  lap_wterm.affect_parameters();
+  lap_wterm.set_parameters()->set_m_quant() = 1 ;
+  lap_wterm.std_base();
 
   // central values of the matter fields
   double loghc = bco_utils::get_boundary_val(0, logh, INNER_BC);
@@ -295,14 +298,20 @@ void reader_2d_diffrot(config_t bconfig) {
   int ndom = space.get_nbr_domains();
   Scalar one(space);
   one = 1.;
-  for(int d = 0; d < space.get_nbr_domains(); ++d)
-    one.set_domain(d).set_base() = lap_Bterm(d).get_base();
+  one.std_base();
   one.coef();
   one.coef_i();
+  
 
-  // auto x = space.get_domain(ndom - 1)->get_cart(1);
-  // auto z = space.get_domain(ndom - 1)->get_cart(2);
-  // std::cout << sqrt(x*x + z *z ) << std::endl;
+  Scalar rsint(one.mult_r().mult_sin_theta());
+  rsint.coef();
+  rsint.coef_i();
+  for(int d = 0; d < space.get_nbr_domains(); ++d)
+    one.set_domain(d).set_base() = rsint(d).get_base();
+  // for(int d = 0; d < ndom; ++d) {
+    // lap_Bterm.set_domain(d).set_base() = rsint(d).get_base();
+    // lap_wterm.set_domain(d).set_base() = lap_Bterm(d).get_base();  
+  // }
 
   // setup a system of equations
   System_of_eqs syst(space, 0, ndom - 1);
@@ -313,7 +322,10 @@ void reader_2d_diffrot(config_t bconfig) {
   syst.add_cst("lapAterm", lap_Aterm);
   syst.add_cst("lapBterm", lap_Bterm);
   syst.add_cst("lapwterm", lap_wterm);
-  syst.add_cst("Omega", ome);
+  if(bconfig.set_field(BCO_FIELDS::DIFF_OMEGA))
+    syst.add_cst("Omega", ome);
+  else
+    syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
   syst.add_cst("one", one);
 
   // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
@@ -335,6 +347,16 @@ void reader_2d_diffrot(config_t bconfig) {
   syst.add_def("A = exp(lapAterm - nu)");
   syst.add_def("B = (divrsint(lapBterm) + 1) / N");
   syst.add_def("w = divrsint(lapwterm)");
+  syst.add_def("Brsint = multrsint(B)");
+  Scalar Brsint(syst.give_val_def("Brsint")());
+  Scalar psi(log(Brsint));
+  psi.std_base();
+  //  for(int d = 0; d < ndom; ++d) {
+  //   psi.set_domain(d).set_base() = Brsint(d).get_base();  
+  // }
+
+  // syst.add_def("psi = log(Brsint)");
+  syst.add_cst("psi", psi);
 
   syst.add_def("diffAB = B^2 - A^2");
   syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
@@ -348,23 +370,22 @@ void reader_2d_diffrot(config_t bconfig) {
     // in the star the constraint equations are sourced by the matter
     case 0:
     case 1:
-      // sources
       syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
       syst.add_def(d, "Usq = U*U");
       syst.add_def(d, "Wsq = 1 / (1 - Usq)");
       syst.add_def(d, "W = sqrt(Wsq)");
 
       // sources
-      syst.add_def(d, "E = Wsq * (1 + eps) * rho - press");
-      syst.add_def(d, "Srrtt = press");
+      syst.add_def(d, "E = Wsq * (press * h - Wsq * press * delta / Wsq)");
+      syst.add_def(d, "Srrtt = press * delta");
+
       syst.add_def(d, "pphi = multrsint(B * (E + Srrtt) * U)");
-      syst.add_def(d, "Spp = press * (1 + Usq) + E * Usq");
+      syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
       syst.add_def(d, "S = 2 * Srrtt + Spp");
-      syst.add_def(d, "Ereg = Wsq * (rho * (1 + eps) + press) - press");
-      syst.add_def(d, "Sreg = 3 * press + (Ereg + press) * Usq");
 
       // Volume integral for Angular momentum 4.38
       syst.add_def(d, "intJV = pphi * A^2 * B * 4piG / 2");
+
 
       // syst.add_def(d, "intEkin = (4piG * S / delta - 1 / A^2 * (scal(grad(nu), grad(nu)) - 1 / 2 / A / B * scal(grad(A), grad(B)))"
       // "+divr(0.5) * (1/A^2 - 1/B^2) * (1/A * (dr(A) + divr(multsint(divcost(dt(A))))) - 1/2/B * (dr(B) + divr(multsint(divcost(dt(B)))))))");
@@ -372,15 +393,17 @@ void reader_2d_diffrot(config_t bconfig) {
       
       // constraint equations
       syst.add_def(d, "DDA = -scal(grad(nu), grad(nu)) + 2 * 4piG * A^2 * Spp") ;
+
+
       // Extra...
       // syst.add_def(d, "eqNA = dr(drNA) + 3 * divr(drNA) - 4 * 4piG * NA * A^2 * press") ;
 
 
-      // // definition for the baryonic mass integral
-      // syst.add_def(d, "intMb = P^6 * rho");
+      // definition for the baryonic mass integral
+      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
       syst.add_def(d, "intDDA = - lap(A) * multrsint(A^2) * multr(B)") ;
       // syst.add_def(d, "intDDA = (N * (Ereg + Sreg) + 2 * w * B * (Ereg + press) * multrsint(U)) * multrsint(A^2) * multr(B)") ;
-      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
+      
       
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
       syst.add_def(d, "firstint = H + log(N)");
@@ -394,6 +417,12 @@ void reader_2d_diffrot(config_t bconfig) {
       break;
     }
   }
+              // syst.add_def(1, "OmegaK = w + dr(w) / 2 / psi "
+              //         "+ sqrt(N^2 * dr(nu) / dr(psi) /  Brsint^2 + (dr(w) / dr(psi) / 2)^2)");
+              // syst.add_def(1, "OmegaK = w + dr(w) / 2 / psi");
+              // syst.add_def(0, "OmegaK = w + dr(w)");
+  syst.sec_member();
+
   
   double VMadm=0;
   Scalar intDDA(syst.give_val_def("intDDA")());
@@ -403,16 +432,38 @@ void reader_2d_diffrot(config_t bconfig) {
   Scalar intJV(syst.give_val_def("intJV")());
   intJV.coef_i();
 
+  // P / rho
+  Scalar P_o_rho(syst.give_val_def("delta")());
+  P_o_rho.coef_i();
+
   double baryonic_mass=0;
   Scalar intMb(syst.give_val_def("intMb")());  
   intMb.coef_i();
   
   for(int i = 0; i < 2; ++i) {
     VMadm += intDDA(i).integ_volume();
-    VJadm += intJV(i).integ_volume();
+
+    // To obtain the rescaled angular momentum
+    // We need to compute pphi / (P / rho)
+    // However, since the surface is defined by P = rho = 0, this produces
+    // NaNs.  Therefore, we compute this manually here such
+    // that we can assert that P/rho on the boundary is zero
+    Val_domain J(intJV(i));
+    Val_domain Porho(P_o_rho(i));
+
+    Index pos(space.get_domain(i)->get_nbr_points());
+    Val_domain J_o_Porho(J);
+    do {
+      double j = J(pos);
+      double porho = Porho(pos);
+      if(std::fabs(porho) <= 1e-15)
+        J_o_Porho.set(pos) = 0.;
+      else
+        J_o_Porho.set(pos) = j / porho;
+    }while(pos.inc());
+    VJadm += J_o_Porho.integ_volume();
     baryonic_mass += intMb(i).integ_volume();
   }
-  // cout << "VMadm: " << VMadm << endl;
 
   Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
   double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
@@ -438,10 +489,16 @@ void reader_2d_diffrot(config_t bconfig) {
   Index pos_pole (npts);
   pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
 
-  auto B(syst.give_val_def("B")()(1));
+  Scalar logh_dr(logh.der_r());
+  double mass_shedding_parameter = logh_dr(1)(pos_eq) / logh_dr(1)(pos_pole);
+
+  auto B(syst.give_val_def("B")());
+  auto N(syst.give_val_def("N")()(1));
   auto r(space.get_domain(1)->get_radius());
-  // cout << B(pos_eq) << ", " << r(pos_eq) << endl;
-  double AR = B(pos_eq) * r(pos_eq);
+  // cout << B(1)(pos_eq) << ", " << r(pos_eq) << endl;
+  auto [ Bmin, Bmax ] = bco_utils::get_field_min_max(B, 2, INNER_BC);
+  // cout << Bmax << ", " << Bmin << endl;
+  double CR = B(1)(pos_eq) * r(pos_eq);
 
   // cout << space.get_domain(1)->get_cart(1)(pos_pole) << ", "
   //       << space.get_domain(1)->get_cart(2)(pos_pole)<< endl;
@@ -478,9 +535,9 @@ void reader_2d_diffrot(config_t bconfig) {
   std::cout << FORMAT << "Coord R_OUT = " << bco_utils::get_radius(space.get_domain(2), OUTER_BC) << "\n";
   print_shells(3, ndom-1); cout << endl;
 
-  std::cout << FORMAT << "Areal R = "    << AR << " [" << AR * M2km << "km]\n"
-            << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl;
-    std::cout \
+  std::cout << FORMAT << "Circumferential R = "    << CR << " [" << CR * M2km << "km]\n"
+            << FORMAT << "Mass Shedding = " << mass_shedding_parameter << "\n"
+            << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl
             << FORMAT << "ADM Mass = " << Madm << " [" << MadmA << ", " << MadmB << "]\n"
             << FORMAT << "ADM Momentum = " << J << " [" << VJadm << "]\n"
             // << FORMAT << "Chi = " << J / Madm / Madm << " [" << bconfig(CHI) << "]\n"
