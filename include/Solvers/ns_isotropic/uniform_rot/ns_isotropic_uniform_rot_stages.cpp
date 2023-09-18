@@ -64,23 +64,28 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
       syst.add_def(d, "Wsq = 1 / (1 - Usq)");
       syst.add_def(d, "W = sqrt(Wsq)");
 
-      // sources
+      // sources rescaled by P/rho as in Papenfort2021
       syst.add_def(d, "E = Wsq * press * h - press * delta");
       syst.add_def(d, "Srrtt = press * delta");
-      syst.add_def(d, "pphi = (E + Srrtt) * U");
       syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
       syst.add_def(d, "S = 2 * Srrtt + Spp");
+
+      // phi component of pressure
+      // pphi = Brsint(E+Srrtt)* U, eq 3.37
+      // however, since it only shows up in eqwrsint term below, 
+      // a factor of Brsint analytically cancels with a 1/Brsint in eq. 3.15
+      syst.add_def(d, "pphi = (E + Srrtt) * U");
  
-      // constraint equations
+      // constraint equations 3.14 - 3.17
       syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
                             "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
                             "- 4piG * A^2 * (E + S)");
+      syst.add_def(d, "eqwrsint = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
+                          "+ 4 * 4piG * N * A^2 / B * pphi");
+      syst.add_def(d, "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
       syst.add_def(d, "eqAterm = delta * lap2(lapAterm) + delta * scal(grad(nu), grad(nu))"
                       "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
                       "- 2 * 4piG * A^2 * Spp");
-      syst.add_def(d, "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
-      syst.add_def(d, "eqwrsint = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                          "+ 4 * 4piG * N * A^2 / B * pphi");
  
       // definition for the baryonic mass integral
       syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
@@ -95,10 +100,10 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
 
       syst.add_def(d, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
                       "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
+      syst.add_def(d, "eqwrsint = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
+      syst.add_def(d, "eqBterm = lap2(lapBterm)");
       syst.add_def(d, "eqAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
                 "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))");
-      syst.add_def(d, "eqBterm = lap2(lapBterm)");
-      syst.add_def(d, "eqwrsint = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
       break;
     }
   }
@@ -148,8 +153,14 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
         space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
         break;
       case BCO_PARAMS::CHI:
-        if(add_Madm_int)
+        // Since we need MADM to compute CHI, we need to ensure
+        // that if it isn't a fixed quantity that it becomes a
+        // variable in our system of equations and the appropriate
+        // constraint equation is added
+        if(add_Madm_int) {
+          syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
           space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+        }
         
         space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
         break;
