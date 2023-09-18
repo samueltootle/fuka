@@ -236,6 +236,29 @@ void reader_3d(config_t bconfig) {
   syst.add_def ("intMsq = P^4");
   double A = space.get_domain(2)->integ(syst.give_val_def("intMsq")()(2), INNER_BC);
   double AR = sqrt(A / 4. / acos(-1.));
+  
+  auto npts = space.get_domain(1)->get_nbr_points();
+
+  Index pos_eq (npts);
+  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+
+  Index pos_pole (npts);
+  pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
+
+  // cout << "Cart (Pole): ";
+  // for(auto i = 1; i <=3; ++i)
+  //   cout << space.get_domain(1)->get_cart(i)(pos_pole) << ", ";
+  // cout << endl;
+  
+  // cout << "Cart (Equitorial): ";
+  // for(auto i = 1; i <=3; ++i)
+  //   cout << space.get_domain(1)->get_cart(i)(pos_eq) << ", ";
+  // cout << endl;
+  double conf_eq = conf(1)(pos_eq);
+  double Circumferential_R = conf_eq * conf_eq * space.get_domain(1)->get_radius()(pos_eq);
+  double& CR = Circumferential_R;
+  
   Point P(3);
   double central_dHdx = syst.give_val_def("dH")().val_point(P);
   double central_euler = syst.give_val_def("firstint")().val_point(P);
@@ -266,6 +289,7 @@ void reader_3d(config_t bconfig) {
   std::cout << FORMAT << "Coord R_OUT = " << bco_utils::get_radius(space.get_domain(ndom-2), OUTER_BC) << "\n\n";
 
   std::cout << FORMAT << "Areal R = "    << AR << " [" << AR * M2km << "km]\n"
+            << FORMAT << "Circumferential R = " << CR << " [" << CR * M2km << "km]\n"
             << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl
             << FORMAT << "ADM Mass = " << Madm << " [" << bconfig(MADM) << "]\n"
             << FORMAT << "ADM Momentum = " << J << std::endl
