@@ -258,6 +258,9 @@ void reader_3d(config_t bconfig) {
   double conf_eq = conf(1)(pos_eq);
   double Circumferential_R = conf_eq * conf_eq * space.get_domain(1)->get_radius()(pos_eq);
   double& CR = Circumferential_R;
+
+  Scalar logh_dr(logh.der_r());
+  double mass_shedding_parameter = logh_dr(1)(pos_eq) / logh_dr(1)(pos_pole);
   
   Point P(3);
   double central_dHdx = syst.give_val_def("dH")().val_point(P);
@@ -290,6 +293,7 @@ void reader_3d(config_t bconfig) {
 
   std::cout << FORMAT << "Areal R = "    << AR << " [" << AR * M2km << "km]\n"
             << FORMAT << "Circumferential R = " << CR << " [" << CR * M2km << "km]\n"
+            << FORMAT << "Mass Shedding = " << mass_shedding_parameter << "\n"
             << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl
             << FORMAT << "ADM Mass = " << Madm << " [" << bconfig(MADM) << "]\n"
             << FORMAT << "ADM Momentum = " << J << std::endl
