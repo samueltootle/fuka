@@ -29,19 +29,6 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   //     EXIT_SUCCESS : RELOAD_FILE;
   // }
 
-  if (fixed) {
-    if (rank == 0)
-      std::cout << "############################" << std::endl
-                << "TOV with a fixed radius" << std::endl
-                << "############################" << std::endl;
-  } else {
-    if (rank == 0) {
-      std::cout << "############################" << std::endl
-                << "TOV with a resolved surface" << std::endl;                
-      std::cout << "############################" << std::endl;
-    }
-  }
-
   Scalar one(space);
   one = 1.;
   one.std_base();
@@ -52,7 +39,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
 
   // in case of "fixed" domain radii
   // syst.add_cst("lev", level); 
-  if(fixed) {
+  if(fixed && bconfig.control(CONTROLS::USE_FIXED_R)) {
   syst.add_cst("one", one);
   syst.add_cst("fixedR", bconfig(BCO_PARAMS::RMID));
   syst.add_def("lev = multr(multr(one)) - fixedR * fixedR");
@@ -91,10 +78,30 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   }
 
   std::string central_fixing_definition{"h - hc"};
+  std::string output_str{};
   if(seq && !fixed) {
     central_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_mass_fixing(syst, bconfig, seq);
+    output_str = ::Kadath::FUKA_Syst_tools::get_ns_mass_fixing_output(bconfig, seq);
   } else {
     syst.add_cst("hc", bconfig(BCO_PARAMS::HC));
+    std::stringstream output;
+    output << "Mass fixed using central enthalpy (hc) = " << bconfig(BCO_PARAMS::HC);
+    output_str = output.str();
+  }
+
+  if (fixed  && bconfig.control(CONTROLS::USE_FIXED_R)) {
+    if (rank == 0)
+      std::cout << "############################" << std::endl
+                << "TOV with a fixed radius" << std::endl
+                << output_str << std::endl
+                << "############################" << std::endl;
+  } else {
+    if (rank == 0) {
+      std::cout << "############################" << std::endl
+                << "TOV with a resolved surface" << std::endl
+                << output_str << std::endl
+                << "############################" << std::endl;
+    }
   }
  
   // add the constraint equations and demand continuity their normal derivative across domain boundaries
@@ -107,7 +114,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
 
   // if the radius of the stellar surface domain is fixed
   // use the helper construction, i.e. a level function with a root defining the radius
-  if(fixed){
+  if(fixed && bconfig.control(CONTROLS::USE_FIXED_R)){
     syst.add_eq_bc(1, OUTER_BC, "lev = 0");
   }
   // if the surface is resolved, define it to be where the matter vanishes
@@ -147,7 +154,8 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   while (!endloop) {  
     // do exactly one newton step, given the system above
     endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
-    update_config_quantities(syst);
+    if(!fixed)
+      update_config_quantities(syst);
  
     // output files at this iteration and print diagnostics
     std::stringstream ss;
@@ -169,7 +177,8 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
     ite++;
     check_max_iter_exceeded(rank, ite, conv);
   }
-  update_config_quantities(syst);
+  if(!fixed)
+    update_config_quantities(syst);
   bconfig.set_filename(converged_filename(stagename));
   bconfig.control(CONTROLS::SEQUENCES) = false;
   if (rank == 0) {
