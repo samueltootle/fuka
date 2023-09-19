@@ -48,7 +48,6 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
     base_config = seqconfig;
     base_config.set(BCO_PARAMS::CHI) = 0;
   }
-  cout << base_config;
   auto mass_fixing = seq.mass_idx();
 
   // Should be deprecated...
@@ -65,12 +64,17 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   
   // Not tested...
   if(bconfig.control(CONTROLS::SEQUENCES) || bconfig.control(CONTROLS::RESOLVE)) {
+    int n_shells = (std::isnan(bconfig.set(BCO_PARAMS::NSHELLS))) ? 0 : bconfig.set(BCO_PARAMS::NSHELLS);
+    // the 2D code is very sensitive to the initial domain decomposition.  Although polytropic
+    // laws are very stable, tabulated solution are more sensitive.
+    bconfig.set(BCO_PARAMS::NSHELLS) = 0.;
     if(rank == 0) {
       setup_2dns_isotropic(bconfig, mass_fixing);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     // make sure all ranks have the same config
     bconfig.open_config();
+    bconfig.set(BCO_PARAMS::NSHELLS) = n_shells;
 
     bconfig.control(CONTROLS::ITERATIVE_M) = !std::isnan(final_MADM) &&
       (std::fabs(1. - bconfig(BCO_PARAMS::MADM)/final_MADM) > 1e-3);
