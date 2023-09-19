@@ -259,6 +259,32 @@ inline std::string set_ns_mass_fixing(System_of_eqs& syst, config_t& bconfig, st
 }
 
 template<class config_t>
+inline std::string get_ns_mass_fixing_output(config_t& bconfig, std::unique_ptr<Kadath::FUKA_Solvers::ns_sequence const>& seq) {
+    std::stringstream output;
+    output << "Mass fixed using ";
+    auto idx{seq->mass_idx()};
+    switch(idx) {
+      case BCO_PARAMS::HC:
+        output << "central enthalpy (hc) = " << bconfig(BCO_PARAMS::HC);
+        break;
+      case BCO_PARAMS::NC:
+        output << "central density (nc) = " << bconfig(BCO_PARAMS::NC);
+        break;
+      case BCO_PARAMS::MADM:
+        output << "ADM Mass (madm) = " << bconfig(BCO_PARAMS::MADM);
+        break;
+      case BCO_PARAMS::MB:
+        output << "Baryonic Mass (mb) = " << bconfig(BCO_PARAMS::MB);
+        break;
+      default:
+        std::string msg{"Sequence initialized, but not implemented for Mass index = " + std::to_string(int(idx))};
+        throw std::runtime_error(msg.c_str());
+        break;
+    }
+    return output.str();
+}
+
+template<class config_t>
 inline std::string set_ns_spin_fixing(System_of_eqs& syst, config_t& bconfig, std::unique_ptr<Kadath::FUKA_Solvers::ns_sequence const>& seq) {
     std::string spin_fixing_definition{"integ(intJ) - chi * Madm * Madm = 0"};
     auto idx{seq->spin_idx()};
