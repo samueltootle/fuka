@@ -968,5 +968,23 @@ void print_constant_space_resolution(space_t const & space){
   	std::cout << dom->get_nbr_points()(i) << " (" << directions[i] << ")     ";
   std::cout << "\n";
 };
+
+/**
+ * @brief Determine the next resolution that is reasonable to use with FFTW3
+ * 
+ * @param res Current resolution
+ * @return int Next resolution
+ */
+inline int next_resolution(int const res) {
+  std::vector<int> ress{9,11,13,17,21, 25, 33};
+  auto res_it = std::find_if(ress.begin(), ress.end(), [&res](auto& n) {return n == res;});
+  if(res_it == ress.end()) {
+    std::stringstream msg;
+    msg << "Resolution " << res << " not found in approved list.\n";
+    std::__throw_runtime_error(msg.str().c_str());
+  }
+  res_it++;
+  return *res_it;
+}
 /** @}*/
 }}
