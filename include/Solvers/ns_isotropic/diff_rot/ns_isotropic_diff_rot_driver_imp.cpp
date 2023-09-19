@@ -188,13 +188,13 @@ inline int ns_isotropic_diff_rot_driver (config_t& bconfig,
   };
 
   while(res_inc) {        
-
+    int next_res = bco_utils::next_resolution(bconfig(BCO_PARAMS::BCO_RES));
     // iterative res increase
-    if(bconfig(BCO_PARAMS::BCO_RES) + 2 >= final_res) {
-      bconfig.set(BCO_PARAMS::BCO_RES) = final_res;
+    if(next_res >= final_res) {
+      bconfig.set(BCO_PARAMS::BCO_RES) = next_res;
       res_inc = false;
     } else {
-      bconfig.set(BCO_PARAMS::BCO_RES) += 2;
+      bconfig.set(BCO_PARAMS::BCO_RES) = next_res;
     }
     regrid();
 
