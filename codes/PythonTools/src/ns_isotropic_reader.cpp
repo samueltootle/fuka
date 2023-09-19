@@ -212,6 +212,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
 
     // double Madm = boost::python::extract<double>(vars["Madm"]);
     FUKA_Syst_tools::syst_vars_NS_isotropic(vars, syst, 2);
+    FUKA_Syst_tools::syst_add_resolution_list(space, vars);
     vars["nc"] = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
     vars["hc"] = bconfig(BCO_PARAMS::HC);
   }
