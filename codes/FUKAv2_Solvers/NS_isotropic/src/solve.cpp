@@ -85,7 +85,8 @@ int main(int argc, char** argv) {
     verify_ns_fixing_values(bconfig, seq);
 
     if(!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES)) {
-      ns_isotropic_driver(bconfig, resolution, InitSolver::outputdir);
+      initialize_config_from_fixing_values(bconfig, seq);
+      ns_isotropic_driver(bconfig, resolution, InitSolver::outputdir, &seq);
     } else {
       
       auto [ branch_name, key, val ] = find_leaf(tree, "N");
