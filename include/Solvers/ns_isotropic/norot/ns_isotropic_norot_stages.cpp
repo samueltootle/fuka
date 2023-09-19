@@ -60,11 +60,10 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
       syst.add_def(d, "eqnulogA = delta * ( lap2(nulogA) + scal(grad(nu), grad(nu)) ) - 2 * 4piG * A^2 * Spp") ;
  
       // definition for the baryonic mass integral
-      // syst.add_def(d, "intMb = P^6 * rho");
+      syst.add_def(d, "intMb = rho * A^3 * 4piG / 2");
 
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
       syst.add_def(d, "firstint = H + log(N)");
-      syst.add_def(d, "intMb = rho * A^3 * 4piG / 2");
  
       break;
     // outside the matter is absent and the sources are zero
