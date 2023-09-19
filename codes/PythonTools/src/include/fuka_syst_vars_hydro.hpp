@@ -137,19 +137,19 @@ void syst_vars_NS_isotropic(dict_t& vars, System_of_eqs & syst,
     pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
     pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
 
-    auto B(syst.give_val_def("B")()(adapt_d-1));
-    auto r(space.get_domain(1)->get_radius());
-    double AR = B(pos_eq) * r(pos_eq);
+    // auto B(syst.give_val_def("B")()(adapt_d-1));
+    // auto r(space.get_domain(1)->get_radius());
+    // double AR = B(pos_eq) * r(pos_eq);
 
-    // Area radius
-    vars[std::string{iden+"ArealR"}.c_str()] = AR;
+    // // Area radius
+    // vars[std::string{iden+"ArealR"}.c_str()] = AR;
 
     vars["rho"] = syst.give_val_def("rho");
     vars["eps"] = syst.give_val_def("eps");
     vars["press"] = syst.give_val_def("press");
     vars["P/rho"] = syst.give_val_def("delta");
 
-    vars["W"] = syst.give_val_def("W");
+    // vars["W"] = syst.give_val_def("W");
     vars["h"] = syst.give_val_def("h");
 }
 }}
