@@ -217,7 +217,7 @@ void reader_2d_norot(config_t bconfig) {
   auto B(syst.give_val_def("A")()(1));
   auto r(space.get_domain(1)->get_radius());
   // cout << B(pos_eq) << ", " << r(pos_eq) << endl;
-  double AR = B(pos_eq) * r(pos_eq);
+  double CR = B(pos_eq) * r(pos_eq);
   
   #ifdef FORMAT
     #undef FORMAT
@@ -243,7 +243,7 @@ void reader_2d_norot(config_t bconfig) {
   std::cout << FORMAT << "Coord R_OUT = " << bco_utils::get_radius(space.get_domain(2), OUTER_BC) << "\n";
   print_shells(3, ndom-1); cout << endl;
 
-  std::cout << FORMAT << "Areal R = "    << AR << " [" << AR * M2km << "km]\n"
+  std::cout << FORMAT << "Circumferential R = "    << CR << " [" << CR * M2km << "km]\n"
             << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl;
   std::cout << FORMAT << "ADM Mass = " << Madm << "\n"
             << FORMAT << std::scientific << "Central Density = " << nc  << std::endl
