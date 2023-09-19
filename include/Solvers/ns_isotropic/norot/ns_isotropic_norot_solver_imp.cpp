@@ -61,8 +61,16 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::solve() {
   // If we start from scratch, we currently need
   // to fix the stellar surface otherwise the solver
   // more often than not diverges.
-  if(bconfig.control(CONTROLS::SEQUENCES))
+  if(bconfig.control(CONTROLS::SEQUENCES)) {
+    bconfig.control(CONTROLS::USE_FIXED_R) = true;
     exit_status = norot_stage(true);
+    // Rerun with fixed central enthalpy, but with
+    // the surface no longer fixed. This helps with
+    // stability before running with, for instance,
+    // Fixed Madm.
+    bconfig.control(CONTROLS::USE_FIXED_R) = false;
+    exit_status = norot_stage(true);
+  }
   exit_status = norot_stage(false);
 
   // Barrier needed in case we need to read from the previous output
@@ -153,5 +161,53 @@ void ns_isotropic_norot_solver<eos_t, config_t, space_t>::print_diagnostics(cons
   std::cout << FORMAT << "R: " << rs[0] << " " << rs[1] << "\n\n";
   std::cout.flags(f);
 } // end print diagnostics
+
+template<class eos_t, typename config_t, typename space_t>
+void ns_isotropic_norot_solver<eos_t, config_t, space_t>::update_config_quantities(System_of_eqs& syst) {
+
+  auto rs = bco_utils::get_rmin_rmax(space, 1);
+  bconfig.set(BCO_PARAMS::RMID) = rs[0];
+
+  auto loghc = bco_utils::get_boundary_val(0, logh, INNER_BC);
+  bool update_madm = true;
+  bool update_mb = true;
+
+  if(seq) {
+    auto idx{seq->mass_idx()};
+    switch(idx) {
+      case BCO_PARAMS::NC:
+        bconfig.set(BCO_PARAMS::HC) = std::exp(loghc);
+        break;
+      case BCO_PARAMS::MADM:
+        update_madm = false;
+        bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+        break;
+      case BCO_PARAMS::MB:
+        update_mb = false;
+        bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+        break;
+      default:
+        bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+        break;
+    }
+  }else {
+    bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+  }
+  
+  // compute the baryonic mass at volume integral from the given integrant
+  if(update_mb) {
+    double baryonic_mass =
+      syst.give_val_def("intMb")()(0).integ_volume() +
+      syst.give_val_def("intMb")()(1).integ_volume();
+    bconfig.set(BCO_PARAMS::MB) = baryonic_mass;
+  }
+
+  // compute the ADM mass as surface integral at infinity
+  if(update_madm) {
+    Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
+    double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
+    bconfig.set(BCO_PARAMS::MADM) = Madm;
+  }
+}
 /** @}*/
 }}
