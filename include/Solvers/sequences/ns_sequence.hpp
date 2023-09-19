@@ -238,7 +238,12 @@ void verify_ns_fixing_values(config_t& bconfig, ns_sequence& seq) {
       seq.set_spin_val(bconfig(seq.spin_idx()));
     }
   }  
+}
 
+template<class config_t>
+void initialize_config_from_fixing_values(config_t& bconfig, ns_sequence& seq) {
+  bconfig.set(seq.mass_idx()) = seq.mass_val();
+  bconfig.set(seq.spin_idx()) = seq.spin_val();
 }
 /** @}*/
 }
