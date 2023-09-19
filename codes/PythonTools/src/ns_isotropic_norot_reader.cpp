@@ -1,0 +1,191 @@
+/*
+ * Copyright 2021
+ * This file is part of the KADATH library and published under
+ * https://arxiv.org/abs/2103.09911
+ *
+ * Author: 
+ * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
+ * L. Jens Papenfort <papenfort@th.physik.uni-frankfurt.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+#include "kadath_adapted_polar.hpp"
+#include "Configurator/config_bco.hpp"
+#include "bco_utilities.hpp"
+#include "EOS/EOS.hh"
+#include "python_reader.hpp"
+#include "include/fuka_py.hpp"
+using namespace Kadath::Margherita ;
+
+
+// the space type
+typedef Kadath::Space_polar_adapted space_t;
+
+// specialized quantities for a BNS system
+struct ns_isotropic_vars_t : public Kadath::vars_base_t<ns_isotropic_vars_t> {};
+// define the actual quantities and their order in the file!
+template<> Kadath::var_vector Kadath::vars_base_t<ns_isotropic_vars_t>::vars = {
+  {"lap_Aterm", SCALAR},
+  {"nu", SCALAR},
+  {"logh", SCALAR},
+};
+
+class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotropic_vars_t> {
+  std::string config_filename;
+  kadath_config_boost<BCO_ISO_NS_INFO> bconfig;
+
+  public:
+  ns_isotropic_reader_t(std::string const filename) : Kadath::python_reader_t<space_t, ns_isotropic_vars_t>(filename),
+                                             config_filename(filename.substr(0,filename.size()-3)+"info"),
+                                             bconfig(config_filename) {
+    // setup eos to before calling solver
+    const double h_cut = bconfig.eos<double>(HCUT);
+    const std::string eos_file = bconfig.eos<std::string>(EOSFILE);
+    const std::string eos_type = bconfig.eos<std::string>(EOSTYPE);
+
+    if(eos_type == "Cold_PWPoly") {
+      using eos_t = Kadath::Margherita::Cold_PWPoly;
+
+      EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
+      this->compute_defs<eos_t>();
+    } else if(eos_type == "Cold_Table") {
+      using eos_t = Kadath::Margherita::Cold_Table;
+
+      const int interp_pts = (bconfig.eos<int>(INTERP_PTS) == 0) ? \
+                              2000 : bconfig.eos<int>(INTERP_PTS);
+
+      EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
+      this->compute_defs<eos_t>();
+    }
+    else { 
+      std::cerr << eos_type << " is not recognized.\n";
+      std::_Exit(EXIT_FAILURE);
+    }
+    ns_Configurator_reader_t pybconfig(config_filename);
+    config = pybconfig.config;
+    // end eos setup and solver
+   
+  }
+
+  template <typename eos_t>
+  void compute_defs() {
+    Kadath::Scalar const & lap_Aterm = extractField<Kadath::Scalar>("lap_Aterm");
+    Kadath::Scalar const & nu = extractField<Kadath::Scalar>("nu");
+    Kadath::Scalar const & logh = extractField<Kadath::Scalar>("logh");
+
+  	int ndom = space.get_nbr_domains() ;
+
+  	double loghc = bco_utils::get_boundary_val(0, logh, INNER_BC);
+
+  	// Setup system of equations and definitions
+    System_of_eqs syst (space, 0, ndom-1) ;
+    // define numerical constants
+    syst.add_cst("4piG", bconfig(BCO_PARAMS::BCO_QPIG));
+
+    // Fields - must be initialized before common setup
+    syst.add_cst("H", logh);
+    syst.add_cst("nu", nu);
+    syst.add_cst("lapAterm", lap_Aterm);
+
+    syst.add_def("N = exp(nu)");
+    syst.add_def("A = exp(lapAterm - nu)");
+
+    // define quantity to be integrated at infinity
+    // two (in this case) equivalent definitions of ADM mass
+    // as well as the Komar mass
+    syst.add_def(ndom - 1, "intMadm = -dr(A)  / 4piG ");
+    syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
+    
+    // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
+    syst.add_def("h = exp(H)");
+  
+    // define the EOS operators
+    Param p;
+    syst.add_ope("eps", &EOS<eos_t,EPSILON>::action, &p);
+    syst.add_ope("press", &EOS<eos_t,PRESSURE>::action, &p);
+    syst.add_ope("rho", &EOS<eos_t,DENSITY>::action, &p);
+  
+    // define rest-mass density, internal energy and pressure through the enthalpy
+    syst.add_def("rho = rho(h)");
+    syst.add_def("eps = eps(h)");
+    syst.add_def("press = press(h)");
+
+    // definition to rescale the equations
+    // delta = p / rho
+    syst.add_def("delta = h - eps - 1.");
+
+    // Avoid excision region (d=0,1) and compactified (d=ndom-1)
+    // for(auto d = 2; d < ndom-1; ++d) {
+    //   syst.add_def(d, "drP = dr(P)");
+    //   syst.add_def(d, "ddrP = dr(drP)");
+    // }
+
+    for (int d = 0; d < ndom; d++) {
+      
+      switch (d) {
+      // in the star the constraint equations are sourced by the matter
+      case 0:
+      case 1:
+
+        // sources
+        syst.add_def(d, "E = press * (1 + eps)");
+        syst.add_def(d, "S = delta * 3 * press");
+        syst.add_def(d, "Spp = press * delta");
+  
+        // constraint equations
+        syst.add_def(d, "eqnu = delta * ( lap(nu) + dr(nu) * dr(lapAterm) ) - 4piG * A^2 * (E + S)") ;
+        syst.add_def(d, "eqlapAterm = delta * ( lap2(lapAterm) + dr(nu) * dr(nu) ) - 2 * 4piG * A^2 * Spp") ;
+  
+        // definition for the baryonic mass integral
+        syst.add_def(d, "intMb = rho * A^3 * 4piG / 2");
+        syst.add_def(d, "intH  = H * A^3 * 4piG / 2") ;
+              break;
+        // outside the matter is absent and the sources are zero
+        default:
+
+          syst.add_def(d, "eqnu = lap(nu) + scal(grad(nu), grad(lapAterm))") ;
+          syst.add_def(d, "eqlapAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))") ;
+          break;
+      }
+    }
+    auto add_surf_integ = [&](auto varstr, auto defstr, auto dom, auto bc) {
+      vars[varstr]  = syst.get_space().get_domain(dom)->integ(
+        syst.give_val_def(defstr)()(dom), bc
+      );
+    };
+    add_surf_integ("Madm", "intMadm"   , ndom-1, OUTER_BC);
+    add_surf_integ("Mk", "intMk"   , ndom-1, OUTER_BC);
+
+    // Populate vars dictionary
+    // FUKA_Syst_tools::syst_vars(vars, syst);
+    // FUKA_Syst_tools::syst_vars_hydro(vars, syst);
+    // FUKA_Syst_tools::export_radii(space, vars, 0, ndom-1, "NS_R");
+    // FUKA_Syst_tools::dict_add_vector_cmp(
+    //   syst, vars, "shift", Tensor(shift)
+    // );
+
+    // double Madm = boost::python::extract<double>(vars["Madm"]);
+    FUKA_Syst_tools::syst_vars_NS_isotropic(vars, syst, 2);
+    FUKA_Syst_tools::syst_add_resolution_list(space, vars);
+    vars["nc"] = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+    vars["hc"] = bconfig(BCO_PARAMS::HC);
+  }
+};
+
+BOOST_PYTHON_MODULE(_ns_isotropic_norot_reader)
+{
+    // initialize python types
+    Kadath::initPythonBinding<space_t>();
+    Kadath::constructPythonReader<ns_isotropic_reader_t>("ns_isotropic_norot_reader");
+}
