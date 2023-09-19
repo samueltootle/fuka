@@ -113,7 +113,7 @@ inline int ns_isotropic_norot_driver (config_t& bconfig,
     std::_Exit(EXIT_FAILURE);
   }
 
-  bool res_inc = (resolution.final() > resolution.init());
+  bool res_inc = (resolution.final() > resolution.init() || bconfig.control(CONTROLS::REGRID));
   auto resolution_indices = resolution.get_indices();
   auto const & final_res = resolution.final();
   
@@ -141,7 +141,10 @@ inline int ns_isotropic_norot_driver (config_t& bconfig,
   while(res_inc) {        
 
     // iterative res increase
-    if(bconfig(BCO_PARAMS::BCO_RES) + 2 >= final_res) {
+    if(bconfig.control(CONTROLS::REGRID)) {
+      bconfig.control(CONTROLS::REGRID) = false;
+      res_inc = (resolution.final() > resolution.init());
+    } else if(bconfig(BCO_PARAMS::BCO_RES) + 2 >= final_res) {
       bconfig.set(BCO_PARAMS::BCO_RES) = final_res;
       res_inc = false;
     } else {
