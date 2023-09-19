@@ -162,7 +162,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
         // sources
         syst.add_def(d, "E = Wsq * press * h - press * delta");
         syst.add_def(d, "Srrtt = press * delta");
-        syst.add_def(d, "pphi = B * (E + Srrtt) * U");
+        syst.add_def(d, "pphi = (E + Srrtt) * U");
         syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
         syst.add_def(d, "S = 2 * Srrtt + Spp");
   
@@ -218,9 +218,9 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
   }
 };
 
-BOOST_PYTHON_MODULE(_ns_isotropic_reader)
+BOOST_PYTHON_MODULE(_ns_isotropic_diffrot_reader)
 {
     // initialize python types
     Kadath::initPythonBinding<space_t>();
-    Kadath::constructPythonReader<ns_isotropic_reader_t>("ns_isotropic_reader");
+    Kadath::constructPythonReader<ns_isotropic_reader_t>("ns_isotropic_diffrot_reader");
 }

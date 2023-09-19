@@ -60,6 +60,7 @@ def add_base_arguments(parser):
   parser.add_argument('--bh'  , action='store_true', help='Use BH ID reader')  
   parser.add_argument('--ns'  , action='store_true', help='Use NS ID reader')
   parser.add_argument('--ns-iso-norot', action='store_true', help='Use NS Isotropic NOROT ID reader')
+  parser.add_argument('--ns-iso-uniformrot', action='store_true', help='Use NS Isotropic UNIFORMROT ID reader')
   parser.add_argument('--ns-iso-diffrot', action='store_true', help='Use NS Isotropic DIFFROT ID reader')
   parser.add_argument('--isotropic'  , action='store_true', help='Isotropic solution')
   parser.add_argument('--pickle', 
@@ -149,7 +150,7 @@ def get_args(print_vars=False):
   
   args = parser.parse_args()
   if not args.isotropic:
-    args.isotropic = args.ns_iso_norot or args.ns_iso_diffrot
+    args.isotropic = args.ns_iso_norot or args.ns_iso_diffrot or args.ns_iso_uniformrot
   
   if args.vars == None and print_vars == False:
     raise ValueError("Var(s) must be supplied with --vars <var1 var2 ... varN>")
@@ -170,6 +171,7 @@ def get_args(print_vars=False):
     not args.bh and \
     not args.ns and \
     not args.ns_iso_norot and \
+    not args.ns_iso_uniformrot and \
     not args.ns_iso_diffrot:
     raise ValueError("""
       An ID reader must be specified:
