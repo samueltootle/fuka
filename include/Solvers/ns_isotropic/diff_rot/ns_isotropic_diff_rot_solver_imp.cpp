@@ -97,8 +97,6 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::syst_init(System_of
   syst.add_def("A = exp(lapAterm - nu)");
   syst.add_def("B = (divrsint(lapBterm) + 1) / N");
   syst.add_def("w = divrsint(wrsint)");
-  syst.add_def("Fomega = B^2 * multrsint(multrsint(ome - w)) "
-                      "/ (N^2 - multrsint(B * (ome - w))^2)");
  
   // define quantity to be integrated at infinity
   // two (in this case) equivalent definitions of ADM mass
