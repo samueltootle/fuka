@@ -8,11 +8,11 @@ sys.path.append(pyFUKA_libspath)
 from fuka_plot_tools.setup_utils import *
 import math
 
-import glob
+import glob, numpy as np
 
 if __name__ == "__main__":
   print("test", glob.glob("res_seq*"))
-  reslist=[13] #, 17, 21, 25, 33]
+  reslist=[13, 17] #, 21, 25, 33]
   for R in reslist:
     for d in sorted(glob.glob("seq_rr*A-1")):
       fabs=d+"/NS_ISO_DIFF_ROT.gam2.keh.nc.*.info"
@@ -41,7 +41,10 @@ if __name__ == "__main__":
           res_sum += reslist[0] * reslist[1]
         res.append(res_sum)
         res_r.append(ns.config['ns']['res'])
-      plt.plot(rho, Madm, label=d)
+      rho = np.array(rho)
+      Madm = np.array(Madm)
+      i = rho.argsort()
+      plt.plot(rho[i], Madm[i], label=d)
       # plt.plot([r**(1./2.) for r in res[:-1]], [math.fabs(1. - M / Madm[-1]) for M in Madm[:-1]], label=d)
       # plt.plot([r**(1./2.) for r in res], [math.fabs(1. - mk / madm) for mk, madm in zip(Mk, Madm)], label=d)
       print(len(rho))
