@@ -30,10 +30,14 @@ rho_tab
 units: cgs_cgs_over_c2
 ```
 
-1. in the first block, the number of pieces, the value range of the density, as well as `K_0` (constant factor at the initial boundary and `P0` (pressure at the initial boundary) must be defined in this order
+1. In the first block is an ordered list (the order matters) of:
+    - the number of pieces used to construct the piecewise polytrope
+    - the extrema of the allowed densities in geometrized units. Note, values above
+    or below the min/max will be set to the min/max value.
+    - `K_0` constant factor at the initial boundary and `P0` (pressure at the initial boundary)
 2. secondly the values of the polytropic exponent for each piece is defined in a single row
 3. thirdly the values of the density are defined for each piece within a single row
-4. finally the units must be specified for the input values
+4. finally the units must be specified for the input values of `K_0` and `rho_tab`
 
 ## Tabulated Equations of State
 
