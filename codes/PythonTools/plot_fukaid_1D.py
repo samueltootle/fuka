@@ -61,15 +61,26 @@ if __name__ == "__main__":
       
       for y in y_coords:
         # extract data for each var
-        data = extract_data(
-          reader, 
-          var, 
-          x_coords, 
-          [y], 
-          plotz=plotz,
-          square = sq,
-          inverse = inv,
-          logscale=args.log)
+        if not args.isotropic:
+          data = extract_data(
+            reader, 
+            var, 
+            x_coords, 
+            [y], 
+            plotz=plotz,
+            square = sq,
+            inverse = inv,
+            logscale=args.log)
+        else:
+          data = extract_data_isotropic(
+            reader, 
+            var, 
+            x_coords, 
+            [y], 
+            plotz=plotz,
+            square = sq,
+            inverse = inv,
+            logscale=args.log)
         print("Plotting data with shape {}".format(data.shape))
 
         # dump data to pickle file
