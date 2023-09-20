@@ -139,6 +139,13 @@ int ns_isotropic_diff_rot_stationary_driver (config_t& bconfig,
       std::_Exit(EXIT_FAILURE);
     }
     
+    if(exit_status == EXIT_SUCCESS){
+      auto [r_min, r_max] = Kadath::bco_utils::get_rmin_rmax(space, 1);
+      bconfig.control(CONTROLS::REGRID) =  \
+          (1. - (bconfig(BCO_PARAMS::RIN) / r_min ) <= 0.05) || 
+          (1. - (r_max / bconfig(BCO_PARAMS::ROUT)) <= 0.05);
+    }
+
     MPI_Barrier(MPI_COMM_WORLD);
   }
   return exit_status;
@@ -169,11 +176,6 @@ inline int ns_isotropic_diff_rot_driver (config_t& bconfig,
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
 
-  exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
-  // We now have a "low" resolution solution for the NS of interest
-  // Set this to false to avoid iterative M and CHI
-  bconfig.control(CONTROLS::SEQUENCES) = false;
-
   auto regrid = [&]() {
     std::string fname{"ns_regrid"};
 
@@ -186,6 +188,16 @@ inline int ns_isotropic_diff_rot_driver (config_t& bconfig,
     stage_enabled.fill(false);
     stage_enabled[STAGES::DIFF_ROT] = true;
   };
+    
+  exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
+  if(bconfig.control(CONTROLS::REGRID)) {
+    regrid();
+    bconfig.control(CONTROLS::REGRID) = false;
+    exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
+  }
+  // We now have a "low" resolution solution for the NS of interest
+  // Set this to false to avoid iterative M and CHI
+  bconfig.control(CONTROLS::SEQUENCES) = false;
 
   while(res_inc) {        
     int next_res = bco_utils::next_resolution(bconfig(BCO_PARAMS::BCO_RES));
