@@ -233,6 +233,43 @@ def extract_data(
     data=data.reshape(xlen,ylen)
   return data
 
+def extract_data_isotropic(
+  reader, 
+  var, 
+  x_coords,
+  y_coords,
+  plotz=False,
+  logscale=False,
+  square=False,
+  inverse=False,
+  zval=0):
+  
+  import numpy as np
+
+  xlen = len(x_coords)
+  ylen = len(y_coords)
+  
+  if not plotz:
+    coords_lst = [[x, y] for y in y_coords for x in x_coords]
+  else:
+    coords_lst = [[x, zval] for z in y_coords for x in x_coords]
+
+  data = reader.getFieldValues(var, coords_lst, -1)
+  data = np.array(data)
+  
+  if square:
+    data *= data
+
+  if inverse:
+    data = 1. / data
+
+  if logscale:
+    data = np.array(np.log10(np.abs(data)+1e-15))
+  
+  if xlen == ylen:
+    data=data.reshape(xlen,ylen)
+  return data
+
 def get_quiver_vars(var, plane):
   qvars = list()
   for c in plane:
