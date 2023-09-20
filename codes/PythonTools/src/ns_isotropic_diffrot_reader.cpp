@@ -119,7 +119,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     // define quantity to be integrated at infinity
     // two (in this case) equivalent definitions of ADM mass
     // as well as the Komar mass
-    syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
+    syst.add_def(ndom - 1, "intMadm = -dr(B) / 4piG ");
     syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
     syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
     
