@@ -300,16 +300,11 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   // Initialize rotation law parameter A
   double diffA = diffAratio * R0;
 
-  std::string jint{"-0.5 * j^2 / A^2"};
-  std::string omej{"omec - j / A^2"};
-  std::string F{"F = " + omej}; //FIXME
-
-  std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsq)) + " + jint};
+  std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsq)) - 0.5 * j^2 / diffA^2"};
 
   if (rank == 0)
     std::cout << "###################################" << std::endl
-              << "Differential Rotating models"      << std::endl
-              << "Law: " << F << std::endl
+              << "Differential Rotating models (KEH)"  << std::endl
               << firstint << std::endl
               << "Fixed A / R0: " << diffAratio << std::endl
               << "Initial Rp/Re: " << Rp / R0 << "\n"
@@ -330,7 +325,6 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_cst("one", one);
   
   // KEH Constants
-  // syst.add_cst("q",q);
   syst.add_cst("diffAratio", diffAratio);
   syst.add_cst("Rratio", diffRratio);  
 
@@ -343,12 +337,12 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_def("diffAField = one * diffA");
   syst.add_def("r = multr(one)");
   syst.add_def("omeratio = omec / ome");
-  syst.add_def(F.c_str());
-  syst.add_def("Fomega = B^2 * multrsint(multrsint(ome - w)) "
-                      "/ (N^2 - multrsint(B * (ome - w))^2)");
+
+  syst.add_def("j = Wsq / N * U");
+  syst.add_def("omelaw = omec - j^2 / diffA^2");
 
   for (int d = 0; d < ndom; d++) {
-    syst.add_eq_full(d, "Fomega - F = 0");
+    syst.add_eq_full(d, "ome - omelaw = 0");
     switch (d) {
     // in the star the constraint equations are sourced by the matter
     case 0:
