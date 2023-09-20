@@ -215,6 +215,19 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     FUKA_Syst_tools::syst_add_resolution_list(space, vars);
     vars["nc"] = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
     vars["hc"] = bconfig(BCO_PARAMS::HC);
+    
+    auto add_from_def = [&](std::string str) {
+      Scalar tmp(syst.give_val_def(str.c_str()));
+      tmp.coef_i();
+      tmp.std_base();
+      vars[str.c_str()] = tmp;
+    };
+    add_from_def("w");
+    add_from_def("A");
+    add_from_def("B");
+    add_from_def("U");
+    add_from_def("W");
+    add_from_def("N");
   }
 };
 
