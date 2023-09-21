@@ -170,12 +170,12 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
         syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
                               "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
                               "- 4piG * A^2 * (E + S)");
+        syst.add_def(d, "eqwrsint = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
+                            "+ 4 * 4piG * N * A^2 / B * pphi");
+        syst.add_def(d, "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
         syst.add_def(d, "eqAterm = delta * lap2(lapAterm) + delta * scal(grad(nu), grad(nu))"
                         "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
                         "- 2 * 4piG * A^2 * Spp");
-        syst.add_def(d, "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
-        syst.add_def(d, "eqwrsint = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                            "+ 4 * 4piG * N * A^2 / B * pphi");
   
         // definition for the baryonic mass integral
         syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
@@ -186,10 +186,10 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
 
           syst.add_def(d, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
                           "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
+          syst.add_def(d, "eqwrsint = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
+          syst.add_def(d, "eqBterm = lap2(lapBterm)");
           syst.add_def(d, "eqAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
                     "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))");
-          syst.add_def(d, "eqBterm = lap2(lapBterm)");
-          syst.add_def(d, "eqwrsint = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
           break;
       }
     }
@@ -216,11 +216,12 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     vars["nc"] = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
     vars["hc"] = bconfig(BCO_PARAMS::HC);
     
-    auto add_from_def = [&](std::string str) {
-      Scalar tmp(syst.give_val_def(str.c_str()));
+    auto add_from_def = [&](std::string in_str, std::string out_str="") {
+      if(out_str == "") out_str = in_str;
+      Scalar tmp(syst.give_val_def(in_str.c_str()));
       tmp.coef_i();
       tmp.std_base();
-      vars[str.c_str()] = tmp;
+      vars[out_str.c_str()] = tmp;
     };
     add_from_def("w");
     add_from_def("A");
@@ -228,6 +229,10 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     add_from_def("U");
     add_from_def("W");
     add_from_def("N");
+    add_from_def("eqnu", "cLapse");
+    add_from_def("eqAterm", "cA");
+    add_from_def("eqBterm", "cB");
+    add_from_def("eqwrsint", "comega");
   }
 };
 
