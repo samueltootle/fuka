@@ -104,15 +104,26 @@ if __name__ == "__main__":
       print("Extracting data: {} with {}-points".format(var_name(var), args.npts))
       
       # extract data for each var
-      data = extract_data(
-        reader, 
-        var, 
-        x_coords, 
-        y_coords, 
-        plotz=plotz,
-        square = sq,
-        inverse = inv,
-        logscale=args.log)
+      if not args.isotropic:
+        data = extract_data(
+          reader, 
+          var, 
+          x_coords, 
+          y_coords, 
+          plotz=plotz,
+          square = sq,
+          inverse = inv,
+          logscale=args.log)
+      else:
+        data = extract_data_isotropic(
+            reader, 
+            var, 
+            x_coords, 
+            y_coords, 
+            plotz=plotz,
+            square = sq,
+            inverse = inv,
+            logscale=args.log)
         
       print("Plotting data: {} with {}-shape".format(var_name(var), data.shape))
 
