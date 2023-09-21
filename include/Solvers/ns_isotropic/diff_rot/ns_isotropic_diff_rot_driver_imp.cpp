@@ -142,8 +142,8 @@ int ns_isotropic_diff_rot_stationary_driver (config_t& bconfig,
     if(exit_status == EXIT_SUCCESS){
       auto [r_min, r_max] = Kadath::bco_utils::get_rmin_rmax(space, 1);
       bconfig.control(CONTROLS::REGRID) =  \
-          (1. - (bconfig(BCO_PARAMS::RIN) / r_min ) <= 0.05) || 
-          (1. - (r_max / bconfig(BCO_PARAMS::ROUT)) <= 0.05);
+          (1. - (bconfig(BCO_PARAMS::RIN) / r_min ) <= 0.3) || 
+          (1. - (r_max / bconfig(BCO_PARAMS::ROUT)) <= 0.1);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
