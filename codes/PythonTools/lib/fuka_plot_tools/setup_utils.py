@@ -237,7 +237,7 @@ def extract_data_isotropic(
   reader, 
   var, 
   x_coords,
-  y_coords,
+  z_coords,
   plotz=False,
   logscale=False,
   square=False,
@@ -247,12 +247,16 @@ def extract_data_isotropic(
   import numpy as np
 
   xlen = len(x_coords)
-  ylen = len(y_coords)
+  zlen = len(z_coords)
   
+  '''
+  In isotropic coordinates, phi symmetry is imposed and, as such,
+  there is no y coordinate input for interpolation, only x and z.
+  '''
   if not plotz:
-    coords_lst = [[x, y] for y in y_coords for x in x_coords]
+    coords_lst = [[x, zval] for x in x_coords]
   else:
-    coords_lst = [[x, zval] for z in y_coords for x in x_coords]
+    coords_lst = [[x, z] for z in z_coords for x in x_coords]
 
   data = reader.getFieldValues(var, coords_lst, -1)
   data = np.array(data)
@@ -266,8 +270,8 @@ def extract_data_isotropic(
   if logscale:
     data = np.array(np.log10(np.abs(data)+1e-15))
   
-  if xlen == ylen:
-    data=data.reshape(xlen,ylen)
+  if xlen == zlen:
+    data=data.reshape(xlen,zlen)
   return data
 
 def get_quiver_vars(var, plane):
