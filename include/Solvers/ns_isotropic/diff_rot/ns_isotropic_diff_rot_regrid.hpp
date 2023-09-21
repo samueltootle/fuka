@@ -122,7 +122,7 @@ int ns_isotropic_diff_rot_regrid(config_t& bconfig, std::string outputfile) {
   bounds.set(2) = bconfig(ROUT);
 
   for(int shell = 1, b = 3; shell <= shells; ++shell, ++b) {
-    bounds.set(b) = bounds(b-1) * 2;
+    bounds.set(b) = bounds(b-1) * bco_utils::gold_ratio;
   }
 
   // get origin of nucleus domain
