@@ -12,11 +12,11 @@ import glob, numpy as np
 
 if __name__ == "__main__":
   print("test", glob.glob("res_seq*"))
-  reslist=[13, 17] #, 21, 25, 33]
+  reslist=[13, 17, 21] #, 25, 33]
   for R in reslist:
     for d in sorted(glob.glob("seq_rr*A-1")):
       fabs=d+"/NS_ISO_DIFF_ROT.gam2.keh.nc.*.info"
-      print(fabs)
+      # print(fabs)
       files = glob.glob(fabs)
   #    print(files)
       rho = []
@@ -29,8 +29,12 @@ if __name__ == "__main__":
         fID, p = check_ID_filename(f)
         ns = get_reader(fID, ns_iso_diffrot=True)
         # print(ns.config['ns']['res'])
-        if not ns.config['ns']['res'] == int(R) :
+        idres = int(ns.config['ns']['res'])
+        nshells = int(ns.config['ns']['nshells'])
+        
+        if not idres == int(R) :
           continue
+        # print(fID)
         # print(ns.vars['nc'], ns.vars['Mb'])
         rho.append(ns.vars['nc']) # * 6.17714e17)
         Mb.append(ns.vars['Mb'])
@@ -40,11 +44,14 @@ if __name__ == "__main__":
         for reslist in ns.vars['domain_resolutions']:
           res_sum += reslist[0] * reslist[1]
         res.append(res_sum)
-        res_r.append(ns.config['ns']['res'])
-      rho = np.array(rho)
-      Madm = np.array(Madm)
-      i = rho.argsort()
-      plt.plot(rho[i], Madm[i], label=d)
+        res_r.append(idres)
+      
+      if len(rho) > 0:
+        print(d, R)
+        rho = np.array(rho)
+        Madm = np.array(Madm)
+        i = rho.argsort()
+        plt.plot(rho[i], Madm[i], label="{}.{}.{}".format(d, nshells, int(R)))
       # plt.plot([r**(1./2.) for r in res[:-1]], [math.fabs(1. - M / Madm[-1]) for M in Madm[:-1]], label=d)
       # plt.plot([r**(1./2.) for r in res], [math.fabs(1. - mk / madm) for mk, madm in zip(Mk, Madm)], label=d)
       print(len(rho))
