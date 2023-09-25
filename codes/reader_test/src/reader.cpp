@@ -40,59 +40,6 @@ constexpr unsigned int Npts = 258;
 constexpr double range = 3;
 constexpr double dx = range / Npts;
 
-void fill_coords(std::vector<double>& xx, std::vector<double>& yy, std::vector<double>& zz) {
-  unsigned int nthreads = std::thread::hardware_concurrency();
-  unsigned int chunksize = Npts / nthreads;
-
-  auto fill_points = [&](auto start, auto stop) {
-    for(auto i = start; i < stop; ++i) {
-      xx[i]+= i * dx;
-      yy[i]+= i * dx;
-      zz[i]+= i * dx;
-    }
-  };
-
-  std::vector<std::thread> threads;
-  for(auto j = 0; j < nthreads; ++j) {
-    auto start = chunksize * j;
-    auto stop = (chunksize * (j+1) > Npts) ? Npts : chunksize * (j+1);
-    threads.push_back(std::thread(fill_points, start, stop));
-  }
-  for(auto j = 0; j < nthreads; ++j) {
-    threads[j].join();
-  }
-}
-
-ary_t interpolate(std::string fn, std::vector<double>& xx, std::vector<double>& yy, std::vector<double>& zz) {
-
-  
-  config_t bconfig(fn);  
-  reader_t input_reader(fn);
-
-  unsigned int nthreads = std::thread::hardware_concurrency();
-  unsigned int chunksize = Npts / nthreads;
-
-  std::vector<ary_t> all;
-
-  auto interp_points = [&](auto start, auto stop) {
-    reader_t reader(input_reader);
-    for(auto i = start; i < stop; ++i) {
-      auto vals = reader.export_pointwise(xx[i], yy[i], zz[i]);
-      all.push_back(vals);
-    }
-  };
-
-  std::vector<std::thread> threads;
-  for(auto j = 0; j < nthreads; ++j) {
-    auto start = chunksize * j;
-    auto stop = (chunksize * (j+1) > Npts) ? Npts : chunksize * (j+1);
-
-    threads.push_back(std::thread(interp_points, start, stop));
-  }
-  for(auto j = 0; j < nthreads; ++j) {
-    threads[j].join();
-  }
-}
 
 int main(int argc, char **argv) {
 
@@ -109,11 +56,6 @@ int main(int argc, char **argv) {
   std::vector<double> xx(Npts);
   std::vector<double> yy(Npts);
   std::vector<double> zz(Npts);
-
-  // fill_coords(xx,yy,zz);
-  // auto v = interpolate(ifilename, xx, yy, zz);
-
-
   
   #pragma omp parallel for
   for(auto i = 0; i < Npts; ++i) {
@@ -129,24 +71,10 @@ int main(int argc, char **argv) {
 
   #pragma omp parallel for firstprivate(input_reader)
   for(auto i = 0; i < Npts; ++i) {
-    // reader_t r(input_reader);
-
-    // r = reader;
-    // #pragma omp critical 
-    // {
-    //   r = reader;
-    // std::cout << i << "\n";
-    // std::cout << r.get_space() << "\n";
-    // auto interp = input_reader.interpolate_pointwise(xx[i], yy[i], zz[i]);
     all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
   }
   for(auto& p : all_data)
     std::cout << p[reader_t::OUTPUT_VARS::ALPHA] << '\n';
-  //   // std::cout << "Psi(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") = " << interp[reader_t::XCTS_VARS::XCTS_PSI] << '\n';
-    
-    
-
-  // }
 
   return EXIT_SUCCESS;
 }

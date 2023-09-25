@@ -216,8 +216,9 @@ void spherical_turduck(fields_ary_t& quants, quant_ary_t& quant_vals,
   T const xshift_) {
   
   auto& space = quants[0].get().get_space();
-  T const ah_r = export_utils::get_excision_r(space,
-    r_bound_, theta_, phi_, dom_, xshift_);
+  T const ah_r = r_bound_;
+  // export_utils::get_excision_r(space,
+  //   r_bound_, theta_, phi_, dom_, xshift_);
   
   std::vector<T> r_points(order_);
   for (int j = 0; j < order_; j++) {

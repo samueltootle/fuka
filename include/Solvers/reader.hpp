@@ -16,7 +16,9 @@
 #include <cstdlib>
 #include <string>
 #include <filesystem>
-
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 namespace fs = std::filesystem;
 
 namespace Kadath::FUKA_Solvers {
@@ -35,9 +37,9 @@ struct Reader {
   using base_config_t = std::decay_t<config_t>;
   using base_space_t = std::decay_t<space_t>;
 
-  ptr_data_member(space_t, space, unique);
-  ptr_data_member(System_of_eqs, syst, unique);
-  ptr_data_member(base_config_t, bconfig, unique);
+  ptr_data_member(space_t, space, shared);
+  ptr_data_member(System_of_eqs, syst, shared);
+  ptr_data_member(base_config_t, bconfig, shared);
   
   protected:
   int ndom{};
@@ -96,7 +98,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     KZZ,
     NUM_OUTPUT_VARS
   };
-  constexpr static size_t nout = size_t(OUTPUT_VARS::NUM_OUTPUT_VARS);
+  using pointwise_ary_t = std::array<double, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
   // Types
   using Reader<config_t, space_t>::base_space_t;
@@ -109,14 +111,14 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
   using Reader<config_t, space_t>::ndom;
 
   // CFMS_BH imported fields from file
-  ptr_data_member(Scalar, conformal_factor, unique);
-  ptr_data_member(Scalar, lapse, unique);
-  ptr_data_member(Vector, shift, unique);
+  ptr_data_member(Scalar, conformal_factor, shared);
+  ptr_data_member(Scalar, lapse, shared);
+  ptr_data_member(Vector, shift, shared);
 
   // Constructed objects
-  ptr_data_member(Base_tensor, basis, unique);
-  ptr_data_member(Metric_flat, fmet, unique);
-  ptr_data_member(Tensor, A, unique);
+  ptr_data_member(Base_tensor, basis, shared);
+  ptr_data_member(Metric_flat, fmet, shared);
+  ptr_data_member(Tensor, A, shared);
 
   protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
@@ -170,7 +172,9 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
 
   public:
   bool is_export_ready() const { return export_ready; }
-
+  CFMS_BH_Reader() : Reader<config_t, space_t>(),
+    basis(nullptr), fmet(nullptr),
+    conformal_factor(nullptr), lapse(nullptr), shift(nullptr) {}
   CFMS_BH_Reader(std::string config_filename) :
     Reader<config_t, space_t>(config_filename),
       basis(nullptr), fmet(nullptr),
@@ -196,9 +200,19 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     
     // For testing only
     // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
+    // std::cout << "copy\n";
   }
 
-  
+  CFMS_BH_Reader(CFMS_BH_Reader&& b) noexcept = delete;
+  CFMS_BH_Reader& operator=(const CFMS_BH_Reader& b)
+  {
+    if (this == &b) return *this;
+
+    CFMS_BH_Reader tmp(b);
+    *this = std::move(tmp);
+// std::cout << "assignment\n";
+    return *this;
+  }
 
   public:
 
@@ -227,7 +241,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
       // Where the filling takes places
       export_utils::spherical_turduck(
         quants, quant_vals, interp_order, delta_r_rel, interpolation_offset, 
-        rbh, extrap_r, theta, phi, 1, bh_ori
+        rbh, extrap_r, theta, phi, 2, bh_ori
       );
     };
 
