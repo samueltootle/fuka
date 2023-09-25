@@ -104,6 +104,7 @@ Domain_shell_outer_adapted::Domain_shell_outer_adapted (const Space& sp, const D
   normal_cart = 0x0 ;
   
   do_coloc() ;
+  outer_radius->coef();
 }
 
 Domain_shell_outer_adapted::Domain_shell_outer_adapted (const Space& sss, int num, FILE* fd) : Domain(num, fd), sp(sss), center(fd) {

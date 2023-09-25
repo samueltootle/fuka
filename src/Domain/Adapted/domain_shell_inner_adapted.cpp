@@ -106,6 +106,7 @@ Domain_shell_inner_adapted::Domain_shell_inner_adapted (const Space& sp, const D
   normal_cart = 0x0 ;
   
   do_coloc() ;
+  inner_radius->coef();
 }
 
 Domain_shell_inner_adapted::Domain_shell_inner_adapted (const Space& sss, int num, FILE* fd) : Domain(num, fd), sp(sss), center(fd) {
