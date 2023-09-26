@@ -192,6 +192,15 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     add_from_def("N");
     add_from_def("eqnu", "cLapse");
     add_from_def("eqAterm", "cA");
+
+    auto npts = space.get_domain(1)->get_nbr_points();
+    Index pos_eq (npts);
+    pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+    pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+    auto B(syst.give_val_def("A")()(1));
+    auto r(space.get_domain(1)->get_radius());
+    double CR = B(pos_eq) * r(pos_eq);
+    vars["CR"] = CR;
   }
 };
 
