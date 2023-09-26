@@ -94,9 +94,11 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   // KEH Definitions
   syst.add_def("diffAField = one * diffA");
   syst.add_def("r = multr(one)");
-  syst.add_def("omeratio = omec / ome");
+  syst.add_def("omeratio = omec / Omega");
 
-  syst.add_def("j = Wsq / N * U");
+  // This converges, but isn't correct
+  // syst.add_def("j = Wsq / N * U");
+  syst.add_def("j = Wsq / N * U * multrsint(B)");
   syst.add_def("omelaw = omec - j^2 / diffA^2");
 
   for (int d = 0; d < ndom; d++) {
@@ -151,9 +153,9 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
       break;
     }
     if( d <= space.ADAPTED_INNER)
-      syst.add_eq_full(d, "ome - omelaw = 0");
+      syst.add_eq_full(d, "Omega - omelaw = 0");
     else
-      syst.add_eq_full(d, "ome = 0");
+      syst.add_eq_full(d, "Omega = 0");
   }
  
   // add the constraint equations and demand continuity their normal derivative across domain boundaries

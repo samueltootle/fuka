@@ -90,7 +90,7 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::syst_init(System_of
   syst.add_var("lapAterm", lap_Aterm);
   syst.add_var("lapBterm", lap_Bterm);
   syst.add_var("wrsint", lap_wterm);
-  syst.add_var("ome", Omega);
+  syst.add_var("Omega", Omega);
 
   // Useful definitions
   syst.add_def("N = exp(nu)");
@@ -123,7 +123,7 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::syst_init(System_of
   // delta = p / rho
   syst.add_def("delta = h - eps - 1.");
 
-  syst.add_def("U = multrsint(B / N * (ome - w))");
+  syst.add_def("U = multrsint(B / N * (Omega - w))");
   syst.add_def("Usq = U*U");
   syst.add_def("Wsq = 1 / (1 - Usq)");
   syst.add_def("W = sqrt(Wsq)");
