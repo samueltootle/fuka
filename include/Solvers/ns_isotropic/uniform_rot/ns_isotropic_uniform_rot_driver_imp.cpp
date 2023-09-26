@@ -187,9 +187,14 @@ inline int ns_isotropic_uniform_rot_driver (config_t& bconfig,
     bconfig.set_filename(fname);
     bconfig.open_config();
     
-    stage_enabled.fill(false);
+    stage_enabled[STAGES::NOROT_BC] = false;
     stage_enabled[STAGES::UNIFORM_ROT] = true;
   };
+
+  // Since the 2D code focuses on sequences, we always regrid to make sure
+  // we start/end on an optimal grid structure.
+  regrid();
+  exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir, seq);
 
   while(res_inc) {        
     int next_res = bco_utils::next_resolution(bconfig(BCO_PARAMS::BCO_RES));

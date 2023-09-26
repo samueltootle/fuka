@@ -190,14 +190,12 @@ inline int ns_isotropic_diff_rot_driver (config_t& bconfig,
   };
     
   exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
-  if(bconfig.control(CONTROLS::REGRID)) {
-    regrid();
-    bconfig.control(CONTROLS::REGRID) = false;
-    exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
-  }
-  // We now have a "low" resolution solution for the NS of interest
-  // Set this to false to avoid iterative M and CHI
-  bconfig.control(CONTROLS::SEQUENCES) = false;
+  
+  // Since the 2D code focuses on sequences, we always regrid to make sure
+  // we start/end on an optimal grid structure.
+  regrid();
+  exit_status = ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
+
 
   while(res_inc) {        
     int next_res = bco_utils::next_resolution(bconfig(BCO_PARAMS::BCO_RES));
