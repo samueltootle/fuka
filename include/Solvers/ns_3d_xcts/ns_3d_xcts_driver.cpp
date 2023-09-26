@@ -338,6 +338,12 @@ inline int ns_3d_xcts_driver (config_t& bconfig,
     stage_enabled.fill(false);
     stage_enabled[last_stage_idx] = true;
   };
+  
+  // Make sure current solution is using an optimal grid structure
+  std::array<bool, NUM_STAGES> saved_stages = bconfig.return_stages();
+  regrid();
+  stage_enabled = saved_stages;
+  exit_status = ns_3d_xcts_stationary_driver(bconfig, outputdir, seq);
 
   while(res_inc) {        
 
