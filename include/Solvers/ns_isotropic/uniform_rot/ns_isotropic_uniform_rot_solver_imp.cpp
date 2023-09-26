@@ -124,9 +124,12 @@ void ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::syst_init(System
   // as well as the Komar mass
   
   // This expression does not give accurate results when compared to M_komar and the computed
-  // ADM Mass from the 3D code.  The deviation from the correct answer is not large, but the
-  // source of the error is unknown
+  // ADM Mass from the 3D code.  The deviation from the correct answer gets large with increasing
+  // differential rotation profiles, but the source of the error is unknown
+  // eq. 4.21 arxiv.org/abs/1003.5015v2
+  // FIXME - there must be a reason
   // syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
+  // Instead, the following definition gives very accurate comparisons with M_komar
   syst.add_def(ndom - 1, "intMadm = - (dr(B)) / 4piG ");
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
   syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
