@@ -16,12 +16,37 @@
 #include <cstdlib>
 #include <string>
 #include <filesystem>
+#include <mutex>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
 namespace fs = std::filesystem;
 
 namespace Kadath::FUKA_Solvers {
+static std::mutex copy_mutex;
+template<class space_t>
+struct find_dom {
+  int dom{-1};
+  find_dom(std::unique_ptr<space_t>& space, Point& p) {
+    auto ndom = space->get_nbr_domains();
+    for(auto d = 2; d < ndom; ++d) {
+      if(space->get_domain(d)->is_in(p)) {
+        dom = d;
+        break;
+      }
+    }
+    if(dom == -1) {
+      std::stringstream msg;
+      msg << "Point " << p << " not found in the numerical space. ";
+      msg << space.get() << ", " << bco_utils::get_radius(space->get_domain(2), INNER_BC) << endl;
+      // cout << *(space->get_domain(d)) << endl;
+      // throw std::runtime_error(msg.str().c_str());
+      cout << msg.str() << endl;
+    }
+  }
+  int operator()() { return dom; }
+};
+
 /**
  * @brief The following "Reader" is really a bandage until the FUKA_Solvers
  * can be rewritten.  Essentially many of the utilities her are duplicate to
@@ -37,9 +62,9 @@ struct Reader {
   using base_config_t = std::decay_t<config_t>;
   using base_space_t = std::decay_t<space_t>;
 
-  ptr_data_member(space_t, space, shared);
-  ptr_data_member(System_of_eqs, syst, shared);
-  ptr_data_member(base_config_t, bconfig, shared);
+  ptr_data_member(space_t, space, unique);
+  ptr_data_member(System_of_eqs, syst, unique);
+  ptr_data_member(base_config_t, bconfig, unique);
   
   protected:
   int ndom{};
@@ -185,6 +210,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
   }
 
   CFMS_BH_Reader(CFMS_BH_Reader const & r) : fmet(nullptr) {
+    copy_mutex.lock();
     space.reset(new space_t((*r.get_space())));
     basis.reset(new Base_tensor(*space, r.get_basis()->get_basis(0)));
     fmet.reset(new Metric_flat(*space, *basis));
@@ -197,7 +223,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     export_ready = false;
 
     extract_xcts_grid_functions();
-    
+    copy_mutex.unlock();
     // For testing only
     // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
     // std::cout << "copy\n";
@@ -222,7 +248,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     std::vector<double> quant_vals(XCTS_VARS::NUM_XCTS_VARS);
 
     // Initial guess of the excision radius - needed for filling
-    double rbh = bco_utils::get_radius(space->get_domain(1), INNER_BC);
+    double rbh = bco_utils::get_radius(space->get_domain(2), INNER_BC);
 
     double r2yz = y * y + z * z;
 
@@ -247,15 +273,17 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
 
     if (r <= (1. + interpolation_offset) * rbh) {
       interp_f(rbh, r, 0.);
+      quant_vals[XCTS_VARS::XCTS_ALPHA] = -1;
     } else { 
       Point abs_coords(ndim);
       abs_coords.set(1) = x;
       abs_coords.set(2) = y;
       abs_coords.set(3) = z;
-
-      for (int k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
-        quant_vals[k] = quants[k].get().val_point(abs_coords);
-      }
+      find_dom fd(space, abs_coords);
+      quant_vals[XCTS_VARS::XCTS_ALPHA] = fd();
+      // for (int k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
+      //   quant_vals[k] = quants[k].get().val_point(abs_coords);
+      // }
     }
     return quant_vals;
   }
