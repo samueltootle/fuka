@@ -348,17 +348,25 @@ double get_center (const space_t& space, const int dom) {
  */
 inline double get_boundary_val (const int dom, const Scalar& field, const int bound=INNER_BC) {
   auto this_domain = field(dom).get_domain(); 
-  Index pos(this_domain->get_nbr_points());
+  auto npts = this_domain->get_nbr_points();
+  Index pos(npts);
+  auto dim = pos.get_ndim();
+
   switch(bound) {
     case INNER_BC:
       break;
     case OUTER_BC:
-      pos.set(0) = this_domain->get_nbr_points()(0) - 1;
-      pos.set(1) = this_domain->get_nbr_points()(1) - 1;
-      pos.set(2) = this_domain->get_nbr_points()(2) - 1;
+      pos.set(0) = npts(0) - 1;
+      pos.set(1) = npts(1) - 1;
+      if(dim == 3)
+        pos.set(2) = npts(2) - 1;
       break;
     case EQUI:
-      pos.set(0) = this_domain->get_nbr_points()(0) - 1;
+      pos.set(0) = npts(0) - 1;
+      pos.set(1) = npts(1) - 1;
+      break;
+    case INNER_EQUI:
+      pos.set(1) = npts(1) - 1;
       break;
     default:
       std::cout << "Unknown bound sent to get_boundary_val: " << bound << std::endl;
