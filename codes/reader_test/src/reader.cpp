@@ -37,7 +37,7 @@ using namespace Kadath::FUKA_Config;
   using ary_t = std::array<double, reader_t::OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
 constexpr unsigned int Npts = 258;  
-constexpr double range = 3;
+constexpr double range = 10;
 constexpr double dx = range / Npts;
 
 
@@ -63,7 +63,6 @@ int main(int argc, char **argv) {
     yy[i]+= i * dx;
     zz[i]+= i * dx;
   }
-  
   config_t bconfig(ifilename);  
   reader_t input_reader(ifilename);
   
