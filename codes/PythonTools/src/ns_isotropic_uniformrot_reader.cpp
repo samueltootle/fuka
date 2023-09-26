@@ -206,6 +206,29 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     FUKA_Syst_tools::syst_add_resolution_list(space, vars);
     vars["nc"] = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
     vars["hc"] = bconfig(BCO_PARAMS::HC);
+
+    auto add_from_def = [&](std::string in_str, std::string out_str="") {
+      if(out_str == "") out_str = in_str;
+      Scalar tmp(syst.give_val_def(in_str.c_str()));
+      tmp.coef_i();
+      tmp.std_base();
+      vars[out_str.c_str()] = tmp;
+    };
+    add_from_def("A");
+    add_from_def("N");
+    add_from_def("eqnu", "cLapse");
+    add_from_def("eqAterm", "cA");
+    add_from_def("eqBterm", "cNB");
+    add_from_def("eqwrsint", "comega");
+
+    auto npts = space.get_domain(1)->get_nbr_points();
+    Index pos_eq (npts);
+    pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+    pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+    auto B(syst.give_val_def("B")()(1));
+    auto r(space.get_domain(1)->get_radius());
+    double CR = B(pos_eq) * r(pos_eq);
+    vars["CR"] = CR;
   }
 };
 
