@@ -145,7 +145,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
   
         // constraint equations
         syst.add_def(d, "eqnu = delta * ( lap(nu) + dr(nu) * dr(lapAterm) ) - 4piG * A^2 * (E + S)") ;
-        syst.add_def(d, "eqlapAterm = delta * ( lap2(lapAterm) + dr(nu) * dr(nu) ) - 2 * 4piG * A^2 * Spp") ;
+        syst.add_def(d, "eqAterm = delta * ( lap2(lapAterm) + dr(nu) * dr(nu) ) - 2 * 4piG * A^2 * Spp") ;
   
         // definition for the baryonic mass integral
         syst.add_def(d, "intMb = rho * A^3 * 4piG / 2");
@@ -155,7 +155,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
         default:
 
           syst.add_def(d, "eqnu = lap(nu) + scal(grad(nu), grad(lapAterm))") ;
-          syst.add_def(d, "eqlapAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))") ;
+          syst.add_def(d, "eqAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))") ;
           break;
       }
     }
@@ -180,6 +180,18 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     FUKA_Syst_tools::syst_add_resolution_list(space, vars);
     vars["nc"] = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
     vars["hc"] = bconfig(BCO_PARAMS::HC);
+  
+    auto add_from_def = [&](std::string in_str, std::string out_str="") {
+      if(out_str == "") out_str = in_str;
+      Scalar tmp(syst.give_val_def(in_str.c_str()));
+      tmp.coef_i();
+      tmp.std_base();
+      vars[out_str.c_str()] = tmp;
+    };
+    add_from_def("A");
+    add_from_def("N");
+    add_from_def("eqnu", "cLapse");
+    add_from_def("eqAterm", "cA");
   }
 };
 
