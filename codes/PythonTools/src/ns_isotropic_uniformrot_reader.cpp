@@ -117,7 +117,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     // two (in this case) equivalent definitions of ADM mass
     // as well as the Komar mass
     syst.add_def(ndom - 1, "intMadm = - dr(B) / 4piG ");
-    syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
+    syst.add_def(ndom - 1, "intMk = B * (dr(N) - multrsint(multrsint(B^2) / 2 / N * w * dr(w)))  / 4piG");
     syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
     
     // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
