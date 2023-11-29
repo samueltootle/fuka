@@ -49,6 +49,7 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
     base_config.set(BCO_PARAMS::CHI) = 0;
   }
   auto mass_fixing = seq.mass_idx();
+  auto spin_fixing = seq.spin_idx();
 
   // Should be deprecated...
   if(seq.is_set() && std::isnan(base_config.set(sequence_idx))) {
@@ -79,7 +80,7 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
     bconfig.control(CONTROLS::ITERATIVE_M) = !std::isnan(final_MADM) &&
       (std::fabs(1. - bconfig(BCO_PARAMS::MADM)/final_MADM) > 1e-3);
 
-    if(bconfig.control(CONTROLS::ITERATIVE_M)) {
+    if(bconfig.control(CONTROLS::ITERATIVE_M) && std::fabs(bconfig(spin_fixing)) < 1e-3 ) {
       if(rank == 0)
       std::cerr << "Cannot solve TOV for Madm = " << final_MADM
                 << " without spin. " << bconfig(BCO_PARAMS::MADM) << '\n';
@@ -208,15 +209,15 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir,
     exit_status == EXIT_FAILURE;
     // exit_status = ns_isotropic_stationary_driver(bconfig, outputdir);
     if(stage_enabled[STAGES::NOROT_BC]) {
-      double const omega = bconfig(BCO_PARAMS::OMEGA);
-      double const chi = bconfig(BCO_PARAMS::CHI);
-      bconfig(BCO_PARAMS::OMEGA) = 0.;
-      bconfig(BCO_PARAMS::CHI) = 0.;
+      double const omega = bconfig.set(BCO_PARAMS::OMEGA);
+      double const chi = bconfig.set(BCO_PARAMS::CHI);
+      bconfig.set(BCO_PARAMS::OMEGA) = 0.;
+      bconfig.set(BCO_PARAMS::CHI) = 0.;
 
       exit_status = ns_isotropic_norot_stationary_driver(bconfig, outputdir, seq);
       stage_enabled[STAGES::NOROT_BC] = false;
-      bconfig(BCO_PARAMS::OMEGA) = omega;
-      bconfig(BCO_PARAMS::CHI) = chi;
+      bconfig.set(BCO_PARAMS::OMEGA) = omega;
+      bconfig.set(BCO_PARAMS::CHI) = chi;
       if(last_stage_idx != STAGES::NOROT_BC) {
         stage_enabled[STAGES::NOROT_BC] = false;
         exit_status = RELOAD_FILE;
