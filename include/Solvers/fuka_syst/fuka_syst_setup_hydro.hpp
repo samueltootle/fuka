@@ -127,6 +127,7 @@ void syst_init_eqdefs_hydro(System_of_eqs& syst, std::vector<int> doms,
 
     // First Integral
     syst.add_def(d, "firstint = log(h * N / W + D_i phi * V^i)") ;
+    syst.add_def(d, "dfirstint_i = D_i firstint") ;
 
     // velocity potential equations
     syst.add_def(d, "eqphi  = P^6 * W * V^i * D_i H \

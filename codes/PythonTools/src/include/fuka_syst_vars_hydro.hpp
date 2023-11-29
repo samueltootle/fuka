@@ -40,6 +40,9 @@ void syst_vars_hydro(dict_t& vars, System_of_eqs & syst) {
   FUKA_Syst_tools::dict_add_vector_cmp(
     syst, vars, "vel", syst.give_val_def("U")
   );
+  FUKA_Syst_tools::dict_add_vector_cmp(
+    syst, vars, "dfirstint", syst.give_val_def("dfirstint")
+  );
 }
 
 /**
