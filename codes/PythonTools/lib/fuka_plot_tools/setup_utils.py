@@ -10,7 +10,7 @@ CbarLabelSize=15
 # Set default matplotlib settings
 plt.rcParams.update({
     'figure.figsize'    : [8.0, 8.0],
-    'text.usetex'       : matplotlib.checkdep_usetex(True),
+    'text.usetex'       : False, #matplotlib.checkdep_usetex(True) matplotlib deprecated this in 3.6...thanks
     'font.family'       : "sans-serif",
     'font.serif'        : "cm",
     'xtick.major.size'  : 6,
