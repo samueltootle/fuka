@@ -273,17 +273,19 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
 
     if (r <= (1. + interpolation_offset) * rbh) {
       interp_f(rbh, r, 0.);
-      quant_vals[XCTS_VARS::XCTS_ALPHA] = -1;
+      // For testing only
+      // quant_vals[XCTS_VARS::XCTS_ALPHA] = fd();
     } else { 
       Point abs_coords(ndim);
       abs_coords.set(1) = x;
       abs_coords.set(2) = y;
       abs_coords.set(3) = z;
       find_dom fd(space, abs_coords);
-      quant_vals[XCTS_VARS::XCTS_ALPHA] = fd();
-      // for (int k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
-      //   quant_vals[k] = quants[k].get().val_point(abs_coords);
-      // }
+      // For testing only
+      // quant_vals[XCTS_VARS::XCTS_ALPHA] = fd();
+      for (int k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
+        quant_vals[k] = quants[k].get().val_point(abs_coords);
+      }
     }
     return quant_vals;
   }

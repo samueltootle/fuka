@@ -72,8 +72,8 @@ int main(int argc, char **argv) {
   for(auto i = 0; i < Npts; ++i) {
     all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
   }
-  for(auto& p : all_data)
-    std::cout << p[reader_t::OUTPUT_VARS::ALPHA] << '\n';
+  // for(auto& p : all_data)
+  //   std::cout << p[reader_t::OUTPUT_VARS::ALPHA] << '\n';
 
   return EXIT_SUCCESS;
 }
