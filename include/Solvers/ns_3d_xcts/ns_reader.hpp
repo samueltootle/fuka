@@ -88,10 +88,10 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     fclose(ff1);
     basis.reset(new Base_tensor{shift->get_basis()});
     fmet.reset(new Metric_flat(*space, *basis));
-    ndom = space->get_nbr_domains();
   }
 
   void extract_xcts_grid_functions() {
+    this->ndom = space->get_nbr_domains();
     if(quants.capacity() != XCTS_VARS::NUM_XCTS_VARS) {
       for (int i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
         quants.push_back(std::cref(*conformal_factor));
@@ -122,14 +122,13 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     syst->add_cst("ome" , (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA));
     syst->add_cst("mg"  , *coord_vectors[GLOBAL_ROT]);
     syst->add_def("omega^i = bet^i + ome * mg^i");
+
+    syst->add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
+    A.reset(new Tensor(syst->give_val_def("A")));
     
     // definitions for the fluid 3-velocity
     syst->add_def("U^i = omega^i / N");
     fluidvel.reset(new Vector(syst->give_val_def("U")));
-
-    // syst->add_def("Ts^i = N * bet^i");
-    syst->add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
-    A.reset(new Tensor(syst->give_val_def("A")));
 
     // Vacuum related quantities
     quants[XCTS_VARS::XCTS_PSI] = std::cref(*conformal_factor);
@@ -210,7 +209,8 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     abs_coords.set(1) = x;
     abs_coords.set(2) = y;
     abs_coords.set(3) = z;
-    find_dom fd(space, abs_coords);
+    
+    find_dom fd(space, abs_coords, 0, this->ndom);
     // For testing only
     // quant_vals[XCTS_VARS::XCTS_ALPHA] = fd();
     for (int k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
