@@ -680,6 +680,7 @@ class Space_spheric_adapted : public Space {
 	Space_spheric_adapted (int ttype, const Point& cr, const Dim_array& nbr, const Array<double>& bounds) ;
      Space_spheric_adapted (int ttype, const Point& cr, const Dim_array& nbr, const std::vector<double>& bounds) ;
 	Space_spheric_adapted (FILE*) ; ///< Constructor from a file
+     Space_spheric_adapted (Space_spheric_adapted const &) ;
 	virtual ~Space_spheric_adapted() ; ///< Destructor
 	virtual void save(FILE*) const ;
 
