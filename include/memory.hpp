@@ -175,6 +175,9 @@ class MemoryMapper {
     }
     template<typename T, size_t ary_sz>
     static void release_memory(T (*mem_ptr)[ary_sz], size_t const sz) {
+      for(auto i = 0; i < ary_sz; ++i) {
+        delete mem_ptr[i];
+      }
       delete [] mem_ptr ;
     }
     #endif
