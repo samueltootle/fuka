@@ -28,11 +28,12 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <array>
 
 // only do this if really necessary, e.g. using an Intel compiler not capable of compiling the flat_hash_map below
 // this is slower than the hash map
-//#define KADATH_VECTORMAP
-#define DEFAULT_KAD_MEM
+// #define KADATH_VECTORMAP
+// #define DEFAULT_KAD_MEM
 #ifndef KADATH_VECTORMAP
 #include "implementation/flat_hash_map.hpp"
 #endif
