@@ -122,7 +122,8 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     KZZ,
     NUM_OUTPUT_VARS
   };
-  using pointwise_ary_t = std::array<double, OUTPUT_VARS::NUM_OUTPUT_VARS>;
+  using pointwise_ary_t = std::vector<double>; 
+  using grid_ary_t = std::array<pointwise_ary_t, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
   // Types
   using Reader<config_t, space_t>::base_space_t;
@@ -288,61 +289,12 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     }
     return quant_vals;
   }
-
-  std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS> export_coordinate_array(
-    int const npoints, double const * xx, double const * yy, double const * zz,
-    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3) {
-    std::array<std::vector<double>,OUTPUT_VARS::NUM_OUTPUT_VARS> out;
-    for(auto& v : out)
-      v.resize(npoints);
-    
-    for (int i = 0; i < npoints; ++i) {
-      
-      auto quant_vals = interpolate_pointwise(xx[i], yy[i], zz[i], interpolation_offset, interp_order, delta_r_rel);
-      
-      // Fill output vector by storing non-conformal quantities
-      auto const psi = quant_vals[XCTS_VARS::XCTS_PSI];
-      auto const psi2 = psi * psi;
-      auto const psi4 = psi2 * psi2;
-
-      out[OUTPUT_VARS::ALPHA][i] = quant_vals[XCTS_VARS::XCTS_ALPHA];
-
-      out[OUTPUT_VARS::BETAX][i] = quant_vals[XCTS_VARS::XCTS_BETAX];
-      out[OUTPUT_VARS::BETAY][i] = quant_vals[XCTS_VARS::XCTS_BETAY];
-      out[OUTPUT_VARS::BETAZ][i] = quant_vals[XCTS_VARS::XCTS_BETAZ];
-
-      double g[3][3];
-      g[0][0] = psi4;
-      g[0][1] = 0.0;
-      g[0][2] = 0.0;
-      g[1][1] = psi4;
-      g[1][2] = 0.0;
-      g[2][2] = psi4;
-      g[1][0] = g[0][1];
-      g[2][0] = g[0][2];
-      g[2][1] = g[1][2];
-
-      out[OUTPUT_VARS::GXX][i] = g[0][0];
-      out[OUTPUT_VARS::GXY][i] = g[0][1];
-      out[OUTPUT_VARS::GXZ][i] = g[0][2];
-      out[OUTPUT_VARS::GYY][i] = g[1][1];
-      out[OUTPUT_VARS::GYZ][i] = g[1][2];
-      out[OUTPUT_VARS::GZZ][i] = g[2][2];
-
-      out[OUTPUT_VARS::KXX][i] = quant_vals[XCTS_VARS::XCTS_AXX] * psi4;
-      out[OUTPUT_VARS::KXY][i] = quant_vals[XCTS_VARS::XCTS_AXY] * psi4;
-      out[OUTPUT_VARS::KXZ][i] = quant_vals[XCTS_VARS::XCTS_AXZ] * psi4;
-      out[OUTPUT_VARS::KYY][i] = quant_vals[XCTS_VARS::XCTS_AYY] * psi4;
-      out[OUTPUT_VARS::KYZ][i] = quant_vals[XCTS_VARS::XCTS_AYZ] * psi4;
-      out[OUTPUT_VARS::KZZ][i] = quant_vals[XCTS_VARS::XCTS_AZZ] * psi4;
-    }
-  }
   
-  std::array<double, OUTPUT_VARS::NUM_OUTPUT_VARS> export_pointwise(
+  pointwise_ary_t export_pointwise(
     double const & x, double const & y, double const & z,
     double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3) {
     
-    std::array<double, OUTPUT_VARS::NUM_OUTPUT_VARS> out;
+    pointwise_ary_t out(OUTPUT_VARS::NUM_OUTPUT_VARS);
       
     auto quant_vals = interpolate_pointwise(x, y, z, interpolation_offset, interp_order, delta_r_rel);
     
@@ -382,6 +334,36 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     out[OUTPUT_VARS::KYZ] = quant_vals[XCTS_VARS::XCTS_AYZ] * psi4;
     out[OUTPUT_VARS::KZZ] = quant_vals[XCTS_VARS::XCTS_AZZ] * psi4;
     return out;
+  }
+
+  grid_ary_t export_coordinate_array(
+    int const npoints, double const * xx, double const * yy, double const * zz,
+    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3) {
+    std::array<std::vector<double>,OUTPUT_VARS::NUM_OUTPUT_VARS> out;
+    
+    for (int i = 0; i < npoints; ++i) {
+      pointwise_ary_t out_pw = export_pointwise(npoints, xx[i], yy[i], zz[i], interpolation_offset, interp_order, delta_r_rel);
+      
+      out[OUTPUT_VARS::ALPHA][i] = out_pw[OUTPUT_VARS::ALPHA];
+
+      out[OUTPUT_VARS::BETAX][i] = out_pw[OUTPUT_VARS::BETAX];
+      out[OUTPUT_VARS::BETAY][i] = out_pw[OUTPUT_VARS::BETAY];
+      out[OUTPUT_VARS::BETAZ][i] = out_pw[OUTPUT_VARS::BETAZ];
+
+      out[OUTPUT_VARS::GXX][i] = out_pw[OUTPUT_VARS::GXX];
+      out[OUTPUT_VARS::GXY][i] = out_pw[OUTPUT_VARS::GXY];
+      out[OUTPUT_VARS::GXZ][i] = out_pw[OUTPUT_VARS::GXZ];
+      out[OUTPUT_VARS::GYY][i] = out_pw[OUTPUT_VARS::GYY];
+      out[OUTPUT_VARS::GYZ][i] = out_pw[OUTPUT_VARS::GYZ];
+      out[OUTPUT_VARS::GZZ][i] = out_pw[OUTPUT_VARS::GZZ];
+
+      out[OUTPUT_VARS::KXX][i] = out_pw[OUTPUT_VARS::KXX];
+      out[OUTPUT_VARS::KXY][i] = out_pw[OUTPUT_VARS::KXY];
+      out[OUTPUT_VARS::KXZ][i] = out_pw[OUTPUT_VARS::KXZ];
+      out[OUTPUT_VARS::KYY][i] = out_pw[OUTPUT_VARS::KYY];
+      out[OUTPUT_VARS::KYZ][i] = out_pw[OUTPUT_VARS::KYZ];
+      out[OUTPUT_VARS::KZZ][i] = out_pw[OUTPUT_VARS::KZZ];
+    }
   }
 };
 }
