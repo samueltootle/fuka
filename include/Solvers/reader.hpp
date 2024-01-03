@@ -136,14 +136,14 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
   using Reader<config_t, space_t>::ndom;
 
   // CFMS_BH imported fields from file
-  ptr_data_member(Scalar, conformal_factor, shared);
-  ptr_data_member(Scalar, lapse, shared);
-  ptr_data_member(Vector, shift, shared);
+  ptr_data_member(Scalar, conformal_factor, unique);
+  ptr_data_member(Scalar, lapse, unique);
+  ptr_data_member(Vector, shift, unique);
 
   // Constructed objects
-  ptr_data_member(Base_tensor, basis, shared);
-  ptr_data_member(Metric_flat, fmet, shared);
-  ptr_data_member(Tensor, A, shared);
+  ptr_data_member(Base_tensor, basis, unique);
+  ptr_data_member(Metric_flat, fmet, unique);
+  ptr_data_member(Tensor, A, unique);
 
   protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
