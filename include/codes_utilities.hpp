@@ -121,7 +121,7 @@ struct Option_base {
         }
     }
 };
-std::ostream & operator<<(std::ostream & os,Option_base const & option) {option.display(os); return os;}
+//std::ostream & operator<<(std::ostream & os,Option_base const & option) {option.display(os); return os;}
 
 template<typename T> struct Option : Option_base {
     T value;
@@ -245,10 +245,10 @@ public:
         }
     }
 };
-std::ostream& operator<<(std::ostream& os,Arguments_parser const & arguments_parser) {
-    arguments_parser.display(os);
-    return os;
-}
+// std::ostream& operator<<(std::ostream& os,Arguments_parser const & arguments_parser) {
+//     arguments_parser.display(os);
+//     return os;
+// }
 
 
 
