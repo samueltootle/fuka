@@ -36,8 +36,8 @@ using namespace Kadath::FUKA_Config;
   using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Reader<config_t, Space_adapted_bh>;
   using ary_t = std::array<double, reader_t::OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
-constexpr unsigned int Npts = 258;  
-constexpr double range = 10;
+constexpr unsigned int Npts = 256;  
+constexpr double range = 2;
 constexpr double dx = range / Npts;
 
 
@@ -72,10 +72,11 @@ int main(int argc, char **argv) {
   for(auto i = 0; i < Npts; ++i) {
     all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
   }
-  for(auto& point_v : all_data)
-    std::cout << point_v[reader_t::OUTPUT_VARS::KXX] << ", "
-              << point_v[reader_t::OUTPUT_VARS::KYY] << ", "
-              << point_v[reader_t::OUTPUT_VARS::KZZ] << "\n";
+  for(auto i = 0; i < Npts; ++i)
+    std::cout << "(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") - " << all_data[i][reader_t::OUTPUT_VARS::ALPHA] << " - "
+              << all_data[i][reader_t::OUTPUT_VARS::KXX] << ", "
+              << all_data[i][reader_t::OUTPUT_VARS::KYY] << ", "
+              << all_data[i][reader_t::OUTPUT_VARS::KZZ] << "\n";
 ;
 
   return EXIT_SUCCESS;
