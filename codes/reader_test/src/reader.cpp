@@ -22,6 +22,7 @@
 */
 #include "Configurator/config_bco.hpp"
 #include "Solvers/reader.hpp"
+#include "Solvers/bh_3d_xcts/bh_reader.hpp"
 #include "kadath_adapted.hpp"
 #include "kadath_adapted_bh.hpp"
 #ifdef _OPENMP
@@ -33,7 +34,8 @@ using namespace Kadath;
 using namespace Kadath::FUKA_Config;
   
   using config_t = kadath_config_boost<BCO_BH_INFO>;
-  using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Reader<config_t, Space_adapted_bh>;
+  // using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Reader<config_t, Space_adapted_bh>;
+  using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Readerv2;
   using ary_t = std::array<double, reader_t::OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
 constexpr unsigned int Npts = 256;  
@@ -68,15 +70,15 @@ int main(int argc, char **argv) {
   
   std::vector<reader_t::pointwise_ary_t> all_data(Npts);
 
-  #pragma omp parallel for firstprivate(input_reader)
-  for(auto i = 0; i < Npts; ++i) {
-    all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
-  }
-  for(auto i = 0; i < Npts; ++i)
-    std::cout << "(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") - " << all_data[i][reader_t::OUTPUT_VARS::ALPHA] << " - "
-              << all_data[i][reader_t::OUTPUT_VARS::KXX] << ", "
-              << all_data[i][reader_t::OUTPUT_VARS::KYY] << ", "
-              << all_data[i][reader_t::OUTPUT_VARS::KZZ] << "\n";
+  // #pragma omp parallel for firstprivate(input_reader)
+  // for(auto i = 0; i < Npts; ++i) {
+  //   all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
+  // }
+  // for(auto i = 0; i < Npts; ++i)
+  //   std::cout << "(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") - " << all_data[i][reader_t::OUTPUT_VARS::ALPHA] << " - "
+  //             << all_data[i][reader_t::OUTPUT_VARS::KXX] << ", "
+  //             << all_data[i][reader_t::OUTPUT_VARS::KYY] << ", "
+  //             << all_data[i][reader_t::OUTPUT_VARS::KZZ] << "\n";
 ;
 
   return EXIT_SUCCESS;
