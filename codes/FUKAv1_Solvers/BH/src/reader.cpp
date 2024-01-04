@@ -63,16 +63,24 @@ int main(int argc, char **argv) {
   conf.coef();
   cout << conf(2).get_coef().get_dimensions() << endl;
   int ndim = 3;
-  for (int d=0 ; d<ndim-1 ; d++) {
-  int dim_output = ndim-1-d ;
-  auto cf = conf(2).get_coef();
-  Dim_array nbr_coefs (cf.get_dimensions()) ;
-  Dim_array nbr_output (dim_output) ;
-  for (int k=0 ; k<dim_output ; k++)
-			nbr_output.set(k) = nbr_coefs(k+d+1) ;
-  Array<double> output (nbr_output) ;
-  cout << output << endl;
-  }
+  Point p(ndim);
+  p.set(1) = 0.5;
+  cout << conf.val_point(p) << endl;
+  // for (int d=0 ; d<ndim-2 ; d++) {
+  // int dim_output = ndim-1-d ;
+  // auto cf = conf(2).get_coef();
+  // // Index p(cf.get_dimensions());
+  // // do {
+  // //   cout << p << endl;
+
+  // // }while(p.inc());
+  // // Dim_array nbr_coefs (cf.get_dimensions()) ;
+  // // Dim_array nbr_output (dim_output) ;
+  // // for (int k=0 ; k<dim_output ; k++)
+	// // 		nbr_output.set(k) = nbr_coefs(k+d+1) ;
+  // // Array<double> output (nbr_output) ;
+  // // cout << output << endl;
+  // }
   return 0;
 
 	int ndom = space.get_nbr_domains() ;
