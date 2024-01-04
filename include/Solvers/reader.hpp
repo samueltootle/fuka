@@ -11,7 +11,6 @@
 #include "Solvers/fuka_syst/fuka_syst_tools.hpp"
 #include "codes_utilities.hpp"
 #include "bco_utilities.hpp"
-#include "exporter_utilities.hpp"
 
 #include <cstdlib>
 #include <string>
@@ -138,17 +137,14 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     lapse.reset( new Scalar(*space.get(), ff1)) ;
     shift.reset( new Vector(*space.get(), ff1)) ;
     fclose(ff1);
+
     basis.reset(new Base_tensor{shift->get_basis()});
     fmet.reset(new Metric_flat(*space, *basis));
+    ndom = space->get_nbr_domains();
   }
 
-  void extract_xcts_grid_functions() {
-    ndom = space->get_nbr_domains();
-    if(quants.capacity() != XCTS_VARS::NUM_XCTS_VARS) {
-      for (int i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
-        quants.push_back(std::cref(*conformal_factor));
-    }
-    syst.reset(new System_of_eqs (*space));    
+  void extract_computed_grid_functions() {
+    syst.reset(new System_of_eqs (*space));
     fmet->set_system(*syst, "f") ;
 
     // Fields - must be initialized before common setup
@@ -158,7 +154,13 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     // syst->add_def("Ts^i = N * bet^i");
     syst->add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
     A.reset(new Tensor(syst->give_val_def("A")));
+  }
 
+  void populate_quants() {
+    if(quants.capacity() != XCTS_VARS::NUM_XCTS_VARS) {
+      for (int i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
+        quants.push_back(std::cref(*conformal_factor));
+    }
     quants[XCTS_VARS::XCTS_PSI] = std::cref(*conformal_factor);
     quants[XCTS_VARS::XCTS_ALPHA] = std::cref(*lapse);
     quants[XCTS_VARS::XCTS_BETAX] = std::cref((*shift)(1));
@@ -186,27 +188,25 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
         conformal_factor(nullptr), lapse(nullptr), shift(nullptr) {
   
     load_solution_from_file();
-    extract_xcts_grid_functions();
+    extract_computed_grid_functions();
+    populate_quants();
   }
 
   CFMS_BH_Reader(CFMS_BH_Reader const & r) : fmet(nullptr) {
-    copy_mutex.lock();
+    std::lock_guard<std::mutex> lock(copy_mutex);
+    ndom = r.ndom;
+
     space.reset(new space_t((*r.get_space())));
-    basis.reset(new Base_tensor(*space, r.get_basis()->get_basis(0)));
-    fmet.reset(new Metric_flat(*space, *basis));
-    bconfig.reset(new config_t(*r.bconfig));
-    
     conformal_factor.reset(new Scalar(*space.get(), *r.conformal_factor.get()));
     lapse.reset(new Scalar(*space, *r.lapse.get()));
     shift.reset(new Vector(*space, *r.shift.get()));
-    bconfig->set_filename("test");
-    export_ready = false;
+    A.reset(new Tensor(*space, *r.A.get()));
 
-    extract_xcts_grid_functions();
-    copy_mutex.unlock();
-    // For testing only
-    // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
-    // std::cout << "copy\n";
+    basis.reset(new Base_tensor(*r.basis.get()));
+    fmet.reset(new Metric_flat(*space, *basis));
+    bconfig.reset(new config_t(*r.bconfig));
+    
+    populate_quants();
   }
 
   CFMS_BH_Reader(CFMS_BH_Reader&& b) noexcept = delete;
@@ -216,7 +216,6 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
 
     CFMS_BH_Reader tmp(b);
     *this = std::move(tmp);
-// std::cout << "assignment\n";
     return *this;
   }
 
