@@ -43,6 +43,18 @@ constexpr unsigned int Npts = 256;
 constexpr double range = 2;
 constexpr double dx = range / Npts;
 
+struct get_space_ptr {
+  using space_t = Space_adapted_bh;
+  using ptr_t = std::unique_ptr<space_t>;
+  static ptr_t&& get(std::string filename) {
+    
+    FILE* ff1 = fopen (filename.c_str(), "r") ;
+    space_t _space{ff1};
+    fclose(ff1);
+    static ptr_t p(new space_t(_space));
+    return std::move(p);
+  }
+};
 
 int main(int argc, char **argv) {
 
@@ -68,14 +80,16 @@ int main(int argc, char **argv) {
   }
   config_t bconfig(ifilename);  
   reader_t input_reader(ifilename);
-  
+  auto space_ptr = get_space_ptr::get(bconfig.space_filename());
   std::vector<reader_t::pointwise_ary_t> all_data(Npts);
-  Kadath::FUKA_Solvers::Interpolator interp{input_reader};
-  interp.print_field_coefs(reader_t::XCTS_VARS::XCTS_PSI);
+  Kadath::FUKA_Solvers::Interpolator interp{input_reader, space_ptr};
+  
 
   // #pragma omp parallel for firstprivate(input_reader)
   // for(auto i = 0; i < Npts; ++i) {
-  //   all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
+  //   Kadath::FUKA_Solvers::Interpolator interp{input_reader, space_ptr};
+  //   // interp.print_field_coefs(reader_t::XCTS_VARS::XCTS_PSI);
+  // //   all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
   // }
   // for(auto i = 0; i < Npts; ++i)
   //   std::cout << "(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") - " << all_data[i][reader_t::OUTPUT_VARS::ALPHA] << " - "

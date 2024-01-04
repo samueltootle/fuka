@@ -20,12 +20,14 @@ struct Readerv2 {
       bconfig.reset(new base_config_t{config_filename});
       bconfig->open_config();
   }
+  const int & get_ndom() const { return ndom; }
 };
 
 // template<class config_t = , class Space_adapted_bh>
 struct CFMS_BH_Readerv2 : public Readerv2<kadath_config_boost<BCO_BH_INFO>, Space_adapted_bh> {
   using config_t = kadath_config_boost<BCO_BH_INFO>;
   using space_t = Space_adapted_bh;
+  static std::unique_ptr<space_t> static_space;
 
   enum XCTS_VARS : size_t {  
     XCTS_PSI,
@@ -79,10 +81,12 @@ struct CFMS_BH_Readerv2 : public Readerv2<kadath_config_boost<BCO_BH_INFO>, Spac
 
   bool export_ready{false};
   int const ndim{3};
+  const int & get_ndim() const { return ndim; }
 
   using sol_vec_t = std::vector<std::vector<double>>;
   std::array<sol_vec_t, NUM_XCTS_VARS> id_vars;
 
+  void initialize_containers();
   void load_solution_from_file();
   
   // super index for a given domain across all coefficients
@@ -91,6 +95,7 @@ struct CFMS_BH_Readerv2 : public Readerv2<kadath_config_boost<BCO_BH_INFO>, Spac
   }
 
   public:
+  using Readerv2<config_t, space_t>::get_ndom;
   bool is_export_ready() const { return export_ready; }
   CFMS_BH_Readerv2() : Readerv2<config_t, space_t>() {}
   CFMS_BH_Readerv2(std::string config_filename) :

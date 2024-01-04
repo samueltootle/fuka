@@ -24,27 +24,7 @@ namespace fs = std::filesystem;
 
 namespace Kadath::FUKA_Solvers {
 static std::mutex copy_mutex;
-template<class space_t>
-struct find_dom {
-  int dom{-1};
-  find_dom(std::unique_ptr<space_t>& space, Point& p, int dom_min, int dom_max) {
-    for(auto d = dom_min; d < dom_max; ++d) {
-      if(space->get_domain(d)->is_in(p)) {
-        dom = d;
-        break;
-      }
-    }
-    if(dom == -1) {
-      std::stringstream msg;
-      msg << "Point " << p << " not found in the numerical space. ";
-      msg << space.get() << ", " << bco_utils::get_radius(space->get_domain(2), INNER_BC) << endl;
-      // cout << *(space->get_domain(d)) << endl;
-      // throw std::runtime_error(msg.str().c_str());
-      cout << msg.str() << endl;
-    }
-  }
-  int operator()() { return dom; }
-};
+
 
 /**
  * @brief The following "Reader" is really a bandage until the FUKA_Solvers
@@ -280,7 +260,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
       abs_coords.set(1) = x;
       abs_coords.set(2) = y;
       abs_coords.set(3) = z;
-      find_dom fd(space, abs_coords, 2, ndom);
+      // find_dom fd(space, abs_coords, 2, ndom);
       // For testing only
       // quant_vals[XCTS_VARS::XCTS_ALPHA] = fd();
       for (int k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
