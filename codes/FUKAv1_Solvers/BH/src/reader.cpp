@@ -57,6 +57,23 @@ int main(int argc, char **argv) {
   Scalar lapse(space, fich);
   Vector shift(space, fich);
   fclose(fich);
+  // conf.coef();
+  // conf.allocate_coef();
+  cout << space.get_domain(2)->get_nbr_coefs() << endl;
+  conf.coef();
+  cout << conf(2).get_coef().get_dimensions() << endl;
+  int ndim = 3;
+  for (int d=0 ; d<ndim-1 ; d++) {
+  int dim_output = ndim-1-d ;
+  auto cf = conf(2).get_coef();
+  Dim_array nbr_coefs (cf.get_dimensions()) ;
+  Dim_array nbr_output (dim_output) ;
+  for (int k=0 ; k<dim_output ; k++)
+			nbr_output.set(k) = nbr_coefs(k+d+1) ;
+  Array<double> output (nbr_output) ;
+  cout << output << endl;
+  }
+  return 0;
 
 	int ndom = space.get_nbr_domains() ;
 	Base_tensor basis (space, CARTESIAN_BASIS) ;
