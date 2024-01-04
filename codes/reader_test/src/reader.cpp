@@ -35,8 +35,7 @@ using namespace Kadath;
 using namespace Kadath::FUKA_Config;
   
   using config_t = kadath_config_boost<BCO_BH_INFO>;
-  // using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Reader<config_t, Space_adapted_bh>;
-  using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Readerv2;
+  using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Reader<config_t, Space_adapted_bh>;
   using ary_t = std::array<double, reader_t::OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
 constexpr unsigned int Npts = 256;  
@@ -82,21 +81,28 @@ int main(int argc, char **argv) {
   reader_t input_reader(ifilename);
   auto space_ptr = get_space_ptr::get(bconfig.space_filename());
   std::vector<reader_t::pointwise_ary_t> all_data(Npts);
-  Kadath::FUKA_Solvers::Interpolator interp{input_reader, space_ptr};
+  auto x = input_reader.export_pointwise(0.5, 0., 0.);
   
 
-  // #pragma omp parallel for firstprivate(input_reader)
-  // for(auto i = 0; i < Npts; ++i) {
-  //   Kadath::FUKA_Solvers::Interpolator interp{input_reader, space_ptr};
-  //   // interp.print_field_coefs(reader_t::XCTS_VARS::XCTS_PSI);
-  // //   all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
-  // }
-  // for(auto i = 0; i < Npts; ++i)
-  //   std::cout << "(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") - " << all_data[i][reader_t::OUTPUT_VARS::ALPHA] << " - "
-  //             << all_data[i][reader_t::OUTPUT_VARS::KXX] << ", "
-  //             << all_data[i][reader_t::OUTPUT_VARS::KYY] << ", "
-  //             << all_data[i][reader_t::OUTPUT_VARS::KZZ] << "\n";
-;
+  #pragma omp parallel for firstprivate(input_reader)
+  for(auto i = 0; i < Npts; ++i) {
+    all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
+  }
+
+  for(auto i = 0; i < Npts; ++i)
+    std::cout << "(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") - " << all_data[i][reader_t::OUTPUT_VARS::ALPHA] << " - "
+              // << all_data[i][reader_t::OUTPUT_VARS::GXX] << ", "
+              // << all_data[i][reader_t::OUTPUT_VARS::BETAX] << ", "
+              // << all_data[i][reader_t::OUTPUT_VARS::BETAY] << ", "
+              // << all_data[i][reader_t::OUTPUT_VARS::BETAZ] << "\n";
+              << all_data[i][reader_t::OUTPUT_VARS::KXY] << ", "
+              << all_data[i][reader_t::OUTPUT_VARS::KXZ] << ", "
+              << all_data[i][reader_t::OUTPUT_VARS::KYZ] << "\n";
+  // cout << xx[200] << ", " << yy[200] << ", " << zz[200] << ", " 
+  //   << all_data[200][reader_t::OUTPUT_VARS::ALPHA] << "\n\t"
+  //   << all_data[200][reader_t::OUTPUT_VARS::KXY] << ", "
+  //   << all_data[200][reader_t::OUTPUT_VARS::KXZ] << ", "
+  //   << all_data[200][reader_t::OUTPUT_VARS::KYZ] << "\n";
 
   return EXIT_SUCCESS;
 }
