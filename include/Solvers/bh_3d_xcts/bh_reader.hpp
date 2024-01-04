@@ -69,20 +69,25 @@ struct CFMS_BH_Readerv2 : public Readerv2<kadath_config_boost<BCO_BH_INFO>, Spac
   
   protected:
   using Readerv2<config_t, space_t>::ndom;
+  
+  // Store number of coefficients per domain in case the resolution
+  // is not constant
   std::vector<std::array<uint, 3>> ncoefs{};
+  // Store total number of coefficients per domain to make for faster lookup
+  // since coefficients are stored in a 1D vector
   std::vector<uint> ncoefs1d{};
-  std::vector<std::reference_wrapper<const Scalar>> quants;
+
   bool export_ready{false};
   int const ndim{3};
 
-  std::vector<std::vector<double>> conformal_factor{};
-  std::vector<std::vector<double>> lapse{};
+  using sol_vec_t = std::vector<std::vector<double>>;
+  std::array<sol_vec_t, NUM_XCTS_VARS> id_vars;
 
   void load_solution_from_file();
   
   // super index for a given domain across all coefficients
   size_t IDX(size_t d, size_t r, size_t theta, size_t phi) {
-    return ((r) + ncoefs[d][0] * ((theta) + ncoefs[d][1] * ((phi))))
+    return ((r) + ncoefs[d][0] * ((theta) + ncoefs[d][1] * ((phi))));
   }
 
   public:
@@ -92,5 +97,40 @@ struct CFMS_BH_Readerv2 : public Readerv2<kadath_config_boost<BCO_BH_INFO>, Spac
     Readerv2<config_t, space_t>(config_filename) {
     load_solution_from_file();
   }
+  CFMS_BH_Readerv2(const CFMS_BH_Readerv2 & r) {
+    bconfig.reset(new base_config_t{*r.bconfig});
+    ndom = r.ndom;
+    
+    ncoefs.resize(r.ncoefs.size());
+    ncoefs1d.resize(r.ncoefs1d.size());
+    for(auto& V : id_vars) {
+      V.resize(ndom);
+    }
+
+    for(auto d = 0; d < ndom; ++d) {
+      ncoefs[d][0] = r.ncoefs[d][0];
+      ncoefs[d][1] = r.ncoefs[d][1];
+      ncoefs[d][2] = r.ncoefs[d][2];
+      ncoefs1d[d]  = r.ncoefs1d[d];
+    
+      int i = 0;
+      for(auto& V : id_vars) {
+        const auto sz = r.id_vars[i][d].size();
+        V[d].resize(sz);
+    
+        for(auto c = 0; c < sz; ++c) {
+          V[d][c] = r.id_vars[i][d][c];
+        }
+        i++;
+      }
+    }
+  }
+
+  sol_vec_t const & get_field_vector(size_t field_idx) const {
+    return id_vars[field_idx];
+  }
+
+  uint const & get_ncoefs_i(uint d, uint i) { return ncoefs[d][i]; }
+  uint const & get_ncoefs1d_d(uint d) { return ncoefs1d[d]; }
 };
 }
