@@ -22,6 +22,7 @@
 */
 #include "Configurator/config_bco.hpp"
 #include "Solvers/reader.hpp"
+#include "Solvers/interpolator.hpp"
 #include "Solvers/bh_3d_xcts/bh_reader.hpp"
 #include "kadath_adapted.hpp"
 #include "kadath_adapted_bh.hpp"
@@ -69,6 +70,8 @@ int main(int argc, char **argv) {
   reader_t input_reader(ifilename);
   
   std::vector<reader_t::pointwise_ary_t> all_data(Npts);
+  Kadath::FUKA_Solvers::Interpolator interp{input_reader};
+  interp.print_field_coefs(reader_t::XCTS_VARS::XCTS_PSI);
 
   // #pragma omp parallel for firstprivate(input_reader)
   // for(auto i = 0; i < Npts; ++i) {
