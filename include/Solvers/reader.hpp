@@ -126,6 +126,8 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
 
   protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
+  std::vector<double> quant_vals;
+  pointwise_ary_t out_pw;
   bool export_ready{false};
   int const ndim{3};
 
@@ -154,6 +156,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     // syst->add_def("Ts^i = N * bet^i");
     syst->add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
     A.reset(new Tensor(syst->give_val_def("A")));
+    A->coef();
   }
 
   void populate_quants() {
@@ -179,22 +182,34 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
 
   public:
   bool is_export_ready() const { return export_ready; }
+  std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
+  const int & get_ndim() const { return ndim; }
   CFMS_BH_Reader() : Reader<config_t, space_t>(),
     basis(nullptr), fmet(nullptr),
-    conformal_factor(nullptr), lapse(nullptr), shift(nullptr) {}
+    conformal_factor(nullptr), lapse(nullptr), shift(nullptr) {
+      quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
+      out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
+    }
   CFMS_BH_Reader(std::string config_filename) :
     Reader<config_t, space_t>(config_filename),
       basis(nullptr), fmet(nullptr),
         conformal_factor(nullptr), lapse(nullptr), shift(nullptr) {
   
+    quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
+    out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
+
     load_solution_from_file();
     extract_computed_grid_functions();
     populate_quants();
+    this->export_pointwise(0.5, 0., 0.);
   }
 
   CFMS_BH_Reader(CFMS_BH_Reader const & r) : fmet(nullptr) {
     std::lock_guard<std::mutex> lock(copy_mutex);
     ndom = r.ndom;
+
+    quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
+    out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
 
     space.reset(new space_t((*r.get_space())));
     conformal_factor.reset(new Scalar(*space.get(), *r.conformal_factor.get()));
@@ -223,10 +238,9 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
 
   std::vector<double> interpolate_pointwise(double const & x, double const & y, double const & z,
     double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3) {
-    
-    std::vector<double> quant_vals(XCTS_VARS::NUM_XCTS_VARS);
 
     // Initial guess of the excision radius - needed for filling
+    // FIXME make excision generic
     double rbh = bco_utils::get_radius(space->get_domain(2), INNER_BC);
 
     double r2yz = y * y + z * z;
@@ -273,7 +287,12 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     double const & x, double const & y, double const & z,
     double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3) {
     
-    pointwise_ary_t out(OUTPUT_VARS::NUM_OUTPUT_VARS);
+    if(quant_vals.size() != XCTS_VARS::NUM_XCTS_VARS)
+      quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
+    
+    if(out_pw.size() != OUTPUT_VARS::NUM_OUTPUT_VARS)
+      out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
+    // pointwise_ary_t out(OUTPUT_VARS::NUM_OUTPUT_VARS);
       
     auto quant_vals = interpolate_pointwise(x, y, z, interpolation_offset, interp_order, delta_r_rel);
     
@@ -282,11 +301,11 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     auto const psi2 = psi * psi;
     auto const psi4 = psi2 * psi2;
 
-    out[OUTPUT_VARS::ALPHA] = quant_vals[XCTS_VARS::XCTS_ALPHA];
+    out_pw[OUTPUT_VARS::ALPHA] = quant_vals[XCTS_VARS::XCTS_ALPHA];
 
-    out[OUTPUT_VARS::BETAX] = quant_vals[XCTS_VARS::XCTS_BETAX];
-    out[OUTPUT_VARS::BETAY] = quant_vals[XCTS_VARS::XCTS_BETAY];
-    out[OUTPUT_VARS::BETAZ] = quant_vals[XCTS_VARS::XCTS_BETAZ];
+    out_pw[OUTPUT_VARS::BETAX] = quant_vals[XCTS_VARS::XCTS_BETAX];
+    out_pw[OUTPUT_VARS::BETAY] = quant_vals[XCTS_VARS::XCTS_BETAY];
+    out_pw[OUTPUT_VARS::BETAZ] = quant_vals[XCTS_VARS::XCTS_BETAZ];
 
     double g[3][3];
     g[0][0] = psi4;
@@ -299,20 +318,20 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     g[2][0] = g[0][2];
     g[2][1] = g[1][2];
 
-    out[OUTPUT_VARS::GXX] = g[0][0];
-    out[OUTPUT_VARS::GXY] = g[0][1];
-    out[OUTPUT_VARS::GXZ] = g[0][2];
-    out[OUTPUT_VARS::GYY] = g[1][1];
-    out[OUTPUT_VARS::GYZ] = g[1][2];
-    out[OUTPUT_VARS::GZZ] = g[2][2];
+    out_pw[OUTPUT_VARS::GXX] = g[0][0];
+    out_pw[OUTPUT_VARS::GXY] = g[0][1];
+    out_pw[OUTPUT_VARS::GXZ] = g[0][2];
+    out_pw[OUTPUT_VARS::GYY] = g[1][1];
+    out_pw[OUTPUT_VARS::GYZ] = g[1][2];
+    out_pw[OUTPUT_VARS::GZZ] = g[2][2];
 
-    out[OUTPUT_VARS::KXX] = quant_vals[XCTS_VARS::XCTS_AXX] * psi4;
-    out[OUTPUT_VARS::KXY] = quant_vals[XCTS_VARS::XCTS_AXY] * psi4;
-    out[OUTPUT_VARS::KXZ] = quant_vals[XCTS_VARS::XCTS_AXZ] * psi4;
-    out[OUTPUT_VARS::KYY] = quant_vals[XCTS_VARS::XCTS_AYY] * psi4;
-    out[OUTPUT_VARS::KYZ] = quant_vals[XCTS_VARS::XCTS_AYZ] * psi4;
-    out[OUTPUT_VARS::KZZ] = quant_vals[XCTS_VARS::XCTS_AZZ] * psi4;
-    return out;
+    out_pw[OUTPUT_VARS::KXX] = quant_vals[XCTS_VARS::XCTS_AXX] * psi4;
+    out_pw[OUTPUT_VARS::KXY] = quant_vals[XCTS_VARS::XCTS_AXY] * psi4;
+    out_pw[OUTPUT_VARS::KXZ] = quant_vals[XCTS_VARS::XCTS_AXZ] * psi4;
+    out_pw[OUTPUT_VARS::KYY] = quant_vals[XCTS_VARS::XCTS_AYY] * psi4;
+    out_pw[OUTPUT_VARS::KYZ] = quant_vals[XCTS_VARS::XCTS_AYZ] * psi4;
+    out_pw[OUTPUT_VARS::KZZ] = quant_vals[XCTS_VARS::XCTS_AZZ] * psi4;
+    return out_pw;
   }
 
   grid_ary_t export_coordinate_array(
@@ -321,7 +340,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     std::array<std::vector<double>,OUTPUT_VARS::NUM_OUTPUT_VARS> out;
     
     for (int i = 0; i < npoints; ++i) {
-      pointwise_ary_t out_pw = export_pointwise(npoints, xx[i], yy[i], zz[i], interpolation_offset, interp_order, delta_r_rel);
+      out_pw = export_pointwise(npoints, xx[i], yy[i], zz[i], interpolation_offset, interp_order, delta_r_rel);
       
       out[OUTPUT_VARS::ALPHA][i] = out_pw[OUTPUT_VARS::ALPHA];
 

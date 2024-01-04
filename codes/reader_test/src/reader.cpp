@@ -22,8 +22,8 @@
 */
 #include "Configurator/config_bco.hpp"
 #include "Solvers/reader.hpp"
-#include "Solvers/interpolator.hpp"
-#include "Solvers/bh_3d_xcts/bh_reader.hpp"
+// #include "Solvers/interpolator.hpp"
+// #include "Solvers/bh_3d_xcts/bh_reader.hpp"
 #include "kadath_adapted.hpp"
 #include "kadath_adapted_bh.hpp"
 #ifdef _OPENMP
@@ -81,7 +81,8 @@ int main(int argc, char **argv) {
   reader_t input_reader(ifilename);
   auto space_ptr = get_space_ptr::get(bconfig.space_filename());
   std::vector<reader_t::pointwise_ary_t> all_data(Npts);
-  auto x = input_reader.export_pointwise(0.5, 0., 0.);
+  // auto x = input_reader.export_pointwise(0.5, 0., 0.);
+  // Kadath::FUKA_Solvers::Interpolator interp{input_reader, space_ptr};
   
 
   #pragma omp parallel for firstprivate(input_reader)
@@ -98,11 +99,11 @@ int main(int argc, char **argv) {
               << all_data[i][reader_t::OUTPUT_VARS::KXY] << ", "
               << all_data[i][reader_t::OUTPUT_VARS::KXZ] << ", "
               << all_data[i][reader_t::OUTPUT_VARS::KYZ] << "\n";
-  // cout << xx[200] << ", " << yy[200] << ", " << zz[200] << ", " 
-  //   << all_data[200][reader_t::OUTPUT_VARS::ALPHA] << "\n\t"
-  //   << all_data[200][reader_t::OUTPUT_VARS::KXY] << ", "
-  //   << all_data[200][reader_t::OUTPUT_VARS::KXZ] << ", "
-  //   << all_data[200][reader_t::OUTPUT_VARS::KYZ] << "\n";
+  cout << xx[200] << ", " << yy[200] << ", " << zz[200] << ", " 
+    << all_data[200][reader_t::OUTPUT_VARS::ALPHA] << "\n\t"
+    << all_data[200][reader_t::OUTPUT_VARS::KXY] << ", "
+    << all_data[200][reader_t::OUTPUT_VARS::KXZ] << ", "
+    << all_data[200][reader_t::OUTPUT_VARS::KYZ] << "\n";
 
   return EXIT_SUCCESS;
 }
