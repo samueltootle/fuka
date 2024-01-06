@@ -14,6 +14,11 @@ set (SOURCES5 src/${PROG2}.cpp)
 add_executable(${PROG2} ${SOURCES5} ${HEADERS})
 target_link_libraries(${PROG2} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES})
 
+set (PROG2 reader_bbh)
+set (SOURCES5 src/${PROG2}.cpp)
+add_executable(${PROG2} ${SOURCES5} ${HEADERS})
+target_link_libraries(${PROG2} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES})
+
 set (PROG2 reader_ns)
 set (SOURCES5 src/${PROG2}.cpp)
 add_executable(${PROG2} ${SOURCES5} ${HEADERS})
