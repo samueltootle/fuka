@@ -1,7 +1,10 @@
-#include "Solvers/reader.hpp"
+#include "Solvers/exporter.hpp"
 namespace Kadath::FUKA_Solvers {
-template<class eos_t, class config_t, class space_t>
-struct CFMS_NS_Reader : public Reader<config_t, space_t> {
+
+template<class eos_t>
+struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_NS_INFO>, Space_spheric_adapted> {
+  using config_t = Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_NS_INFO>;
+  using space_t = Space_spheric_adapted;
   enum XCTS_VARS : size_t {  
     XCTS_PSI,
     XCTS_ALPHA,
@@ -47,20 +50,20 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     NUM_OUTPUT_VARS
   };
 
-  using pointwise_ary_t = std::vector<double>; 
-  using grid_ary_t = std::array<pointwise_ary_t, OUTPUT_VARS::NUM_OUTPUT_VARS>;
+  using interp_ary_t = std::array<double, NUM_XCTS_VARS>; 
+  using output_ary_t = std::array<double, NUM_OUTPUT_VARS>; 
+  using grid_ary_t = std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
   // Types
-  using Reader<config_t, space_t>::base_space_t;
-  using Reader<config_t, space_t>::base_config_t;
+  using Exporter<config_t, space_t>::base_space_t;
+  using Exporter<config_t, space_t>::base_config_t;
 
   // Reuse base class members
-  using Reader<config_t, space_t>::space;
-  using Reader<config_t, space_t>::bconfig;
-  using Reader<config_t, space_t>::syst;
-  using Reader<config_t, space_t>::ndom;
+  using Exporter<config_t, space_t>::space;
+  using Exporter<config_t, space_t>::bconfig;
+  using Exporter<config_t, space_t>::ndom;
 
-  // CFMS_BH imported fields from file
+  // CFMS_NS imported fields from file
   ptr_data_member(Scalar, conformal_factor, shared);
   ptr_data_member(Scalar, lapse, shared);
   ptr_data_member(Vector, shift, shared);
@@ -68,35 +71,35 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
   ptr_data_member(Vector, fluidvel, shared);
 
   // Constructed objects
-  ptr_data_member(Base_tensor, basis, shared);
-  ptr_data_member(Metric_flat, fmet, shared);
   ptr_data_member(Tensor, A, shared);
 
   protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
-  std::vector<double> quant_vals;
-  pointwise_ary_t out_pw;
+  interp_ary_t quant_vals;
+  output_ary_t out_pw;
   bool export_ready{false};
   int const ndim{3};
 
   void load_solution_from_file() override {
     std::string spacein{bconfig->space_filename()};
     FILE* ff1 = fopen (spacein.c_str(), "r") ;
+
     space.reset(new space_t{ff1});
     conformal_factor.reset( new Scalar(*space.get(), ff1)) ;
     lapse.reset( new Scalar(*space.get(), ff1)) ;
     shift.reset( new Vector(*space.get(), ff1)) ;
     logh.reset( new Scalar(*space.get(), ff1)) ;
+    
     fclose(ff1);
     
-    basis.reset(new Base_tensor{shift->get_basis()});
-    fmet.reset(new Metric_flat(*space, *basis));
     ndom = space->get_nbr_domains();
   }
   
   void extract_computed_grid_functions() {
-    syst.reset(new System_of_eqs (*space));
-    fmet->set_system(*syst, "f") ;
+    System_of_eqs syst(*space);
+    Base_tensor basis(shift->get_basis());
+    Metric_flat fmet(*space, basis);
+    fmet.set_system(syst, "f") ;
     
     // fields depending on the coords
     CoordFields<Space_spheric_adapted> cf_generator(*space);
@@ -107,27 +110,28 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     update_fields_co(cf_generator, coord_vectors, {}, xo);
 
     Param p;
-    syst->add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
-    syst->add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
-    syst->add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
+    syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
+    syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
+    syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
     // end adding EOS OPEs
 
     // Fields - must be initialized before common setup
-    syst->add_cst("N"  , *lapse) ;
-    syst->add_cst("bet", *shift) ;
-    syst->add_cst("ome" , (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA));
-    syst->add_cst("mg"  , *coord_vectors[GLOBAL_ROT]);
-    syst->add_def("omega^i = bet^i + ome * mg^i");
+    syst.add_cst("N"  , *lapse) ;
+    syst.add_cst("bet", *shift) ;
+    syst.add_cst("ome" , (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA));
+    syst.add_cst("mg"  , *coord_vectors[GLOBAL_ROT]);
+    syst.add_def("omega^i = bet^i + ome * mg^i");
 
-    syst->add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
-    A.reset(new Tensor(syst->give_val_def("A")));
+    syst.add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
+    A.reset(new Tensor(syst.give_val_def("A")));
     A->coef();
   
     // definitions for the fluid 3-velocity
-    syst->add_def("U^i = omega^i / N");
-    fluidvel.reset(new Vector(syst->give_val_def("U")));
+    syst.add_def("U^i = omega^i / N");
+    fluidvel.reset(new Vector(syst.give_val_def("U")));
     fluidvel->coef();
   }
+
   void populate_quants() {
     if(quants.capacity() != XCTS_VARS::NUM_XCTS_VARS) {
       for (size_t i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
@@ -156,20 +160,16 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
   }
 
   public:
-  bool is_export_ready() const { return export_ready; }
   std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
+  bool is_export_ready() const { return export_ready; }  
   const int & get_ndim() const { return ndim; }
   
-  CFMS_NS_Reader() : Reader<config_t, space_t>(),
-    basis(nullptr), fmet(nullptr),
+  CFMS_NS_Exporter() : Exporter<config_t, space_t>(),
     conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr), fluidvel(nullptr) {}
-  CFMS_NS_Reader(std::string config_filename) :
-    Reader<config_t, space_t>(config_filename),
-      basis(nullptr), fmet(nullptr),
-        conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr), fluidvel(nullptr) {
   
-    quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
-    out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
+  CFMS_NS_Exporter(std::string config_filename) :
+    Exporter<config_t, space_t>(config_filename),
+        conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr), fluidvel(nullptr) {
 
     load_solution_from_file();
     extract_computed_grid_functions();
@@ -180,18 +180,11 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     // in undefined behavior.  By running the interpolator once, this
     // bug seems to be avoided.
     this->export_pointwise(0.5, 0., 0.);
-
-    //for(auto& e : out_pw)
-    //  cout << e << ", ";
-    //cout << endl;
   }
 
-  CFMS_NS_Reader(CFMS_NS_Reader const & r) : fmet(nullptr) {
+  CFMS_NS_Exporter(CFMS_NS_Exporter const & r) {
     std::lock_guard<std::mutex> lock(copy_mutex);
     ndom = r.ndom;
-    
-    quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
-    out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
 
     space.reset(new space_t((*r.get_space())));
     conformal_factor.reset(new Scalar(*space.get(), *r.conformal_factor.get()));
@@ -201,8 +194,6 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     fluidvel.reset(new Vector(*space, *r.fluidvel.get()));
     A.reset(new Tensor(*space, *r.A.get()));
 
-    basis.reset(new Base_tensor(*space, r.get_basis()->get_basis(0)));
-    fmet.reset(new Metric_flat(*space, *basis));
     bconfig.reset(new config_t(*r.bconfig));
     
     export_ready = false;
@@ -213,19 +204,19 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     // std::cout << "copy\n";
   }
 
-  CFMS_NS_Reader(CFMS_NS_Reader&& b) noexcept = delete;
-  CFMS_NS_Reader& operator=(const CFMS_NS_Reader& b)
+  CFMS_NS_Exporter(CFMS_NS_Exporter&& b) noexcept = delete;
+  CFMS_NS_Exporter& operator=(const CFMS_NS_Exporter& b)
   {
     if (this == &b) return *this;
 
-    CFMS_NS_Reader tmp(b);
+    CFMS_NS_Exporter tmp(b);
     *this = std::move(tmp);
     return *this;
   }
 
   public:
 
-  std::vector<double> interpolate_pointwise(double const & x, double const & y, double const & z) {
+  interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z) {
     
     Point abs_coords(ndim);
     abs_coords.set(1) = x;
@@ -241,14 +232,7 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
   }
 
   
-  pointwise_ary_t export_pointwise(
-    double const & x, double const & y, double const & z) {
-    
-    if(quant_vals.size() != XCTS_VARS::NUM_XCTS_VARS)
-      quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
-    
-    if(out_pw.size() != OUTPUT_VARS::NUM_OUTPUT_VARS)
-      out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
+  output_ary_t export_pointwise(double const & x, double const & y, double const & z) {    
     
     quant_vals = interpolate_pointwise(x, y, z);
      
@@ -312,15 +296,16 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     return out_pw;
   }
 
-  std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS> export_coordinate_array(
+  grid_ary_t export_coordinate_array(
     int const npoints, double const * xx, double const * yy, double const * zz) {
     
-    std::array<std::vector<double>,OUTPUT_VARS::NUM_OUTPUT_VARS> out;
-    for(auto& v : out)
+    grid_ary_t out;
+    for(auto& v : out) {
       v.resize(npoints);
+    }
     
     for (size_t i = 0; i < npoints; ++i) {
-      out_pw = export_pointwise(xx[i], yy[i], zz[i]);
+      export_pointwise(xx[i], yy[i], zz[i]);
 
       out[OUTPUT_VARS::ALPHA][i] = out_pw[OUTPUT_VARS::ALPHA];
 
@@ -345,6 +330,9 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
       out[OUTPUT_VARS::RHO][i] = out_pw[OUTPUT_VARS::RHO];
       out[OUTPUT_VARS::EPS][i] = out_pw[OUTPUT_VARS::EPS];
       out[OUTPUT_VARS::PRESS][i] = out_pw[OUTPUT_VARS::PRESS];
+      out[OUTPUT_VARS::VELX][i]  = out_pw[OUTPUT_VARS::VELX];
+      out[OUTPUT_VARS::VELY][i]  = out_pw[OUTPUT_VARS::VELY];
+      out[OUTPUT_VARS::VELZ][i]  = out_pw[OUTPUT_VARS::VELZ];
     }
     return out;
   }
