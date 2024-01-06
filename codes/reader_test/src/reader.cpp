@@ -21,9 +21,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "Configurator/config_bco.hpp"
-#include "Solvers/reader.hpp"
-// #include "Solvers/interpolator.hpp"
-// #include "Solvers/bh_3d_xcts/bh_reader.hpp"
+#include "Solvers/bh_3d_xcts/bh_exporter.hpp"
 #include "kadath_adapted.hpp"
 #include "kadath_adapted_bh.hpp"
 #ifdef _OPENMP
@@ -35,8 +33,8 @@ using namespace Kadath;
 using namespace Kadath::FUKA_Config;
   
   using config_t = kadath_config_boost<BCO_BH_INFO>;
-  using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Reader<config_t, Space_adapted_bh>;
-  using ary_t = std::array<double, reader_t::OUTPUT_VARS::NUM_OUTPUT_VARS>;
+  using reader_t = Kadath::FUKA_Solvers::CFMS_BH_Exporter;
+  using ary_t = std::vector<reader_t::output_ary_t>;
 
 constexpr unsigned int Npts = 256;  
 constexpr double range = 2;
@@ -80,7 +78,7 @@ int main(int argc, char **argv) {
   config_t bconfig(ifilename);  
   reader_t input_reader(ifilename);
   auto space_ptr = get_space_ptr::get(bconfig.space_filename());
-  std::vector<reader_t::pointwise_ary_t> all_data(Npts);
+  ary_t all_data(Npts);
   // auto x = input_reader.export_pointwise(0.5, 0., 0.);
   // Kadath::FUKA_Solvers::Interpolator interp{input_reader, space_ptr};
   
