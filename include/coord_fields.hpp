@@ -343,7 +343,7 @@ Kadath::Vector CoordFields<space_t>::e_rad(double shift_x, double shift_y, doubl
     // impact on the system of equations
     for(int dom=0; dom < ndom - 1; ++dom) {
       Index pos(space.get_domain(dom)->get_nbr_points());
-      const int npts_r = space.get_domain(dom)->get_nbr_points()(0);
+      __attribute__((unused)) const int npts_r = space.get_domain(dom)->get_nbr_points()(0);
       do{
         if(!std::isfinite(e_rad(i)(dom)(pos)) && pos(0) == 0) {
           Index tempos(pos);
@@ -414,7 +414,7 @@ void update_fields (CoordFields<space_t> const & cf_generator,
   
   auto update = [&] (auto& name, auto& field) {
     for(int dom = 0; dom < ndom; ++dom){
-      bool succ = update_field(*syst, dom, name.c_str(), field);
+      __attribute__((unused)) bool succ = update_field(*syst, dom, name.c_str(), field);
       #ifdef DEBUG
       if(!succ)
         std::cout << name << " failed\n";

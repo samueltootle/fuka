@@ -2,7 +2,7 @@
 #define _HH_MARGHERITA
 
 
-#define CCTK_VError(A, B, C, D, E, F)
+//#define CCTK_VError(A, B, C, D, E, F)
 
 namespace Margherita_constants {
 
