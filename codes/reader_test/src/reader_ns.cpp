@@ -21,7 +21,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "Configurator/config_bco.hpp"
-#include "Solvers/ns_3d_xcts/ns_reader.hpp"
+#include "Solvers/ns_3d_xcts/ns_exporter.hpp"
 #include "kadath_adapted.hpp"
 #ifdef _OPENMP
   #include <omp.h>
@@ -34,15 +34,15 @@ using namespace Kadath::FUKA_Config;
   using config_t = kadath_config_boost<BCO_NS_INFO>;
   
   template<class eos_t>
-  using reader_t = Kadath::FUKA_Solvers::CFMS_NS_Reader<eos_t, config_t, Space_spheric_adapted>;
+  using reader_t = Kadath::FUKA_Solvers::CFMS_NS_Exporter<eos_t>;
 
-constexpr unsigned int Npts = 1e5;
+constexpr unsigned int Npts = 1e4;
 constexpr double range = 10;
 constexpr double dx = range / Npts;
 
 template<class reader_t>
 void interp_data(reader_t& input_reader, std::vector<double>& xx, std::vector<double>& yy, std::vector<double>& zz) {
-  std::vector<typename reader_t::pointwise_ary_t> all_data(Npts);
+  std::vector<typename reader_t::output_ary_t> all_data(Npts);
 
   #pragma omp parallel for firstprivate(input_reader)
   for(auto i = 0; i < Npts; ++i) {
