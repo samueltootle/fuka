@@ -135,6 +135,11 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
     load_solution_from_file();
     extract_computed_grid_functions();
     populate_quants();
+    
+    // This is to avoid a "bug" where "something" in kadath is not
+    // correctly initialized prior to copying to other threads resulting
+    // in undefined behavior.  By running the interpolator once, this
+    // bug seems to be avoided.
     this->export_pointwise(0.5, 0., 0.);
   }
 
@@ -149,8 +154,11 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
     A.reset(new Tensor(*space, *r.A.get()));
 
     bconfig.reset(new config_t(*r.bconfig));
-    
+    export_ready = false;
     populate_quants();
+    // For testing only
+    // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
+    // std::cout << "copy\n";
   }
 
   CFMS_BH_Exporter(CFMS_BH_Exporter&& b) noexcept = delete;
@@ -208,8 +216,7 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
     return quant_vals;
   }
   
-  output_ary_t export_pointwise(
-    double const & x, double const & y, double const & z,
+  output_ary_t export_pointwise(double const & x, double const & y, double const & z,
     double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3) {
       
     quant_vals = interpolate_pointwise(x, y, z, interpolation_offset, interp_order, delta_r_rel);
