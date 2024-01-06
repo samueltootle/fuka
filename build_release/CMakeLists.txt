@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 project(Kadath_release)
-
 if (NOT CMAKE_BUILD_TYPE)
     message(STATUS "No build type selected, default to Release")
     set(CMAKE_BUILD_TYPE "Release")
@@ -46,9 +45,9 @@ endif()
 #need to use C++17
 add_definitions(-std=c++17)
 if ("$ENV{KAD_ARCH}" STREQUAL "")
-  set(CMAKE_CXX_FLAGS_RELEASE "-g -O3 -std=c++17")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -g -O3 -std=c++17")
 else()
-  set(CMAKE_CXX_FLAGS_RELEASE "-g -O3 -march=$ENV{KAD_ARCH} -std=c++17")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -g -O3 -march=$ENV{KAD_ARCH} -std=c++17")
 endif()
 
 add_library(kadath ${KADATH_SOURCES})
