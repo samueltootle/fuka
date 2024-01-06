@@ -23,6 +23,8 @@
 #include "Configurator/config_bco.hpp"
 #include "Solvers/ns_3d_xcts/ns_exporter.hpp"
 #include "kadath_adapted.hpp"
+
+#include "./reader_test_tools.hpp"
 #ifdef _OPENMP
   #include <omp.h>
 #endif
@@ -39,30 +41,6 @@ using namespace Kadath::FUKA_Config;
 constexpr unsigned int Npts = 1e4;
 constexpr double range = 10;
 constexpr double dx = range / Npts;
-
-template<class reader_t>
-void interp_data(reader_t& input_reader, std::vector<double>& xx, std::vector<double>& yy, std::vector<double>& zz) {
-  std::vector<typename reader_t::output_ary_t> all_data(Npts);
-
-  #pragma omp parallel for firstprivate(input_reader)
-  for(auto i = 0; i < Npts; ++i) {
-    all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
-  }
-  
-  for(auto i = 0; i < Npts; ++i) {
-    std::cout << "(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") - ";
-    
-    for(auto& e : all_data[i])
-      cout << e << " - ";
-    cout << endl;
-  }
-  cout << xx[200] << ", " << yy[200] << ", " << zz[200] << ", " 
-    << all_data[200][reader_t::OUTPUT_VARS::ALPHA] << "\n\t"
-    << all_data[200][reader_t::OUTPUT_VARS::KXY] << ", "
-    << all_data[200][reader_t::OUTPUT_VARS::KXZ] << ", "
-    << all_data[200][reader_t::OUTPUT_VARS::KYZ] << "\n";
-
-}
 
 int main(int argc, char **argv) {
 

@@ -24,6 +24,8 @@
 #include "Solvers/bh_3d_xcts/bh_exporter.hpp"
 #include "kadath_adapted.hpp"
 #include "kadath_adapted_bh.hpp"
+
+#include "./reader_test_tools.hpp"
 #ifdef _OPENMP
   #include <omp.h>
 #endif
@@ -39,19 +41,6 @@ using namespace Kadath::FUKA_Config;
 constexpr unsigned int Npts = 256;  
 constexpr double range = 2;
 constexpr double dx = range / Npts;
-
-struct get_space_ptr {
-  using space_t = Space_adapted_bh;
-  using ptr_t = std::unique_ptr<space_t>;
-  static ptr_t&& get(std::string filename) {
-    
-    FILE* ff1 = fopen (filename.c_str(), "r") ;
-    space_t _space{ff1};
-    fclose(ff1);
-    static ptr_t p(new space_t(_space));
-    return std::move(p);
-  }
-};
 
 int main(int argc, char **argv) {
 
@@ -77,31 +66,8 @@ int main(int argc, char **argv) {
   }
   config_t bconfig(ifilename);  
   reader_t input_reader(ifilename);
-  auto space_ptr = get_space_ptr::get(bconfig.space_filename());
-  ary_t all_data(Npts);
-  // auto x = input_reader.export_pointwise(0.5, 0., 0.);
-  // Kadath::FUKA_Solvers::Interpolator interp{input_reader, space_ptr};
-  
 
-  #pragma omp parallel for firstprivate(input_reader)
-  for(auto i = 0; i < Npts; ++i) {
-    all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
-  }
-
-  for(auto i = 0; i < Npts; ++i)
-    std::cout << "(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") - " << all_data[i][reader_t::OUTPUT_VARS::ALPHA] << " - "
-              // << all_data[i][reader_t::OUTPUT_VARS::GXX] << ", "
-              // << all_data[i][reader_t::OUTPUT_VARS::BETAX] << ", "
-              // << all_data[i][reader_t::OUTPUT_VARS::BETAY] << ", "
-              // << all_data[i][reader_t::OUTPUT_VARS::BETAZ] << "\n";
-              << all_data[i][reader_t::OUTPUT_VARS::KXY] << ", "
-              << all_data[i][reader_t::OUTPUT_VARS::KXZ] << ", "
-              << all_data[i][reader_t::OUTPUT_VARS::KYZ] << "\n";
-  cout << xx[200] << ", " << yy[200] << ", " << zz[200] << ", " 
-    << all_data[200][reader_t::OUTPUT_VARS::ALPHA] << "\n\t"
-    << all_data[200][reader_t::OUTPUT_VARS::KXY] << ", "
-    << all_data[200][reader_t::OUTPUT_VARS::KXZ] << ", "
-    << all_data[200][reader_t::OUTPUT_VARS::KYZ] << "\n";
+  interp_data(input_reader, xx, yy, zz);
 
   return EXIT_SUCCESS;
 }
