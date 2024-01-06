@@ -58,7 +58,7 @@ void setup_Cold_Table(std::string cold_table_name, int cold_lintp_points, double
   Cold_Table::hmin = h_min;
   Cold_Table::hmax = h_max;
 
-  double K_ext = (h_min - 1) / (2. * Cold_Table::rhomin);
+  __attribute__((unused)) double K_ext = (h_min - 1) / (2. * Cold_Table::rhomin);
 
   // Shift eps to ensure positivity
   if (vectors[1].front() < 0) {
@@ -76,7 +76,7 @@ void setup_Cold_Table(std::string cold_table_name, int cold_lintp_points, double
   std::unique_ptr<double[]> eps_ptr{new double[vectors[1].size()]};
   std::unique_ptr<double[]> press_ptr{new double[vectors[2].size()]};
 
-  for (int i = 0; i < vectors[0].size(); ++i) {
+  for (size_t i = 0; i < vectors[0].size(); ++i) {
     rho_ptr[i] = vectors[0][i];
     eps_ptr[i] = vectors[1][i];
     press_ptr[i] = vectors[2][i];

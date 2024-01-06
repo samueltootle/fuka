@@ -19,8 +19,6 @@ namespace FUKA_Syst_tools {
  */
 inline
 void syst_init_contraction_defs_hydro(System_of_eqs & syst) {
-  int const ndom = syst.get_space().get_nbr_domains();
-
   #ifdef DEBUG
     std::cout << "Loading hydro contractions.\n";
   #endif

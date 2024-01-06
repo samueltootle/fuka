@@ -63,7 +63,7 @@ tree_t read_branch(const tree_t& tree, std::string node) {
 
 template<typename ary_t, typename map_t, typename tree_t>
 void get_branch_nodes(const map_t& storage_map, ary_t& storage, const tree_t& branch, bool rsuffix){
-  int idx = 0;
+  size_t idx = 0;
   for(const auto& node : branch) {
     if(!node.second.empty()) {
       std::string tstr = node.first;

@@ -37,6 +37,14 @@ Scalar::Scalar (const Scalar& so, bool copie) : Tensor(so.espace) {
 	cmp[0] = this ;
 }
 
+Scalar::Scalar (const Space& sp, const Scalar& so) : Tensor(sp) {
+
+	val_zones = MemoryMapper::get_memory<Val_domain*>(ndom);
+	for (int l=0 ; l<ndom ; l++)
+	    val_zones[l] = new Val_domain(sp.get_domain(l), *so.val_zones[l]) ;
+	cmp[0] = this ;
+}
+
 Scalar::Scalar (const Tensor& so, bool copie) : Tensor(so.espace) {
 
 	assert (so.valence==0) ;

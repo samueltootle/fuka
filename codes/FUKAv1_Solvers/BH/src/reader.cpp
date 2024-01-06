@@ -24,6 +24,7 @@
 #include "Configurator/config_bco.hpp"
 #include "bco_utilities.hpp"
 #include "coord_fields.hpp"
+#include "exporter_utilities.hpp"
 #include <iostream>
 #include <memory>
 #include "mpi.h"
@@ -57,6 +58,36 @@ int main(int argc, char **argv) {
   Scalar lapse(space, fich);
   Vector shift(space, fich);
   fclose(fich);
+  // conf.coef();
+  // conf.allocate_coef();
+  //cout << space.get_domain(2)->get_nbr_coefs() << endl;
+  conf.coef();
+  //cout << conf(2).get_coef().get_dimensions() << endl;
+  // cout << shift.get_basis() << endl;
+  int ndim = 3;
+  Point p(ndim);
+  p.set(1) = 1.5625;
+  p.set(2) = 1.5625;
+  p.set(3) = 1.5625;
+
+  cout << p << endl;
+  cout << lapse.val_point(p) << endl;
+  // for (int d=0 ; d<ndim-2 ; d++) {
+  // int dim_output = ndim-1-d ;
+  // auto cf = conf(2).get_coef();
+  // // Index p(cf.get_dimensions());
+  // // do {
+  // //   cout << p << endl;
+
+  // // }while(p.inc());
+  // // Dim_array nbr_coefs (cf.get_dimensions()) ;
+  // // Dim_array nbr_output (dim_output) ;
+  // // for (int k=0 ; k<dim_output ; k++)
+	// // 		nbr_output.set(k) = nbr_coefs(k+d+1) ;
+  // // Array<double> output (nbr_output) ;
+  // // cout << output << endl;
+  // }
+  // return 0;
 
 	int ndom = space.get_nbr_domains() ;
 	Base_tensor basis (space, CARTESIAN_BASIS) ;
@@ -95,7 +126,15 @@ int main(int argc, char **argv) {
 
   syst.add_def        ("NP = P*N");
   syst.add_def        ("Ntilde = N / P^6");
-  syst.add_def        ("A^ij = (D^i bet^j + D^j bet^i - 2. / 3.* D_k bet^k * f^ij) / 2. / Ntilde");
+//  syst.add_def        ("A^ij = (D^i bet^j + D^j bet^i - 2. / 3.* D_k bet^k * f^ij) / 2. / Ntilde");
+syst.add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
+auto At(syst.give_val_def("A"));
+for(int c = 0; c < 6; ++c) {
+auto tidx = export_utils::R2TensorSymmetricIndices[c];
+Kadath::Array<int> ind (At.indices(tidx));
+cout << At(ind).val_point(p) << endl;
+}
+return 0;
 
   syst.add_def        ("intPx = A_ij * ex^j * einf^i / 8 / PI") ;
   syst.add_def        ("intPy = A_ij * ey^j * einf^i / 8 / PI") ;

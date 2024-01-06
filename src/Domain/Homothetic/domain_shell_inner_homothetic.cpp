@@ -39,6 +39,10 @@ Domain_shell_inner_homothetic::Domain_shell_inner_homothetic (const Space& sss, 
 Domain_shell_inner_homothetic::Domain_shell_inner_homothetic (const Domain_shell_inner_homothetic& so) : Domain_shell_inner_adapted(so) {
 }
 
+// Constructor by copy
+Domain_shell_inner_homothetic::Domain_shell_inner_homothetic (const Space& sp, const Domain_shell_inner_homothetic& so) : Domain_shell_inner_adapted(sp, so) {
+}
+
 Domain_shell_inner_homothetic::Domain_shell_inner_homothetic (const Space& sss, int num, FILE* fd) : Domain_shell_inner_adapted(sss, num, fd) {
 }
 

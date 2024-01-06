@@ -20,6 +20,12 @@
 #ifndef __HEADCPP_HPP_
 #define __HEADCPP_HPP_
 
+#ifdef USE_CXX_STANDARD_17_OR_HIGHER
+#define CXX_17_ATTRIBUTES(...) [[__VA_ARGS__]]
+#else
+#define CXX_17_ATTRIBUTES(...)
+#endif
+
 #include <iomanip>
 #include <iostream>
 #include <fstream>

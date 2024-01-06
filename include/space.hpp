@@ -86,6 +86,7 @@ class Domain : public MemoryMappable {
   explicit Domain (int num, int ttype, const Dim_array& res) ; ///< Constructor from a number of points and a type of base
   explicit Domain (int, FILE*) ; ///< Constructor from a file
   Domain (const Domain& so) ; ///< Copy constructor.
+  Domain (const Domain& so, bool import) ; ///< Copy constructor.
 
  public:
   virtual ~Domain() ; ///< Destructor.

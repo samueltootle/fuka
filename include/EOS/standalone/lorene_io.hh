@@ -81,7 +81,7 @@ static std::array<std::vector<double>, 3> Lorene_Table(const std::string &filena
   return vectors;
 }
 
-static std::array<std::vector<double>, 4> ID_Table(
+__attribute__((unused)) static std::array<std::vector<double>, 4> ID_Table(
     const std::string &filename) {
   using namespace Margherita_constants;
 

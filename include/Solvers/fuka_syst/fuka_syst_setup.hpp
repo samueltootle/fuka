@@ -78,8 +78,6 @@ void syst_init_contraction_defs_vac(System_of_eqs & syst) {
   #ifdef DEBUG
     std::cout << "Loading vacuum contraction definitions.\n";
   #endif
-  int const ndom = syst.get_space().get_nbr_domains();
-
   // Contractions of definitions and fields for analysis
   syst.add_def("Axx     = A^ij * ex_i * ex_j ");
   syst.add_def("Ayy     = A^ij * ey_i * ey_j");

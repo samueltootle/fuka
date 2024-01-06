@@ -215,16 +215,17 @@ void spherical_turduck(fields_ary_t& quants, quant_ary_t& quant_vals,
   T const r_, T const theta_, T const phi_, const int dom_, 
   T const xshift_) {
   
-  auto& space = quants[0].get().get_space();
-  T const ah_r = export_utils::get_excision_r(space,
-    r_bound_, theta_, phi_, dom_, xshift_);
+  //auto& space = quants[0].get().get_space();
+  T const ah_r = r_bound_;
+  // export_utils::get_excision_r(space,
+  //   r_bound_, theta_, phi_, dom_, xshift_);
   
   std::vector<T> r_points(order_);
   for (int j = 0; j < order_; j++) {
     r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
   }
 
-  for (int k = 0; k < N; ++k) {
+  for (size_t k = 0; k < N; ++k) {
     std::vector<T> vals(order_);
 
     // Avoid computations if fluid quantities are encountered
