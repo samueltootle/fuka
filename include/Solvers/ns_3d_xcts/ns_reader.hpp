@@ -47,7 +47,8 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     NUM_OUTPUT_VARS
   };
 
-  using pointwise_ary_t = std::array<double, OUTPUT_VARS::NUM_OUTPUT_VARS>;
+  using pointwise_ary_t = std::vector<double>; 
+  using grid_ary_t = std::array<pointwise_ary_t, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
   // Types
   using Reader<config_t, space_t>::base_space_t;
@@ -73,9 +74,10 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
 
   protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
+  std::vector<double> quant_vals;
+  pointwise_ary_t out_pw;
   bool export_ready{false};
   int const ndim{3};
-  
 
   void load_solution_from_file() override {
     std::string spacein{bconfig->space_filename()};
@@ -86,22 +88,16 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     shift.reset( new Vector(*space.get(), ff1)) ;
     logh.reset( new Scalar(*space.get(), ff1)) ;
     fclose(ff1);
+    
     basis.reset(new Base_tensor{shift->get_basis()});
     fmet.reset(new Metric_flat(*space, *basis));
+    ndom = space->get_nbr_domains();
   }
-
-  void extract_xcts_grid_functions() {
-    this->ndom = space->get_nbr_domains();
-    if(quants.capacity() != XCTS_VARS::NUM_XCTS_VARS) {
-      for (int i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
-        quants.push_back(std::cref(*conformal_factor));
-    }
-    syst.reset(new System_of_eqs (*space));    
+  
+  void extract_computed_grid_functions() {
+    syst.reset(new System_of_eqs (*space));
     fmet->set_system(*syst, "f") ;
     
-    // get const EOS information - used for initializing EOS later
-    const double h_cut = (*bconfig).template eos<double>(Kadath::FUKA_Config::HCUT);
-
     // fields depending on the coords
     CoordFields<Space_spheric_adapted> cf_generator(*space);
     vec_ary_t coord_vectors {default_co_vector_ary(*space)};
@@ -125,12 +121,18 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
 
     syst->add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
     A.reset(new Tensor(syst->give_val_def("A")));
-    
+    A->coef();
+  
     // definitions for the fluid 3-velocity
     syst->add_def("U^i = omega^i / N");
     fluidvel.reset(new Vector(syst->give_val_def("U")));
-
-    // Vacuum related quantities
+    fluidvel->coef();
+  }
+  void populate_quants() {
+    if(quants.capacity() != XCTS_VARS::NUM_XCTS_VARS) {
+      for (size_t i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
+        quants.push_back(std::cref(*conformal_factor));
+    }
     quants[XCTS_VARS::XCTS_PSI] = std::cref(*conformal_factor);
     quants[XCTS_VARS::XCTS_ALPHA] = std::cref(*lapse);
     quants[XCTS_VARS::XCTS_BETAX] = std::cref((*shift)(1));
@@ -144,7 +146,7 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
       XCTS_VARS::XCTS_AYY, 
       XCTS_VARS::XCTS_AYZ, 
       XCTS_VARS::XCTS_AZZ}, *A);
-        
+    
     // Fluid related quantities
     quants[XCTS_VARS::XCTS_H] = std::cref(*logh);
     quants[XCTS_VARS::XCTS_UX] = std::cref((*fluidvel)(1));
@@ -155,34 +157,57 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
 
   public:
   bool is_export_ready() const { return export_ready; }
+  std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
+  const int & get_ndim() const { return ndim; }
+  
   CFMS_NS_Reader() : Reader<config_t, space_t>(),
     basis(nullptr), fmet(nullptr),
-    conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr) {}
+    conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr), fluidvel(nullptr) {}
   CFMS_NS_Reader(std::string config_filename) :
     Reader<config_t, space_t>(config_filename),
       basis(nullptr), fmet(nullptr),
-        conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr) {
+        conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr), fluidvel(nullptr) {
   
+    quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
+    out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
+
     load_solution_from_file();
-    extract_xcts_grid_functions();
+    extract_computed_grid_functions();
+    populate_quants();
+    
+    // This is to avoid a "bug" where "something" in kadath is not
+    // correctly initialized prior to copying to other threads resulting
+    // in undefined behavior.  By running the interpolator once, this
+    // bug seems to be avoided.
+    this->export_pointwise(0.5, 0., 0.);
+
+    //for(auto& e : out_pw)
+    //  cout << e << ", ";
+    //cout << endl;
   }
 
   CFMS_NS_Reader(CFMS_NS_Reader const & r) : fmet(nullptr) {
-    copy_mutex.lock();
-    space.reset(new space_t((*r.get_space())));
-    basis.reset(new Base_tensor(*space, r.get_basis()->get_basis(0)));
-    fmet.reset(new Metric_flat(*space, *basis));
-    bconfig.reset(new config_t(*r.bconfig));
+    std::lock_guard<std::mutex> lock(copy_mutex);
+    ndom = r.ndom;
     
+    quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
+    out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
+
+    space.reset(new space_t((*r.get_space())));
     conformal_factor.reset(new Scalar(*space.get(), *r.conformal_factor.get()));
     lapse.reset(new Scalar(*space, *r.lapse.get()));
     shift.reset(new Vector(*space, *r.shift.get()));
     logh.reset(new Scalar(*space, *r.logh.get()));
-    bconfig->set_filename("test");
+    fluidvel.reset(new Vector(*space, *r.fluidvel.get()));
+    A.reset(new Tensor(*space, *r.A.get()));
+
+    basis.reset(new Base_tensor(*space, r.get_basis()->get_basis(0)));
+    fmet.reset(new Metric_flat(*space, *basis));
+    bconfig.reset(new config_t(*r.bconfig));
+    
     export_ready = false;
 
-    extract_xcts_grid_functions();
-    copy_mutex.unlock();
+    populate_quants();
     // For testing only
     // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
     // std::cout << "copy\n";
@@ -195,7 +220,6 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
 
     CFMS_NS_Reader tmp(b);
     *this = std::move(tmp);
-// std::cout << "assignment\n";
     return *this;
   }
 
@@ -203,17 +227,13 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
 
   std::vector<double> interpolate_pointwise(double const & x, double const & y, double const & z) {
     
-    std::vector<double> quant_vals(XCTS_VARS::NUM_XCTS_VARS);
-
     Point abs_coords(ndim);
     abs_coords.set(1) = x;
     abs_coords.set(2) = y;
     abs_coords.set(3) = z;
     
-    find_dom fd(space, abs_coords, 0, this->ndom);
     // For testing only
-    // quant_vals[XCTS_VARS::XCTS_ALPHA] = fd();
-    for (int k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
+    for (size_t k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
     }
     
@@ -221,23 +241,27 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
   }
 
   
-  std::array<double, OUTPUT_VARS::NUM_OUTPUT_VARS> export_pointwise(
+  pointwise_ary_t export_pointwise(
     double const & x, double const & y, double const & z) {
     
-    std::array<double, OUTPUT_VARS::NUM_OUTPUT_VARS> out;
-      
-    auto quant_vals = interpolate_pointwise(x, y, z);
+    if(quant_vals.size() != XCTS_VARS::NUM_XCTS_VARS)
+      quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
     
+    if(out_pw.size() != OUTPUT_VARS::NUM_OUTPUT_VARS)
+      out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
+    
+    quant_vals = interpolate_pointwise(x, y, z);
+     
     // Fill output vector by storing non-conformal quantities
     auto const psi = quant_vals[XCTS_VARS::XCTS_PSI];
     auto const psi2 = psi * psi;
     auto const psi4 = psi2 * psi2;
 
-    out[OUTPUT_VARS::ALPHA] = quant_vals[XCTS_VARS::XCTS_ALPHA];
+    out_pw[OUTPUT_VARS::ALPHA] = quant_vals[XCTS_VARS::XCTS_ALPHA];
 
-    out[OUTPUT_VARS::BETAX] = quant_vals[XCTS_VARS::XCTS_BETAX];
-    out[OUTPUT_VARS::BETAY] = quant_vals[XCTS_VARS::XCTS_BETAY];
-    out[OUTPUT_VARS::BETAZ] = quant_vals[XCTS_VARS::XCTS_BETAZ];
+    out_pw[OUTPUT_VARS::BETAX] = quant_vals[XCTS_VARS::XCTS_BETAX];
+    out_pw[OUTPUT_VARS::BETAY] = quant_vals[XCTS_VARS::XCTS_BETAY];
+    out_pw[OUTPUT_VARS::BETAZ] = quant_vals[XCTS_VARS::XCTS_BETAZ];
 
     double g[3][3];
     g[0][0] = psi4;
@@ -250,19 +274,19 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     g[2][0] = g[0][2];
     g[2][1] = g[1][2];
 
-    out[OUTPUT_VARS::GXX] = g[0][0];
-    out[OUTPUT_VARS::GXY] = g[0][1];
-    out[OUTPUT_VARS::GXZ] = g[0][2];
-    out[OUTPUT_VARS::GYY] = g[1][1];
-    out[OUTPUT_VARS::GYZ] = g[1][2];
-    out[OUTPUT_VARS::GZZ] = g[2][2];
+    out_pw[OUTPUT_VARS::GXX] = g[0][0];
+    out_pw[OUTPUT_VARS::GXY] = g[0][1];
+    out_pw[OUTPUT_VARS::GXZ] = g[0][2];
+    out_pw[OUTPUT_VARS::GYY] = g[1][1];
+    out_pw[OUTPUT_VARS::GYZ] = g[1][2];
+    out_pw[OUTPUT_VARS::GZZ] = g[2][2];
 
-    out[OUTPUT_VARS::KXX] = quant_vals[XCTS_VARS::XCTS_AXX] * psi4;
-    out[OUTPUT_VARS::KXY] = quant_vals[XCTS_VARS::XCTS_AXY] * psi4;
-    out[OUTPUT_VARS::KXZ] = quant_vals[XCTS_VARS::XCTS_AXZ] * psi4;
-    out[OUTPUT_VARS::KYY] = quant_vals[XCTS_VARS::XCTS_AYY] * psi4;
-    out[OUTPUT_VARS::KYZ] = quant_vals[XCTS_VARS::XCTS_AYZ] * psi4;
-    out[OUTPUT_VARS::KZZ] = quant_vals[XCTS_VARS::XCTS_AZZ] * psi4;
+    out_pw[OUTPUT_VARS::KXX] = quant_vals[XCTS_VARS::XCTS_AXX] * psi4;
+    out_pw[OUTPUT_VARS::KXY] = quant_vals[XCTS_VARS::XCTS_AXY] * psi4;
+    out_pw[OUTPUT_VARS::KXZ] = quant_vals[XCTS_VARS::XCTS_AXZ] * psi4;
+    out_pw[OUTPUT_VARS::KYY] = quant_vals[XCTS_VARS::XCTS_AYY] * psi4;
+    out_pw[OUTPUT_VARS::KYZ] = quant_vals[XCTS_VARS::XCTS_AYZ] * psi4;
+    out_pw[OUTPUT_VARS::KZZ] = quant_vals[XCTS_VARS::XCTS_AZZ] * psi4;
 
     double const H = quant_vals[XCTS_VARS::XCTS_H];
     double h = std::exp(H);
@@ -279,13 +303,13 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
       eps = EOS<eos_t, EPSILON>::get(h);
       press = EOS<eos_t, PRESSURE>::get(h);
     }
-    out[OUTPUT_VARS::RHO]   = rho;
-    out[OUTPUT_VARS::EPS]   = eps;
-    out[OUTPUT_VARS::PRESS] = press;
-    out[OUTPUT_VARS::VELX]  = quant_vals[XCTS_VARS::XCTS_UX];
-    out[OUTPUT_VARS::VELY]  = quant_vals[XCTS_VARS::XCTS_UY];
-    out[OUTPUT_VARS::VELZ]  = quant_vals[XCTS_VARS::XCTS_UZ];
-    return out;
+    out_pw[OUTPUT_VARS::RHO]   = rho;
+    out_pw[OUTPUT_VARS::EPS]   = eps;
+    out_pw[OUTPUT_VARS::PRESS] = press;
+    out_pw[OUTPUT_VARS::VELX]  = quant_vals[XCTS_VARS::XCTS_UX];
+    out_pw[OUTPUT_VARS::VELY]  = quant_vals[XCTS_VARS::XCTS_UY];
+    out_pw[OUTPUT_VARS::VELZ]  = quant_vals[XCTS_VARS::XCTS_UZ];
+    return out_pw;
   }
 
   std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS> export_coordinate_array(
@@ -295,8 +319,8 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
     for(auto& v : out)
       v.resize(npoints);
     
-    for (int i = 0; i < npoints; ++i) {
-      std::array<double, OUTPUT_VARS::NUM_OUTPUT_VARS> out_pw = export_pointwise(xx[i], yy[i], zz[i]);
+    for (size_t i = 0; i < npoints; ++i) {
+      out_pw = export_pointwise(xx[i], yy[i], zz[i]);
 
       out[OUTPUT_VARS::ALPHA][i] = out_pw[OUTPUT_VARS::ALPHA];
 
@@ -322,6 +346,7 @@ struct CFMS_NS_Reader : public Reader<config_t, space_t> {
       out[OUTPUT_VARS::EPS][i] = out_pw[OUTPUT_VARS::EPS];
       out[OUTPUT_VARS::PRESS][i] = out_pw[OUTPUT_VARS::PRESS];
     }
+    return out;
   }
 };
 }
