@@ -35,8 +35,6 @@ using namespace Kadath::FUKA_Config;
   
   template<class eos_t>
   using reader_t = Kadath::FUKA_Solvers::CFMS_NS_Reader<eos_t, config_t, Space_spheric_adapted>;
-  //using reader_t = Kadath::FUKA_Solvers::CFMS_NS_Reader<eos_t, config_t, Space_spheric_adapted>;
-  using ary_t = std::array<double, reader_t::OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
 constexpr unsigned int Npts = 1e5;
 constexpr double range = 10;
@@ -47,23 +45,16 @@ void interp_data(reader_t& input_reader, std::vector<double>& xx, std::vector<do
   std::vector<typename reader_t::pointwise_ary_t> all_data(Npts);
 
   #pragma omp parallel for firstprivate(input_reader)
-  // #pragma omp parallel for
   for(auto i = 0; i < Npts; ++i) {
-    // auto inner_reader = input_reader;
     all_data[i] = input_reader.export_pointwise(xx[i], yy[i], zz[i]);
   }
+  
   for(auto i = 0; i < Npts; ++i) {
     std::cout << "(" << xx[i] << ", " << yy[i] << ", " << zz[i] << ") - ";
+    
     for(auto& e : all_data[i])
       cout << e << " - ";
     cout << endl;
-              // << all_data[i][reader_t::OUTPUT_VARS::GXX] << ", "
-              // << all_data[i][reader_t::OUTPUT_VARS::BETAX] << ", "
-              // << all_data[i][reader_t::OUTPUT_VARS::BETAY] << ", "
-              // << all_data[i][reader_t::OUTPUT_VARS::BETAZ] << "\n";
-              // << all_data[i][reader_t::OUTPUT_VARS::KXY] << ", "
-              // << all_data[i][reader_t::OUTPUT_VARS::KXZ] << ", "
-              // << all_data[i][reader_t::OUTPUT_VARS::KYZ] << "\n";
   }
   cout << xx[200] << ", " << yy[200] << ", " << zz[200] << ", " 
     << all_data[200][reader_t::OUTPUT_VARS::ALPHA] << "\n\t"
@@ -106,7 +97,6 @@ int main(int argc, char **argv) {
   if(eos_type == "Cold_Table") {
     using namespace Kadath::Margherita;
     using eos_t = Kadath::Margherita::Cold_Table;
-    //using reader_t = Kadath::FUKA_Solvers::CFMS_NS_Reader<eos_t, config_t, Space_spheric_adapted>;
 
     const int interp_pts = (bconfig.eos<int>(INTERP_PTS) == 0) ? \
                             2000 : bconfig.eos<int>(INTERP_PTS);
@@ -119,15 +109,11 @@ int main(int argc, char **argv) {
   if(eos_type == "Cold_PWPoly") {
     using namespace Kadath::Margherita;
     using eos_t = Kadath::Margherita::Cold_PWPoly;
-//    using reader_t = Kadath::FUKA_Solvers::CFMS_NS_Reader<eos_t, config_t, Space_spheric_adapted>;
 
     EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
     reader_t<eos_t> input_reader(ifilename);
     interp_data(input_reader, xx, yy, zz);
   } // end adding EOS OPEs
-
-  // for(auto& p : all_data)
-  //   std::cout << p[reader_t::OUTPUT_VARS::ALPHA] << '\n';
 
   return EXIT_SUCCESS;
 }
