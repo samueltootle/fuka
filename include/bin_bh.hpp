@@ -102,7 +102,7 @@ class Space_bin_bh : public Space {
                 const std::vector<double>& BH2_bounds, const std::vector<double>& outer_bounds, int nr);
 
 	Space_bin_bh (FILE*) ; ///< Constructor from a file
-
+	Space_bin_bh (Space_bin_bh const &) ;
   virtual ~Space_bin_bh() ; ///< Destructor
 	virtual void save(FILE*) const ;
 
