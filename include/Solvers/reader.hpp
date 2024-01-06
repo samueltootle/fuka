@@ -161,7 +161,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
 
   void populate_quants() {
     if(quants.capacity() != XCTS_VARS::NUM_XCTS_VARS) {
-      for (int i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
+      for (size_t i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
         quants.push_back(std::cref(*conformal_factor));
     }
     quants[XCTS_VARS::XCTS_PSI] = std::cref(*conformal_factor);
@@ -276,7 +276,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
       // find_dom fd(space, abs_coords, 2, ndom);
       // For testing only
       // quant_vals[XCTS_VARS::XCTS_ALPHA] = fd();
-      for (int k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
+      for (size_t k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
       }
     }
@@ -292,9 +292,8 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     
     if(out_pw.size() != OUTPUT_VARS::NUM_OUTPUT_VARS)
       out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
-    // pointwise_ary_t out(OUTPUT_VARS::NUM_OUTPUT_VARS);
       
-    auto quant_vals = interpolate_pointwise(x, y, z, interpolation_offset, interp_order, delta_r_rel);
+    quant_vals = interpolate_pointwise(x, y, z, interpolation_offset, interp_order, delta_r_rel);
     
     // Fill output vector by storing non-conformal quantities
     auto const psi = quant_vals[XCTS_VARS::XCTS_PSI];
@@ -362,6 +361,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
       out[OUTPUT_VARS::KYZ][i] = out_pw[OUTPUT_VARS::KYZ];
       out[OUTPUT_VARS::KZZ][i] = out_pw[OUTPUT_VARS::KZZ];
     }
+    return out;
   }
 };
 }
