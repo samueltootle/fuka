@@ -1,16 +1,21 @@
 #pragma once
 #include "kadath.hpp"
 #include "kadath_adapted.hpp"
+#include "codes_utilities.hpp"
+#include "bco_utilities.hpp"
+#include "adapted_bh.hpp"
+#include "exporter_utilities.hpp"
+#include "name_tools.hpp"
+
 #include "Configurator/config_bco.hpp"
 #include "Configurator/config_binary.hpp"
 #include "Configurator/configurator_boost.hpp"
+
 #include "EOS/EOS.hh"
-#include "name_tools.hpp"
-#include "exporter_utilities.hpp"
+
 #include "Solvers/fuka_syst/fuka_syst_setup.hpp"
 #include "Solvers/fuka_syst/fuka_syst_tools.hpp"
-#include "codes_utilities.hpp"
-#include "bco_utilities.hpp"
+
 
 #include <cstdlib>
 #include <string>
@@ -41,16 +46,15 @@ struct Reader {
   using base_space_t = std::decay_t<space_t>;
 
   ptr_data_member(space_t, space, unique);
-  ptr_data_member(System_of_eqs, syst, unique);
   ptr_data_member(base_config_t, bconfig, unique);
   
   protected:
   int ndom{};
 
   public:
-  Reader() : space(nullptr), syst(nullptr) {}
+  Reader() : space(nullptr) {}
   Reader(std::string config_filename) : 
-    space(nullptr), syst(nullptr), bconfig(nullptr) {
+    space(nullptr), bconfig(nullptr) {
       bconfig.reset(new base_config_t{config_filename});
       bconfig->open_config();
   }
@@ -59,14 +63,15 @@ struct Reader {
     std::string spacein{bconfig->space_filename()};
     FILE* ff1 = fopen (spacein.c_str(), "r") ;
     space.reset(new space_t{ff1});
-    syst.reset(new System_of_eqs{*space});
     fclose(ff1);
     ndom = space->get_nbr_domains();
   }
 };
 
-template<class config_t, class space_t>
-struct CFMS_BH_Reader : public Reader<config_t, space_t> {
+struct CFMS_BH_Reader : public Reader<Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_BH_INFO>, Space_adapted_bh> {
+  using config_t = Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_BH_INFO>;
+  using space_t = Space_adapted_bh;
+
   enum XCTS_VARS : size_t {  
     XCTS_PSI,
     XCTS_ALPHA,
@@ -101,8 +106,10 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     KZZ,
     NUM_OUTPUT_VARS
   };
-  using pointwise_ary_t = std::vector<double>; 
-  using grid_ary_t = std::array<pointwise_ary_t, OUTPUT_VARS::NUM_OUTPUT_VARS>;
+
+  using interp_ary_t = std::array<double, NUM_XCTS_VARS>; 
+  using output_ary_t = std::array<double, NUM_OUTPUT_VARS>; 
+  using grid_ary_t = std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
   // Types
   using Reader<config_t, space_t>::base_space_t;
@@ -111,7 +118,6 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
   // Reuse base class members
   using Reader<config_t, space_t>::space;
   using Reader<config_t, space_t>::bconfig;
-  using Reader<config_t, space_t>::syst;
   using Reader<config_t, space_t>::ndom;
 
   // CFMS_BH imported fields from file
@@ -120,42 +126,41 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
   ptr_data_member(Vector, shift, unique);
 
   // Constructed objects
-  ptr_data_member(Base_tensor, basis, unique);
-  ptr_data_member(Metric_flat, fmet, unique);
   ptr_data_member(Tensor, A, unique);
 
   protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
-  std::vector<double> quant_vals;
-  pointwise_ary_t out_pw;
+  interp_ary_t quant_vals;
+  output_ary_t out_pw;
   bool export_ready{false};
   int const ndim{3};
 
   void load_solution_from_file() override {
     std::string spacein{bconfig->space_filename()};
     FILE* ff1 = fopen (spacein.c_str(), "r") ;
+    
     space.reset(new space_t{ff1});
     conformal_factor.reset( new Scalar(*space.get(), ff1)) ;
     lapse.reset( new Scalar(*space.get(), ff1)) ;
     shift.reset( new Vector(*space.get(), ff1)) ;
+    
     fclose(ff1);
 
-    basis.reset(new Base_tensor{shift->get_basis()});
-    fmet.reset(new Metric_flat(*space, *basis));
     ndom = space->get_nbr_domains();
   }
 
   void extract_computed_grid_functions() {
-    syst.reset(new System_of_eqs (*space));
-    fmet->set_system(*syst, "f") ;
+    System_of_eqs syst(*space);
+    Base_tensor basis(shift->get_basis());
+    Metric_flat fmet(*space, basis);
+    fmet.set_system(syst, "f") ;
 
     // Fields - must be initialized before common setup
-    syst->add_cst("N"  , *lapse) ;
-    syst->add_cst("bet", *shift) ;
+    syst.add_cst("N"  , *lapse) ;
+    syst.add_cst("bet", *shift) ;
 
-    // syst->add_def("Ts^i = N * bet^i");
-    syst->add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
-    A.reset(new Tensor(syst->give_val_def("A")));
+    syst.add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
+    A.reset(new Tensor(syst.give_val_def("A")));
     A->coef();
   }
 
@@ -181,22 +186,16 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
   }
 
   public:
-  bool is_export_ready() const { return export_ready; }
   std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
+  bool is_export_ready() const { return export_ready; }  
   const int & get_ndim() const { return ndim; }
+
   CFMS_BH_Reader() : Reader<config_t, space_t>(),
-    basis(nullptr), fmet(nullptr),
-    conformal_factor(nullptr), lapse(nullptr), shift(nullptr) {
-      quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
-      out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
-    }
+    conformal_factor(nullptr), lapse(nullptr), shift(nullptr) { }
+  
   CFMS_BH_Reader(std::string config_filename) :
     Reader<config_t, space_t>(config_filename),
-      basis(nullptr), fmet(nullptr),
         conformal_factor(nullptr), lapse(nullptr), shift(nullptr) {
-  
-    quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
-    out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
 
     load_solution_from_file();
     extract_computed_grid_functions();
@@ -204,12 +203,9 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     this->export_pointwise(0.5, 0., 0.);
   }
 
-  CFMS_BH_Reader(CFMS_BH_Reader const & r) : fmet(nullptr) {
+  CFMS_BH_Reader(CFMS_BH_Reader const & r) {
     std::lock_guard<std::mutex> lock(copy_mutex);
     ndom = r.ndom;
-
-    quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
-    out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
 
     space.reset(new space_t((*r.get_space())));
     conformal_factor.reset(new Scalar(*space.get(), *r.conformal_factor.get()));
@@ -217,8 +213,6 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     shift.reset(new Vector(*space, *r.shift.get()));
     A.reset(new Tensor(*space, *r.A.get()));
 
-    basis.reset(new Base_tensor(*r.basis.get()));
-    fmet.reset(new Metric_flat(*space, *basis));
     bconfig.reset(new config_t(*r.bconfig));
     
     populate_quants();
@@ -236,7 +230,7 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
 
   public:
 
-  std::vector<double> interpolate_pointwise(double const & x, double const & y, double const & z,
+  interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z,
     double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3) {
 
     // Initial guess of the excision radius - needed for filling
@@ -266,16 +260,12 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
 
     if (r <= (1. + interpolation_offset) * rbh) {
       interp_f(rbh, r, 0.);
-      // For testing only
-      // quant_vals[XCTS_VARS::XCTS_ALPHA] = fd();
     } else { 
       Point abs_coords(ndim);
       abs_coords.set(1) = x;
       abs_coords.set(2) = y;
       abs_coords.set(3) = z;
-      // find_dom fd(space, abs_coords, 2, ndom);
-      // For testing only
-      // quant_vals[XCTS_VARS::XCTS_ALPHA] = fd();
+
       for (size_t k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
       }
@@ -283,15 +273,9 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
     return quant_vals;
   }
   
-  pointwise_ary_t export_pointwise(
+  output_ary_t export_pointwise(
     double const & x, double const & y, double const & z,
     double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3) {
-    
-    if(quant_vals.size() != XCTS_VARS::NUM_XCTS_VARS)
-      quant_vals.resize(XCTS_VARS::NUM_XCTS_VARS);
-    
-    if(out_pw.size() != OUTPUT_VARS::NUM_OUTPUT_VARS)
-      out_pw.resize(OUTPUT_VARS::NUM_OUTPUT_VARS);
       
     quant_vals = interpolate_pointwise(x, y, z, interpolation_offset, interp_order, delta_r_rel);
     
@@ -336,10 +320,14 @@ struct CFMS_BH_Reader : public Reader<config_t, space_t> {
   grid_ary_t export_coordinate_array(
     int const npoints, double const * xx, double const * yy, double const * zz,
     double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3) {
-    std::array<std::vector<double>,OUTPUT_VARS::NUM_OUTPUT_VARS> out;
+    
+    grid_ary_t out;
+    for(auto& v : out) {
+      v.resize(npoints);
+    }
     
     for (int i = 0; i < npoints; ++i) {
-      out_pw = export_pointwise(npoints, xx[i], yy[i], zz[i], interpolation_offset, interp_order, delta_r_rel);
+      export_pointwise(xx[i], yy[i], zz[i], interpolation_offset, interp_order, delta_r_rel);
       
       out[OUTPUT_VARS::ALPHA][i] = out_pw[OUTPUT_VARS::ALPHA];
 
