@@ -100,7 +100,6 @@ std::array<std::vector<double>,NUM_VOUT> KadathExportBBH(int const npoints,
       if(extrap_r == 0.) extrap_r = 1e-14;
       double xs = x_shifted - bh_ori;
       if(xs == 0.) xs = 1e-14;
-      double x_shifted = (xx[i] == 0.) ? 1e-14 : xx[i];
 
       double theta = std::acos(zz[i] / extrap_r);
       double phi = std::atan2(y_shifted, xs); // atan2 is needed here

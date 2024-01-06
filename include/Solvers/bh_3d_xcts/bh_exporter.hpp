@@ -197,7 +197,7 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
       // Where the filling takes places
       export_utils::spherical_turduck(
         quants, quant_vals, interp_order, delta_r_rel, interpolation_offset, 
-        rbh, extrap_r, theta, phi, 2, bh_ori
+        ah_r, extrap_r, theta, phi, 2, bh_ori
       );
     };
 
