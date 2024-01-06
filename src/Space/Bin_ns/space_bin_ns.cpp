@@ -235,6 +235,105 @@ Space_bin_ns::Space_bin_ns (int ttype, double dist, double rinstar1, double rsta
     pinner_2->vars_to_terms() ;
     pinner_2->update() ;
 }
+
+Space_bin_ns::Space_bin_ns (Space_bin_ns const & sp) {
+
+	nbr_domains = sp.nbr_domains;
+  ndim = sp.ndim;
+  type_base = sp.type_base;
+
+  n_shells1 = sp.n_shells1;
+  n_shells2 = sp.n_shells2;
+
+  // We calculate domain indicies and ensure they match
+  // the imported space - should be consistent!
+  this->NS1 = 0;
+  assert(NS1 == sp.NS1);
+
+  this->NS2 = 3 + n_shells1;
+  assert(NS2 == sp.NS2);
+
+  this->ADAPTED1 = NS1 + n_shells1 + 1;
+  assert(ADAPTED1 == sp.ADAPTED1);
+
+  this->ADAPTED2 = NS2 + n_shells2 + 1;
+  assert(ADAPTED2 == sp.ADAPTED2);
+
+  this->OUTER = 6 + n_shells1 + n_shells2;
+  assert(OUTER == sp.OUTER);
+
+  this->n_shells_outer = nbr_domains - 12 - n_shells1 - n_shells2;
+  assert(n_shells_outer >= 0 && n_shells_outer == sp.n_shells_outer);
+
+	domains = new Domain* [nbr_domains] ;
+
+  auto add_spherical_shells = [&](auto start_idx, auto nshells) {
+    for(int i = 0; i < nshells; ++i) {
+      const Domain_shell* d_shell = dynamic_cast<const Domain_shell*> (sp.get_domain(start_idx+i)) ;
+      domains[start_idx+i] = new Domain_shell(*d_shell, true);
+    }
+  };
+
+	//First NS :
+  const Domain_nucleus* d_nuc1 = dynamic_cast<const Domain_nucleus*> (sp.get_domain(NS1)) ;
+  domains[NS1] = new Domain_nucleus(*d_nuc1, true);
+
+  add_spherical_shells(NS1+1, n_shells1);
+
+  const Domain_shell_outer_adapted* sp_pouter_1 = dynamic_cast<const Domain_shell_outer_adapted*> (sp.get_domain(ADAPTED1)) ;
+  domains[ADAPTED1] = new Domain_shell_outer_adapted(*this, *sp_pouter_1) ;
+  
+  const Domain_shell_inner_adapted* sp_pinner_1 = dynamic_cast<const Domain_shell_inner_adapted*> (sp.get_domain(ADAPTED1+1)) ;
+  domains[ADAPTED1+1] = new Domain_shell_inner_adapted(*this, *sp_pinner_1) ;
+
+	//second NS :
+  const Domain_nucleus* d_nuc2 = dynamic_cast<const Domain_nucleus*> (sp.get_domain(NS2)) ;
+  domains[NS2] = new Domain_nucleus(*d_nuc2, true);
+
+  add_spherical_shells(NS2+1, n_shells2);
+
+  const Domain_shell_outer_adapted* sp_pouter_2 = dynamic_cast<const Domain_shell_outer_adapted*> (sp.get_domain(ADAPTED2)) ;
+  domains[ADAPTED2] = new Domain_shell_outer_adapted(*this, *sp_pouter_2) ;
+  
+  const Domain_shell_inner_adapted* sp_pinner_2 = dynamic_cast<const Domain_shell_inner_adapted*> (sp.get_domain(ADAPTED2+1)) ;
+  domains[ADAPTED2+1] = new Domain_shell_inner_adapted(*this, *sp_pinner_2) ;
+
+	// Bispheric
+  const Domain_bispheric_chi_first* sp_chi_1 = dynamic_cast<const Domain_bispheric_chi_first*> (sp.get_domain(OUTER)) ;
+	domains[OUTER] = new Domain_bispheric_chi_first(*this, *sp_chi_1) ;
+
+  const Domain_bispheric_rect* sp_rec_1 = dynamic_cast<const Domain_bispheric_rect*> (sp.get_domain(OUTER+1)) ;
+	domains[OUTER+1] = new Domain_bispheric_rect(*this, *sp_rec_1) ;
+
+  const Domain_bispheric_eta_first* sp_eta = dynamic_cast<const Domain_bispheric_eta_first*> (sp.get_domain(OUTER+2)) ;
+  domains[OUTER+2] = new Domain_bispheric_eta_first(*this, *sp_eta) ;
+
+  const Domain_bispheric_rect* sp_rec_2 = dynamic_cast<const Domain_bispheric_rect*> (sp.get_domain(OUTER+3)) ;
+	domains[OUTER+3] = new Domain_bispheric_rect(*this, *sp_rec_2) ;
+
+  const Domain_bispheric_chi_first* sp_chi_2 = dynamic_cast<const Domain_bispheric_chi_first*> (sp.get_domain(OUTER+4)) ;
+	domains[OUTER+4] = new Domain_bispheric_chi_first(*this, *sp_chi_2) ;
+
+  add_spherical_shells(OUTER+5, n_shells_outer);
+
+	// Compactified
+  const Domain_compact* d_compact = dynamic_cast<const Domain_compact*> (sp.get_domain(nbr_domains-1)) ;
+	domains[nbr_domains-1] = new Domain_compact(*d_compact, true) ;
+
+  const Domain_shell_outer_adapted* pouter_1 = dynamic_cast<const Domain_shell_outer_adapted*> (domains[ADAPTED1]) ;
+  pouter_1->vars_to_terms() ;
+  pouter_1->update() ;
+  const Domain_shell_inner_adapted* pinner_1 = dynamic_cast<const Domain_shell_inner_adapted*> (domains[ADAPTED1+1]) ;
+  pinner_1->vars_to_terms() ;
+  pinner_1->update() ;
+  const Domain_shell_outer_adapted* pouter_2 = dynamic_cast<const Domain_shell_outer_adapted*> (domains[ADAPTED2]) ;
+  pouter_2->vars_to_terms() ;
+  pouter_2->update() ;
+  const Domain_shell_inner_adapted* pinner_2 = dynamic_cast<const Domain_shell_inner_adapted*> (domains[ADAPTED2+1]) ;
+  pinner_2->vars_to_terms() ;
+  pinner_2->update() ;
+}
+
 Space_bin_ns::Space_bin_ns (FILE* fd, bool old) {
 	fread_be (&nbr_domains, sizeof(int), 1, fd) ;
   if(old){

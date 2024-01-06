@@ -115,6 +115,7 @@ class Space_bin_ns : public Space {
   Space_bin_ns (int ttype, double dist, const std::vector<double>& NS1_bounds, const std::vector<double>& NS2_bounds,
                             const std::vector<double>& outer_bounds, int nr);
 
+	Space_bin_ns (const Space_bin_ns &) ; ///< Constructor from existing space.
 	Space_bin_ns (FILE*, bool old = false) ; ///< Constructor from a file for old data.
 
  	virtual ~Space_bin_ns() ; ///< Destructor
