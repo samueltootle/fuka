@@ -1,11 +1,12 @@
 #include "Solvers/exporter.hpp"
 namespace Kadath::FUKA_Solvers {
 
-template<class eos_t>
 struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_NS_INFO>, Space_spheric_adapted> {
   using config_t = Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_NS_INFO>;
   using space_t = Space_spheric_adapted;
-  enum XCTS_VARS : size_t {  
+  
+  // Input ID grid functions that we interpolate on
+  enum XCTS_VARS : size_t {
     XCTS_PSI,
     XCTS_ALPHA,
     XCTS_BETAX,
@@ -24,6 +25,7 @@ struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
     NUM_XCTS_VARS 
   };
 
+  // Output physical grid functions
   enum OUTPUT_VARS : size_t {
     ALPHA,
     BETAX,
@@ -54,11 +56,11 @@ struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
   using output_ary_t = std::array<double, NUM_OUTPUT_VARS>; 
   using grid_ary_t = std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
-  // Types
+  // Types from Base class
   using Exporter<config_t, space_t>::base_space_t;
   using Exporter<config_t, space_t>::base_config_t;
 
-  // Reuse base class members
+  // Class members from base class to avoid using this->
   using Exporter<config_t, space_t>::space;
   using Exporter<config_t, space_t>::bconfig;
   using Exporter<config_t, space_t>::ndom;
@@ -68,10 +70,10 @@ struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
   ptr_data_member(Scalar, lapse, shared);
   ptr_data_member(Vector, shift, shared);
   ptr_data_member(Scalar, logh, shared);
-  ptr_data_member(Vector, fluidvel, shared);
 
   // Constructed objects
   ptr_data_member(Tensor, A, shared);
+  ptr_data_member(Vector, fluidvel, shared);
 
   protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
@@ -79,85 +81,53 @@ struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
   output_ary_t out_pw;
   bool export_ready{false};
   int const ndim{3};
-
-  void load_solution_from_file() override {
-    std::string spacein{bconfig->space_filename()};
-    FILE* ff1 = fopen (spacein.c_str(), "r") ;
-
-    space.reset(new space_t{ff1});
-    conformal_factor.reset( new Scalar(*space.get(), ff1)) ;
-    lapse.reset( new Scalar(*space.get(), ff1)) ;
-    shift.reset( new Vector(*space.get(), ff1)) ;
-    logh.reset( new Scalar(*space.get(), ff1)) ;
-    
-    fclose(ff1);
-    
-    ndom = space->get_nbr_domains();
-  }
   
-  void extract_computed_grid_functions() {
-    System_of_eqs syst(*space);
-    Base_tensor basis(shift->get_basis());
-    Metric_flat fmet(*space, basis);
-    fmet.set_system(syst, "f") ;
-    
-    // fields depending on the coords
-    CoordFields<Space_spheric_adapted> cf_generator(*space);
-    vec_ary_t coord_vectors {default_co_vector_ary(*space)};
+  // EOS Parameters
+  double h_cut{0};
+  std::string eos_file{};
+  std::string eos_type{};
+  
+  /**
+   * @brief We initialize the FUKA EOS module here to avoid needing to handle this by the
+   * an interface code on the importer side since the FUKA EOS module is independent of the
+   * EOS module used in the evolution code. 
+   */
+  void initialize_eos();
 
-    // get origin of the system and initialize coordinate fields
-    double xo = Kadath::bco_utils::get_center(*space,0);
-    update_fields_co(cf_generator, coord_vectors, {}, xo);
-
-    Param p;
+  /**
+   * @brief Here we load the ID solution from file in order to initialize the ID fields
+   * and Exporter variables
+   * 
+   */
+  void load_solution_from_file() override;
+  
+  /**
+   * @brief Setup the EOS operators in System_of_eqs
+   * 
+   * @tparam eos_t C++ Polytrope/Table type
+   * @param syst System of equations
+   * @param p Parameter container (unused, but required by add_ope)
+   */
+  template<class eos_t>
+  void set_eos_ope(System_of_eqs& syst, Param& p) {
     syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
     syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
     syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
-    // end adding EOS OPEs
-
-    // Fields - must be initialized before common setup
-    syst.add_cst("N"  , *lapse) ;
-    syst.add_cst("bet", *shift) ;
-    syst.add_cst("ome" , (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA));
-    syst.add_cst("mg"  , *coord_vectors[GLOBAL_ROT]);
-    syst.add_def("omega^i = bet^i + ome * mg^i");
-
-    syst.add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
-    A.reset(new Tensor(syst.give_val_def("A")));
-    A->coef();
-  
-    // definitions for the fluid 3-velocity
-    syst.add_def("U^i = omega^i / N");
-    fluidvel.reset(new Vector(syst.give_val_def("U")));
-    fluidvel->coef();
   }
 
-  void populate_quants() {
-    if(quants.capacity() != XCTS_VARS::NUM_XCTS_VARS) {
-      for (size_t i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
-        quants.push_back(std::cref(*conformal_factor));
-    }
-    quants[XCTS_VARS::XCTS_PSI] = std::cref(*conformal_factor);
-    quants[XCTS_VARS::XCTS_ALPHA] = std::cref(*lapse);
-    quants[XCTS_VARS::XCTS_BETAX] = std::cref((*shift)(1));
-    quants[XCTS_VARS::XCTS_BETAY] = std::cref((*shift)(2));
-    quants[XCTS_VARS::XCTS_BETAZ] = std::cref((*shift)(3));
+  /**
+   * @brief Compute needed grid functions (gf) within Kadath's System_of_eqs before
+   * populating the gf pointers
+   * 
+   */
+  void extract_computed_grid_functions();
 
-    export_utils::add_tensor_refs(quants, {
-      XCTS_VARS::XCTS_AXX, 
-      XCTS_VARS::XCTS_AXY, 
-      XCTS_VARS::XCTS_AXZ, 
-      XCTS_VARS::XCTS_AYY, 
-      XCTS_VARS::XCTS_AYZ, 
-      XCTS_VARS::XCTS_AZZ}, *A);
-    
-    // Fluid related quantities
-    quants[XCTS_VARS::XCTS_H] = std::cref(*logh);
-    quants[XCTS_VARS::XCTS_UX] = std::cref((*fluidvel)(1));
-    quants[XCTS_VARS::XCTS_UY] = std::cref((*fluidvel)(2));
-    quants[XCTS_VARS::XCTS_UZ] = std::cref((*fluidvel)(3));
-    export_ready = true;
-  }
+  /**
+   * @brief Using the populated struct pointers, populate the "quants" array with the
+   * associated gf references
+   * 
+   */
+  void populate_quants();
 
   public:
   std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
@@ -172,6 +142,7 @@ struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
         conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr), fluidvel(nullptr) {
 
     load_solution_from_file();
+    initialize_eos();
     extract_computed_grid_functions();
     populate_quants();
     
@@ -182,57 +153,38 @@ struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
     this->export_pointwise(0.5, 0., 0.);
   }
 
-  CFMS_NS_Exporter(CFMS_NS_Exporter const & r) {
-    std::lock_guard<std::mutex> lock(copy_mutex);
-    ndom = r.ndom;
-
-    space.reset(new space_t((*r.get_space())));
-    conformal_factor.reset(new Scalar(*space.get(), *r.conformal_factor.get()));
-    lapse.reset(new Scalar(*space, *r.lapse.get()));
-    shift.reset(new Vector(*space, *r.shift.get()));
-    logh.reset(new Scalar(*space, *r.logh.get()));
-    fluidvel.reset(new Vector(*space, *r.fluidvel.get()));
-    A.reset(new Tensor(*space, *r.A.get()));
-
-    bconfig.reset(new config_t(*r.bconfig));
-    
-    export_ready = false;
-
-    populate_quants();
-    // For testing only
-    // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
-    // std::cout << "copy\n";
-  }
-
+  /**
+   * @brief Construct a new object - a mutex is used to allow for thread safety in
+   * copying.
+   *  
+   */
+  CFMS_NS_Exporter(CFMS_NS_Exporter const & r);
   CFMS_NS_Exporter(CFMS_NS_Exporter&& b) noexcept = delete;
-  CFMS_NS_Exporter& operator=(const CFMS_NS_Exporter& b)
-  {
-    if (this == &b) return *this;
-
-    CFMS_NS_Exporter tmp(b);
-    *this = std::move(tmp);
-    return *this;
-  }
+  CFMS_NS_Exporter& operator=(const CFMS_NS_Exporter& b);
 
   public:
 
-  interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z) {
-    
-    Point abs_coords(ndim);
-    abs_coords.set(1) = x;
-    abs_coords.set(2) = y;
-    abs_coords.set(3) = z;
-    
-    // For testing only
-    for (size_t k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
-        quant_vals[k] = quants[k].get().val_point(abs_coords);
-    }
-    
-    return quant_vals;
-  }
+  /**
+   * @brief For a given coordinate, interpolate the ID solution
+   * 
+   * @param x 
+   * @param y 
+   * @param z 
+   * @return interp_ary_t 
+   */
+  interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z);
 
-  
-  output_ary_t export_pointwise(double const & x, double const & y, double const & z) {    
+  /**
+   * @brief Export an array of OUTPUT_VARS for a given point
+   * 
+   * @tparam eos_t C++ Polytrope/Table type
+   * @param x 
+   * @param y 
+   * @param z 
+   * @return output_ary_t Interpolated solution at x,y,z
+   */
+  template<class eos_t>
+  output_ary_t export_pointwise_imp(double const & x, double const & y, double const & z) {    
     
     quant_vals = interpolate_pointwise(x, y, z);
      
@@ -296,7 +248,32 @@ struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
     return out_pw;
   }
 
-  grid_ary_t export_coordinate_array(
+  /**
+   * @brief Interface to export an array of OUTPUT_VARS for a given point.  The logic
+   * for determining the EOS type is here and adds a bit of overhead as compared to
+   * a templated class where eos_t is known at compile time.  Here we error on
+   * convenience rather than speed since the cost is very small.
+   * 
+   * @tparam eos_t C++ Polytrope/Table type
+   * @param x 
+   * @param y 
+   * @param z 
+   * @return output_ary_t Interpolated solution at x,y,z
+   */
+  output_ary_t export_pointwise(double const & x, double const & y, double const & z);
+
+  /**
+   * @brief Export an array of OUTPUT_VARS for an array of npoints
+   * 
+   * @tparam eos_t C++ Polytrope/Table type
+   * @param npoints Number of coordinate points
+   * @param xx 
+   * @param yy 
+   * @param zz 
+   * @return grid_ary_t 
+   */
+  template<class eos_t>
+  grid_ary_t export_coordinate_array_imp(
     int const npoints, double const * xx, double const * yy, double const * zz) {
     
     grid_ary_t out;
@@ -336,5 +313,19 @@ struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
     }
     return out;
   }
+
+  /**
+   * @brief Interface to export an array of OUTPUT_VARS for an array of points.  The logic
+   * for determining the EOS type is here and adds a bit of overhead as compared to
+   * a templated class where eos_t is known at compile time.  Here we error on
+   * convenience rather than speed since the cost is very small.
+   * 
+   * @tparam eos_t C++ Polytrope/Table type
+   * @param x 
+   * @param y 
+   * @param z 
+   * @return grid_ary_t Interpolated solutions at all x,y,z
+   */
+  grid_ary_t export_coordinate_array(int const npoints, double const * xx, double const * yy, double const * zz);
 };
 }
