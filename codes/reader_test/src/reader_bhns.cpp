@@ -36,8 +36,7 @@ using namespace Kadath::FUKA_Config;
   
   using config_t = kadath_config_boost<BIN_INFO>;
   
-  template<class eos_t>
-  using reader_t = Kadath::FUKA_Solvers::CFMS_BHNS_Exporter<eos_t>;
+  using reader_t = Kadath::FUKA_Solvers::CFMS_BHNS_Exporter;
 
 constexpr unsigned int Npts = 1e4;  
 constexpr double range = 100;
@@ -66,31 +65,8 @@ int main(int argc, char **argv) {
     zz[i]+= i * dx;
   }
   config_t bconfig(ifilename);  
-  
-  // get const EOS information - used for initializing EOS later
-  const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT, NODES::BCO1);
-  const std::string eos_file = bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE, NODES::BCO1);
-  const std::string eos_type = bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE, NODES::BCO1);
-  if(eos_type == "Cold_Table") {
-    using namespace Kadath::Margherita;
-    using eos_t = Kadath::Margherita::Cold_Table;
-
-    const int interp_pts = (bconfig.eos<int>(EOS_PARAMS::INTERP_PTS, NODES::BCO1) == 0) ? \
-                            2000 : bconfig.eos<int>(EOS_PARAMS::INTERP_PTS, NODES::BCO1);
-
-    EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut, interp_pts);
-    reader_t<eos_t> input_reader(ifilename);
-    interp_data(input_reader, xx, yy, zz);
-  }
-
-  if(eos_type == "Cold_PWPoly") {
-    using namespace Kadath::Margherita;
-    using eos_t = Kadath::Margherita::Cold_PWPoly;
-
-    EOS<eos_t,eos_var_t::PRESSURE>::init(eos_file, h_cut);
-    reader_t<eos_t> input_reader(ifilename);
-    interp_data(input_reader, xx, yy, zz);
-  } // end adding EOS OPEs
+  reader_t input_reader(ifilename);
+  interp_data(input_reader, xx, yy, zz);
 
   return EXIT_SUCCESS;
 }
