@@ -47,13 +47,13 @@ namespace Kadath::FUKA_Solvers {
                               2000 : (*bconfig).template eos<int>(Kadath::FUKA_Config::EOS_PARAMS::INTERP_PTS);
 
       EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
-    }
-
-    if(eos_type == "Cold_PWPoly") {
+    } else if(eos_type == "Cold_PWPoly") {
       using namespace Kadath::Margherita;
       using eos_t = Kadath::Margherita::Cold_PWPoly;
       EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
-    } // end adding EOS OPEs
+    } else {
+      throw std::invalid_argument("\nInvalid EOS Type\n)");
+    }// end adding EOS OPEs
   }
 
   void CFMS_NS_Exporter::load_solution_from_file() {
@@ -153,7 +153,6 @@ namespace Kadath::FUKA_Solvers {
     return quant_vals;
   }
 
-
   CFMS_NS_Exporter::output_ary_t CFMS_NS_Exporter::export_pointwise(double const & x, double const & y, double const & z) {
     if(eos_type == "Cold_Table") {
       using eos_t = Kadath::Margherita::Cold_Table;
@@ -162,19 +161,47 @@ namespace Kadath::FUKA_Solvers {
       using eos_t = Kadath::Margherita::Cold_PWPoly;
       return export_pointwise_imp<eos_t>(x, y, z);
     } // end adding EOS OPEs
-    throw std::invalid_argument("\nInvalid EOS Type\n)");
+    throw std::invalid_argument("\nExport: Invalid EOS Type\n)");
   }
 
-  CFMS_NS_Exporter::grid_ary_t CFMS_NS_Exporter::export_coordinate_array(int const npoints, 
-    double const * xx, double const * yy, double const * zz) {
+  CFMS_NS_Exporter::grid_ary_t CFMS_NS_Exporter::export_coordinate_array(
+    int const npoints, double const * xx, double const * yy, double const * zz) {
     
-    if(eos_type == "Cold_Table") {
-      using eos_t = Kadath::Margherita::Cold_Table;
-      return export_coordinate_array_imp<eos_t>(npoints, xx, yy, zz);
-    }else if(eos_type == "Cold_PWPoly") {
-      using eos_t = Kadath::Margherita::Cold_PWPoly;
-      return export_coordinate_array_imp<eos_t>(npoints, xx, yy, zz);
-    } // end adding EOS OPEs
-    throw std::invalid_argument("\nInvalid EOS Type\n)");
+    grid_ary_t out;
+    for(auto& v : out) {
+      v.resize(npoints);
+    }
+    
+    for (size_t i = 0; i < npoints; ++i) {
+      export_pointwise(xx[i], yy[i], zz[i]);
+
+      out[OUTPUT_VARS::ALPHA][i] = out_pw[OUTPUT_VARS::ALPHA];
+
+      out[OUTPUT_VARS::BETAX][i] = out_pw[OUTPUT_VARS::BETAX];
+      out[OUTPUT_VARS::BETAY][i] = out_pw[OUTPUT_VARS::BETAY];
+      out[OUTPUT_VARS::BETAZ][i] = out_pw[OUTPUT_VARS::BETAZ];
+
+      out[OUTPUT_VARS::GXX][i] = out_pw[OUTPUT_VARS::GXX];
+      out[OUTPUT_VARS::GXY][i] = out_pw[OUTPUT_VARS::GXY];
+      out[OUTPUT_VARS::GXZ][i] = out_pw[OUTPUT_VARS::GXZ];
+      out[OUTPUT_VARS::GYY][i] = out_pw[OUTPUT_VARS::GYY];
+      out[OUTPUT_VARS::GYZ][i] = out_pw[OUTPUT_VARS::GYZ];
+      out[OUTPUT_VARS::GZZ][i] = out_pw[OUTPUT_VARS::GZZ];
+
+      out[OUTPUT_VARS::KXX][i] = out_pw[OUTPUT_VARS::KXX];
+      out[OUTPUT_VARS::KXY][i] = out_pw[OUTPUT_VARS::KXY];
+      out[OUTPUT_VARS::KXZ][i] = out_pw[OUTPUT_VARS::KXZ];
+      out[OUTPUT_VARS::KYY][i] = out_pw[OUTPUT_VARS::KYY];
+      out[OUTPUT_VARS::KYZ][i] = out_pw[OUTPUT_VARS::KYZ];
+      out[OUTPUT_VARS::KZZ][i] = out_pw[OUTPUT_VARS::KZZ];
+
+      out[OUTPUT_VARS::RHO][i] = out_pw[OUTPUT_VARS::RHO];
+      out[OUTPUT_VARS::EPS][i] = out_pw[OUTPUT_VARS::EPS];
+      out[OUTPUT_VARS::PRESS][i] = out_pw[OUTPUT_VARS::PRESS];
+      out[OUTPUT_VARS::VELX][i]  = out_pw[OUTPUT_VARS::VELX];
+      out[OUTPUT_VARS::VELY][i]  = out_pw[OUTPUT_VARS::VELY];
+      out[OUTPUT_VARS::VELZ][i]  = out_pw[OUTPUT_VARS::VELZ];
+    }
+    return out;
   }
 }
