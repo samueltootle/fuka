@@ -2,11 +2,12 @@
 #include "bin_ns.hpp"
 namespace Kadath::FUKA_Solvers {
 
-template<class eos_t>
 struct CFMS_BNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BIN_INFO>, Space_bin_ns> {
   using config_t = Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BIN_INFO>;
   using space_t = Space_bin_ns;
-  enum XCTS_VARS : size_t {  
+  
+  // Input ID grid functions that we interpolate on
+  enum XCTS_VARS : size_t {
     XCTS_PSI,
     XCTS_ALPHA,
     XCTS_BETAX,
@@ -25,6 +26,7 @@ struct CFMS_BNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
     NUM_XCTS_VARS 
   };
 
+  // Output physical grid functions
   enum OUTPUT_VARS : size_t {
     ALPHA,
     BETAX,
@@ -55,11 +57,11 @@ struct CFMS_BNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
   using output_ary_t = std::array<double, NUM_OUTPUT_VARS>; 
   using grid_ary_t = std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
-  // Types
+  // Types from Base class
   using Exporter<config_t, space_t>::base_space_t;
   using Exporter<config_t, space_t>::base_config_t;
 
-  // Reuse base class members
+  // Class members from base class to avoid using this->
   using Exporter<config_t, space_t>::space;
   using Exporter<config_t, space_t>::bconfig;
   using Exporter<config_t, space_t>::ndom;
@@ -82,114 +84,52 @@ struct CFMS_BNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
   bool export_ready{false};
   int const ndim{3};
 
-  void load_solution_from_file() override {
-    std::string spacein{bconfig->space_filename()};
-    FILE* ff1 = fopen (spacein.c_str(), "r") ;
+  // EOS Parameters
+  double h_cut{0};
+  std::string eos_file{};
+  std::string eos_type{};
 
-    space.reset(new space_t{ff1});
-    conformal_factor.reset( new Scalar(*space.get(), ff1)) ;
-    lapse.reset( new Scalar(*space.get(), ff1)) ;
-    shift.reset( new Vector(*space.get(), ff1)) ;
-    logh.reset( new Scalar(*space.get(), ff1)) ;
-    velpotential.reset( new Scalar(*space.get(), ff1)) ;
-    
-    fclose(ff1);
-    
-    ndom = space->get_nbr_domains();
-  }
+  /**
+   * @brief We initialize the FUKA EOS module here to avoid needing to handle this by the
+   * an interface code on the importer side since the FUKA EOS module is independent of the
+   * EOS module used in the evolution code. 
+   */
+  void initialize_eos();
   
-  void extract_computed_grid_functions() {
-    // fields depending on the coords
-    CoordFields<space_t> cfields(*space);
-    vec_ary_t coord_vectors {default_binary_vector_ary(*space)};
-
-    // get origin of the system and initialize coordinate fields
-    double xc1 = Kadath::bco_utils::get_center(*space,space->NS1);
-    double xc2 = Kadath::bco_utils::get_center(*space,space->NS2);
-    double xo  = Kadath::bco_utils::get_center(*space,ndom-1);
-    update_fields(cfields, coord_vectors, {}, xo, xc1, xc2);
-
-    // Initialize Flat Metric
-    Base_tensor basis(shift->get_basis());
-    Metric_flat fmet(*space, basis);
-
-    // Start - Setup System of equations
-    System_of_eqs syst(*space);
-    fmet.set_system(syst, "f") ;
-
-    Param p;
-    syst.add_ope("eps"  , &EOS<eos_t, eos_var_t::EPSILON>::action, &p);
-    syst.add_ope("press", &EOS<eos_t, eos_var_t::PRESSURE>::action, &p);
-    syst.add_ope("rho"  , &EOS<eos_t, eos_var_t::DENSITY>::action, &p);
-    // end adding EOS OPEs
-
-    // Fields - must be initialized before common setup
-    syst.add_cst("P"  , *conformal_factor);
-    syst.add_cst("N"  , *lapse) ;
-    syst.add_cst("bet", *shift) ;
-    syst.add_cst("H"  , *logh);
-    syst.add_cst("phi", *velpotential);
-
-    syst.add_cst("omes1" , (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA, Kadath::FUKA_Config::NODES::BCO1));
-    syst.add_cst("omes2" , (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA, Kadath::FUKA_Config::NODES::BCO2));
+  /**
+   * @brief Here we load the ID solution from file in order to initialize the ID fields
+   * and Exporter variables
+   * 
+   */
+  void load_solution_from_file() override;
     
-    syst.add_cst("mg", *coord_vectors[Kadath::coord_vector::GLOBAL_ROT]);
-    syst.add_cst("mm", *coord_vectors[Kadath::coord_vector::BCO1_ROT]) ;
-    syst.add_cst("mp", *coord_vectors[Kadath::coord_vector::BCO2_ROT]) ;
-
-    syst.add_def("h = exp(H)");
-    for(int d = space->NS1; d <= space->ADAPTED1; ++d){
-      syst.add_def(d, "s^i  = omes1 * mm^i");
-    }
-    for(int d = space->NS2; d <= space->ADAPTED2; ++d){
-      syst.add_def(d, "s^i  = omes2 * mp^i");
-    }
-    for(int d = 0; d < ndom; ++d) {
-      if((d <= space->ADAPTED1) || (d <= space->ADAPTED2 && d >= space->NS2))
-        syst.add_def(d, "eta_i = D_i phi + P^4 * s_i");
-      else
-        syst.add_def(d, "eta_i = D_i phi");
-    }
-
-    syst.add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
-    A.reset(new Tensor(syst.give_val_def("A")));
-    A->coef();
-  
-    // definitions for the fluid 3-velocity
-    syst.add_def("Wsquare = eta^i * eta_i / h^2 / P^4 + 1.");
-    syst.add_def("W = sqrt(Wsquare)");
-
-    syst.add_def("U^i = eta^i / P^4 / h / W");
-    fluidvel.reset(new Vector(syst.give_val_def("U")));
-    fluidvel->coef();
+  /**
+   * @brief Setup the EOS operators in System_of_eqs
+   * 
+   * @tparam eos_t C++ Polytrope/Table type
+   * @param syst System of equations
+   * @param p Parameter container (unused, but required by add_ope)
+   */
+  template<class eos_t>
+  void set_eos_ope(System_of_eqs& syst, Param& p) {
+    syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
+    syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
+    syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
   }
 
-  void populate_quants() {
-    if(quants.capacity() != XCTS_VARS::NUM_XCTS_VARS) {
-      for (size_t i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
-        quants.push_back(std::cref(*conformal_factor));
-    }
-    quants[XCTS_VARS::XCTS_PSI] = std::cref(*conformal_factor);
-    quants[XCTS_VARS::XCTS_ALPHA] = std::cref(*lapse);
-    quants[XCTS_VARS::XCTS_BETAX] = std::cref((*shift)(1));
-    quants[XCTS_VARS::XCTS_BETAY] = std::cref((*shift)(2));
-    quants[XCTS_VARS::XCTS_BETAZ] = std::cref((*shift)(3));
+  /**
+   * @brief Compute needed grid functions (gf) within Kadath's System_of_eqs before
+   * populating the gf pointers
+   * 
+   */
+  void extract_computed_grid_functions();
 
-    export_utils::add_tensor_refs(quants, {
-      XCTS_VARS::XCTS_AXX, 
-      XCTS_VARS::XCTS_AXY, 
-      XCTS_VARS::XCTS_AXZ, 
-      XCTS_VARS::XCTS_AYY, 
-      XCTS_VARS::XCTS_AYZ, 
-      XCTS_VARS::XCTS_AZZ}, *A);
-    
-    // Fluid related quantities
-    quants[XCTS_VARS::XCTS_H] = std::cref(*logh);
-    quants[XCTS_VARS::XCTS_UX] = std::cref((*fluidvel)(1));
-    quants[XCTS_VARS::XCTS_UY] = std::cref((*fluidvel)(2));
-    quants[XCTS_VARS::XCTS_UZ] = std::cref((*fluidvel)(3));
-    export_ready = true;
-  }
+  /**
+   * @brief Using the populated struct pointers, populate the "quants" array with the
+   * associated gf references
+   * 
+   */
+  void populate_quants();
 
   public:
   std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
@@ -205,6 +145,7 @@ struct CFMS_BNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
       logh(nullptr), velpotential(nullptr), fluidvel(nullptr) {
 
     load_solution_from_file();
+    initialize_eos();
     extract_computed_grid_functions();
     populate_quants();
     
@@ -215,59 +156,38 @@ struct CFMS_BNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
     this->export_pointwise(0.5, 0., 0.);
   }
 
-  CFMS_BNS_Exporter(CFMS_BNS_Exporter const & r) {
-    std::lock_guard<std::mutex> lock(copy_mutex);
-    ndom = r.ndom;
-
-    space.reset(new space_t((*r.get_space())));
-    conformal_factor.reset(new Scalar(*space.get(), *r.conformal_factor.get()));
-    lapse.reset(new Scalar(*space, *r.lapse.get()));
-    shift.reset(new Vector(*space, *r.shift.get()));
-    logh.reset(new Scalar(*space, *r.logh.get()));
-    velpotential.reset(new Scalar(*space, *r.velpotential.get()));
-    fluidvel.reset(new Vector(*space, *r.fluidvel.get()));
-    A.reset(new Tensor(*space, *r.A.get()));
-
-    bconfig.reset(new config_t(*r.bconfig));
-    
-    export_ready = false;
-
-    populate_quants();
-    // For testing only
-    // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
-    // std::cout << "copy\n";
-  }
-
+  /**
+   * @brief Construct a new object - a mutex is used to allow for thread safety in
+   * copying.
+   *  
+   */
+  CFMS_BNS_Exporter(CFMS_BNS_Exporter const & r);
   CFMS_BNS_Exporter(CFMS_BNS_Exporter&& b) noexcept = delete;
-  CFMS_BNS_Exporter& operator=(const CFMS_BNS_Exporter& b)
-  {
-    if (this == &b) return *this;
-
-    CFMS_BNS_Exporter tmp(b);
-    *this = std::move(tmp);
-    return *this;
-  }
+  CFMS_BNS_Exporter& operator=(const CFMS_BNS_Exporter& b);
 
   public:
 
-  interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z) {
-    
-    double const & xcom_shift = (*bconfig)(Kadath::FUKA_Config::BIN_PARAMS::COM);
-    double const & ycom_shift = (*bconfig)(Kadath::FUKA_Config::BIN_PARAMS::COMY);
-    Point abs_coords(ndim);
-    abs_coords.set(1) = x - xcom_shift;
-    abs_coords.set(2) = y - ycom_shift;
-    abs_coords.set(3) = z;
-    
-    for (size_t k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
-        quant_vals[k] = quants[k].get().val_point(abs_coords);
-    }
-    
-    return quant_vals;
-  }
-
+  /**
+   * @brief For a given coordinate, interpolate the ID solution
+   * 
+   * @param x 
+   * @param y 
+   * @param z 
+   * @return interp_ary_t 
+   */
+  interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z);
   
-  output_ary_t export_pointwise(double const & x, double const & y, double const & z) {    
+  /**
+   * @brief Export an array of OUTPUT_VARS for a given point
+   * 
+   * @tparam eos_t C++ Polytrope/Table type
+   * @param x 
+   * @param y 
+   * @param z 
+   * @return output_ary_t Interpolated solution at x,y,z
+   */
+  template<class eos_t>
+  output_ary_t export_pointwise_imp(double const & x, double const & y, double const & z) {    
     
     quant_vals = interpolate_pointwise(x, y, z);
      
@@ -331,45 +251,31 @@ struct CFMS_BNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
     return out_pw;
   }
 
+  /**
+   * @brief Interface to export an array of OUTPUT_VARS for a given point.  The logic
+   * for determining the EOS type is here and adds a bit of overhead as compared to
+   * a templated class where eos_t is known at compile time.  Here we error on
+   * convenience rather than speed since the cost is very small.
+   * 
+   * @tparam eos_t C++ Polytrope/Table type
+   * @param x 
+   * @param y 
+   * @param z 
+   * @return output_ary_t Interpolated solution at x,y,z
+   */
+  output_ary_t export_pointwise(double const & x, double const & y, double const & z);
+
+  /**
+   * @brief Export an array of OUTPUT_VARS for an array of npoints
+   * 
+   * @tparam eos_t C++ Polytrope/Table type
+   * @param npoints Number of coordinate points
+   * @param xx 
+   * @param yy 
+   * @param zz 
+   * @return grid_ary_t 
+   */
   grid_ary_t export_coordinate_array(
-    int const npoints, double const * xx, double const * yy, double const * zz) {
-    
-    grid_ary_t out;
-    for(auto& v : out) {
-      v.resize(npoints);
-    }
-    
-    for (size_t i = 0; i < npoints; ++i) {
-      export_pointwise(xx[i], yy[i], zz[i]);
-
-      out[OUTPUT_VARS::ALPHA][i] = out_pw[OUTPUT_VARS::ALPHA];
-
-      out[OUTPUT_VARS::BETAX][i] = out_pw[OUTPUT_VARS::BETAX];
-      out[OUTPUT_VARS::BETAY][i] = out_pw[OUTPUT_VARS::BETAY];
-      out[OUTPUT_VARS::BETAZ][i] = out_pw[OUTPUT_VARS::BETAZ];
-
-      out[OUTPUT_VARS::GXX][i] = out_pw[OUTPUT_VARS::GXX];
-      out[OUTPUT_VARS::GXY][i] = out_pw[OUTPUT_VARS::GXY];
-      out[OUTPUT_VARS::GXZ][i] = out_pw[OUTPUT_VARS::GXZ];
-      out[OUTPUT_VARS::GYY][i] = out_pw[OUTPUT_VARS::GYY];
-      out[OUTPUT_VARS::GYZ][i] = out_pw[OUTPUT_VARS::GYZ];
-      out[OUTPUT_VARS::GZZ][i] = out_pw[OUTPUT_VARS::GZZ];
-
-      out[OUTPUT_VARS::KXX][i] = out_pw[OUTPUT_VARS::KXX];
-      out[OUTPUT_VARS::KXY][i] = out_pw[OUTPUT_VARS::KXY];
-      out[OUTPUT_VARS::KXZ][i] = out_pw[OUTPUT_VARS::KXZ];
-      out[OUTPUT_VARS::KYY][i] = out_pw[OUTPUT_VARS::KYY];
-      out[OUTPUT_VARS::KYZ][i] = out_pw[OUTPUT_VARS::KYZ];
-      out[OUTPUT_VARS::KZZ][i] = out_pw[OUTPUT_VARS::KZZ];
-
-      out[OUTPUT_VARS::RHO][i] = out_pw[OUTPUT_VARS::RHO];
-      out[OUTPUT_VARS::EPS][i] = out_pw[OUTPUT_VARS::EPS];
-      out[OUTPUT_VARS::PRESS][i] = out_pw[OUTPUT_VARS::PRESS];
-      out[OUTPUT_VARS::VELX][i]  = out_pw[OUTPUT_VARS::VELX];
-      out[OUTPUT_VARS::VELY][i]  = out_pw[OUTPUT_VARS::VELY];
-      out[OUTPUT_VARS::VELZ][i]  = out_pw[OUTPUT_VARS::VELZ];
-    }
-    return out;
-  }
+    int const npoints, double const * xx, double const * yy, double const * zz);
 };
 }
