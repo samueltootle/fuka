@@ -302,6 +302,8 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space, config_t
   }
 
   Scalar A(conf * conf);
+  A.std_base();
+  lapse.std_base();
 
   // We store the quantities that appear in the lapace terms
   // for solver stability.  These will need to be transformed
@@ -312,9 +314,12 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space, config_t
   logh.std_base();
   nu.std_base();
   lap_aterm.std_base();
+
+  Scalar tmp(lapse * A - 1);
+  Scalar lap_Bterm = Scalar(tmp.mult_r().mult_sin_theta());
   // end setup fields
   
-  bco_utils::save_to_file(space, bconfig, lap_aterm, nu, logh);
+  bco_utils::save_to_file(space, bconfig, lap_aterm, nu, logh, lap_Bterm);
 }
 
 template<typename eos_t, typename config_t>
