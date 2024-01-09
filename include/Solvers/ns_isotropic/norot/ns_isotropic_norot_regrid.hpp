@@ -49,8 +49,9 @@ int ns_isotropic_norot_regrid(config_t& bconfig, std::string outputfile) {
 	FILE* ff1 = fopen(kadath_filename.c_str(), "r") ;
 	space_t old_space(ff1) ;
   Scalar old_lap_Aterm(old_space, ff1) ;
-	Scalar old_nu(old_space, ff1) ;
-	Scalar old_logh(old_space, ff1) ;
+	Scalar old_nu       (old_space, ff1) ;
+	Scalar old_logh     (old_space, ff1) ;
+  Scalar old_lap_Bterm(old_space, ff1) ;
   fclose(ff1) ;
 
   std::cout << "Resolution of old space: "
@@ -143,6 +144,9 @@ int ns_isotropic_norot_regrid(config_t& bconfig, std::string outputfile) {
   Scalar lap_Aterm(space);
   lap_Aterm.annule_hard();
   lap_Aterm.std_base();
+
+  Scalar lap_Bterm(lap_Aterm);
+  lap_Bterm.std_base();
   
   Scalar nu(space);
   nu.annule_hard();
@@ -157,16 +161,26 @@ int ns_isotropic_norot_regrid(config_t& bconfig, std::string outputfile) {
   lap_Aterm.import(old_lap_Aterm);
   nu.import(old_nu);
   logh.import(old_logh);
+  lap_Bterm.import(old_lap_Bterm);
   // end import old fields
 
   // enforce spectral decomposition compatible with the parities
   lap_Aterm.std_base();
   nu.std_base();
   logh.std_base();
+
+  // Set appropriate angular basis
+  Scalar one(space);
+  one = 1.;
+  one.std_base();
+  Scalar rsint = Scalar(one.mult_r().mult_sin_theta());
+  for(int d = 0; d < ndom; ++d) {
+    lap_Bterm.set_domain(d).set_base() = rsint(d).get_base();
+  }
   
   // output data  
   bconfig.set_filename(outputfile);
-  bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh);
+  bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh, lap_Bterm);
 
   return EXIT_SUCCESS;
 }

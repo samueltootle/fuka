@@ -54,9 +54,10 @@ int ns_isotropic_norot_stationary_driver (config_t& bconfig,
     Space_polar_adapted space (ff1) ;
 
     // load the fields defined on the space
-    Scalar lap_Aterm   (space, ff1) ;
-    Scalar nu  (space, ff1) ;
-    Scalar logh   (space, ff1) ;
+    Scalar lap_Aterm (space, ff1) ;
+    Scalar nu        (space, ff1) ;
+    Scalar logh      (space, ff1) ;
+    Scalar lap_Bterm (space, ff1) ;
     fclose(ff1) ;
     
     if(outputdir != "") bconfig.set_outputdir(outputdir) ;
@@ -71,7 +72,7 @@ int ns_isotropic_norot_stationary_driver (config_t& bconfig,
 
       EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
       ns_isotropic_norot_solver<eos_t, decltype(bconfig), decltype(space)> 
-        ns_solver(bconfig, space, nu, lap_Aterm, logh);
+        ns_solver(bconfig, space, nu, lap_Aterm, logh, lap_Bterm);
       exit_status = ns_solver.solve(seq);
 
     } else if(eos_type == "Cold_Table") {
@@ -82,7 +83,7 @@ int ns_isotropic_norot_stationary_driver (config_t& bconfig,
 
       EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
       ns_isotropic_norot_solver<eos_t, decltype(bconfig), decltype(space)> 
-        ns_solver(bconfig, space, nu, lap_Aterm, logh);
+        ns_solver(bconfig, space, nu, lap_Aterm, logh, lap_Bterm);
       
       exit_status = ns_solver.solve(seq);
     } else { 

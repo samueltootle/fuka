@@ -40,6 +40,7 @@ class ns_isotropic_norot_solver : public Solver<config_t, space_t> {
   Scalar& nu;
   Scalar& lap_Aterm;
   Scalar& logh;
+  Scalar& lap_Bterm;
   std::unique_ptr<ns_sequence const> seq;
 
   /// Specify base class members used to avoid this->
@@ -58,7 +59,7 @@ class ns_isotropic_norot_solver : public Solver<config_t, space_t> {
   ns_isotropic_norot_solver() = delete;
 
   ns_isotropic_norot_solver(config_t& config_in, space_t& space_in,  
-    Scalar& nu_in, Scalar& lap_Aterm_in, Scalar& logh_in);
+    Scalar& nu_in, Scalar& lap_Aterm_in, Scalar& logh_in, Scalar& lap_Bterm_in);
   
   /// syst always requires the same initialization for the stages
   void syst_init(System_of_eqs& syst);
@@ -70,7 +71,7 @@ class ns_isotropic_norot_solver : public Solver<config_t, space_t> {
   std::string converged_filename(const std::string stage="") const override;
   
   void save_to_file() const override {
-    Kadath::bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh);
+    Kadath::bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh, lap_Bterm);
   }
   
   /// solver driver

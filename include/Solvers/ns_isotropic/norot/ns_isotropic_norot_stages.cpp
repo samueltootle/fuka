@@ -52,15 +52,19 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
     case 1:
       // sources
       syst.add_def(d, "E = press * h - press * delta");
-      syst.add_def(d, "S = delta * 3 * press");
+      syst.add_def(d, "Srrtt = press * delta");
       syst.add_def(d, "Spp = press * delta");
+      syst.add_def(d, "S = 2 * Srrtt + Spp");
  
       // constraint equations
-      syst.add_def(d, "eqnu = delta * ( lap(nu) + scal(grad(nu), grad(nulogA)) ) - 4piG * A^2 * (E + S)") ;
-      syst.add_def(d, "eqnulogA = delta * ( lap2(nulogA) + scal(grad(nu), grad(nu)) ) - 2 * 4piG * A^2 * Spp") ;
+      syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
+                            "- 4piG * A^2 * (E + S)");
+      syst.add_def(d, "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
+      syst.add_def(d, "eqAterm = delta * lap2(lapAterm) + delta * scal(grad(nu), grad(nu))"
+                              "- 2 * 4piG * A^2 * Spp");
  
       // definition for the baryonic mass integral
-      syst.add_def(d, "intMb = rho * A^3 * 4piG / 2");
+      syst.add_def(d, "intMb = rho * A^2 * B * 4piG / 2");
 
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
       syst.add_def(d, "firstint = H + log(N)");
@@ -70,8 +74,9 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
     default:
       syst.add_eq_full(d, "H = 0");
  
-      syst.add_def(d, "eqnu = lap(nu) + scal(grad(nu), grad(nulogA))") ;
-      syst.add_def(d, "eqnulogA = lap2(nulogA) + scal(grad(nu), grad(nu))") ;
+      syst.add_def(d, "eqnu    = lap(nu) + scal(grad(nu), grad(nu + log(B)))");
+      syst.add_def(d, "eqBterm = lap2(lapBterm)");
+      syst.add_def(d, "eqAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))");
       break;
     }
   }
@@ -105,11 +110,13 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
  
   // add the constraint equations and demand continuity their normal derivative across domain boundaries
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
-  space.add_eq(syst, "eqnulogA=0", "nulogA", "dn(nulogA)");
+  space.add_eq(syst, "eqAterm=0", "lapAterm", "dn(lapAterm)");
+  space.add_eq(syst, "eqBterm=0", "lapBterm", "dn(lapBterm)");
   
   // boundary conditions at infinity
   syst.add_eq_bc(ndom - 1, OUTER_BC, "nu=0");
-  syst.add_eq_bc(ndom - 1, OUTER_BC, "nulogA=0");
+  syst.add_eq_bc(ndom - 1, OUTER_BC, "lapAterm=0");
+  syst.add_eq_bc(ndom - 1, OUTER_BC, "lapBterm=0");
 
   // if the radius of the stellar surface domain is fixed
   // use the helper construction, i.e. a level function with a root defining the radius
@@ -185,6 +192,5 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   }
   return exit_status;
 }
-
 /** @}*/
 }}

@@ -16,9 +16,9 @@ using namespace ::Kadath::Margherita;
 
 template<class eos_t, typename config_t, typename space_t>
 ns_isotropic_norot_solver<eos_t, config_t, space_t>::ns_isotropic_norot_solver(config_t& config_in, 
-  space_t& space_in, Scalar& nu_in, Scalar& lap_Aterm_in, Scalar& logh_in) :
+  space_t& space_in, Scalar& nu_in, Scalar& lap_Aterm_in, Scalar& logh_in, Scalar& lap_Bterm_in) :
       Solver<config_t, space_t>(config_in, space_in), 
-        nu(nu_in), lap_Aterm(lap_Aterm_in), logh(logh_in)
+        nu(nu_in), lap_Aterm(lap_Aterm_in), logh(logh_in), lap_Bterm(lap_Bterm_in)
 { }
 
 // standardized filename for each converged dataset at the end of each stage.
@@ -96,16 +96,21 @@ void ns_isotropic_norot_solver<eos_t, config_t, space_t>::syst_init(System_of_eq
   // the basic fields, conformal factor, lapse and (log) enthalpy
   syst.add_var("H", logh);
   syst.add_var("nu", nu);
-  syst.add_var("nulogA", lap_Aterm);
+  syst.add_var("lapAterm", lap_Aterm);
+  syst.add_var("lapBterm", lap_Bterm);
 
   // Useful definitions
   syst.add_def("N = exp(nu)");
-  syst.add_def("A = exp(nulogA - nu)");
+  syst.add_def("A = exp(lapAterm - nu)");
+  syst.add_def("B = (divrsint(lapBterm) + 1) / N");
+  syst.add_def("Brsint = multrsint(B)");
  
   // define quantity to be integrated at infinity
   // two (in this case) equivalent definitions of ADM mass
   // as well as the Komar mass
-  syst.add_def(ndom - 1, "intMadm = -dr(A) / 4piG ");
+  // syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
+  // syst.add_def(ndom - 1, "intMadm = -dr(A) / 4piG ");
+  syst.add_def(ndom - 1, "intMadm = - (dr(B)) / 4piG ");
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
   
   // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
