@@ -111,6 +111,98 @@ Space_bin_bh::Space_bin_bh (int ttype, double dist, double rbh1, double rbh2, do
     pinner_2->update() ;
 }
 
+Space_bin_bh::Space_bin_bh (Space_bin_bh const & sp) {
+
+	nbr_domains = sp.nbr_domains;
+  ndim = sp.ndim;
+  type_base = sp.type_base;
+
+  n_shells1 = sp.n_shells1;
+  n_shells2 = sp.n_shells2;
+
+  // We calculate domain indicies and ensure they match
+  // the imported space - should be consistent!
+  this->BH1 = 0;
+  assert(BH1 == sp.BH1);
+
+  this->BH2 = 3 + n_shells1;
+  assert(BH2 == sp.BH2);
+
+  this->OUTER = 6 + n_shells1 + n_shells2;
+  assert(OUTER == sp.OUTER);
+
+  this->n_shells_outer = nbr_domains - 12 - n_shells1 - n_shells2;
+  assert(n_shells_outer >= 0 && n_shells_outer == sp.n_shells_outer);
+
+	domains = new Domain* [nbr_domains] ;
+	//First BH :
+  const Domain_nucleus* d_nuc1 = dynamic_cast<const Domain_nucleus*> (sp.get_domain(BH1)) ;
+  domains[BH1] = new Domain_nucleus(*d_nuc1, true);
+
+  const Domain_shell_outer_homothetic* sp_pouter_1 = dynamic_cast<const Domain_shell_outer_homothetic*> (sp.get_domain(BH1+1)) ;
+  domains[BH1+1] = new Domain_shell_outer_homothetic(*this, *sp_pouter_1) ;
+  
+  const Domain_shell_inner_homothetic* sp_pinner_1 = dynamic_cast<const Domain_shell_inner_homothetic*> (sp.get_domain(BH1+2)) ;
+  domains[BH1+2] = new Domain_shell_inner_homothetic(*this, *sp_pinner_1) ;
+
+  for(int i = 0; i < n_shells1; ++i) {
+    const Domain_shell* d_shell = dynamic_cast<const Domain_shell*> (sp.get_domain(BH1+3+i)) ;
+    domains[BH1+3+i] = new Domain_shell(*d_shell, true);
+  }    
+
+	//second BH :
+  const Domain_nucleus* d_nuc2 = dynamic_cast<const Domain_nucleus*> (sp.get_domain(BH2)) ;
+  domains[BH2] = new Domain_nucleus(*d_nuc2, true);
+
+  const Domain_shell_outer_homothetic* sp_pouter_2 = dynamic_cast<const Domain_shell_outer_homothetic*> (sp.get_domain(BH2+1)) ;
+  domains[BH2+1] = new Domain_shell_outer_homothetic(*this, *sp_pouter_2) ;
+  
+  const Domain_shell_inner_homothetic* sp_pinner_2 = dynamic_cast<const Domain_shell_inner_homothetic*> (sp.get_domain(BH2+2)) ;
+  domains[BH2+2] = new Domain_shell_inner_homothetic(*this, *sp_pinner_2) ;
+
+  for(int i = 0; i < n_shells1; ++i) {
+    const Domain_shell* d_shell = dynamic_cast<const Domain_shell*> (sp.get_domain(BH2+3+i)) ;
+    domains[BH2+3+i] = new Domain_shell(*d_shell, true);
+  } 
+
+	// Bispheric
+  const Domain_bispheric_chi_first* sp_chi_1 = dynamic_cast<const Domain_bispheric_chi_first*> (sp.get_domain(OUTER)) ;
+	domains[OUTER] = new Domain_bispheric_chi_first(*this, *sp_chi_1) ;
+
+  const Domain_bispheric_rect* sp_rec_1 = dynamic_cast<const Domain_bispheric_rect*> (sp.get_domain(OUTER+1)) ;
+	domains[OUTER+1] = new Domain_bispheric_rect(*this, *sp_rec_1) ;
+
+  const Domain_bispheric_eta_first* sp_eta = dynamic_cast<const Domain_bispheric_eta_first*> (sp.get_domain(OUTER+2)) ;
+  domains[OUTER+2] = new Domain_bispheric_eta_first(*this, *sp_eta) ;
+
+  const Domain_bispheric_rect* sp_rec_2 = dynamic_cast<const Domain_bispheric_rect*> (sp.get_domain(OUTER+3)) ;
+	domains[OUTER+3] = new Domain_bispheric_rect(*this, *sp_rec_2) ;
+
+  const Domain_bispheric_chi_first* sp_chi_2 = dynamic_cast<const Domain_bispheric_chi_first*> (sp.get_domain(OUTER+4)) ;
+	domains[OUTER+4] = new Domain_bispheric_chi_first(*this, *sp_chi_2) ;
+
+	for (int i=0 ; i<n_shells_outer ; i++) {
+		const Domain_shell* d_shell = dynamic_cast<const Domain_shell*> (sp.get_domain(OUTER+5+i)) ;
+    domains[OUTER+5+i] = new Domain_shell(*d_shell, true);
+  }
+
+	// Compactified
+  const Domain_compact* d_compact = dynamic_cast<const Domain_compact*> (sp.get_domain(nbr_domains-1)) ;
+	domains[nbr_domains-1] = new Domain_compact(*d_compact, true) ;
+
+  const Domain_shell_outer_homothetic* pouter_1 = dynamic_cast<const Domain_shell_outer_homothetic*> (domains[BH1+1]) ;
+  pouter_1->vars_to_terms() ;
+  pouter_1->update() ;
+  const Domain_shell_inner_homothetic* pinner_1 = dynamic_cast<const Domain_shell_inner_homothetic*> (domains[BH1+2]) ;
+  pinner_1->vars_to_terms() ;
+  pinner_1->update() ;
+  const Domain_shell_outer_homothetic* pouter_2 = dynamic_cast<const Domain_shell_outer_homothetic*> (domains[BH2+1]) ;
+  pouter_2->vars_to_terms() ;
+  pouter_2->update() ;
+  const Domain_shell_inner_homothetic* pinner_2 = dynamic_cast<const Domain_shell_inner_homothetic*> (domains[BH2+2]) ;
+  pinner_2->vars_to_terms() ;
+  pinner_2->update() ;
+}
 
 Space_bin_bh::Space_bin_bh (FILE* fd) {
 

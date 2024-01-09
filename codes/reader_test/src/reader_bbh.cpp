@@ -21,9 +21,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "Configurator/config_bco.hpp"
-#include "Solvers/ns_3d_xcts/ns_exporter.hpp"
+#include "Solvers/bbh_xcts/bbh_exporter.hpp"
 #include "kadath_adapted.hpp"
-
+#include "kadath_bin_bh.hpp"
 #include "./reader_test_tools.hpp"
 #ifdef _OPENMP
   #include <omp.h>
@@ -33,11 +33,12 @@
 using namespace Kadath;
 using namespace Kadath::FUKA_Config;
   
-  using config_t = kadath_config_boost<BCO_NS_INFO>;
-  using reader_t = Kadath::FUKA_Solvers::CFMS_NS_Exporter;
+  using config_t = kadath_config_boost<BIN_INFO>;
+  using reader_t = Kadath::FUKA_Solvers::CFMS_BBH_Exporter;
+  using ary_t = std::vector<reader_t::output_ary_t>;
 
-constexpr unsigned int Npts = 1e4;
-constexpr double range = 10;
+constexpr unsigned int Npts = 256;  
+constexpr double range = 100;
 constexpr double dx = range / Npts;
 
 int main(int argc, char **argv) {
@@ -45,13 +46,13 @@ int main(int argc, char **argv) {
   // expecting a configuration file on execution
   if(argc < 2) {
     std::cerr << "Usage: ./reader /<path>/<ID base name>.info" << std::endl;
-    std::cerr << "e.g. ./reader converged.NS.9.info" << endl;
+    std::cerr << "e.g. ./reader converged.BBH.9.info" << endl;
     std::_Exit(EXIT_FAILURE);
   }
 
   std::string ifilename{argv[1]};
 
-  // ID Coords
+
   std::vector<double> xx(Npts);
   std::vector<double> yy(Npts);
   std::vector<double> zz(Npts);
@@ -62,11 +63,9 @@ int main(int argc, char **argv) {
     yy[i]+= i * dx;
     zz[i]+= i * dx;
   }
-  // END ID Coords
-
-  config_t bconfig(ifilename);
+  config_t bconfig(ifilename);  
   reader_t input_reader(ifilename);
-  interp_data(input_reader, xx, yy, zz);
 
+  interp_data(input_reader, xx, yy, zz);
   return EXIT_SUCCESS;
 }

@@ -38,7 +38,8 @@ p_detadx(0x0), p_detady(0x0), p_detadz(0x0), p_dchidx(0x0), p_dchidy(0x0), p_dch
 }
 
 // Constructor by copy
-Domain_bispheric_chi_first::Domain_bispheric_chi_first (const Domain_bispheric_chi_first& so) : Domain(so), aa(so.aa), eta_lim(so.eta_lim), r_ext(so.r_ext), chi_max(so.chi_max) {
+Domain_bispheric_chi_first::Domain_bispheric_chi_first (const Domain_bispheric_chi_first& so) 
+	: Domain(so), aa(so.aa), eta_lim(so.eta_lim), r_ext(so.r_ext), chi_max(so.chi_max) {
 
 	bound_eta = (so.bound_eta!=0x0) ? new Val_domain(*so.bound_eta) : 0x0 ;
 	bound_eta_der = (so.bound_eta_der!=0x0) ? new Val_domain(*so.bound_eta_der) : 0x0 ;
@@ -54,6 +55,25 @@ Domain_bispheric_chi_first::Domain_bispheric_chi_first (const Domain_bispheric_c
 	p_dphidy = (so.p_dphidy!=0x0) ? new Val_domain(*so.p_dphidy) : 0x0 ;
 	p_dphidz = (so.p_dphidz!=0x0) ? new Val_domain(*so.p_dphidz) : 0x0 ;
 	p_dsint = (so.p_dsint!=0x0) ? new Val_domain(*so.p_dsint) : 0x0 ;
+}
+
+Domain_bispheric_chi_first::Domain_bispheric_chi_first (const Space& sp, const Domain_bispheric_chi_first& so) 
+	: Domain(so, true), aa(so.aa), eta_lim(so.eta_lim), r_ext(so.r_ext), chi_max(so.chi_max), eta_c(so.eta_c) {
+	bound_eta = (so.bound_eta!=0x0) ? new Val_domain(this, *so.bound_eta) : 0x0 ;
+	bound_eta_der = (so.bound_eta_der!=0x0) ? new Val_domain(this, *so.bound_eta_der) : 0x0 ;
+	p_eta = (so.p_eta!=0x0) ? new Val_domain(this, *so.p_eta) : 0x0 ;
+	p_chi = (so.p_chi!=0x0) ? new Val_domain(this, *so.p_chi) : 0x0 ;
+	p_phi = (so.p_phi!=0x0) ? new Val_domain(this, *so.p_phi) : 0x0 ;
+	p_detadx = (so.p_detadx!=0x0) ? new Val_domain(this, *so.p_detadx) : 0x0 ;
+	p_detady = (so.p_detady!=0x0) ? new Val_domain(this, *so.p_detady) : 0x0 ;
+	p_detadz = (so.p_detadz!=0x0) ? new Val_domain(this, *so.p_detadz) : 0x0 ;
+	p_dchidx = (so.p_dchidx!=0x0) ? new Val_domain(this, *so.p_dchidx) : 0x0 ;
+	p_dchidy = (so.p_dchidy!=0x0) ? new Val_domain(this, *so.p_dchidy) : 0x0 ;
+	p_dchidz = (so.p_dchidz!=0x0) ? new Val_domain(this, *so.p_dchidz) : 0x0 ;
+	p_dphidy = (so.p_dphidy!=0x0) ? new Val_domain(this, *so.p_dphidy) : 0x0 ;
+	p_dphidz = (so.p_dphidz!=0x0) ? new Val_domain(this, *so.p_dphidz) : 0x0 ;
+	p_dsint = (so.p_dsint!=0x0) ? new Val_domain(this, *so.p_dsint) : 0x0 ;
+	do_coloc() ;
 }
 
 Domain_bispheric_chi_first::Domain_bispheric_chi_first (int num, FILE* fd) : Domain(num, fd) {

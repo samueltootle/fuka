@@ -173,6 +173,7 @@ class Domain_bispheric_rect : public Domain {
 
   Domain_bispheric_rect (int nd, int ttype, double aa, double rext, double eta_minus, double eta_plus, double chi_min, const Dim_array& nbr) ;
   Domain_bispheric_rect (const Domain_bispheric_rect& so) ; ///< Copy constructor.
+  Domain_bispheric_rect (const Space& sp, const Domain_bispheric_rect& so) ;
 /**
   * Constructor from a file
   * @param num : number of the domain (used by the \c Space).
@@ -594,6 +595,7 @@ class Domain_bispheric_chi_first : public Domain {
   Domain_bispheric_chi_first (int num, int ttype, double aa, double etalim,
 				double rr, double chi_max, const Dim_array& nbr) ;
   Domain_bispheric_chi_first (const Domain_bispheric_chi_first& so) ; ///< Constructor by copy.
+  Domain_bispheric_chi_first (const Space& sp, const Domain_bispheric_chi_first& so) ; ///< Constructor by copy.
 /**
   * Constructor from a file
   * @param num : number of the domain (used by the \c Space).
@@ -1004,6 +1006,7 @@ class Domain_bispheric_eta_first : public Domain {
   */
   Domain_bispheric_eta_first (int num, int ttype, double aa, double rr, double eta_min, double eta_max, const Dim_array& nbr) ;
   Domain_bispheric_eta_first (const Domain_bispheric_eta_first& so) ; ///< Copy constructor.
+  Domain_bispheric_eta_first (const Space& sp, const Domain_bispheric_eta_first& so) ; ///< Copy constructor.
 /**
   * Constructor from a file
   * @param num : number of the domain (used by the \c Space).

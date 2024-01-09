@@ -77,6 +77,7 @@ class Space_bhns : public Space {
                               const std::vector<double>& outer_bounds, int nr, const int n_inner_shellsNS = 0);
 
 	Space_bhns (FILE*, bool oldspace = false) ; ///< Constructor from a file
+	Space_bhns (const Space_bhns&);
 
  	virtual ~Space_bhns() ; ///< Destructor
 	virtual void save(FILE*) const ;
