@@ -145,8 +145,22 @@ namespace Kadath::FUKA_Solvers {
     abs_coords.set(2) = y;
     abs_coords.set(3) = z;
     
-    // For testing only
     for (size_t k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
+        quant_vals[k] = quants[k].get().val_point(abs_coords);
+    }
+    
+    return quant_vals;
+  }
+
+  CFMS_NS_Exporter::interp_ary_t CFMS_NS_Exporter::interpolate_pointwise_subset(double const & x, double const & y, double const & z,
+    std::vector<CFMS_NS_Exporter::XCTS_VARS> slice) {
+    
+    Point abs_coords(ndim);
+    abs_coords.set(1) = x;
+    abs_coords.set(2) = y;
+    abs_coords.set(3) = z;
+    
+    for (const auto k : slice) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
     }
     
@@ -160,6 +174,17 @@ namespace Kadath::FUKA_Solvers {
     }else if(eos_type == "Cold_PWPoly") {
       using eos_t = Kadath::Margherita::Cold_PWPoly;
       return export_pointwise_imp<eos_t>(x, y, z);
+    } // end adding EOS OPEs
+    throw std::invalid_argument("\nExport: Invalid EOS Type\n)");
+  }
+
+  CFMS_NS_Exporter::output_ary_t CFMS_NS_Exporter::export_pointwise_fluid_vars(double const & x, double const & y, double const & z) {
+    if(eos_type == "Cold_Table") {
+      using eos_t = Kadath::Margherita::Cold_Table;
+      return export_pointwise_fluid_vars_imp<eos_t>(x, y, z);
+    }else if(eos_type == "Cold_PWPoly") {
+      using eos_t = Kadath::Margherita::Cold_PWPoly;
+      return export_pointwise_fluid_vars_imp<eos_t>(x, y, z);
     } // end adding EOS OPEs
     throw std::invalid_argument("\nExport: Invalid EOS Type\n)");
   }
@@ -203,5 +228,52 @@ namespace Kadath::FUKA_Solvers {
       out[OUTPUT_VARS::VELZ][i]  = out_pw[OUTPUT_VARS::VELZ];
     }
     return out;
+  }
+  
+  CFMS_NS_Exporter::output_ary_t CFMS_NS_Exporter::export_pointwise_spacetime_vars(double const & x, double const & y, double const & z) {
+    
+    // Reset to NAN
+    for(auto& e : quant_vals) {
+      e = NAN;
+    }
+    quant_vals = interpolate_pointwise_subset(x, y, z, xcts_spacetime_indicies);
+
+    // Fill output vector by storing non-conformal quantities
+    auto const psi = quant_vals[XCTS_VARS::XCTS_PSI];
+    auto const psi2 = psi * psi;
+    auto const psi4 = psi2 * psi2;
+
+    out_pw[OUTPUT_VARS::ALPHA] = quant_vals[XCTS_VARS::XCTS_ALPHA];
+
+    out_pw[OUTPUT_VARS::BETAX] = quant_vals[XCTS_VARS::XCTS_BETAX];
+    out_pw[OUTPUT_VARS::BETAY] = quant_vals[XCTS_VARS::XCTS_BETAY];
+    out_pw[OUTPUT_VARS::BETAZ] = quant_vals[XCTS_VARS::XCTS_BETAZ];
+
+    double g[3][3];
+    g[0][0] = psi4;
+    g[0][1] = 0.0;
+    g[0][2] = 0.0;
+    g[1][1] = psi4;
+    g[1][2] = 0.0;
+    g[2][2] = psi4;
+    g[1][0] = g[0][1];
+    g[2][0] = g[0][2];
+    g[2][1] = g[1][2];
+
+    out_pw[OUTPUT_VARS::GXX] = g[0][0];
+    out_pw[OUTPUT_VARS::GXY] = g[0][1];
+    out_pw[OUTPUT_VARS::GXZ] = g[0][2];
+    out_pw[OUTPUT_VARS::GYY] = g[1][1];
+    out_pw[OUTPUT_VARS::GYZ] = g[1][2];
+    out_pw[OUTPUT_VARS::GZZ] = g[2][2];
+
+    out_pw[OUTPUT_VARS::KXX] = quant_vals[XCTS_VARS::XCTS_AXX] * psi4;
+    out_pw[OUTPUT_VARS::KXY] = quant_vals[XCTS_VARS::XCTS_AXY] * psi4;
+    out_pw[OUTPUT_VARS::KXZ] = quant_vals[XCTS_VARS::XCTS_AXZ] * psi4;
+    out_pw[OUTPUT_VARS::KYY] = quant_vals[XCTS_VARS::XCTS_AYY] * psi4;
+    out_pw[OUTPUT_VARS::KYZ] = quant_vals[XCTS_VARS::XCTS_AYZ] * psi4;
+    out_pw[OUTPUT_VARS::KZZ] = quant_vals[XCTS_VARS::XCTS_AZZ] * psi4;
+    
+    return out_pw;
   }
 }
