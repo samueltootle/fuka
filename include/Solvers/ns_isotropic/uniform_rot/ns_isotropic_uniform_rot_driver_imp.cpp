@@ -23,21 +23,22 @@ void initialize_fields(config_t& bconfig) {
   Scalar lap_Aterm   (space, ff1) ;
   Scalar nu  (space, ff1) ;
   Scalar logh   (space, ff1) ;
+  Scalar lap_Bterm   (space, ff1) ;
   fclose(ff1) ;
   
-  // Construct initial guess for lap_Bterm and lap_wterm
-  Scalar lap_Bterm(space);  
-    {  
-    Scalar B(exp(lap_Aterm - nu));
-    Scalar N(exp(nu));
-    Scalar tmp(N * B - 1);
-    lap_Bterm = Scalar(tmp.mult_sin_theta().mult_r());
-    }
+  // // Construct initial guess for lap_Bterm and lap_wterm
+  // Scalar lap_Bterm(space);  
+  //   {  
+  //   Scalar B(exp(lap_Aterm - nu));
+  //   Scalar N(exp(nu));
+  //   Scalar tmp(N * B - 1);
+  //   lap_Bterm = Scalar(tmp.mult_sin_theta().mult_r());
+  //   }
+  // bconfig.set_field(BCO_FIELDS::LAP_BTERM) = true;
   Scalar lap_wterm(space);
   lap_wterm.annule_hard();
   lap_wterm.std_base();
   bconfig.set_filename("initns_rot");
-  bconfig.set_field(BCO_FIELDS::LAP_BTERM) = true;
   bconfig.set_field(BCO_FIELDS::LAP_WTERM) = true;
   if(rank == 0)
     bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh, lap_Bterm, lap_wterm);

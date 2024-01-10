@@ -709,7 +709,8 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
     // Document fields that will be stored
     bconfig.set_field(BCO_FIELDS::LOGH)   = true;
     bconfig.set_field(BCO_FIELDS::NU)     = true;
-    bconfig.set_field(BCO_FIELDS::LAP_ATERM) = true;    
+    bconfig.set_field(BCO_FIELDS::LAP_ATERM) = true;
+    bconfig.set_field(BCO_FIELDS::LAP_BTERM) = true;
     // end   - set NS fields
 
     bconfig.seq_setting(SEQ_SETTINGS::INIT_RES) = 9;
