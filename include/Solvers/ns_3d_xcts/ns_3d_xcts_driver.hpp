@@ -84,7 +84,7 @@ int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, ns_s
  * @return int error code
  */
 template<typename config_t>
-int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir);
+int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir, ns_sequence const * seq = nullptr);
 
 /**
  * @brief Driver for computing a NS solution including increasing resolution

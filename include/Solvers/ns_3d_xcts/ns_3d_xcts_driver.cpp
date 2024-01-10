@@ -13,6 +13,7 @@ config_t ns_3d_xcts_sequence_setup (config_t & seqconfig, std::string outputdir)
   config_t bconfig = generate_sequence_config(seqconfig, outputdir);
 
   update_eos_parameters(seqconfig, bconfig);
+  update_diffrot_parameters(seqconfig, bconfig);
 
   if(rank == 0) bconfig.write_config();
   return bconfig;
@@ -26,6 +27,11 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
   
   int rank = 0, exit_status = EXIT_SUCCESS;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  // Ensure fixed values are initialized
+  seqconfig.set(seq.mass_idx()) = seq.mass_val();
+  seqconfig.set(seq.spin_idx()) = seq.spin_val();
+
   // Initialize sequence variables
   auto sequence_var_indices = seq.get_indices();
   auto resolution_indices   = resolution.get_indices();
@@ -36,21 +42,29 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
   config_t base_config = ns_3d_xcts_sequence_setup(seqconfig, outputdir);
   base_config.set(resolution_indices) = resolution.init();
 
+  if(!(base_config.control(CONTROLS::SEQUENCES) || base_config.control(CONTROLS::RESOLVE))) {
+    base_config = seqconfig;
+    base_config.set(BCO_PARAMS::CHI) = 0;
+  }
+  auto mass_fixing = seq.mass_idx();
+  auto spin_fixing = seq.spin_idx();
+
   // in the event the user wants an MADM > MTOV
-  const double final_MADM = base_config(BCO_PARAMS::MADM);
+  const double final_MADM = (seq.mass_idx() == BCO_PARAMS::MADM) ? base_config(BCO_PARAMS::MADM) : std::nan("1");
   base_config.control(CONTROLS::ITERATIVE_M) = false;
   config_t bconfig{base_config};
 
   if(bconfig.control(CONTROLS::SEQUENCES) || bconfig.control(CONTROLS::RESOLVE)) {
     if(rank == 0) {
-      setup_co<NODES::NS>(bconfig);
+      // setup_co<NODES::NS>(bconfig);
+      setup_ns_3d_xcts(bconfig, mass_fixing);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     // make sure all ranks have the same config
     bconfig.open_config();
     MPI_Barrier(MPI_COMM_WORLD);
-    bconfig.control(CONTROLS::ITERATIVE_M) = 
-      (bconfig(BCO_PARAMS::MADM) < final_MADM);
+    bconfig.control(CONTROLS::ITERATIVE_M) = !std::isnan(final_MADM) &&
+      (std::fabs(1. - bconfig(BCO_PARAMS::MADM)/final_MADM) > 1e-3);
 
     if(bconfig.control(CONTROLS::ITERATIVE_M) 
         && std::fabs(bconfig(BCO_PARAMS::CHI)) < 1e-5) {
@@ -73,7 +87,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
     tmp_res.set(res_init,res_init,res_init);
 
     // exit_status = ns_3d_xcts_driver(bconfig, tmp_res, outputdir);
-    exit_status = ns_3d_xcts_base_solution_driver(bconfig, outputdir);
+    exit_status = ns_3d_xcts_base_solution_driver(bconfig, outputdir, &seq);
 
     // Update config such that the next solving round uses
     // the final ADM mass and spin
@@ -82,7 +96,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
     
 
   }
-  exit_status = ns_3d_xcts_base_solution_driver(bconfig, outputdir);
+  exit_status = ns_3d_xcts_base_solution_driver(bconfig, outputdir, &seq);
   // Ensure only the final stage is used
   // e.g. avoid NOROT stage
   stage_enabled.fill(false);
@@ -109,6 +123,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
       }
     }
     exit_status = ns_3d_xcts_driver(bconfig, resolution, outputdir, &seq); 
+    resolution.set(resolution.final(), resolution.final(), resolution.final());
     return exit_status;
   };
 
@@ -257,11 +272,11 @@ int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir){
               << "Directory will be created if it doesn't exist.\n";
   fs::create_directory(outputdir);
 
-  if(std::isnan(bconfig.set(BCO_PARAMS::MADM)) && std::isnan(bconfig.set(BCO_PARAMS::MB))){
-    if(rank == 0)
-      std::cout << "Config error.  No madm nor mb found. \n\n";
-    std::_Exit(EXIT_FAILURE);
-  }
+  // if(std::isnan(bconfig.set(BCO_PARAMS::MADM)) && std::isnan(bconfig.set(BCO_PARAMS::MB))){
+  //   if(rank == 0)
+  //     std::cout << "Config error.  No madm nor mb found. \n\n";
+  //   std::_Exit(EXIT_FAILURE);
+  // }
   
   std::string spacein = bconfig.space_filename();
   if(!fs::exists(spacein)) {
@@ -275,7 +290,7 @@ int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir){
   }
 
   while(exit_status == RELOAD_FILE) { 
-    exit_status = ns_3d_xcts_stationary_driver(bconfig, outputdir);
+    exit_status = ns_3d_xcts_stationary_driver(bconfig, outputdir, seq);
     MPI_Barrier(MPI_COMM_WORLD);
   }
   return exit_status;
