@@ -105,6 +105,7 @@ void reader_2d_norot(config_t bconfig) {
 	Scalar lap_Aterm   (space, ff1) ;
 	Scalar nu (space, ff1) ;
   Scalar logh   (space, ff1) ;
+  Scalar lap_Bterm   (space, ff1) ;
 	fclose(ff1) ;
 
   // central values of the matter fields
@@ -127,10 +128,13 @@ void reader_2d_norot(config_t bconfig) {
   syst.add_cst("H", logh);
   syst.add_cst("nu", nu);
   syst.add_cst("lapAterm", lap_Aterm);
+  syst.add_cst("lapBterm", lap_Bterm);
 
   syst.add_def("N = exp(nu)");
   syst.add_def("A = exp(lapAterm - nu)");
-    // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
+  syst.add_def("B = (divrsint(lapBterm) + 1) / N");
+  syst.add_def("Brsint = multrsint(B)");
+  // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
   syst.add_def("h = exp(H)");
 
   // define the EOS operators
@@ -145,7 +149,14 @@ void reader_2d_norot(config_t bconfig) {
   syst.add_def("press = press(h)");
   syst.add_def("delta = h - eps - 1.");
 
-  syst.add_def(ndom - 1, "intMadm = -dr(A) / 4piG ");
+  syst.add_def(ndom - 1, "intMadmFULL = - (dr(A^2 + B^2) + divr(B^2 - A^2)) / 4 / 4piG ");
+  
+  // If we assume that at infinity A = B = 1, we can obtain two "equivalent expressions"
+  // However, we find that intMadmA does not give as accurate of results as intMadmB
+  // intMadmB, however, gives very accurate results as compared to Mkomar and MADM that
+  // has been computed for the same configuration using the full 3D code.
+  syst.add_def(ndom - 1, "intMadmA = - (dr(A)) / 4piG ");
+  syst.add_def(ndom - 1, "intMadmB = - (dr(B)) / 4piG ");
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
 
   for (int d = 0; d < ndom; d++) {
@@ -166,17 +177,23 @@ void reader_2d_norot(config_t bconfig) {
 
 
       // // definition for the baryonic mass integral
-      syst.add_def(d, "intMb = rho * A^3 * 4piG / 2");
-      syst.add_def(d, "intDDA = - lap2(A) * multrsint(A^2) * multr(A)") ;
+      syst.add_def(d, "intMb = rho * A^2 * B * 4piG / 2");
+      syst.add_def(d, "intDDA = - lap2(A) * multrsint(A^2) * multr(B)") ;
       
       
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
       syst.add_def(d, "firstint = H + log(N)");
+      
+      syst.add_def(d, "GRV2 = divrsint(2 * 4piG * A^2 * Spp"
+                      " - delta * scal(grad(nu), grad(nu))) / 2");
 
       break;
     // outside the matter is absent and the sources are zero
     default:
       syst.add_eq_full(d, "H = 0");
+      syst.add_def(d, "DDA = -delta * scal(grad(nu), grad(nu))") ;
+      syst.add_def(d, "intDDA = - lap2(A) * 2 / 4piG") ;
+      syst.add_def(d, "GRV2 = divrsint(scal(grad(nu), grad(nu))) / 2");
 
       syst.add_def(d, "eqnu = lap(nu) + scal(grad(nu), grad(lapAterm))") ;
       syst.add_def(d, "eqlapAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))") ;
@@ -198,8 +215,12 @@ void reader_2d_norot(config_t bconfig) {
   }
   cout << "VMadm: " << VMadm << endl;
  
-  Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
-  double Madm = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
+  Val_domain integMadm(syst.give_val_def("intMadmFULL")()(ndom - 1));
+  double MadmFULL = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
+  Val_domain integMadmA(syst.give_val_def("intMadmA")()(ndom - 1));
+  double MadmA = space.get_domain(ndom - 1)->integ(integMadmA, OUTER_BC);
+  Val_domain integMadmB(syst.give_val_def("intMadmB")()(ndom - 1));
+  double MadmB = space.get_domain(ndom - 1)->integ(integMadmB, OUTER_BC);
 
   // Komar mass at infinity
   Val_domain integMk(syst.give_val_def("intMk")()(ndom - 1));
@@ -245,7 +266,7 @@ void reader_2d_norot(config_t bconfig) {
 
   std::cout << FORMAT << "Circumferential R = "    << CR << " [" << CR * M2km << "km]\n"
             << FORMAT << "Baryonic Mass = " << baryonic_mass << std::endl;
-  std::cout << FORMAT << "ADM Mass = " << Madm << "\n"
+  std::cout << FORMAT << "ADM Mass = " << MadmB << " [" << MadmA << ", " << MadmFULL << "]\n"
             << FORMAT << std::scientific << "Central Density = " << nc  << std::endl
             << FORMAT << std::scientific << "Central h = " << hc << std::endl
             << FORMAT << std::scientific << "Central log(h) = " << loghc << std::endl
@@ -255,7 +276,7 @@ void reader_2d_norot(config_t bconfig) {
             // << FORMAT << "Integrated log(h) = "    << H_integral << "\n\n";
 
   std::cout << FORMAT << "Mk = "   << Mk << std::scientific
-            << ", Diff: " << 2. * fabs(Madm-Mk)/(Madm+Mk) << std::endl;
+            << ", Diff: " << 2. * fabs(MadmB-Mk)/(MadmB+Mk) << std::endl;
             // << FORMAT << "Px = "   << Px   << std::endl
             // << FORMAT << "Py = "   << Py   << std::endl
             // << FORMAT << "Pz = "   << Pz   << std::endl;
