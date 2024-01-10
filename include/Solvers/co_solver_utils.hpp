@@ -47,6 +47,9 @@ namespace FUKA_Solvers {
 template <std::size_t s_type, typename config_t>
 void setup_co(config_t& bconfig);
 
+template <typename config_t>
+void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx);
+
 /**
  * @brief Set the initial guess for 2D Neutron star in
  * isotropic coordinates based on

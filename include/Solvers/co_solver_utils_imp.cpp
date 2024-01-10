@@ -16,7 +16,7 @@ void setup_co(config_t& bconfig) {
   auto& fields = bconfig.return_fields();
 
   int type_coloc = CHEB_TYPE;
-  Dim_array res(bconfig(DIM));
+  Dim_array res(bconfig(BCO_PARAMS::DIM));
   res.set(0) = bconfig(BCO_PARAMS::BCO_RES);
   res.set(1) = bconfig(BCO_PARAMS::BCO_RES);
   res.set(2) = bconfig(BCO_PARAMS::BCO_RES)-1;
@@ -84,6 +84,62 @@ void setup_co(config_t& bconfig) {
   else 
     std::cerr << "BCO type not implemented. \n";
   
+}
+
+template <typename config_t>
+void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx) {
+  auto& fields = bconfig.return_fields();
+
+  int type_coloc = CHEB_TYPE;
+  auto const dim = BCO_PARAMS::DIM;
+  Dim_array res(bconfig(BCO_PARAMS::DIM));
+  res.set(0) = bconfig(BCO_PARAMS::BCO_RES);
+  res.set(1) = bconfig(BCO_PARAMS::BCO_RES);
+  res.set(2) = bconfig(BCO_PARAMS::BCO_RES)-1;
+
+  Point center(dim);
+  for (int i = 1; i <= dim; i++)
+    center.set(i) = 0;
+  
+  const int shells = (int)bconfig(BCO_PARAMS::NSHELLS);
+  int ndom = 4 + shells;
+  std::vector<double> bounds(ndom - 1);
+
+  // Lambda to reduce code based on EOSTYPE
+  auto gen_NS = [&](auto tov) {
+    Kadath::bco_utils::set_NS_bounds(bounds, bconfig);
+    
+    // generate a full single star space including compactification to infinity
+    Space_spheric_adapted space(type_coloc, center, res, bounds);
+    
+    write_ns_init_setup_tofile_XCTS(space, bconfig, *tov);
+  };  
+
+  const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
+  const std::string eos_file = bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
+  const std::string eos_type = bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
+
+  if(eos_type == "Cold_PWPoly") {
+    using eos_t = ::Kadath::Margherita::Cold_PWPoly;
+    EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
+
+    std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov = setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
+    gen_NS(std::move(tov));
+  } else if(eos_type == "Cold_Table") {
+    using eos_t = ::Kadath::Margherita::Cold_Table;
+
+    const int interp_pts = (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0) ? \
+                            2000 : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
+
+    EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
+    
+    std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov = setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
+    gen_NS(std::move(tov));
+  }
+  else { 
+    std::cerr << eos_type << " is not recognized.\n";
+    std::_Exit(EXIT_FAILURE);
+  }
 }
 
 template <typename config_t>
