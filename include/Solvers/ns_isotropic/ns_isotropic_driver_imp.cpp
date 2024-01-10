@@ -35,7 +35,7 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   seqconfig.set(seq.spin_idx()) = seq.spin_val();
 
   // Initialize sequence variables
-  auto sequence_idx = seq.get_sequence_idx();
+  auto sequence_var_indices = seq.get_indices();
   auto resolution_indices = resolution.get_indices();
   
   auto const & dx = seq.step_size();
@@ -52,10 +52,10 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   auto spin_fixing = seq.spin_idx();
 
   // Should be deprecated...
-  if(seq.is_set() && std::isnan(base_config.set(sequence_idx))) {
-    base_config.set(sequence_idx) = seq.init();
+  if(seq.is_set() && std::isnan(base_config.set(sequence_var_indices))) {
+    base_config.set(sequence_var_indices) = seq.init();
     if(ns_seq_is_mass_fixing(seq))
-      mass_fixing = sequence_idx;
+      mass_fixing = std::get<0>(sequence_var_indices);
   }
 
   // Save this in case an invalid ADM mass is given for the EOS used
@@ -116,16 +116,24 @@ config_t ns_isotropic_sequence (config_t & seqconfig,
   stage_enabled[last_stage_idx] = true;
 
   base_config = bconfig;
-
+  if(seq.is_set() && std::isnan(bconfig.set(sequence_var_indices)))
+    bconfig.set(sequence_var_indices) = seq.init();
   #ifdef DEBUG
   std::cout << seq << std::endl;
   std::cout << resolution << std::endl;
   #endif
   auto single_seq = [&](auto val) {
     stage_enabled[last_stage_idx] = true;
+    auto old_val = bconfig(sequence_var_indices);
     if(seq.is_set())
-      bconfig.set(sequence_idx) = val;
-
+      bconfig.set(sequence_var_indices) = val;
+    if(std::get<0>(sequence_var_indices) == BCO_PARAMS::CHI) {
+      bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI) = bconfig(BCO_PARAMS::CHI);
+      if(std::fabs(old_val) < 0.1 && val > 0.2) {
+        bconfig.control(CONTROLS::SEQUENCES) = true;
+        exit_status = ns_isotropic_driver(bconfig, resolution, outputdir, &seq);
+      }
+    }
     exit_status = ns_isotropic_driver(bconfig, resolution, outputdir, &seq);
     resolution.set(resolution.final(), resolution.final(), resolution.final());
     return exit_status;

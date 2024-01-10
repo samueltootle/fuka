@@ -14,11 +14,6 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   int exit_status = EXIT_SUCCESS;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  const int max_iter = bconfig.seq_setting(MAX_ITER);
-  
-  // logarithm of the central enthalpy, a variable in the system of equations 
-  double loghc = std::log(bconfig(BCO_PARAMS::HC));
-  std::string stagename = "DIFF_ROT";
 
   // We use `config_filename()` vs `config_filename_abs()` since
   // `solution_exists` will probe the HOME_KADATH/COs directory
@@ -30,6 +25,12 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   //   return (current == bconfig.config_filename()) ? \
   //     EXIT_SUCCESS : RELOAD_FILE;
   // }
+  
+  const int max_iter = bconfig.seq_setting(MAX_ITER);
+  
+  // logarithm of the central enthalpy, a variable in the system of equations 
+  double loghc = std::log(bconfig(BCO_PARAMS::HC));
+  std::string stagename = "DIFF_ROT";
 
   // Sad tool to make system of equations work with constants
   Scalar one(space);
@@ -102,7 +103,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_def("omelaw = omec - j^2 / diffA^2");
 
   for (int d = 0; d < ndom; d++) {
-
+    syst.add_eq_full(d, "Omega - omelaw = 0");
     switch (d) {
     // in the star the constraint equations are sourced by the matter
     case 0:
@@ -152,10 +153,10 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
 
       break;
     }
-    if( d <= space.ADAPTED_INNER)
-      syst.add_eq_full(d, "Omega - omelaw = 0");
-    else
-      syst.add_eq_full(d, "Omega = 0");
+    // if( d <= space.ADAPTED_INNER)
+    //   syst.add_eq_full(d, "Omega - omelaw = 0");
+    // else
+    //   syst.add_eq_full(d, "Omega = 0");
   }
  
   // add the constraint equations and demand continuity their normal derivative across domain boundaries
