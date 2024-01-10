@@ -76,7 +76,7 @@ class ns_sequence : public seq_t {
     friend std::ostream &operator<<(std::ostream &, const ns_sequence &);
 };
 
-bool ns_idx_is_mass_fixing(BCO_PARAMS const & idx) {
+inline bool ns_idx_is_mass_fixing(BCO_PARAMS const & idx) {
     switch(idx) {
         case BCO_PARAMS::HC:
         case BCO_PARAMS::NC:
@@ -87,7 +87,7 @@ bool ns_idx_is_mass_fixing(BCO_PARAMS const & idx) {
   return false;
 }
 
-bool ns_idx_is_spin_fixing(BCO_PARAMS const & idx) {
+inline bool ns_idx_is_spin_fixing(BCO_PARAMS const & idx) {
     switch(idx) {
         case BCO_PARAMS::OMEGA:
         case BCO_PARAMS::CHI:
@@ -97,7 +97,7 @@ bool ns_idx_is_spin_fixing(BCO_PARAMS const & idx) {
   return false;
 }
 
-void parse_tree_for_fixed(Tree const & tree, std::string const branch_name, 
+inline void parse_tree_for_fixed(Tree const & tree, std::string const branch_name, 
     std::string const parameter_str, BCO_PARAMS const idx, ns_sequence& seq) {
     
     Tree branch = read_branch(tree, branch_name);
@@ -141,7 +141,7 @@ inline ns_sequence find_ns_sequence(Tree const & tree) {
 }
 
 template<class seq_t>
-bool ns_seq_is_mass_fixing(seq_t& seq) {
+inline bool ns_seq_is_mass_fixing(seq_t& seq) {
   auto seq_indicies = seq.get_indices();
   auto seq_idx = std::get<0>(seq_indicies);
   switch(seq_idx) {
@@ -155,7 +155,7 @@ bool ns_seq_is_mass_fixing(seq_t& seq) {
 }
 
 template<class seq_t>
-bool ns_seq_is_spin_fixing(seq_t& seq) {
+inline bool ns_seq_is_spin_fixing(seq_t& seq) {
   auto seq_indicies = seq.get_indices();
   auto seq_idx = std::get<0>(seq_indicies);
   switch(seq_idx) {
@@ -167,7 +167,7 @@ bool ns_seq_is_spin_fixing(seq_t& seq) {
   return false;
 }
 
-std::ostream &operator<<(std::ostream & out, const ns_sequence & Seq) {
+inline std::ostream &operator<<(std::ostream & out, const ns_sequence & Seq) {
   auto indices = Seq.get_indices();
   std::string s = Seq.str() + " sequence";
   int n = ((42 - s.size()) > 0) ? 42 - s.size() : s.size() - 42;
@@ -205,7 +205,7 @@ std::ostream &operator<<(std::ostream & out, const ns_sequence & Seq) {
 
 // Only the container values are verified - we don't modify the Config
 template<class config_t>
-void verify_ns_fixing_values(config_t& bconfig, ns_sequence& seq) {
+inline void verify_ns_fixing_values(config_t& bconfig, ns_sequence& seq) {
   if(seq.is_mass_set() && seq.is_spin_set())
     return;
   
@@ -241,7 +241,7 @@ void verify_ns_fixing_values(config_t& bconfig, ns_sequence& seq) {
 }
 
 template<class config_t>
-void initialize_config_from_fixing_values(config_t& bconfig, ns_sequence& seq) {
+inline void initialize_config_from_fixing_values(config_t& bconfig, ns_sequence& seq) {
   bconfig.set(seq.mass_idx()) = seq.mass_val();
   bconfig.set(seq.spin_idx()) = seq.spin_val();
 }
