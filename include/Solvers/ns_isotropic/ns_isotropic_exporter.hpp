@@ -1,21 +1,20 @@
 #include "Solvers/exporter.hpp"
 namespace Kadath::FUKA_Solvers {
 
-struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_ISO_NS_INFO>, Space_spheric_adapted> {
+struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_ISO_NS_INFO>, Space_polar_adapted> {
   using config_t = Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_ISO_NS_INFO>;
-  using space_t = Space_spheric_adapted;
+  using space_t = Space_polar_adapted;
   
   // Input ID grid functions that we interpolate on
   enum ISO_VARS : size_t {
-    ISO_LAPSE,
+    ISO_ALPHA,
     ISO_METRIC_A,
     ISO_METRIC_B,
     ISO_OMEGA,
     ISO_DOMEGA_DR,
     ISO_DOMEGA_DTHETA,
     ISO_H,
-    ISO_CARTX,
-    ISO_CARTY,
+    ISO_U,
     NUM_ISO_VARS 
   };
 
@@ -50,13 +49,15 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
   using output_ary_t = std::array<double, NUM_OUTPUT_VARS>; 
   using grid_ary_t = std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
-  std::vector<ISO_VARS> xcts_spacetime_indicies{
-    ISO_LAPSE,
+  std::vector<ISO_VARS> iso_spacetime_indicies{
+    ISO_ALPHA,
     ISO_METRIC_A,
     ISO_METRIC_B,
+    ISO_DOMEGA_DR,
+    ISO_DOMEGA_DTHETA,
     ISO_OMEGA,
   };
-  std::vector<ISO_VARS> xcts_fluid_indicies{
+  std::vector<ISO_VARS> iso_fluid_indicies{
     ISO_H,
     ISO_U
   };  
@@ -79,21 +80,20 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
 
 
   // Constructed objects
-  // ptr_data_member(Tensor, A, shared);
-
-  ptr_data_member(Scalar, metric_A, shared);
-  ptr_data_member(Scalar, metric_B, shared);
   ptr_data_member(Scalar, lapse, shared);
+  ptr_data_member(Scalar, metric_A, shared);
+  ptr_data_member(Scalar, metric_B, shared);  
   ptr_data_member(Scalar, omega, shared);
   ptr_data_member(Scalar, domega_dr, shared);
   ptr_data_member(Scalar, domega_dt, shared);
+  ptr_data_member(Scalar, fluidvel, shared);
 
   protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
   interp_ary_t quant_vals;
   output_ary_t out_pw;
   bool export_ready{false};
-  int const ndim{3};
+  int const ndim{2};
   
   // EOS Parameters
   double h_cut{0};
@@ -147,12 +147,16 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
   bool is_export_ready() const { return export_ready; }  
   const int & get_ndim() const { return ndim; }
   
-  CFMS_NS_Exporter() : Exporter<config_t, space_t>(),
-    conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr), fluidvel(nullptr) {}
+  CFMS_NS_ISO_Exporter() : Exporter<config_t, space_t>(),
+    lap_Aterm(nullptr), lap_Bterm(nullptr), Nu(nullptr), lap_omega_term(nullptr), logh(nullptr), 
+      metric_A(nullptr), metric_B(nullptr), lapse(nullptr), omega(nullptr), 
+        domega_dr(nullptr), domega_dt(nullptr), fluidvel(nullptr) {}
   
-  CFMS_NS_Exporter(std::string config_filename) :
+  CFMS_NS_ISO_Exporter(std::string config_filename) :
     Exporter<config_t, space_t>(config_filename),
-        conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr), fluidvel(nullptr) {
+    lap_Aterm(nullptr), lap_Bterm(nullptr), Nu(nullptr), lap_omega_term(nullptr), logh(nullptr), 
+      metric_A(nullptr), metric_B(nullptr), lapse(nullptr), omega(nullptr), 
+        domega_dr(nullptr), domega_dt(nullptr), fluidvel(nullptr) {
 
     load_solution_from_file();
     initialize_eos();
@@ -171,9 +175,9 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
    * copying.
    *  
    */
-  CFMS_NS_Exporter(CFMS_NS_Exporter const & r);
-  CFMS_NS_Exporter(CFMS_NS_Exporter&& b) noexcept = delete;
-  CFMS_NS_Exporter& operator=(const CFMS_NS_Exporter& b);
+  CFMS_NS_ISO_Exporter(CFMS_NS_ISO_Exporter const & r);
+  CFMS_NS_ISO_Exporter(CFMS_NS_ISO_Exporter&& b) noexcept = delete;
+  CFMS_NS_ISO_Exporter& operator=(const CFMS_NS_ISO_Exporter& b);
 
   public:
 
@@ -223,9 +227,9 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     
     // Reset to NAN
     quant_vals.fill(NAN);
-    quant_vals = interpolate_pointwise_subset(x, y, z, xcts_fluid_indicies);
+    quant_vals = interpolate_pointwise_subset(x, y, z, iso_fluid_indicies);
 
-    double const H = quant_vals[ISO_VARS::XCTS_H];
+    double const H = quant_vals[ISO_VARS::ISO_H];
     double h = std::exp(H);
     double rho, eps, press;
 
@@ -243,9 +247,10 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     out_pw[OUTPUT_VARS::RHO]   = rho;
     out_pw[OUTPUT_VARS::EPS]   = eps;
     out_pw[OUTPUT_VARS::PRESS] = press;
-    out_pw[OUTPUT_VARS::VELX]  = quant_vals[ISO_VARS::XCTS_UX];
-    out_pw[OUTPUT_VARS::VELY]  = quant_vals[ISO_VARS::XCTS_UY];
-    out_pw[OUTPUT_VARS::VELZ]  = quant_vals[ISO_VARS::XCTS_UZ];
+    // FIXME
+    // out_pw[OUTPUT_VARS::VELX]  = quant_vals[ISO_VARS::XCTS_UX];
+    // out_pw[OUTPUT_VARS::VELY]  = quant_vals[ISO_VARS::XCTS_UY];
+    // out_pw[OUTPUT_VARS::VELZ]  = quant_vals[ISO_VARS::XCTS_UZ];
     return out_pw;
   }
 
@@ -294,16 +299,14 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       *  "[xx2 = atan2(xCart[1], xCart[0])]"
       */
       {
-        const REAL tmp0 = sqrt(((xCart[0]) * (xCart[0])) + ((xCart[1]) * (xCart[1])) + ((xCart[2]) * (xCart[2])));
+        const double tmp0 = sqrt(((xCart[0]) * (xCart[0])) + ((xCart[1]) * (xCart[1])) + ((xCart[2]) * (xCart[2])));
         xx0 = tmp0;
         xx1 = acos(xCart[2] / tmp0);
         xx2 = atan2(xCart[1], xCart[0]);
       }
       // Unpack initial_data for ADM vectors/tensors
       const double N = quant_vals[ISO_VARS::ISO_ALPHA];
-      double const omega = quant_vals[ISO_VARS::ISO_OMEGA];
-      const double Omega = (*bconfig)(BCO_PARAMS::OMEGA);
-      const double U_factor = (Omega - omega) / N * xx0 * sin(xx2);
+      const double U_factor  = quant_vals[ISO_VARS::ISO_U];
       const double domega_dr = quant_vals[ISO_VARS::ISO_DOMEGA_DR];
       const double domega_dt = quant_vals[ISO_VARS::ISO_DOMEGA_DTHETA];
 
@@ -330,65 +333,65 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       const double KSphericalDD22 = 0.0;
       const double KSphericalDD02 = -gammaSphericalDD22 / 2.0 / N * domega_dr;
       const double KSphericalDD12 = -gammaSphericalDD22 / 2.0 / N * domega_dt;
-      const REAL tmp0 = cos(xx2);
-      const REAL tmp1 = sin(xx1);
-      const REAL tmp4 = cos(xx1);
-      const REAL tmp6 = sin(xx2);
-      const REAL tmp12 = ((xx0) * (xx0));
-      const REAL tmp3 = tmp0 * xx0;
-      const REAL tmp7 = tmp1 * xx0;
-      const REAL tmp9 = tmp6 * xx0;
-      const REAL tmp10 = ((tmp0) * (tmp0));
-      const REAL tmp11 = ((tmp6) * (tmp6));
-      const REAL tmp13 = ((tmp1) * (tmp1) * (tmp1));
-      const REAL tmp15 = ((tmp4) * (tmp4));
-      const REAL tmp20 = ((tmp1) * (tmp1) * (tmp1) * (tmp1)) * ((xx0) * (xx0) * (xx0) * (xx0));
-      const REAL tmp25 = ((tmp1) * (tmp1));
-      const REAL tmp17 = tmp1 * tmp12 * tmp15;
-      const REAL tmp21 = gammaSphericalDD00 * tmp20;
-      const REAL tmp23 = tmp13 * tmp4 * ((xx0) * (xx0) * (xx0));
-      const REAL tmp26 = tmp12 * tmp25;
-      const REAL tmp29 = -tmp15 * tmp9 - tmp25 * tmp9;
-      const REAL tmp34 = tmp4 * tmp7;
-      const REAL tmp41 = tmp15 * tmp3 + tmp25 * tmp3;
-      const REAL tmp52 = tmp1 * tmp12 * tmp4;
-      const REAL tmp68 = KSphericalDD00 * tmp20;
-      const REAL tmp18 = (1.0 / ((tmp10 * tmp12 * tmp13 + tmp10 * tmp17 + tmp11 * tmp12 * tmp13 + tmp11 * tmp17) *
+      const double tmp0 = cos(xx2);
+      const double tmp1 = sin(xx1);
+      const double tmp4 = cos(xx1);
+      const double tmp6 = sin(xx2);
+      const double tmp12 = ((xx0) * (xx0));
+      const double tmp3 = tmp0 * xx0;
+      const double tmp7 = tmp1 * xx0;
+      const double tmp9 = tmp6 * xx0;
+      const double tmp10 = ((tmp0) * (tmp0));
+      const double tmp11 = ((tmp6) * (tmp6));
+      const double tmp13 = ((tmp1) * (tmp1) * (tmp1));
+      const double tmp15 = ((tmp4) * (tmp4));
+      const double tmp20 = ((tmp1) * (tmp1) * (tmp1) * (tmp1)) * ((xx0) * (xx0) * (xx0) * (xx0));
+      const double tmp25 = ((tmp1) * (tmp1));
+      const double tmp17 = tmp1 * tmp12 * tmp15;
+      const double tmp21 = gammaSphericalDD00 * tmp20;
+      const double tmp23 = tmp13 * tmp4 * ((xx0) * (xx0) * (xx0));
+      const double tmp26 = tmp12 * tmp25;
+      const double tmp29 = -tmp15 * tmp9 - tmp25 * tmp9;
+      const double tmp34 = tmp4 * tmp7;
+      const double tmp41 = tmp15 * tmp3 + tmp25 * tmp3;
+      const double tmp52 = tmp1 * tmp12 * tmp4;
+      const double tmp68 = KSphericalDD00 * tmp20;
+      const double tmp18 = (1.0 / ((tmp10 * tmp12 * tmp13 + tmp10 * tmp17 + tmp11 * tmp12 * tmp13 + tmp11 * tmp17) *
                                 (tmp10 * tmp12 * tmp13 + tmp10 * tmp17 + tmp11 * tmp12 * tmp13 + tmp11 * tmp17)));
-      const REAL tmp24 = 2 * gammaSphericalDD01 * tmp23;
-      const REAL tmp35 = gammaSphericalDD12 * tmp34;
-      const REAL tmp37 = gammaSphericalDD02 * tmp26;
-      const REAL tmp47 = -tmp10 * tmp25 * xx0 - tmp11 * tmp25 * xx0;
-      const REAL tmp53 = tmp10 * tmp52 + tmp11 * tmp52;
-      const REAL tmp70 = 2 * KSphericalDD01 * tmp23;
-      const REAL tmp73 = KSphericalDD12 * tmp34;
-      const REAL tmp75 = KSphericalDD02 * tmp26;
-      const REAL tmp19 = tmp10 * tmp18;
-      const REAL tmp28 = gammaSphericalDD11 * tmp15 * tmp26;
-      const REAL tmp31 = gammaSphericalDD22 * tmp18;
-      const REAL tmp32 = tmp18 * tmp29;
-      const REAL tmp39 = tmp0 * tmp18;
-      const REAL tmp42 = tmp18 * tmp41;
-      const REAL tmp54 = tmp18 * tmp53;
-      const REAL tmp61 = tmp11 * tmp18;
-      const REAL tmp64 = tmp18 * tmp6;
-      const REAL tmp65 = tmp18 * ((tmp47) * (tmp47));
-      const REAL tmp66 = tmp18 * ((tmp53) * (tmp53));
-      const REAL tmp71 = KSphericalDD11 * tmp15 * tmp26;
-      const REAL tmp72 = KSphericalDD22 * tmp18;
-      const REAL tmp33 = tmp0 * tmp32;
-      const REAL tmp40 = tmp39 * tmp6;
-      const REAL tmp43 = tmp0 * tmp42;
-      const REAL tmp44 = tmp32 * tmp6;
-      const REAL tmp49 = gammaSphericalDD11 * tmp34 * tmp47;
-      const REAL tmp51 = gammaSphericalDD01 * tmp26 * tmp47;
-      const REAL tmp63 = tmp42 * tmp6;
-      const REAL tmp77 = KSphericalDD11 * tmp34 * tmp47;
-      const REAL tmp78 = KSphericalDD01 * tmp26 * tmp47;
-      const REAL tmp56 = gammaSphericalDD01 * tmp34 * tmp54;
-      const REAL tmp58 = gammaSphericalDD00 * tmp26 * tmp54;
-      const REAL tmp79 = KSphericalDD01 * tmp34 * tmp54;
-      const REAL tmp80 = KSphericalDD00 * tmp26 * tmp54;
+      const double tmp24 = 2 * gammaSphericalDD01 * tmp23;
+      const double tmp35 = gammaSphericalDD12 * tmp34;
+      const double tmp37 = gammaSphericalDD02 * tmp26;
+      const double tmp47 = -tmp10 * tmp25 * xx0 - tmp11 * tmp25 * xx0;
+      const double tmp53 = tmp10 * tmp52 + tmp11 * tmp52;
+      const double tmp70 = 2 * KSphericalDD01 * tmp23;
+      const double tmp73 = KSphericalDD12 * tmp34;
+      const double tmp75 = KSphericalDD02 * tmp26;
+      const double tmp19 = tmp10 * tmp18;
+      const double tmp28 = gammaSphericalDD11 * tmp15 * tmp26;
+      const double tmp31 = gammaSphericalDD22 * tmp18;
+      const double tmp32 = tmp18 * tmp29;
+      const double tmp39 = tmp0 * tmp18;
+      const double tmp42 = tmp18 * tmp41;
+      const double tmp54 = tmp18 * tmp53;
+      const double tmp61 = tmp11 * tmp18;
+      const double tmp64 = tmp18 * tmp6;
+      const double tmp65 = tmp18 * ((tmp47) * (tmp47));
+      const double tmp66 = tmp18 * ((tmp53) * (tmp53));
+      const double tmp71 = KSphericalDD11 * tmp15 * tmp26;
+      const double tmp72 = KSphericalDD22 * tmp18;
+      const double tmp33 = tmp0 * tmp32;
+      const double tmp40 = tmp39 * tmp6;
+      const double tmp43 = tmp0 * tmp42;
+      const double tmp44 = tmp32 * tmp6;
+      const double tmp49 = gammaSphericalDD11 * tmp34 * tmp47;
+      const double tmp51 = gammaSphericalDD01 * tmp26 * tmp47;
+      const double tmp63 = tmp42 * tmp6;
+      const double tmp77 = KSphericalDD11 * tmp34 * tmp47;
+      const double tmp78 = KSphericalDD01 * tmp26 * tmp47;
+      const double tmp56 = gammaSphericalDD01 * tmp34 * tmp54;
+      const double tmp58 = gammaSphericalDD00 * tmp26 * tmp54;
+      const double tmp79 = KSphericalDD01 * tmp34 * tmp54;
+      const double tmp80 = KSphericalDD00 * tmp26 * tmp54;
       out_pw[OUTPUT_VARS::BETAX] = betaSphericalU0 * tmp0 * tmp1 + betaSphericalU1 * tmp3 * tmp4 - betaSphericalU2 * tmp6 * tmp7;
       out_pw[OUTPUT_VARS::BETAY] = betaSphericalU0 * tmp1 * tmp6 + betaSphericalU1 * tmp4 * tmp9 + betaSphericalU2 * tmp0 * tmp7;
       out_pw[OUTPUT_VARS::BETAZ] = betaSphericalU0 * tmp4 - betaSphericalU1 * tmp7;
@@ -414,8 +417,8 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       out_pw[OUTPUT_VARS::VELY] = FluidVelU0 * tmp1 * tmp6 + FluidVelU1 * tmp4 * tmp9 + FluidVelU2 * tmp0 * tmp7;
       out_pw[OUTPUT_VARS::VELZ] = FluidVelU0 * tmp4 - FluidVelU1 * tmp7;
     };
+    ADM_Spherical_to_Cart();
 
-    double const N = quant_vals[ISO_VARS::ISO_ALPHA];
     double const H = quant_vals[ISO_VARS::ISO_H];
     double h = std::exp(H);
     double rho, eps, press;
@@ -431,7 +434,7 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       eps = EOS<eos_t, EPSILON>::get(h);
       press = EOS<eos_t, PRESSURE>::get(h);
     }
-    out_pw[OUTPUT_VARS::ALPHA] = N;
+    out_pw[OUTPUT_VARS::ALPHA] = quant_vals[ISO_VARS::ISO_ALPHA];
     out_pw[OUTPUT_VARS::RHO]   = rho;
     out_pw[OUTPUT_VARS::EPS]   = eps;
     out_pw[OUTPUT_VARS::PRESS] = press;
