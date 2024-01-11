@@ -1,6 +1,6 @@
 #include "Solvers/ns_isotropic/ns_isotropic_exporter.hpp"
 namespace Kadath::FUKA_Solvers {
-  // CFMS_NS_Exporter::CFMS_NS_Exporter(CFMS_NS_Exporter const & r) {
+  // CFMS_NS_ISO_Exporter::CFMS_NS_ISO_Exporter(CFMS_NS_ISO_Exporter const & r) {
   //   std::lock_guard<std::mutex> lock(copy_mutex);
   //   ndom = r.ndom;
   //   h_cut= r.h_cut;
@@ -25,15 +25,15 @@ namespace Kadath::FUKA_Solvers {
   //   // std::cout << "copy\n";
   // }
 
-  CFMS_NS_Exporter& CFMS_NS_Exporter::operator=(const CFMS_NS_Exporter& b) {
+  CFMS_NS_ISO_Exporter& CFMS_NS_ISO_Exporter::operator=(const CFMS_NS_ISO_Exporter& b) {
     if (this == &b) return *this;
 
-    CFMS_NS_Exporter tmp(b);
+    CFMS_NS_ISO_Exporter tmp(b);
     *this = std::move(tmp);
     return *this;
   }
 
-  void CFMS_NS_Exporter::initialize_eos() {
+  void CFMS_NS_ISO_Exporter::initialize_eos() {
     // Initialize EOS
     h_cut    = (*bconfig).template eos<double>(Kadath::FUKA_Config::EOS_PARAMS::HCUT);
     eos_file = (*bconfig).template eos<std::string>(Kadath::FUKA_Config::EOS_PARAMS::EOSFILE);
@@ -56,7 +56,7 @@ namespace Kadath::FUKA_Solvers {
     }// end adding EOS OPEs
   }
 
-  void CFMS_NS_Exporter::load_solution_from_file() {
+  void CFMS_NS_ISO_Exporter::load_solution_from_file() {
     std::string spacein{bconfig->space_filename()};
     FILE* ff1 = fopen (spacein.c_str(), "r") ;
 
@@ -72,7 +72,7 @@ namespace Kadath::FUKA_Solvers {
     ndom = space->get_nbr_domains();
   }
 
-  void CFMS_NS_Exporter::extract_computed_grid_functions() {
+  void CFMS_NS_ISO_Exporter::extract_computed_grid_functions() {
     System_of_eqs syst(*space);
     Base_tensor basis(shift->get_basis());
     Metric_flat fmet(*space, basis);
@@ -99,13 +99,15 @@ namespace Kadath::FUKA_Solvers {
     syst.add_cst("nu", nu);
     syst.add_cst("lapAterm", lap_Aterm);
     syst.add_cst("lapBterm", lap_Bterm);
-    syst.add_cst("wrsint", lap_wterm);
+    syst.add_cst("wrsint"  , lap_wterm);
     syst.add_cst("ome", bconfig->(BCO_PARAMS::OMEGA));
 
     syst.add_def("N = exp(nu)");
     syst.add_def("A = exp(lapAterm - nu)");
     syst.add_def("B = (divrsint(lapBterm) + 1) / N");
     syst.add_def("w = divrsint(wrsint)");
+    syst.add_def("drw = dr(w)");
+    syst.add_def("dtw = dt(w)");
 
     if(bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::LAP_WTERM)) {
       syst.add_def(d, "U = multrsint(B / N * (ome - w))");
@@ -124,6 +126,10 @@ namespace Kadath::FUKA_Solvers {
     lapse->coef();
     omega.reset(new Scalar(syst.give_val_def("w")));
     omega->coef();
+    domega_dr.reset(new Scalar(syst.give_val_def("drw")));
+    domega_dr->coef();
+    domega_dt.reset(new Scalar(syst.give_val_def("dtw")));
+    domega_dt->coef();
 
     // syst.add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
     // A.reset(new Tensor(syst.give_val_def("A")));
@@ -135,7 +141,7 @@ namespace Kadath::FUKA_Solvers {
     // fluidvel->coef();
   }
 
-  void CFMS_NS_Exporter::populate_quants() {
+  void CFMS_NS_ISO_Exporter::populate_quants() {
     if(quants.capacity() != XCTS_VARS::NUM_XCTS_VARS) {
       for (size_t i = 0; i < XCTS_VARS::NUM_XCTS_VARS; ++i)
         quants.push_back(std::cref(*conformal_factor));
@@ -162,7 +168,7 @@ namespace Kadath::FUKA_Solvers {
     export_ready = true;
   }
 
-  CFMS_NS_Exporter::interp_ary_t CFMS_NS_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z) {
+  CFMS_NS_ISO_Exporter::interp_ary_t CFMS_NS_ISO_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z) {
     
     Point abs_coords(ndim);
     abs_coords.set(1) = x;
@@ -176,8 +182,8 @@ namespace Kadath::FUKA_Solvers {
     return quant_vals;
   }
 
-  CFMS_NS_Exporter::interp_ary_t CFMS_NS_Exporter::interpolate_pointwise_subset(double const & x, double const & y, double const & z,
-    std::vector<CFMS_NS_Exporter::XCTS_VARS> slice) {
+  CFMS_NS_ISO_Exporter::interp_ary_t CFMS_NS_ISO_Exporter::interpolate_pointwise_subset(double const & x, double const & y, double const & z,
+    std::vector<CFMS_NS_ISO_Exporter::XCTS_VARS> slice) {
     
     Point abs_coords(ndim);
     abs_coords.set(1) = x;
@@ -191,7 +197,7 @@ namespace Kadath::FUKA_Solvers {
     return quant_vals;
   }
 
-  CFMS_NS_Exporter::output_ary_t CFMS_NS_Exporter::export_pointwise(double const & x, double const & y, double const & z) {
+  CFMS_NS_ISO_Exporter::output_ary_t CFMS_NS_ISO_Exporter::export_pointwise(double const & x, double const & y, double const & z) {
     if(eos_type == "Cold_Table") {
       using eos_t = Kadath::Margherita::Cold_Table;
       return export_pointwise_imp<eos_t>(x, y, z);
@@ -202,7 +208,7 @@ namespace Kadath::FUKA_Solvers {
     throw std::invalid_argument("\nExport: Invalid EOS Type\n)");
   }
 
-  CFMS_NS_Exporter::output_ary_t CFMS_NS_Exporter::export_pointwise_fluid_vars(double const & x, double const & y, double const & z) {
+  CFMS_NS_ISO_Exporter::output_ary_t CFMS_NS_ISO_Exporter::export_pointwise_fluid_vars(double const & x, double const & y, double const & z) {
     if(eos_type == "Cold_Table") {
       using eos_t = Kadath::Margherita::Cold_Table;
       return export_pointwise_fluid_vars_imp<eos_t>(x, y, z);
@@ -213,7 +219,7 @@ namespace Kadath::FUKA_Solvers {
     throw std::invalid_argument("\nExport: Invalid EOS Type\n)");
   }
 
-  CFMS_NS_Exporter::grid_ary_t CFMS_NS_Exporter::export_coordinate_array(
+  CFMS_NS_ISO_Exporter::grid_ary_t CFMS_NS_ISO_Exporter::export_coordinate_array(
     int const npoints, double const * xx, double const * yy, double const * zz) {
     
     grid_ary_t out;
@@ -254,7 +260,7 @@ namespace Kadath::FUKA_Solvers {
     return out;
   }
   
-  CFMS_NS_Exporter::output_ary_t CFMS_NS_Exporter::export_pointwise_spacetime_vars(double const & x, double const & y, double const & z) {
+  CFMS_NS_ISO_Exporter::output_ary_t CFMS_NS_ISO_Exporter::export_pointwise_spacetime_vars(double const & x, double const & y, double const & z) {
     
     // Reset to NAN
     for(auto& e : quant_vals) {
