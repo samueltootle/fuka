@@ -84,6 +84,7 @@ int main(int argc, char** argv) {
     verify_ns_fixing_values(bconfig, seq);
 
     if(!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES)) {
+      initialize_config_from_fixing_values(bconfig, seq);
       int err = ns_3d_xcts_driver(bconfig, resolution, InitSolver::outputdir);
     } else {
       
