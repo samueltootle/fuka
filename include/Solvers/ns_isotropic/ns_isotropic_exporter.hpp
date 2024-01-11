@@ -11,8 +11,11 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     ISO_METRIC_A,
     ISO_METRIC_B,
     ISO_OMEGA,
+    ISO_DOMEGA_DR,
+    ISO_DOMEGA_DTHETA,
     ISO_H,
-    ISO_U,
+    ISO_CARTX,
+    ISO_CARTY,
     NUM_ISO_VARS 
   };
 
@@ -76,12 +79,18 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
 
 
   // Constructed objects
-  ptr_data_member(Tensor, A, shared);
-  ptr_data_member(Vector, fluidvel, shared);
+  // ptr_data_member(Tensor, A, shared);
+  
+  // dphi = (-y, +x, 0)
+  ptr_data_member(Scalar, X, shared);
+  ptr_data_member(Scalar, Y, shared);
+
   ptr_data_member(Scalar, metric_A, shared);
   ptr_data_member(Scalar, metric_B, shared);
   ptr_data_member(Scalar, lapse, shared);
   ptr_data_member(Scalar, omega, shared);
+  ptr_data_member(Scalar, domega_dr, shared);
+  ptr_data_member(Scalar, domega_dt, shared);
 
   protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
@@ -271,43 +280,140 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     quant_vals.fill(NAN);
     quant_vals = interpolate_pointwise(x, y, z);
 
-    // Fill output vector by storing non-conformal quantities
-    auto const psi = quant_vals[ISO_VARS::XCTS_PSI];
-    auto const psi2 = psi * psi;
-    auto const psi4 = psi2 * psi2;
+    /*
+    * Convert ADM variables from the spherical or Cartesian basis to the Cartesian basis
+    * Code generated from NrPyv2
+    */
+    auto ADM_Spherical_to_Cart =[&]() {
+    
+      const double xCart[3] = {x, y, z};
+      // Perform the basis transform on ADM vectors/tensors from Spherical to Cartesian:
 
-    out_pw[OUTPUT_VARS::ALPHA] = quant_vals[ISO_VARS::XCTS_ALPHA];
+      // Set destination xx[3] based on desired xCart[3]
+      double xx0, xx1, xx2;
+      /*
+      *  Original SymPy expressions:
+      *  "[xx0 = sqrt(xCart[0]**2 + xCart[1]**2 + xCart[2]**2)]"
+      *  "[xx1 = acos(xCart[2]/sqrt(xCart[0]**2 + xCart[1]**2 + xCart[2]**2))]"
+      *  "[xx2 = atan2(xCart[1], xCart[0])]"
+      */
+      {
+        const REAL tmp0 = sqrt(((xCart[0]) * (xCart[0])) + ((xCart[1]) * (xCart[1])) + ((xCart[2]) * (xCart[2])));
+        xx0 = tmp0;
+        xx1 = acos(xCart[2] / tmp0);
+        xx2 = atan2(xCart[1], xCart[0]);
+      }
+      // Unpack initial_data for ADM vectors/tensors
+      const double N = quant_vals[ISO_VARS::ISO_ALPHA];
+      const double domega_dr = quant_vals[ISO_VARS::ISO_DOMEGA_DR];
+      const double domega_dt = quant_vals[ISO_VARS::ISO_DOMEGA_DTHETA];
 
-    out_pw[OUTPUT_VARS::BETAX] = quant_vals[ISO_VARS::XCTS_BETAX];
-    out_pw[OUTPUT_VARS::BETAY] = quant_vals[ISO_VARS::XCTS_BETAY];
-    out_pw[OUTPUT_VARS::BETAZ] = quant_vals[ISO_VARS::XCTS_BETAZ];
+      const double betaSpherical0 = 0.0;                              // r
+      const double betaSpherical1 = 0.0;                              // theta
+      const double betaSpherical2 = -quant_vals[ISO_VARS::ISO_OMEGA]; // phi
 
-    double g[3][3];
-    g[0][0] = psi4;
-    g[0][1] = 0.0;
-    g[0][2] = 0.0;
-    g[1][1] = psi4;
-    g[1][2] = 0.0;
-    g[2][2] = psi4;
-    g[1][0] = g[0][1];
-    g[2][0] = g[0][2];
-    g[2][1] = g[1][2];
+      const double A = quant_vals[ISO_VARS::ISO_METRIC_A];
+      const double B = quant_vals[ISO_VARS::ISO_METRIC_B];
 
-    out_pw[OUTPUT_VARS::GXX] = g[0][0];
-    out_pw[OUTPUT_VARS::GXY] = g[0][1];
-    out_pw[OUTPUT_VARS::GXZ] = g[0][2];
-    out_pw[OUTPUT_VARS::GYY] = g[1][1];
-    out_pw[OUTPUT_VARS::GYZ] = g[1][2];
-    out_pw[OUTPUT_VARS::GZZ] = g[2][2];
+      const double gammaSphericalDD01 = 0.0;
+      const double gammaSphericalDD02 = 0.0;
+      const double gammaSphericalDD12 = 0.0;
+      const double gammaSphericalDD00 = A * A;
+      const double gammaSphericalDD11 = A * A * xx0 * xx0;
+      const double gammaSphericalDD22 = B * B * xx0 * xx0 * sin(xx2) * sin(xx2);
 
-    out_pw[OUTPUT_VARS::KXX] = quant_vals[ISO_VARS::XCTS_AXX] * psi4;
-    out_pw[OUTPUT_VARS::KXY] = quant_vals[ISO_VARS::XCTS_AXY] * psi4;
-    out_pw[OUTPUT_VARS::KXZ] = quant_vals[ISO_VARS::XCTS_AXZ] * psi4;
-    out_pw[OUTPUT_VARS::KYY] = quant_vals[ISO_VARS::XCTS_AYY] * psi4;
-    out_pw[OUTPUT_VARS::KYZ] = quant_vals[ISO_VARS::XCTS_AYZ] * psi4;
-    out_pw[OUTPUT_VARS::KZZ] = quant_vals[ISO_VARS::XCTS_AZZ] * psi4;
+      const double KSphericalDD00 = 0.0;
+      const double KSphericalDD01 = 0.0;
+      const double KSphericalDD11 = 0.0;
+      const double KSphericalDD22 = 0.0;
+      const double KSphericalDD02 = -gammaSphericalDD22 / 2.0 / N * domega_dr;
+      const double KSphericalDD12 = -gammaSphericalDD22 / 2.0 / N * domega_dt;
+      const REAL tmp0 = cos(xx2);
+      const REAL tmp1 = sin(xx1);
+      const REAL tmp3 = cos(xx1);
+      const REAL tmp6 = sin(xx2);
+      const REAL tmp12 = ((xx0) * (xx0));
+      const REAL tmp5 = betaSpherical1 * tmp3 * xx0;
+      const REAL tmp7 = tmp6 * xx0;
+      const REAL tmp9 = tmp0 * xx0;
+      const REAL tmp10 = ((tmp0) * (tmp0));
+      const REAL tmp11 = ((tmp6) * (tmp6));
+      const REAL tmp13 = ((tmp1) * (tmp1) * (tmp1));
+      const REAL tmp15 = ((tmp3) * (tmp3));
+      const REAL tmp20 = ((tmp1) * (tmp1) * (tmp1) * (tmp1)) * ((xx0) * (xx0) * (xx0) * (xx0));
+      const REAL tmp25 = ((tmp1) * (tmp1));
+      const REAL tmp33 = tmp1 * tmp3;
+      const REAL tmp17 = tmp1 * tmp12 * tmp15;
+      const REAL tmp21 = gammaSphericalDD00 * tmp20;
+      const REAL tmp23 = tmp13 * tmp3 * ((xx0) * (xx0) * (xx0));
+      const REAL tmp26 = tmp12 * tmp25;
+      const REAL tmp29 = -tmp15 * tmp7 - tmp25 * tmp7;
+      const REAL tmp34 = gammaSphericalDD12 * tmp33;
+      const REAL tmp41 = tmp15 * tmp9 + tmp25 * tmp9;
+      const REAL tmp48 = tmp33 * tmp9;
+      const REAL tmp55 = tmp1 * tmp12 * tmp3;
+      const REAL tmp66 = tmp33 * tmp7;
+      const REAL tmp71 = KSphericalDD00 * tmp20;
+      const REAL tmp18 = (1.0 / ((tmp10 * tmp12 * tmp13 + tmp10 * tmp17 + tmp11 * tmp12 * tmp13 + tmp11 * tmp17) *
+                                (tmp10 * tmp12 * tmp13 + tmp10 * tmp17 + tmp11 * tmp12 * tmp13 + tmp11 * tmp17)));
+      const REAL tmp24 = 2 * gammaSphericalDD01 * tmp23;
+      const REAL tmp36 = gammaSphericalDD02 * tmp26;
+      const REAL tmp50 = -tmp10 * tmp25 * xx0 - tmp11 * tmp25 * xx0;
+      const REAL tmp56 = tmp10 * tmp55 + tmp11 * tmp55;
+      const REAL tmp73 = 2 * KSphericalDD01 * tmp23;
+      const REAL tmp77 = KSphericalDD02 * tmp26;
+      const REAL tmp19 = tmp10 * tmp18;
+      const REAL tmp28 = gammaSphericalDD11 * tmp15 * tmp26;
+      const REAL tmp31 = gammaSphericalDD22 * tmp18;
+      const REAL tmp32 = tmp18 * tmp29;
+      const REAL tmp39 = tmp0 * tmp18;
+      const REAL tmp42 = tmp18 * tmp41;
+      const REAL tmp57 = tmp18 * tmp56;
+      const REAL tmp63 = tmp11 * tmp18;
+      const REAL tmp68 = tmp18 * ((tmp50) * (tmp50));
+      const REAL tmp69 = tmp18 * ((tmp56) * (tmp56));
+      const REAL tmp74 = KSphericalDD11 * tmp15 * tmp26;
+      const REAL tmp75 = KSphericalDD22 * tmp18;
+      const REAL tmp40 = tmp39 * tmp6;
+      const REAL tmp52 = gammaSphericalDD11 * tmp18 * tmp50;
+      const REAL tmp54 = gammaSphericalDD01 * tmp26 * tmp50;
+      const REAL tmp80 = KSphericalDD11 * tmp18 * tmp50;
+      const REAL tmp81 = KSphericalDD01 * tmp26 * tmp50;
+      const REAL tmp60 = gammaSphericalDD00 * tmp26 * tmp57;
+      const REAL tmp83 = KSphericalDD00 * tmp26 * tmp57;
+      out_pw[OUTPUT_VARS::BETAX] = betaSpherical0 * tmp0 * tmp1 - betaSpherical2 * tmp1 * tmp7 + tmp0 * tmp5;
+      out_pw[OUTPUT_VARS::BETAY] = betaSpherical0 * tmp1 * tmp6 + betaSpherical2 * tmp1 * tmp9 + tmp5 * tmp6;
+      out_pw[OUTPUT_VARS::BETAZ] = betaSpherical0 * tmp3 - betaSpherical1 * tmp1 * xx0;
+      out_pw[OUTPUT_VARS::GXX] =
+          2 * tmp0 * tmp32 * tmp36 + tmp19 * tmp21 + tmp19 * tmp24 + tmp19 * tmp28 + ((tmp29) * (tmp29)) * tmp31 + 2 * tmp32 * tmp34 * tmp9;
+      out_pw[OUTPUT_VARS::GXY] = tmp0 * tmp36 * tmp42 + tmp21 * tmp40 + tmp24 * tmp40 + tmp28 * tmp40 + tmp29 * tmp31 * tmp41 + tmp32 * tmp34 * tmp7 +
+                                tmp32 * tmp36 * tmp6 + tmp34 * tmp42 * tmp9;
+      out_pw[OUTPUT_VARS::GXZ] = gammaSphericalDD01 * tmp48 * tmp57 + gammaSphericalDD02 * tmp32 * tmp56 + gammaSphericalDD12 * tmp32 * tmp50 +
+                                tmp0 * tmp60 + tmp39 * tmp54 + tmp48 * tmp52;
+      out_pw[OUTPUT_VARS::GYY] =
+          tmp21 * tmp63 + tmp24 * tmp63 + tmp28 * tmp63 + tmp31 * ((tmp41) * (tmp41)) + 2 * tmp34 * tmp42 * tmp7 + 2 * tmp36 * tmp42 * tmp6;
+      out_pw[OUTPUT_VARS::GYZ] = gammaSphericalDD01 * tmp57 * tmp66 + gammaSphericalDD02 * tmp42 * tmp56 + gammaSphericalDD12 * tmp42 * tmp50 +
+                                tmp18 * tmp54 * tmp6 + tmp52 * tmp66 + tmp6 * tmp60;
+      out_pw[OUTPUT_VARS::GZZ] = gammaSphericalDD00 * tmp69 + 2 * gammaSphericalDD01 * tmp50 * tmp57 + gammaSphericalDD11 * tmp68;
+      out_pw[OUTPUT_VARS::KXX] =
+          2 * KSphericalDD12 * tmp32 * tmp48 + 2 * tmp0 * tmp32 * tmp77 + tmp19 * tmp71 + tmp19 * tmp73 + tmp19 * tmp74 + ((tmp29) * (tmp29)) * tmp75;
+      out_pw[OUTPUT_VARS::KXY] = KSphericalDD12 * tmp32 * tmp33 * tmp7 + KSphericalDD12 * tmp33 * tmp42 * tmp9 + tmp0 * tmp42 * tmp77 +
+                                tmp29 * tmp41 * tmp75 + tmp32 * tmp6 * tmp77 + tmp40 * tmp71 + tmp40 * tmp73 + tmp40 * tmp74;
+      out_pw[OUTPUT_VARS::KXZ] =
+          KSphericalDD01 * tmp48 * tmp57 + KSphericalDD02 * tmp32 * tmp56 + KSphericalDD12 * tmp32 * tmp50 + tmp0 * tmp83 + tmp39 * tmp81 + tmp48 * tmp80;
+      out_pw[OUTPUT_VARS::KYY] =
+          2 * KSphericalDD12 * tmp42 * tmp66 + ((tmp41) * (tmp41)) * tmp75 + 2 * tmp42 * tmp6 * tmp77 + tmp63 * tmp71 + tmp63 * tmp73 + tmp63 * tmp74;
+      out_pw[OUTPUT_VARS::KYZ] = KSphericalDD01 * tmp57 * tmp66 + KSphericalDD02 * tmp42 * tmp56 + KSphericalDD12 * tmp42 * tmp50 + tmp18 * tmp6 * tmp81 +
+                                tmp6 * tmp83 + tmp66 * tmp80;
+      out_pw[OUTPUT_VARS::KZZ] = KSphericalDD00 * tmp69 + 2 * KSphericalDD01 * tmp50 * tmp57 + KSphericalDD11 * tmp68;
+    };
 
-    double const H = quant_vals[ISO_VARS::XCTS_H];
+    double const N = quant_vals[ISO_VARS::ISO_ALPHA];
+    double const omega = quant_vals[ISO_VARS::ISO_OMEGA];
+    const double Omega = (*bconfig)(BCO_PARAMS::OMEGA);
+    const double U_factor = (Omega - omega) / N;
+
+    double const H = quant_vals[ISO_VARS::ISO_H];
     double h = std::exp(H);
     double rho, eps, press;
 
@@ -322,12 +428,13 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       eps = EOS<eos_t, EPSILON>::get(h);
       press = EOS<eos_t, PRESSURE>::get(h);
     }
+    out_pw[OUTPUT_VARS::ALPHA] = N;
     out_pw[OUTPUT_VARS::RHO]   = rho;
     out_pw[OUTPUT_VARS::EPS]   = eps;
     out_pw[OUTPUT_VARS::PRESS] = press;
-    out_pw[OUTPUT_VARS::VELX]  = quant_vals[ISO_VARS::XCTS_UX];
-    out_pw[OUTPUT_VARS::VELY]  = quant_vals[ISO_VARS::XCTS_UY];
-    out_pw[OUTPUT_VARS::VELZ]  = quant_vals[ISO_VARS::XCTS_UZ];
+    out_pw[OUTPUT_VARS::VELX]  = - quant_vals[ISO_VARS::ISO_CARTY] * U_factor;
+    out_pw[OUTPUT_VARS::VELY]  =   quant_vals[ISO_VARS::ISO_CARTX] * U_factor;
+    out_pw[OUTPUT_VARS::VELZ]  = 0.;
     return out_pw;
   }
 
