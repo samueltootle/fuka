@@ -57,6 +57,26 @@ struct CFMS_BNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
   using output_ary_t = std::array<double, NUM_OUTPUT_VARS>; 
   using grid_ary_t = std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
+  std::vector<XCTS_VARS> xcts_spacetime_indicies{
+    XCTS_PSI,
+    XCTS_ALPHA,
+    XCTS_BETAX,
+    XCTS_BETAY,
+    XCTS_BETAZ,
+    XCTS_AXX,
+    XCTS_AXY,
+    XCTS_AXZ,
+    XCTS_AYY,
+    XCTS_AYZ,
+    XCTS_AZZ
+  };
+  std::vector<XCTS_VARS> xcts_fluid_indicies{
+    XCTS_H,
+    XCTS_UX,
+    XCTS_UY,
+    XCTS_UZ
+  };
+
   // Types from Base class
   using Exporter<config_t, space_t>::base_space_t;
   using Exporter<config_t, space_t>::base_config_t;
@@ -176,7 +196,80 @@ struct CFMS_BNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
    * @return interp_ary_t 
    */
   interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z);
+
+  /**
+   * @brief For a given coordinate, interpolate the ID solution for a subset of the ID variables
+   * 
+   * @param x 
+   * @param y 
+   * @param z 
+   * @param slice indicies of array subset to interpolate
+   * @return interp_ary_t 
+   */
+  interp_ary_t interpolate_pointwise_subset(double const & x, double const & y, double const & z,
+    std::vector<XCTS_VARS> slice);
   
+  /**
+   * @brief Export: Load only the spacetime variables
+   * 
+   * @param x 
+   * @param y 
+   * @param z
+   * @return output_ary_t 
+   */
+  output_ary_t export_pointwise_spacetime_vars(double const & x, double const & y, double const & z);
+  
+  /**
+   * @brief Export: Load only the fluid variables
+   * 
+   * @tparam eos_t EOS type
+   * @param x 
+   * @param y 
+   * @param z
+   * @return output_ary_t 
+   */
+  template<class eos_t>
+  output_ary_t export_pointwise_fluid_vars_imp(double const & x, double const & y, double const & z) {
+    
+    // Reset to NAN
+    quant_vals.fill(NAN);
+    quant_vals = interpolate_pointwise_subset(x, y, z, xcts_fluid_indicies);
+
+    double const H = quant_vals[XCTS_VARS::XCTS_H];
+    double h = std::exp(H);
+    double rho, eps, press;
+
+    // get quantities point-wise, since h is smoothest, and cut data at H=0
+    if(std::fabs(H) <= 1e-12) {
+      rho = 0.;
+      eps = 0.;
+      press = 0.;
+    }
+    else {
+      rho = EOS<eos_t, DENSITY>::get(h);
+      eps = EOS<eos_t, EPSILON>::get(h);
+      press = EOS<eos_t, PRESSURE>::get(h);
+    }
+    out_pw[OUTPUT_VARS::RHO]   = rho;
+    out_pw[OUTPUT_VARS::EPS]   = eps;
+    out_pw[OUTPUT_VARS::PRESS] = press;
+    out_pw[OUTPUT_VARS::VELX]  = quant_vals[XCTS_VARS::XCTS_UX];
+    out_pw[OUTPUT_VARS::VELY]  = quant_vals[XCTS_VARS::XCTS_UY];
+    out_pw[OUTPUT_VARS::VELZ]  = quant_vals[XCTS_VARS::XCTS_UZ];
+    return out_pw;
+  }
+ 
+  /**
+   * @brief Export: Interface for only loading the fluid variables
+   * 
+   * @tparam eos_t EOS type
+   * @param x 
+   * @param y 
+   * @param z
+   * @return output_ary_t 
+   */
+  output_ary_t export_pointwise_fluid_vars(double const & x, double const & y, double const & z);
+   
   /**
    * @brief Export an array of OUTPUT_VARS for a given point
    * 
