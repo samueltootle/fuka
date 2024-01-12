@@ -263,9 +263,12 @@ void ns_3d_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(Syste
     auto loghc = bco_utils::get_boundary_val(0, logh, INNER_BC);
 
     // compute the ADM Angular Momentum as surface integral at infinity
-    Val_domain integJ(syst.give_val_def("intJ")()(ndom - 1));
-    double Jadm = space.get_domain(ndom - 1)->integ(integJ, OUTER_BC);
-    double chi = Jadm / Madm / Madm;
+    double chi{0};
+    if(solver_stage != STAGES::NOROT_BC) {
+      Val_domain integJ(syst.give_val_def("intJ")()(ndom - 1));
+      double Jadm = space.get_domain(ndom - 1)->integ(integJ, OUTER_BC);
+      chi = Jadm / Madm / Madm;
+    }
 
     if(seq) {
       auto idx{seq->mass_idx()};
