@@ -22,7 +22,7 @@ config_t ns_3d_xcts_sequence_setup (config_t & seqconfig, std::string outputdir)
 template<class Res_t, class config_t>
 config_t ns_3d_xcts_sequence (config_t & seqconfig, 
                           ns_sequence const & seq,
-                          Res_t const & resolution,
+                          Res_t & resolution,
                           std::string outputdir) {
   
   int rank = 0, exit_status = EXIT_SUCCESS;
@@ -123,7 +123,8 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
       }
     }
     exit_status = ns_3d_xcts_driver(bconfig, resolution, outputdir, &seq); 
-    resolution.set(resolution.final(), resolution.final(), resolution.final());
+    const auto r = resolution.final();
+    resolution.set(r,r,r);
     return exit_status;
   };
 
@@ -238,7 +239,7 @@ int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, ns_s
  * @return int error code
  */
 template<typename config_t>
-int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir){
+int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir, ns_sequence const * seq) {
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
