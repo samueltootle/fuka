@@ -60,7 +60,7 @@ config_t ns_3d_xcts_sequence_setup (config_t & seqconfig, std::string outputdir)
 template<class Res_t, class config_t>
 config_t ns_3d_xcts_sequence (config_t & seqconfig, 
                           ns_sequence const & seq,
-                          Res_t const & resolution,
+                          Res_t & resolution,
                           std::string outputdir);
 
 /**
