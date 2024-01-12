@@ -117,7 +117,7 @@ struct Parameter_sequence : public Parameter_sequence_base {
    * @param _init Initial value
    * @param _final Final value
    */
-  void set(double _val, double _init, double _final) {
+  void set(const double _val, const double _init, const double _final) {
     parameter_val = _val;
     seqinit = _init;
     seqfinal = _final;
