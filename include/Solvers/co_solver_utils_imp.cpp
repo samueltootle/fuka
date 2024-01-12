@@ -91,8 +91,8 @@ void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx) {
   auto& fields = bconfig.return_fields();
 
   int type_coloc = CHEB_TYPE;
-  auto const dim = BCO_PARAMS::DIM;
-  Dim_array res(bconfig(BCO_PARAMS::DIM));
+  auto const dim = bconfig(BCO_PARAMS::DIM);
+  Dim_array res(dim);
   res.set(0) = bconfig(BCO_PARAMS::BCO_RES);
   res.set(1) = bconfig(BCO_PARAMS::BCO_RES);
   res.set(2) = bconfig(BCO_PARAMS::BCO_RES)-1;
