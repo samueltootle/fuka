@@ -59,6 +59,7 @@ class Domain_polar_nucleus : public Domain {
   */
   Domain_polar_nucleus (int nim, int ttype, double radius, const Point& cr, const Dim_array& nbr) ;
   Domain_polar_nucleus (const Domain_polar_nucleus& so) ; ///< Copy constructor.
+  Domain_polar_nucleus (const Domain_polar_nucleus& so, bool import) ; ///< Copy constructor.
   /**
   * Constructor from a file
   * @param num : number of the domain (used by the \c Space).
@@ -237,6 +238,8 @@ class Domain_polar_shell : public Domain {
   */
   Domain_polar_shell (int num, int ttype, double r_int, double r_ext, const Point& cr, const Dim_array& nbr) ;
   Domain_polar_shell (const Domain_polar_shell& so) ; ///< Copy constructor.
+  Domain_polar_shell (const Domain_polar_shell& so, bool import) ; ///< Copy constructor.
+
   /**
   * Constructor from a file
   * @param num : number of the domain (used by the \c Space).
@@ -406,6 +409,7 @@ class Domain_polar_compact : public Domain {
   */
   Domain_polar_compact (int num, int ttype, double r_int, const Point& cr, const Dim_array& nbr) ;
   Domain_polar_compact (const Domain_polar_compact& so) ; ///< Copy constructor.
+  Domain_polar_compact (const Domain_polar_compact& so, bool import) ; ///< Copy constructor.
  /**
   * Constructor from a file
   * @param num : number of the domain (used by the \c Space).

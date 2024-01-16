@@ -57,6 +57,42 @@ Space_polar_adapted::Space_polar_adapted (int ttype, const Point& center, const 
    pshell_inner->vars_to_terms() ;
 }
 
+Space_polar_adapted::Space_polar_adapted (const Space_polar_adapted& sp) {
+	// Copy Space values
+  nbr_domains = sp.nbr_domains;
+  ndim = sp.ndim;
+  type_base = sp.type_base;
+
+  ADAPTED_OUTER = 1;
+  ADAPTED_INNER = 2;
+
+  // Initialize Domain array
+  domains = new Domain* [nbr_domains] ;
+
+  // Copy nucleus
+  const Domain_polar_nucleus* d_nuc = dynamic_cast<const Domain_polar_nucleus*> (sp.get_domain(0)) ;
+  domains[0] = new Domain_polar_nucleus(*d_nuc, true);
+
+  const Domain_polar_shell_outer_adapted* pouter = dynamic_cast<const Domain_polar_shell_outer_adapted*> (sp.get_domain(1)) ;
+  domains[1] = new Domain_polar_shell_outer_adapted(*this, *pouter) ;
+  const Domain_polar_shell_inner_adapted* pinner = dynamic_cast<const Domain_polar_shell_inner_adapted*> (sp.get_domain(2)) ;
+  domains[2] = new Domain_polar_shell_inner_adapted(*this, *pinner) ;
+  
+  for (int i=3 ; i<nbr_domains-1 ; i++) {
+    const Domain_polar_shell* d_shell = dynamic_cast<const Domain_polar_shell*> (sp.get_domain(i)) ;
+    domains[i] = new Domain_polar_shell(*d_shell, true) ;
+  }
+	// Compactified
+  const Domain_polar_compact* d_compact = dynamic_cast<const Domain_polar_compact*> (sp.get_domain(nbr_domains-1)) ;
+	domains[nbr_domains-1] = new Domain_polar_compact(*d_compact, true) ;  
+	
+  const Domain_polar_shell_outer_adapted* pouter_1 = dynamic_cast<const Domain_polar_shell_outer_adapted*> (domains[1]) ;
+  pouter_1->vars_to_terms() ;
+  pouter_1->update() ;
+  const Domain_polar_shell_inner_adapted* pinner_1 = dynamic_cast<const Domain_polar_shell_inner_adapted*> (domains[2]) ;
+  pinner_1->vars_to_terms() ;
+  pinner_1->update() ;
+}
 
 Space_polar_adapted::Space_polar_adapted (FILE* fd) {
 	fread_be (&nbr_domains, sizeof(int), 1, fd) ;

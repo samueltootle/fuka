@@ -37,6 +37,7 @@ Domain_polar_compact::Domain_polar_compact (int num, int ttype, double r, const 
 // Copy constructor
 Domain_polar_compact::Domain_polar_compact (const Domain_polar_compact& so) : Domain(so), alpha(so.alpha), center(so.center){}
 
+Domain_polar_compact::Domain_polar_compact (const Domain_polar_compact& so, bool import) : Domain(so, import), alpha(so.alpha), center(so.center){}
 
 Domain_polar_compact::Domain_polar_compact (int num , FILE* fd) : Domain(num, fd), center(fd) {
 	fread_be (&alpha, sizeof(double), 1, fd) ;

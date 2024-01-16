@@ -40,6 +40,11 @@ Domain_polar_nucleus::Domain_polar_nucleus (int num, int ttype, double r, const 
 Domain_polar_nucleus::Domain_polar_nucleus (const Domain_polar_nucleus& so) : Domain(so), alpha(so.alpha), center(so.center) {
 }
 
+// Constructor by copy
+Domain_polar_nucleus::Domain_polar_nucleus (const Domain_polar_nucleus& so, bool import) : 
+	Domain(so, import), alpha(so.alpha), center(so.center) {
+}
+
 Domain_polar_nucleus::Domain_polar_nucleus (int num, FILE* fd) : Domain(num, fd), center(fd) {
 	fread_be (&alpha, sizeof(double), 1, fd) ;
 	do_coloc() ;
