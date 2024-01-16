@@ -285,7 +285,7 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     * Convert ADM variables from the spherical or Cartesian basis to the Cartesian basis
     * Code generated from NrPyv2
     */
-    auto ADM_Spherical_to_Cart() {
+    auto ADM_Spherical_to_Cart = [&] () {
       using REAL = double;
       const REAL xCart[3] = {x, y, z};
       // Perform the basis transform on ADM vectors/tensors from Spherical to Cartesian:
