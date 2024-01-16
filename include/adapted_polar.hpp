@@ -104,6 +104,7 @@ class Domain_polar_shell_inner_adapted : public Domain {
   */
   Domain_polar_shell_inner_adapted (const Space& sp, int num, int ttype, const Val_domain& rin, double rout, const Point& cr, const Dim_array& nbr) ;
   Domain_polar_shell_inner_adapted (const Domain_polar_shell_inner_adapted & so) ; ///< Copy constructor.
+  Domain_polar_shell_inner_adapted (const Space& sp, const Domain_polar_shell_inner_adapted & so) ; ///< Copy constructor. New space
   /**
   * Constructor from a file
   * @param sp [input] : the associated \c Space.
@@ -180,6 +181,7 @@ class Domain_polar_shell_inner_adapted : public Domain {
      virtual Val_domain laplacian (const Val_domain&, int) const ;
      virtual Val_domain laplacian2 (const Val_domain&, int) const ;
      virtual Val_domain der_r (const Val_domain&) const ;
+     virtual Val_domain dt (const Val_domain&) const ; 
      virtual double integrale (const Val_domain&) const ;
      virtual double integ_volume (const Val_domain&) const ;
      virtual double integ (const Val_domain& so, int bound) const;
@@ -384,6 +386,7 @@ class Domain_polar_shell_outer_adapted : public Domain {
   */
   Domain_polar_shell_outer_adapted (const Space& sp, int num, int ttype, double rin, const Val_domain& rout, const Point& cr, const Dim_array& nbr) ;
   Domain_polar_shell_outer_adapted (const Domain_polar_shell_outer_adapted & so) ; ///< Copy constructor.
+  Domain_polar_shell_outer_adapted (const Space& sp, const Domain_polar_shell_outer_adapted & so) ; ///< Copy constructor, new space.
  /**
   * Constructor from a file
   * @param sp [input] : the associated \c Space.
@@ -466,6 +469,7 @@ class Domain_polar_shell_outer_adapted : public Domain {
      virtual Val_domain laplacian (const Val_domain&, int) const ;
      virtual Val_domain laplacian2 (const Val_domain&, int) const ;
      virtual Val_domain der_r (const Val_domain&) const ;
+     virtual Val_domain dt (const Val_domain&) const ; 
      virtual double integrale (const Val_domain&) const ;
      virtual double integ_volume (const Val_domain&) const ;
 
@@ -614,6 +618,7 @@ class Space_polar_adapted : public Space {
 	* @param bounds [input] : radii of the various shells (and also determines the total number of domains).
 	*/
 	Space_polar_adapted (int ttype, const Point& cr, const Dim_array& nbr, const Array<double>& bounds) ;
+     Space_polar_adapted (const Space_polar_adapted& sp) ; ///< Constructor from a file
 	Space_polar_adapted (FILE*) ; ///< Constructor from a file
 	virtual ~Space_polar_adapted() ; ///< Destructor
 	virtual void save(FILE*) const ;
