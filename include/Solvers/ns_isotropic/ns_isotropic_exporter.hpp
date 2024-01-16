@@ -285,13 +285,13 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     * Convert ADM variables from the spherical or Cartesian basis to the Cartesian basis
     * Code generated from NrPyv2
     */
-    auto ADM_Spherical_to_Cart =[&]() {
-    
-      const double xCart[3] = {x, y, z};
+    auto ADM_Spherical_to_Cart() {
+      using REAL = double;
+      const REAL xCart[3] = {x, y, z};
       // Perform the basis transform on ADM vectors/tensors from Spherical to Cartesian:
 
       // Set destination xx[3] based on desired xCart[3]
-      double xx0, xx1, xx2;
+      REAL xx0, xx1, xx2;
       /*
       *  Original SymPy expressions:
       *  "[xx0 = sqrt(xCart[0]**2 + xCart[1]**2 + xCart[2]**2)]"
@@ -299,99 +299,99 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       *  "[xx2 = atan2(xCart[1], xCart[0])]"
       */
       {
-        const double tmp0 = sqrt(((xCart[0]) * (xCart[0])) + ((xCart[1]) * (xCart[1])) + ((xCart[2]) * (xCart[2])));
+        const REAL tmp0 = sqrt(((xCart[0]) * (xCart[0])) + ((xCart[1]) * (xCart[1])) + ((xCart[2]) * (xCart[2])));
         xx0 = tmp0;
         xx1 = acos(xCart[2] / tmp0);
         xx2 = atan2(xCart[1], xCart[0]);
       }
       // Unpack initial_data for ADM vectors/tensors
-      const double N = quant_vals[ISO_VARS::ISO_ALPHA];
-      const double U_factor  = quant_vals[ISO_VARS::ISO_U];
-      const double domega_dr = quant_vals[ISO_VARS::ISO_DOMEGA_DR];
-      const double domega_dt = quant_vals[ISO_VARS::ISO_DOMEGA_DTHETA];
+      const REAL N = quant_vals[ISO_VARS::ISO_ALPHA];
+      const REAL U_factor = quant_vals[ISO_VARS::ISO_U];
+      const REAL domega_dr = quant_vals[ISO_VARS::ISO_DOMEGA_DR];
+      const REAL domega_dt = quant_vals[ISO_VARS::ISO_DOMEGA_DTHETA];
 
-      const double FluidVelU0 = 0.0;                                   // r
-      const double FluidVelU1 = 0.0;                                   // theta
-      const double FluidVelU2 = U_factor;                              // phi
-      const double betaSphericalU0 = 0.0;                              // r
-      const double betaSphericalU1 = 0.0;                              // theta
-      const double betaSphericalU2 = -quant_vals[ISO_VARS::ISO_OMEGA]; // phi
+      const REAL FluidVelU0 = 0.0;                                   // r
+      const REAL FluidVelU1 = 0.0;                                   // theta
+      const REAL FluidVelU2 = U_factor;                              // phi
+      const REAL betaSphericalU0 = 0.0;                              // r
+      const REAL betaSphericalU1 = 0.0;                              // theta
+      const REAL betaSphericalU2 = -quant_vals[ISO_VARS::ISO_OMEGA]; // phi
 
-      const double A = quant_vals[ISO_VARS::ISO_METRIC_A];
-      const double B = quant_vals[ISO_VARS::ISO_METRIC_B];
+      const REAL A = quant_vals[ISO_VARS::ISO_METRIC_A];
+      const REAL B = quant_vals[ISO_VARS::ISO_METRIC_B];
 
-      const double gammaSphericalDD01 = 0.0;
-      const double gammaSphericalDD02 = 0.0;
-      const double gammaSphericalDD12 = 0.0;
-      const double gammaSphericalDD00 = A * A;
-      const double gammaSphericalDD11 = A * A * xx0 * xx0;
-      const double gammaSphericalDD22 = B * B * xx0 * xx0 * sin(xx2) * sin(xx2);
+      const REAL gammaSphericalDD01 = 0.0;
+      const REAL gammaSphericalDD02 = 0.0;
+      const REAL gammaSphericalDD12 = 0.0;
+      const REAL gammaSphericalDD00 = A * A;
+      const REAL gammaSphericalDD11 = A * A * xx0 * xx0;
+      const REAL gammaSphericalDD22 = B * B * xx0 * xx0 * sin(xx2) * sin(xx2);
 
-      const double KSphericalDD00 = 0.0;
-      const double KSphericalDD01 = 0.0;
-      const double KSphericalDD11 = 0.0;
-      const double KSphericalDD22 = 0.0;
-      const double KSphericalDD02 = -gammaSphericalDD22 / 2.0 / N * domega_dr;
-      const double KSphericalDD12 = -gammaSphericalDD22 / 2.0 / N * domega_dt;
-      const double tmp0 = cos(xx2);
-      const double tmp1 = sin(xx1);
-      const double tmp4 = cos(xx1);
-      const double tmp6 = sin(xx2);
-      const double tmp12 = ((xx0) * (xx0));
-      const double tmp3 = tmp0 * xx0;
-      const double tmp7 = tmp1 * xx0;
-      const double tmp9 = tmp6 * xx0;
-      const double tmp10 = ((tmp0) * (tmp0));
-      const double tmp11 = ((tmp6) * (tmp6));
-      const double tmp13 = ((tmp1) * (tmp1) * (tmp1));
-      const double tmp15 = ((tmp4) * (tmp4));
-      const double tmp20 = ((tmp1) * (tmp1) * (tmp1) * (tmp1)) * ((xx0) * (xx0) * (xx0) * (xx0));
-      const double tmp25 = ((tmp1) * (tmp1));
-      const double tmp17 = tmp1 * tmp12 * tmp15;
-      const double tmp21 = gammaSphericalDD00 * tmp20;
-      const double tmp23 = tmp13 * tmp4 * ((xx0) * (xx0) * (xx0));
-      const double tmp26 = tmp12 * tmp25;
-      const double tmp29 = -tmp15 * tmp9 - tmp25 * tmp9;
-      const double tmp34 = tmp4 * tmp7;
-      const double tmp41 = tmp15 * tmp3 + tmp25 * tmp3;
-      const double tmp52 = tmp1 * tmp12 * tmp4;
-      const double tmp68 = KSphericalDD00 * tmp20;
-      const double tmp18 = (1.0 / ((tmp10 * tmp12 * tmp13 + tmp10 * tmp17 + tmp11 * tmp12 * tmp13 + tmp11 * tmp17) *
+      const REAL KSphericalDD00 = 0.0;
+      const REAL KSphericalDD01 = 0.0;
+      const REAL KSphericalDD11 = 0.0;
+      const REAL KSphericalDD22 = 0.0;
+      const REAL KSphericalDD02 = -gammaSphericalDD22 / 2.0 / N * domega_dr;
+      const REAL KSphericalDD12 = -gammaSphericalDD22 / 2.0 / N * domega_dt;
+      const REAL tmp0 = cos(xx2);
+      const REAL tmp1 = sin(xx1);
+      const REAL tmp4 = cos(xx1);
+      const REAL tmp6 = sin(xx2);
+      const REAL tmp12 = ((xx0) * (xx0));
+      const REAL tmp3 = tmp0 * xx0;
+      const REAL tmp7 = tmp1 * xx0;
+      const REAL tmp9 = tmp6 * xx0;
+      const REAL tmp10 = ((tmp0) * (tmp0));
+      const REAL tmp11 = ((tmp6) * (tmp6));
+      const REAL tmp13 = ((tmp1) * (tmp1) * (tmp1));
+      const REAL tmp15 = ((tmp4) * (tmp4));
+      const REAL tmp20 = ((tmp1) * (tmp1) * (tmp1) * (tmp1)) * ((xx0) * (xx0) * (xx0) * (xx0));
+      const REAL tmp25 = ((tmp1) * (tmp1));
+      const REAL tmp17 = tmp1 * tmp12 * tmp15;
+      const REAL tmp21 = gammaSphericalDD00 * tmp20;
+      const REAL tmp23 = tmp13 * tmp4 * ((xx0) * (xx0) * (xx0));
+      const REAL tmp26 = tmp12 * tmp25;
+      const REAL tmp29 = -tmp15 * tmp9 - tmp25 * tmp9;
+      const REAL tmp34 = tmp4 * tmp7;
+      const REAL tmp41 = tmp15 * tmp3 + tmp25 * tmp3;
+      const REAL tmp52 = tmp1 * tmp12 * tmp4;
+      const REAL tmp68 = KSphericalDD00 * tmp20;
+      const REAL tmp18 = (1.0 / ((tmp10 * tmp12 * tmp13 + tmp10 * tmp17 + tmp11 * tmp12 * tmp13 + tmp11 * tmp17) *
                                 (tmp10 * tmp12 * tmp13 + tmp10 * tmp17 + tmp11 * tmp12 * tmp13 + tmp11 * tmp17)));
-      const double tmp24 = 2 * gammaSphericalDD01 * tmp23;
-      const double tmp35 = gammaSphericalDD12 * tmp34;
-      const double tmp37 = gammaSphericalDD02 * tmp26;
-      const double tmp47 = -tmp10 * tmp25 * xx0 - tmp11 * tmp25 * xx0;
-      const double tmp53 = tmp10 * tmp52 + tmp11 * tmp52;
-      const double tmp70 = 2 * KSphericalDD01 * tmp23;
-      const double tmp73 = KSphericalDD12 * tmp34;
-      const double tmp75 = KSphericalDD02 * tmp26;
-      const double tmp19 = tmp10 * tmp18;
-      const double tmp28 = gammaSphericalDD11 * tmp15 * tmp26;
-      const double tmp31 = gammaSphericalDD22 * tmp18;
-      const double tmp32 = tmp18 * tmp29;
-      const double tmp39 = tmp0 * tmp18;
-      const double tmp42 = tmp18 * tmp41;
-      const double tmp54 = tmp18 * tmp53;
-      const double tmp61 = tmp11 * tmp18;
-      const double tmp64 = tmp18 * tmp6;
-      const double tmp65 = tmp18 * ((tmp47) * (tmp47));
-      const double tmp66 = tmp18 * ((tmp53) * (tmp53));
-      const double tmp71 = KSphericalDD11 * tmp15 * tmp26;
-      const double tmp72 = KSphericalDD22 * tmp18;
-      const double tmp33 = tmp0 * tmp32;
-      const double tmp40 = tmp39 * tmp6;
-      const double tmp43 = tmp0 * tmp42;
-      const double tmp44 = tmp32 * tmp6;
-      const double tmp49 = gammaSphericalDD11 * tmp34 * tmp47;
-      const double tmp51 = gammaSphericalDD01 * tmp26 * tmp47;
-      const double tmp63 = tmp42 * tmp6;
-      const double tmp77 = KSphericalDD11 * tmp34 * tmp47;
-      const double tmp78 = KSphericalDD01 * tmp26 * tmp47;
-      const double tmp56 = gammaSphericalDD01 * tmp34 * tmp54;
-      const double tmp58 = gammaSphericalDD00 * tmp26 * tmp54;
-      const double tmp79 = KSphericalDD01 * tmp34 * tmp54;
-      const double tmp80 = KSphericalDD00 * tmp26 * tmp54;
+      const REAL tmp24 = 2 * gammaSphericalDD01 * tmp23;
+      const REAL tmp35 = gammaSphericalDD12 * tmp34;
+      const REAL tmp37 = gammaSphericalDD02 * tmp26;
+      const REAL tmp47 = -tmp10 * tmp25 * xx0 - tmp11 * tmp25 * xx0;
+      const REAL tmp53 = tmp10 * tmp52 + tmp11 * tmp52;
+      const REAL tmp70 = 2 * KSphericalDD01 * tmp23;
+      const REAL tmp73 = KSphericalDD12 * tmp34;
+      const REAL tmp75 = KSphericalDD02 * tmp26;
+      const REAL tmp19 = tmp10 * tmp18;
+      const REAL tmp28 = gammaSphericalDD11 * tmp15 * tmp26;
+      const REAL tmp31 = gammaSphericalDD22 * tmp18;
+      const REAL tmp32 = tmp18 * tmp29;
+      const REAL tmp39 = tmp0 * tmp18;
+      const REAL tmp42 = tmp18 * tmp41;
+      const REAL tmp54 = tmp18 * tmp53;
+      const REAL tmp61 = tmp11 * tmp18;
+      const REAL tmp64 = tmp18 * tmp6;
+      const REAL tmp65 = tmp18 * ((tmp47) * (tmp47));
+      const REAL tmp66 = tmp18 * ((tmp53) * (tmp53));
+      const REAL tmp71 = KSphericalDD11 * tmp15 * tmp26;
+      const REAL tmp72 = KSphericalDD22 * tmp18;
+      const REAL tmp33 = tmp0 * tmp32;
+      const REAL tmp40 = tmp39 * tmp6;
+      const REAL tmp43 = tmp0 * tmp42;
+      const REAL tmp44 = tmp32 * tmp6;
+      const REAL tmp49 = gammaSphericalDD11 * tmp34 * tmp47;
+      const REAL tmp51 = gammaSphericalDD01 * tmp26 * tmp47;
+      const REAL tmp63 = tmp42 * tmp6;
+      const REAL tmp77 = KSphericalDD11 * tmp34 * tmp47;
+      const REAL tmp78 = KSphericalDD01 * tmp26 * tmp47;
+      const REAL tmp56 = gammaSphericalDD01 * tmp34 * tmp54;
+      const REAL tmp58 = gammaSphericalDD00 * tmp26 * tmp54;
+      const REAL tmp79 = KSphericalDD01 * tmp34 * tmp54;
+      const REAL tmp80 = KSphericalDD00 * tmp26 * tmp54;
       out_pw[OUTPUT_VARS::BETAX] = betaSphericalU0 * tmp0 * tmp1 + betaSphericalU1 * tmp3 * tmp4 - betaSphericalU2 * tmp6 * tmp7;
       out_pw[OUTPUT_VARS::BETAY] = betaSphericalU0 * tmp1 * tmp6 + betaSphericalU1 * tmp4 * tmp9 + betaSphericalU2 * tmp0 * tmp7;
       out_pw[OUTPUT_VARS::BETAZ] = betaSphericalU0 * tmp4 - betaSphericalU1 * tmp7;
