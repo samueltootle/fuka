@@ -326,9 +326,12 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       {
         const REAL tmp0 = sqrt(((xCart[0]) * (xCart[0])) + ((xCart[1]) * (xCart[1])) + ((xCart[2]) * (xCart[2])));
         xx0 = tmp0;
-        xx1 = acos(xCart[2] / tmp0);
-        xx2 = atan2(xCart[1], xCart[0]);
+        if(std::fabs(xx0) < 1e-12) xx0 = 1e-12;
+        const REAL X = (std::fabs(xCart[0]) < 1e-12) ? 1e-12 : xCart[0];
+        xx1 = acos(xCart[2] / xx0); //theta (angle from Z to xy plane)
+        xx2 = atan2(xCart[1], X); // phi (angle from x to y axis)
       }
+      // cout << "r: " << xx0 << ", xx1: " << xx1 << ", xx2: " << xx2 << endl;
       // Unpack initial_data for ADM vectors/tensors
       const REAL N = quant_vals[ISO_VARS::ISO_ALPHA];
       const REAL U_factor = quant_vals[ISO_VARS::ISO_U];
@@ -350,7 +353,7 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       const REAL gammaSphericalDD12 = 0.0;
       const REAL gammaSphericalDD00 = A * A;
       const REAL gammaSphericalDD11 = A * A * xx0 * xx0;
-      const REAL gammaSphericalDD22 = B * B * xx0 * xx0 * sin(xx2) * sin(xx2);
+      const REAL gammaSphericalDD22 = B * B * xx0 * xx0 * sin(xx1) * sin(xx1);
 
       const REAL KSphericalDD00 = 0.0;
       const REAL KSphericalDD01 = 0.0;
