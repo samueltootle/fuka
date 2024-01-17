@@ -223,8 +223,10 @@ namespace Kadath::FUKA_Solvers {
       {
         const double tmp0 = sqrt(((xCart[0]) * (xCart[0])) + ((xCart[1]) * (xCart[1])) + ((xCart[2]) * (xCart[2])));
         xx0 = tmp0;
-        xx1 = acos(xCart[2] / tmp0);
-        xx2 = atan2(xCart[1], xCart[0]);
+        if(std::fabs(xx0) < 1e-12) xx0 = 1e-12;
+        const REAL X = (std::fabs(xCart[0]) < 1e-12) ? 1e-12 : xCart[0];
+        xx1 = acos(xCart[2] / xx0); //theta (angle from Z to xy plane)
+        xx2 = atan2(xCart[1], X); // phi (angle from x to y axis)
       }
       // Unpack initial_data for ADM vectors/tensors
       const double N = quant_vals[ISO_VARS::ISO_ALPHA];
@@ -243,7 +245,7 @@ namespace Kadath::FUKA_Solvers {
       const double gammaSphericalDD12 = 0.0;
       const double gammaSphericalDD00 = A * A;
       const double gammaSphericalDD11 = A * A * xx0 * xx0;
-      const double gammaSphericalDD22 = B * B * xx0 * xx0 * sin(xx2) * sin(xx2);
+      const double gammaSphericalDD22 = B * B * xx0 * xx0 * sin(xx1) * sin(xx1);
 
       const double KSphericalDD00 = 0.0;
       const double KSphericalDD01 = 0.0;
