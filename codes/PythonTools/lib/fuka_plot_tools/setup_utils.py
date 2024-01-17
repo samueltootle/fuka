@@ -245,7 +245,7 @@ def extract_data_isotropic(
   zval=0):
   
   import numpy as np
-
+  plotz=True
   xlen = len(x_coords)
   zlen = len(z_coords)
   
