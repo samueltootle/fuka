@@ -208,7 +208,7 @@ namespace Kadath::FUKA_Solvers {
     * Code generated from NrPyv2
     */
     auto ADM_Spherical_to_Cart =[&]() {
-    
+      using REAL = double; 
       const double xCart[3] = {x, y, z};
       // Perform the basis transform on ADM vectors/tensors from Spherical to Cartesian:
 
