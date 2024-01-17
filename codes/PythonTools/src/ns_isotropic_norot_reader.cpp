@@ -26,29 +26,33 @@
 #include "EOS/EOS.hh"
 #include "python_reader.hpp"
 #include "include/fuka_py.hpp"
+#include "Solvers/ns_isotropic/ns_isotropic_exporter.hpp"
 using namespace Kadath::Margherita ;
 
 
 // the space type
 typedef Kadath::Space_polar_adapted space_t;
 
-// specialized quantities for a BNS system
+// specialized quantities for a non-rotating isotropic NS
 struct ns_isotropic_vars_t : public Kadath::vars_base_t<ns_isotropic_vars_t> {};
 // define the actual quantities and their order in the file!
 template<> Kadath::var_vector Kadath::vars_base_t<ns_isotropic_vars_t>::vars = {
   {"lap_Aterm", SCALAR},
   {"nu", SCALAR},
   {"logh", SCALAR},
+  {"lap_Bterm", SCALAR},
 };
 
 class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotropic_vars_t> {
+  using exporter_t = Kadath::FUKA_Solvers::CFMS_NS_ISO_Exporter;
   std::string config_filename;
   kadath_config_boost<BCO_ISO_NS_INFO> bconfig;
+  exporter_t exporter;
 
   public:
   ns_isotropic_reader_t(std::string const filename) : Kadath::python_reader_t<space_t, ns_isotropic_vars_t>(filename),
                                              config_filename(filename.substr(0,filename.size()-3)+"info"),
-                                             bconfig(config_filename) {
+                                             bconfig(config_filename), exporter(config_filename) {
     // setup eos to before calling solver
     const double h_cut = bconfig.eos<double>(HCUT);
     const std::string eos_file = bconfig.eos<std::string>(EOSFILE);
@@ -83,6 +87,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     Kadath::Scalar const & lap_Aterm = extractField<Kadath::Scalar>("lap_Aterm");
     Kadath::Scalar const & nu = extractField<Kadath::Scalar>("nu");
     Kadath::Scalar const & logh = extractField<Kadath::Scalar>("logh");
+    Kadath::Scalar const & lap_Bterm = extractField<Kadath::Scalar>("lap_Bterm");
 
   	int ndom = space.get_nbr_domains() ;
 
@@ -202,11 +207,69 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     double CR = B(pos_eq) * r(pos_eq);
     vars["CR"] = CR;
   }
+
+  boost::python::list getExporterFieldValues(std::string const & fieldname, boost::python::list const & coord_list) {
+    // list of values to return
+    boost::python::list values;
+
+    
+    // From CPPReference
+    auto str_tolower = [](std::string s) {
+        std::transform(s.begin(), s.end(), s.begin(), 
+                      [](unsigned char c){ return std::tolower(c); } // correct
+                      );
+        return s;
+    };
+    auto key{str_tolower(fieldname)};
+    size_t idx;
+    if (auto search = exporter.output_var_map.find(key); search == exporter.output_var_map.end()) {
+      std::string msg{"Invalid output fieldname pass: "+fieldname};
+      throw std::invalid_argument(msg.c_str());
+    } else {
+      idx = exporter.output_var_map[key];
+      cout << key << ": " << idx << endl;
+    }
+    
+    // loop through all given coords
+    for(int i = 0; i < boost::python::len(coord_list); ++i) {
+      // extract coords
+      boost::python::list coords = boost::python::extract<boost::python::list>(coord_list[i]);
+      auto output_vars = exporter.export_pointwise(
+        boost::python::extract<double>(coords[0]), 
+        boost::python::extract<double>(coords[1]), 
+        boost::python::extract<double>(coords[2])
+      );
+      values.append(output_vars[idx]);
+    }
+    return values;
+  }
+  boost::python::list getExporterKeys() {
+    boost::python::list values;
+    for(auto t : exporter.output_var_map) {
+      values.append(t.first);
+    }
+    return values;
+  }
 };
+
+// dummy constructor function, defining readers through boost python
+template<typename reader_t>
+void constructPythonReader_here(std::string reader_name) {
+  using namespace boost::python;
+
+  auto reader = class_<reader_t>(reader_name.c_str(), init<std::string>());
+  reader.def("getFieldValues", &reader_t::getFieldValues);
+  reader.def("getEOSValues", &reader_t::getEOSValues);
+  reader.def("getExporterFieldValues", &reader_t::getExporterFieldValues);
+  reader.def("getExporterKeys", &reader_t::getExporterKeys);
+  reader.def_readonly("vars", &reader_t::vars);
+  reader.def_readonly("config", &reader_t::config);  
+}
 
 BOOST_PYTHON_MODULE(_ns_isotropic_norot_reader)
 {
     // initialize python types
     Kadath::initPythonBinding<space_t>();
-    Kadath::constructPythonReader<ns_isotropic_reader_t>("ns_isotropic_norot_reader");
+    constructPythonReader_here<ns_isotropic_reader_t>("ns_isotropic_norot_reader");
+    
 }
