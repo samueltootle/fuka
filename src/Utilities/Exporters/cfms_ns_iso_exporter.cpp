@@ -112,6 +112,9 @@ namespace Kadath::FUKA_Solvers {
 
       fluidvel.reset(new Scalar(syst.give_val_def("U")));
       fluidvel->coef();
+    } else {
+      fluidvel.reset(new Scalar(*space));
+      fluidvel->annule_hard();
     }
     metric_A.reset(new Scalar(syst.give_val_def("A")));
     metric_A->coef();
