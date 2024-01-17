@@ -45,6 +45,31 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     NUM_OUTPUT_VARS
   };
 
+  std::map<std::string, OUTPUT_VARS> output_var_map {
+    {"lapse", OUTPUT_VARS::ALPHA},
+    {"betax", OUTPUT_VARS::BETAX},
+    {"betay", OUTPUT_VARS::BETAY},
+    {"betaz", OUTPUT_VARS::BETAZ},
+    {"gxx"  , OUTPUT_VARS::GXX},
+    {"gxy"  , OUTPUT_VARS::GXY},
+    {"gxz"  , OUTPUT_VARS::GXZ},
+    {"gyy"  , OUTPUT_VARS::GYY},
+    {"gyz"  , OUTPUT_VARS::GYZ},
+    {"gzz"  , OUTPUT_VARS::GZZ},
+    {"kxx"  , OUTPUT_VARS::KXX},
+    {"kxy"  , OUTPUT_VARS::KXY},
+    {"kxz"  , OUTPUT_VARS::KXZ},
+    {"kyy"  , OUTPUT_VARS::KYY},
+    {"kyz"  , OUTPUT_VARS::KYZ},
+    {"kzz"  , OUTPUT_VARS::KZZ},
+    {"rho"  , OUTPUT_VARS::RHO},
+    {"eps"  , OUTPUT_VARS::EPS},
+    {"press", OUTPUT_VARS::PRESS},
+    {"velx" , OUTPUT_VARS::VELX},
+    {"vely" , OUTPUT_VARS::VELY},
+    {"velz" , OUTPUT_VARS::VELZ},
+  };
+
   using interp_ary_t = std::array<double, NUM_ISO_VARS>; 
   using output_ary_t = std::array<double, NUM_OUTPUT_VARS>; 
   using grid_ary_t = std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS>;
