@@ -9,18 +9,20 @@ void syst_vars_hydro(dict_t& vars, System_of_eqs & syst) {
   #ifdef DEBUG
     std::cout << "Loading hydro vars into dictionary.\n";
   #endif
+  auto check_before = [&](auto def) 
   {
-    char n[] = "eqphi";
+    // char n[] = "eqphi";
     char* name;
     name = new char[LMAX];
-    trim_spaces(name, n);
+    trim_spaces(name, def);
     int which = -1 ;
     int valence;
     char* name_ind = 0x0  ;
     Array<int>* type_ind = 0x0 ;
     bool found = false ;
-
-    if(syst.isdef(0, name, which, valence, name_ind, type_ind))
+    return syst.isdef(0, name, which, valence, name_ind, type_ind);
+  };
+  if(check_before("eqphi")) {        
       vars["cPhi"] = syst.give_val_def("eqphi");
   }
   
@@ -40,9 +42,11 @@ void syst_vars_hydro(dict_t& vars, System_of_eqs & syst) {
   FUKA_Syst_tools::dict_add_vector_cmp(
     syst, vars, "vel", syst.give_val_def("U")
   );
-  FUKA_Syst_tools::dict_add_vector_cmp(
-    syst, vars, "dfirstint", syst.give_val_def("dfirstint")
-  );
+  if(check_before("dfirstint")) {
+    FUKA_Syst_tools::dict_add_vector_cmp(
+      syst, vars, "dfirstint", syst.give_val_def("dfirstint")
+    );
+  }
 }
 
 /**
