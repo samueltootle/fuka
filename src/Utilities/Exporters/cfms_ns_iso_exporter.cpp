@@ -29,9 +29,9 @@ namespace Kadath::FUKA_Solvers {
     export_ready = false;
 
     populate_quants();
-  //   // For testing only
-  //   // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
-  //   // std::cout << "copy\n";
+    // For testing only
+    // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
+    // std::cout << "copy\n";
   }
 
   CFMS_NS_ISO_Exporter& CFMS_NS_ISO_Exporter::operator=(const CFMS_NS_ISO_Exporter& b) {
@@ -108,7 +108,7 @@ namespace Kadath::FUKA_Solvers {
     syst.add_def("dtw = dt(w)");
 
     if(bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::LAP_WTERM)) {
-      syst.add_def("U = multrsint(B / N * (ome - w))");
+      syst.add_def("U = 1 / N * (ome - w)");
 
       fluidvel.reset(new Scalar(syst.give_val_def("U")));
       fluidvel->coef();
