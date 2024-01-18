@@ -325,7 +325,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
       throw std::invalid_argument(msg.c_str());
     }
 
-    auto output_vars = exporter.export_pointwise(
+    auto output_vars = exporter.export_pointwise__spherical(
       boost::python::extract<double>(coord[0]), 
       boost::python::extract<double>(coord[1]), 
       boost::python::extract<double>(coord[2])
@@ -350,7 +350,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
       throw std::invalid_argument(msg.c_str());
     }
 
-    auto output_vars = exporter.export_pointwise__spherical(
+    auto output_vars = exporter.export_pointwise(
       boost::python::extract<double>(coord[0]), 
       boost::python::extract<double>(coord[1]), 
       boost::python::extract<double>(coord[2])
