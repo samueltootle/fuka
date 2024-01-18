@@ -88,8 +88,13 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     Kadath::Scalar const & lap_Aterm = extractField<Kadath::Scalar>("lap_Aterm");
     Kadath::Scalar const & nu = extractField<Kadath::Scalar>("nu");
     Kadath::Scalar const & lap_Bterm = extractField<Kadath::Scalar>("lap_Bterm");
-    Kadath::Scalar const & lap_wterm = extractField<Kadath::Scalar>("lap_wterm");
+    Kadath::Scalar const & lap_wterm_in = extractField<Kadath::Scalar>("lap_wterm");
     Kadath::Scalar const & logh = extractField<Kadath::Scalar>("logh");
+
+    Kadath::Scalar lap_wterm(lap_wterm_in, true);
+    lap_wterm.affect_parameters();
+    lap_wterm.set_parameters()->set_m_quant() = 1 ;
+    lap_wterm.std_base();
 
   	int ndom = space.get_nbr_domains() ;
 
@@ -164,12 +169,12 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
         syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
                               "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
                               "- 4piG * A^2 * (E + S)");
+        syst.add_def(d, "eqwrsint = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
+                            "+ 4 * 4piG * N * A^2 / B * pphi");
+        syst.add_def(d, "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
         syst.add_def(d, "eqAterm = delta * lap2(lapAterm) + delta * scal(grad(nu), grad(nu))"
                         "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
                         "- 2 * 4piG * A^2 * Spp");
-        syst.add_def(d, "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
-        syst.add_def(d, "eqwrsint = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                            "+ 4 * 4piG * N * A^2 / B * pphi");
   
         // definition for the baryonic mass integral
         syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
