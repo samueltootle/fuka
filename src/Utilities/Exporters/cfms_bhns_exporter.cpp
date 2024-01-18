@@ -148,17 +148,17 @@ namespace Kadath::FUKA_Solvers {
     }
     quants[XCTS_VARS::XCTS_PSI] = std::cref(*conformal_factor);
     quants[XCTS_VARS::XCTS_ALPHA] = std::cref(*lapse);
-    quants[XCTS_VARS::XCTS_BETAX] = std::cref((*shift)(1));
-    quants[XCTS_VARS::XCTS_BETAY] = std::cref((*shift)(2));
-    quants[XCTS_VARS::XCTS_BETAZ] = std::cref((*shift)(3));
+    quants[XCTS_VARS::XCTS_BETA1] = std::cref((*shift)(1));
+    quants[XCTS_VARS::XCTS_BETA2] = std::cref((*shift)(2));
+    quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
     export_utils::add_tensor_refs(quants, {
-      XCTS_VARS::XCTS_AXX, 
-      XCTS_VARS::XCTS_AXY, 
-      XCTS_VARS::XCTS_AXZ, 
-      XCTS_VARS::XCTS_AYY, 
-      XCTS_VARS::XCTS_AYZ, 
-      XCTS_VARS::XCTS_AZZ}, *A);
+      XCTS_VARS::XCTS_A11, 
+      XCTS_VARS::XCTS_A12, 
+      XCTS_VARS::XCTS_A13, 
+      XCTS_VARS::XCTS_A22, 
+      XCTS_VARS::XCTS_A23, 
+      XCTS_VARS::XCTS_A33}, *A);
     
     // Fluid related quantities
     quants[XCTS_VARS::XCTS_H] = std::cref(*logh);
@@ -247,30 +247,30 @@ namespace Kadath::FUKA_Solvers {
 
       out[OUTPUT_VARS::ALPHA][i] = out_pw[OUTPUT_VARS::ALPHA];
 
-      out[OUTPUT_VARS::BETAX][i] = out_pw[OUTPUT_VARS::BETAX];
-      out[OUTPUT_VARS::BETAY][i] = out_pw[OUTPUT_VARS::BETAY];
-      out[OUTPUT_VARS::BETAZ][i] = out_pw[OUTPUT_VARS::BETAZ];
+      out[OUTPUT_VARS::BETA1][i] = out_pw[OUTPUT_VARS::BETA1];
+      out[OUTPUT_VARS::BETA2][i] = out_pw[OUTPUT_VARS::BETA2];
+      out[OUTPUT_VARS::BETA3][i] = out_pw[OUTPUT_VARS::BETA3];
 
-      out[OUTPUT_VARS::GXX][i] = out_pw[OUTPUT_VARS::GXX];
-      out[OUTPUT_VARS::GXY][i] = out_pw[OUTPUT_VARS::GXY];
-      out[OUTPUT_VARS::GXZ][i] = out_pw[OUTPUT_VARS::GXZ];
-      out[OUTPUT_VARS::GYY][i] = out_pw[OUTPUT_VARS::GYY];
-      out[OUTPUT_VARS::GYZ][i] = out_pw[OUTPUT_VARS::GYZ];
-      out[OUTPUT_VARS::GZZ][i] = out_pw[OUTPUT_VARS::GZZ];
+      out[OUTPUT_VARS::G11][i] = out_pw[OUTPUT_VARS::G11];
+      out[OUTPUT_VARS::G12][i] = out_pw[OUTPUT_VARS::G12];
+      out[OUTPUT_VARS::G13][i] = out_pw[OUTPUT_VARS::G13];
+      out[OUTPUT_VARS::G22][i] = out_pw[OUTPUT_VARS::G22];
+      out[OUTPUT_VARS::G23][i] = out_pw[OUTPUT_VARS::G23];
+      out[OUTPUT_VARS::G33][i] = out_pw[OUTPUT_VARS::G33];
 
-      out[OUTPUT_VARS::KXX][i] = out_pw[OUTPUT_VARS::KXX];
-      out[OUTPUT_VARS::KXY][i] = out_pw[OUTPUT_VARS::KXY];
-      out[OUTPUT_VARS::KXZ][i] = out_pw[OUTPUT_VARS::KXZ];
-      out[OUTPUT_VARS::KYY][i] = out_pw[OUTPUT_VARS::KYY];
-      out[OUTPUT_VARS::KYZ][i] = out_pw[OUTPUT_VARS::KYZ];
-      out[OUTPUT_VARS::KZZ][i] = out_pw[OUTPUT_VARS::KZZ];
+      out[OUTPUT_VARS::K11][i] = out_pw[OUTPUT_VARS::K11];
+      out[OUTPUT_VARS::K12][i] = out_pw[OUTPUT_VARS::K12];
+      out[OUTPUT_VARS::K13][i] = out_pw[OUTPUT_VARS::K13];
+      out[OUTPUT_VARS::K22][i] = out_pw[OUTPUT_VARS::K22];
+      out[OUTPUT_VARS::K23][i] = out_pw[OUTPUT_VARS::K23];
+      out[OUTPUT_VARS::K33][i] = out_pw[OUTPUT_VARS::K33];
 
       out[OUTPUT_VARS::RHO][i] = out_pw[OUTPUT_VARS::RHO];
       out[OUTPUT_VARS::EPS][i] = out_pw[OUTPUT_VARS::EPS];
       out[OUTPUT_VARS::PRESS][i] = out_pw[OUTPUT_VARS::PRESS];
-      out[OUTPUT_VARS::VELX][i]  = out_pw[OUTPUT_VARS::VELX];
-      out[OUTPUT_VARS::VELY][i]  = out_pw[OUTPUT_VARS::VELY];
-      out[OUTPUT_VARS::VELZ][i]  = out_pw[OUTPUT_VARS::VELZ];
+      out[OUTPUT_VARS::VEL1][i]  = out_pw[OUTPUT_VARS::VEL1];
+      out[OUTPUT_VARS::VEL2][i]  = out_pw[OUTPUT_VARS::VEL2];
+      out[OUTPUT_VARS::VEL3][i]  = out_pw[OUTPUT_VARS::VEL3];
     }
     return out;
   }

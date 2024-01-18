@@ -10,15 +10,15 @@ struct CFMS_BHNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_b
   enum XCTS_VARS : size_t {
     XCTS_PSI,
     XCTS_ALPHA,
-    XCTS_BETAX,
-    XCTS_BETAY,
-    XCTS_BETAZ,
-    XCTS_AXX,
-    XCTS_AXY,
-    XCTS_AXZ,
-    XCTS_AYY,
-    XCTS_AYZ,
-    XCTS_AZZ,
+    XCTS_BETA1,
+    XCTS_BETA2,
+    XCTS_BETA3,
+    XCTS_A11,
+    XCTS_A12,
+    XCTS_A13,
+    XCTS_A22,
+    XCTS_A23,
+    XCTS_A33,
     XCTS_H,
     XCTS_UX,
     XCTS_UY,
@@ -29,27 +29,27 @@ struct CFMS_BHNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_b
   // Output physical grid functions
   enum OUTPUT_VARS : size_t {
     ALPHA,
-    BETAX,
-    BETAY,
-    BETAZ,
-    GXX,
-    GXY,
-    GXZ,
-    GYY,
-    GYZ,
-    GZZ,
-    KXX,
-    KXY,
-    KXZ,
-    KYY,
-    KYZ,
-    KZZ,
+    BETA1,
+    BETA2,
+    BETA3,
+    G11,
+    G12,
+    G13,
+    G22,
+    G23,
+    G33,
+    K11,
+    K12,
+    K13,
+    K22,
+    K23,
+    K33,
     RHO,
     EPS,
     PRESS,
-    VELX,
-    VELY,
-    VELZ,
+    VEL1,
+    VEL2,
+    VEL3,
     NUM_OUTPUT_VARS
   };
 
@@ -200,9 +200,9 @@ struct CFMS_BHNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_b
 
     out_pw[OUTPUT_VARS::ALPHA] = quant_vals[XCTS_VARS::XCTS_ALPHA];
 
-    out_pw[OUTPUT_VARS::BETAX] = quant_vals[XCTS_VARS::XCTS_BETAX];
-    out_pw[OUTPUT_VARS::BETAY] = quant_vals[XCTS_VARS::XCTS_BETAY];
-    out_pw[OUTPUT_VARS::BETAZ] = quant_vals[XCTS_VARS::XCTS_BETAZ];
+    out_pw[OUTPUT_VARS::BETA1] = quant_vals[XCTS_VARS::XCTS_BETA1];
+    out_pw[OUTPUT_VARS::BETA2] = quant_vals[XCTS_VARS::XCTS_BETA2];
+    out_pw[OUTPUT_VARS::BETA3] = quant_vals[XCTS_VARS::XCTS_BETA3];
 
     double g[3][3];
     g[0][0] = psi4;
@@ -215,19 +215,19 @@ struct CFMS_BHNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_b
     g[2][0] = g[0][2];
     g[2][1] = g[1][2];
 
-    out_pw[OUTPUT_VARS::GXX] = g[0][0];
-    out_pw[OUTPUT_VARS::GXY] = g[0][1];
-    out_pw[OUTPUT_VARS::GXZ] = g[0][2];
-    out_pw[OUTPUT_VARS::GYY] = g[1][1];
-    out_pw[OUTPUT_VARS::GYZ] = g[1][2];
-    out_pw[OUTPUT_VARS::GZZ] = g[2][2];
+    out_pw[OUTPUT_VARS::G11] = g[0][0];
+    out_pw[OUTPUT_VARS::G12] = g[0][1];
+    out_pw[OUTPUT_VARS::G13] = g[0][2];
+    out_pw[OUTPUT_VARS::G22] = g[1][1];
+    out_pw[OUTPUT_VARS::G23] = g[1][2];
+    out_pw[OUTPUT_VARS::G33] = g[2][2];
 
-    out_pw[OUTPUT_VARS::KXX] = quant_vals[XCTS_VARS::XCTS_AXX] * psi4;
-    out_pw[OUTPUT_VARS::KXY] = quant_vals[XCTS_VARS::XCTS_AXY] * psi4;
-    out_pw[OUTPUT_VARS::KXZ] = quant_vals[XCTS_VARS::XCTS_AXZ] * psi4;
-    out_pw[OUTPUT_VARS::KYY] = quant_vals[XCTS_VARS::XCTS_AYY] * psi4;
-    out_pw[OUTPUT_VARS::KYZ] = quant_vals[XCTS_VARS::XCTS_AYZ] * psi4;
-    out_pw[OUTPUT_VARS::KZZ] = quant_vals[XCTS_VARS::XCTS_AZZ] * psi4;
+    out_pw[OUTPUT_VARS::K11] = quant_vals[XCTS_VARS::XCTS_A11] * psi4;
+    out_pw[OUTPUT_VARS::K12] = quant_vals[XCTS_VARS::XCTS_A12] * psi4;
+    out_pw[OUTPUT_VARS::K13] = quant_vals[XCTS_VARS::XCTS_A13] * psi4;
+    out_pw[OUTPUT_VARS::K22] = quant_vals[XCTS_VARS::XCTS_A22] * psi4;
+    out_pw[OUTPUT_VARS::K23] = quant_vals[XCTS_VARS::XCTS_A23] * psi4;
+    out_pw[OUTPUT_VARS::K33] = quant_vals[XCTS_VARS::XCTS_A33] * psi4;
 
     double const H = quant_vals[XCTS_VARS::XCTS_H];
     double h = std::exp(H);
@@ -247,9 +247,9 @@ struct CFMS_BHNS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_b
     out_pw[OUTPUT_VARS::RHO]   = rho;
     out_pw[OUTPUT_VARS::EPS]   = eps;
     out_pw[OUTPUT_VARS::PRESS] = press;
-    out_pw[OUTPUT_VARS::VELX]  = quant_vals[XCTS_VARS::XCTS_UX];
-    out_pw[OUTPUT_VARS::VELY]  = quant_vals[XCTS_VARS::XCTS_UY];
-    out_pw[OUTPUT_VARS::VELZ]  = quant_vals[XCTS_VARS::XCTS_UZ];
+    out_pw[OUTPUT_VARS::VEL1]  = quant_vals[XCTS_VARS::XCTS_UX];
+    out_pw[OUTPUT_VARS::VEL2]  = quant_vals[XCTS_VARS::XCTS_UY];
+    out_pw[OUTPUT_VARS::VEL3]  = quant_vals[XCTS_VARS::XCTS_UZ];
     return out_pw;
   }
 
