@@ -19,8 +19,8 @@ void interp_data(reader_t& input_reader, std::vector<double>& xx, std::vector<do
   }
   cout << xx[200] << ", " << yy[200] << ", " << zz[200] << ", " 
     << all_data[200][reader_t::OUTPUT_VARS::ALPHA] << "\n\t"
-    << all_data[200][reader_t::OUTPUT_VARS::KXY] << ", "
-    << all_data[200][reader_t::OUTPUT_VARS::KXZ] << ", "
-    << all_data[200][reader_t::OUTPUT_VARS::KYZ] << "\n";
+    << all_data[200][reader_t::OUTPUT_VARS::K12] << ", "
+    << all_data[200][reader_t::OUTPUT_VARS::K13] << ", "
+    << all_data[200][reader_t::OUTPUT_VARS::K23] << "\n";
 
 }
