@@ -151,8 +151,10 @@ namespace Kadath::FUKA_Solvers {
 
   CFMS_NS_ISO_Exporter::interp_ary_t CFMS_NS_ISO_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z) {
     
+    double r2_xy = x * x + y * y;
+    double r_xy = std::sqrt(r2_xy);
     Point abs_coords(ndim);
-    abs_coords.set(1) = x;
+    abs_coords.set(1) = r_xy;
     abs_coords.set(2) = z;
     
     for (size_t k = 0; k < ISO_VARS::NUM_ISO_VARS; ++k) {
@@ -165,8 +167,10 @@ namespace Kadath::FUKA_Solvers {
   CFMS_NS_ISO_Exporter::interp_ary_t CFMS_NS_ISO_Exporter::interpolate_pointwise_subset(double const & x, double const & y, double const & z,
     std::vector<CFMS_NS_ISO_Exporter::ISO_VARS> slice) {
     
+    double r2_xy = x * x + y * y;
+    double r_xy = std::sqrt(r2_xy);
     Point abs_coords(ndim);
-    abs_coords.set(1) = x;
+    abs_coords.set(1) = r_xy;
     abs_coords.set(2) = z;
     
     for (const auto k : slice) {
