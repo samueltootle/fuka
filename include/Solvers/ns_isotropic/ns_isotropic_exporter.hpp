@@ -326,12 +326,20 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       {
         const REAL tmp0 = sqrt(((xCart[0]) * (xCart[0])) + ((xCart[1]) * (xCart[1])) + ((xCart[2]) * (xCart[2])));
         xx0 = tmp0;
-        if(std::fabs(xx0) < 1e-12) xx0 = 1e-12;
-        const REAL X = (std::fabs(xCart[0]) < 1e-12) ? 1e-12 : xCart[0];
-        xx1 = acos(xCart[2] / xx0); //theta (angle from Z to xy plane)
-        xx2 = atan2(xCart[1], X); // phi (angle from x to y axis)
+        // if(std::fabs(xx0) < 1e-12) xx0 = 1e-12;
+        // const REAL X = (std::fabs(xCart[0]) < 1e-12) ? 1e-12 : xCart[0];
+        if(std::fabs(xx0) < 1e-12) {
+          xx1 = 1e-10;
+          xx2 = 1e-12;
+          xx0 = 1e-12;
+        } else if(std::fabs(x) < 1e-12 && std::fabs(y) < 1e-12) {
+          xx1 = 1e-12;
+          xx2 = 1e-12;
+        } else {
+          xx1 = acos(xCart[2] / xx0); //theta (angle from Z to xy plane)
+          xx2 = atan2(xCart[1], xCart[0]); // phi (angle from x to y axis)
+        }
       }
-      // cout << "r: " << xx0 << ", xx1: " << xx1 << ", xx2: " << xx2 << endl;
       // Unpack initial_data for ADM vectors/tensors
       const REAL N = quant_vals[ISO_VARS::ISO_ALPHA];
       const REAL U_factor = quant_vals[ISO_VARS::ISO_U];
