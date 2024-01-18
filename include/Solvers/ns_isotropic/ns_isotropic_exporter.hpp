@@ -329,12 +329,15 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
         // if(std::fabs(xx0) < 1e-12) xx0 = 1e-12;
         // const REAL X = (std::fabs(xCart[0]) < 1e-12) ? 1e-12 : xCart[0];
         if(std::fabs(xx0) < 1e-12) {
-          xx1 = 1e-10;
-          xx2 = 1e-12;
           xx0 = 1e-12;
+          xx1 = acos(xCart[2] / xx0); //theta (angle from Z to xy plane)
+          const double xfixed = std::copysign(1e-12, xCart[2]);
+          xx2 = atan2(xCart[1], xfixed); // phi (angle from x to y axis)
         } else if(std::fabs(x) < 1e-12 && std::fabs(y) < 1e-12) {
-          xx1 = 1e-12;
-          xx2 = 1e-12;
+          xx1 = acos(xCart[2] / xx0); //theta (angle from Z to xy plane)
+          
+          const double xfixed = std::copysign(1e-12, xCart[2]);
+          xx2 = atan2(xCart[1], xfixed); // phi (angle from x to y axis)
         } else {
           xx1 = acos(xCart[2] / xx0); //theta (angle from Z to xy plane)
           xx2 = atan2(xCart[1], xCart[0]); // phi (angle from x to y axis)
