@@ -123,10 +123,16 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::syst_init(System_of
   // delta = p / rho
   syst.add_def("delta = h - eps - 1.");
 
-  syst.add_def("U = multrsint(B / N * (Omega - w))");
+  // (3.31) Upper Phi component of U vector (r, theta = 0)
+  syst.add_def("UphiU = (Omega - w) / N");
+  // (3.32)
+  syst.add_def("U = multrsint(B * UphiU)");
   syst.add_def("Usq = U*U");
   syst.add_def("Wsq = 1 / (1 - Usq)");
   syst.add_def("W = sqrt(Wsq)");
+  // Lower Phi component of U vector = u . \xi
+  // (3.85)
+  syst.add_def("UphiL = multrsint(multrsint(B^2 * UphiU * W))");
 }
 
 template<class eos_t, typename config_t, typename space_t>

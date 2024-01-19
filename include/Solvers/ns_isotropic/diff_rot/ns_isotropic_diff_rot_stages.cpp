@@ -99,11 +99,12 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
 
   // This converges, but isn't correct
   // syst.add_def("j = Wsq / N * U");
-  syst.add_def("j = Wsq / N * U * multrsint(B)");
+  // syst.add_def("j = Wsq^2 / N^2 * (Omega - w)");
+  syst.add_def("j = W / N * UphiL");
   syst.add_def("omelaw = omec - j^2 / diffA^2");
 
   for (int d = 0; d < ndom; d++) {
-    syst.add_eq_full(d, "Omega - omelaw = 0");
+    // syst.add_eq_full(d, "Omega - omelaw = 0");
     switch (d) {
     // in the star the constraint equations are sourced by the matter
     case 0:
@@ -138,6 +139,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
       // first integral of the euler equation for a differentially rotating star
       // This is rotation law specific
       syst.add_def(d, firstint.c_str());
+      syst.add_eq_full(d, "Omega - omelaw = 0");
       break;
     // outside the matter is absent and the sources are zero
     default:
@@ -150,14 +152,15 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
       syst.add_def(d, "eqAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
                 "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))");
 
-
       break;
     }
-    // if( d <= space.ADAPTED_INNER)
-    //   syst.add_eq_full(d, "Omega - omelaw = 0");
-    // else
-    //   syst.add_eq_full(d, "Omega = 0");
   }
+  // Ensure Omega field matches the interior solution, but is zero otherwise.
+  // Much more reliable convergence
+  syst.add_eq_matching(2, INNER_BC, "Omega");
+  syst.add_eq_matching(2, INNER_BC, "dn(Omega)");
+  syst.add_eq_inside(2,"Omega = 0");
+  syst.add_eq_full(3, "Omega = 0");
  
   // add the constraint equations and demand continuity their normal derivative across domain boundaries
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
