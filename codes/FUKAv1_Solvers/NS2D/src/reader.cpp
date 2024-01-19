@@ -373,9 +373,6 @@ void reader_2d_diffrot(config_t bconfig) {
   Scalar Brsint(syst.give_val_def("Brsint")());
   Scalar psi(log(Brsint));
   psi.std_base();
-  //  for(int d = 0; d < ndom; ++d) {
-  //   psi.set_domain(d).set_base() = Brsint(d).get_base();  
-  // }
 
   // syst.add_def("psi = log(Brsint)");
   syst.add_cst("psi", psi);
