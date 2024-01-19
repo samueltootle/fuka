@@ -14,12 +14,13 @@ namespace Kadath::FUKA_Solvers {
     Nu.reset(new Scalar(*space, *r.Nu.get()));
     lap_omega_term.reset(new Scalar(*space, *r.lap_omega_term.get()));
     logh.reset(new Scalar(*space, *r.logh.get()));
+    omega.reset(new Scalar(*space, *r.omega.get()));
 
     // Copy Computed Terms    
     lapse.reset(new Scalar(*space, *r.lapse.get()));
     metric_A.reset(new Scalar(*space, *r.metric_A.get()));
     metric_B.reset(new Scalar(*space, *r.metric_B.get()));
-    omega.reset(new Scalar(*space, *r.omega.get()));
+    metric_omega.reset(new Scalar(*space, *r.metric_omega.get()));
     domega_dr.reset(new Scalar(*space, *r.domega_dr.get()));
     domega_dt.reset(new Scalar(*space, *r.domega_dt.get()));
     fluidvel.reset(new Scalar(*space, *r.fluidvel.get()));
@@ -74,8 +75,12 @@ namespace Kadath::FUKA_Solvers {
     Nu.reset( new Scalar(*space.get(), ff1)) ;
     logh.reset( new Scalar(*space.get(), ff1)) ;
     lap_Bterm.reset( new Scalar(*space.get(), ff1)) ;
-    if(bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::LAP_WTERM))
+    if(bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::LAP_WTERM)) {
       lap_omega_term.reset(new Scalar(*space.get(), ff1));
+      if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
+        omega.reset(new Scalar(*space.get(), ff1));
+      }
+    }
     
     fclose(ff1);
     ndom = space->get_nbr_domains();
@@ -98,8 +103,11 @@ namespace Kadath::FUKA_Solvers {
     syst.add_cst("lapAterm", *lap_Aterm);
     syst.add_cst("lapBterm", *lap_Bterm);
     syst.add_cst("wrsint"  , *lap_omega_term);
-    syst.add_cst("ome", (*bconfig)(BCO_PARAMS::OMEGA));
-
+    if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
+      syst.add_cst("Omega", *omega);
+    } else {
+      syst.add_cst("Omega", (*bconfig)(BCO_PARAMS::OMEGA));
+    }
     syst.add_def("N = exp(nu)");
     syst.add_def("A = exp(lapAterm - nu)");
     syst.add_def("B = (divrsint(lapBterm) + 1) / N");
@@ -108,9 +116,9 @@ namespace Kadath::FUKA_Solvers {
     syst.add_def("dtw = dt(w)");
 
     if(bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::LAP_WTERM)) {
-      syst.add_def("U = 1 / N * (ome - w)");
+      syst.add_def("UphiU = 1 / N * (Omega - w)");
 
-      fluidvel.reset(new Scalar(syst.give_val_def("U")));
+      fluidvel.reset(new Scalar(syst.give_val_def("UphiU")));
       fluidvel->coef();
     } else {
       fluidvel.reset(new Scalar(*space));
@@ -122,8 +130,8 @@ namespace Kadath::FUKA_Solvers {
     metric_B->coef();
     lapse.reset(new Scalar(syst.give_val_def("N")));
     lapse->coef();
-    omega.reset(new Scalar(syst.give_val_def("w")));
-    omega->coef();
+    metric_omega.reset(new Scalar(syst.give_val_def("w")));
+    metric_omega->coef();
     domega_dr.reset(new Scalar(syst.give_val_def("drw")));
     domega_dr->coef();
     domega_dt.reset(new Scalar(syst.give_val_def("dtw")));
@@ -138,7 +146,7 @@ namespace Kadath::FUKA_Solvers {
     quants[ISO_VARS::ISO_METRIC_A] = std::cref(*metric_A);
     quants[ISO_VARS::ISO_METRIC_B] = std::cref(*metric_B);
     quants[ISO_VARS::ISO_ALPHA] = std::cref(*lapse);
-    quants[ISO_VARS::ISO_OMEGA] = std::cref(*omega);
+    quants[ISO_VARS::ISO_METRIC_OMEGA] = std::cref(*metric_omega);
     quants[ISO_VARS::ISO_DOMEGA_DR] = std::cref(*domega_dr);
     quants[ISO_VARS::ISO_DOMEGA_DTHETA] = std::cref(*domega_dt);
 
@@ -242,7 +250,7 @@ namespace Kadath::FUKA_Solvers {
 
   //     const double betaSphericalU0 = 0.0;                              // r
   //     const double betaSphericalU1 = 0.0;                              // theta
-  //     const double betaSphericalU2 = -quant_vals[ISO_VARS::ISO_OMEGA]; // phi
+  //     const double betaSphericalU2 = -quant_vals[ISO_VARS::ISO_METRIC_OMEGA]; // phi
 
   //     const double A = quant_vals[ISO_VARS::ISO_METRIC_A];
   //     const double B = quant_vals[ISO_VARS::ISO_METRIC_B];

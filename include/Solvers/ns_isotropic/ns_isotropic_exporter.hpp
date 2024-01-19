@@ -16,7 +16,7 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     ISO_ALPHA,
     ISO_METRIC_A,
     ISO_METRIC_B,
-    ISO_OMEGA,
+    ISO_METRIC_OMEGA,
     ISO_DOMEGA_DR,
     ISO_DOMEGA_DTHETA,
     ISO_H,
@@ -84,9 +84,9 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     ISO_ALPHA,
     ISO_METRIC_A,
     ISO_METRIC_B,
+    ISO_METRIC_OMEGA,
     ISO_DOMEGA_DR,
     ISO_DOMEGA_DTHETA,
-    ISO_OMEGA,
   };
   std::vector<ISO_VARS> iso_fluid_indicies{
     ISO_H,
@@ -108,13 +108,14 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
   ptr_data_member(Scalar, Nu, shared);
   ptr_data_member(Scalar, lap_omega_term, shared);
   ptr_data_member(Scalar, logh, shared);
+  ptr_data_member(Scalar, omega, shared);
 
 
   // Constructed objects
   ptr_data_member(Scalar, lapse, shared);
   ptr_data_member(Scalar, metric_A, shared);
   ptr_data_member(Scalar, metric_B, shared);  
-  ptr_data_member(Scalar, omega, shared);
+  ptr_data_member(Scalar, metric_omega, shared);
   ptr_data_member(Scalar, domega_dr, shared);
   ptr_data_member(Scalar, domega_dt, shared);
   ptr_data_member(Scalar, fluidvel, shared);
@@ -181,13 +182,13 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
   
   CFMS_NS_ISO_Exporter() : Exporter<config_t, space_t>(),
     lap_Aterm(nullptr), lap_Bterm(nullptr), Nu(nullptr), lap_omega_term(nullptr), logh(nullptr), 
-      metric_A(nullptr), metric_B(nullptr), lapse(nullptr), omega(nullptr), 
+      metric_A(nullptr), metric_B(nullptr), lapse(nullptr), metric_omega(nullptr), 
         domega_dr(nullptr), domega_dt(nullptr), fluidvel(nullptr) {}
   
   CFMS_NS_ISO_Exporter(std::string config_filename) :
     Exporter<config_t, space_t>(config_filename),
     lap_Aterm(nullptr), lap_Bterm(nullptr), Nu(nullptr), lap_omega_term(nullptr), logh(nullptr), 
-      metric_A(nullptr), metric_B(nullptr), lapse(nullptr), omega(nullptr), 
+      metric_A(nullptr), metric_B(nullptr), lapse(nullptr), metric_omega(nullptr), 
         domega_dr(nullptr), domega_dt(nullptr), fluidvel(nullptr) {
 
     load_solution_from_file();
@@ -360,7 +361,7 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       const REAL FluidVelU2 = U_factor;                              // phi
       const REAL betaSphericalU0 = 0.0;                              // r
       const REAL betaSphericalU1 = 0.0;                              // theta
-      const REAL betaSphericalU2 = -quant_vals[ISO_VARS::ISO_OMEGA]; // phi
+      const REAL betaSphericalU2 = -quant_vals[ISO_VARS::ISO_METRIC_OMEGA]; // phi
 
       const REAL A = quant_vals[ISO_VARS::ISO_METRIC_A];
       const REAL B = quant_vals[ISO_VARS::ISO_METRIC_B];
@@ -555,7 +556,7 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
 
     out_pw[OUTPUT_VARS::BETA1] = 0.0;
     out_pw[OUTPUT_VARS::BETA2] = 0.0;
-    out_pw[OUTPUT_VARS::BETA3] = -quant_vals[ISO_VARS::ISO_OMEGA];
+    out_pw[OUTPUT_VARS::BETA3] = -quant_vals[ISO_VARS::ISO_METRIC_OMEGA];
 
     out_pw[OUTPUT_VARS::G11] = A * A;
     out_pw[OUTPUT_VARS::G12] = 0.0;
