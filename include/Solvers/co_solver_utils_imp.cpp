@@ -144,8 +144,6 @@ void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx) {
 
 template <typename config_t>
 void setup_2dns_isotropic(config_t& bconfig, size_t mass_fixing_idx) {
-  auto& fields = bconfig.return_fields();
-
   int type_coloc = CHEB_TYPE;
   auto const & dim = bconfig(BCO_PARAMS::DIM);
   Dim_array res(dim);
@@ -412,7 +410,7 @@ auto setup_ns_config_from_TOV(config_t& bconfig, size_t mass_fixing_idx) {
   bconfig.set(BCO_PARAMS::RIN) = 0.5 * bconfig(BCO_PARAMS::RMID);
   bconfig.set(BCO_PARAMS::ROUT) = bco_utils::gold_ratio * bconfig(BCO_PARAMS::RMID);
 
-  return std::move(tov);
+  return tov;
 }
 
 template<typename tov_t>
@@ -424,7 +422,7 @@ auto setup_interpolator_from_TOV(tov_t& tov) {
   std::unique_ptr<double[]> lapse_lin_ptr{new double[max_iter]};
   std::unique_ptr<double[]> rho_lin_ptr{new double[max_iter]};
   
-  for(auto j=0; j < max_iter; ++j) {
+  for(size_t j=0; j < max_iter; ++j) {
     //lapse est.
     auto phi = tov.state[j][tov.PHI];
     

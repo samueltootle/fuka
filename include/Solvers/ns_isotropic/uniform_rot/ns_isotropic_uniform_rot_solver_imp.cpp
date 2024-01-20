@@ -70,17 +70,18 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::solve() {
   
   double const & final_chi = (!bconfig.control(CONTROLS::ITERATIVE_CHI)) ?
     bconfig(BCO_PARAMS::CHI) : bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI);
-  double const initial_chi = bconfig(BCO_PARAMS::CHI);
+  double const initial_chi = (!bconfig.control(CONTROLS::ITERATIVE_CHI)) ? bconfig(BCO_PARAMS::CHI) : std::copysign(0.1, final_chi);
 
   this->solver_stage = STAGES::UNIFORM_ROT;
   if(bconfig.control(CONTROLS::ITERATIVE_CHI) || keplerian) {
+    bconfig(BCO_PARAMS::CHI) = initial_chi;
     exit_status = uniform_rot_stage();
     bconfig.control(CONTROLS::ITERATIVE_CHI) = false;
     stage_enabled[solver_stage] = true;
+    bconfig(BCO_PARAMS::CHI) = final_chi;
   }
 
-  if(exit_status != RELOAD_FILE) {
-    bconfig(BCO_PARAMS::CHI) = final_chi;
+  if(exit_status != RELOAD_FILE) {    
     exit_status = uniform_rot_stage();
   } 
 

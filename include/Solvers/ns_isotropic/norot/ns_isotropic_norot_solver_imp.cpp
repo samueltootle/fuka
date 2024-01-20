@@ -54,8 +54,6 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::solve() {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   int exit_status = EXIT_SUCCESS;
-  
-  std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
 
   this->solver_stage = STAGES::NOROT_BC;
   // If we start from scratch, we currently need

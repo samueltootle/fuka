@@ -140,7 +140,7 @@ static void write_table(std::ostream &file) {
   file << "#" << std::endl;
 
   file << std::setiosflags(std::ios::scientific) << std::setprecision(16);
-
+*/
   /*
    auto rhoL = exp(Hot_Slice::lintp[0]);
    typename Hot_Slice::error_t error;

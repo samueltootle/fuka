@@ -81,7 +81,7 @@ template <typename EOS> class MargheritaTOV {
     initial_conditions[RHOB] = rhoc;
     initial_conditions[PRESS] = press_c;
     initial_conditions[PHI] = 1.;
-    return std::move(initial_conditions);
+    return initial_conditions;
   }
 
   /** 
@@ -236,14 +236,14 @@ template <typename EOS> class MargheritaTOV {
     if(adaptive)
       adaptive_step();
        
-    return std::move(res);
+    return res;
   }
   
   // basic RK4 - mainly for testing
   inline ary_t rk_step(const ary_t& input, double& dr) const { 
     using namespace Kadath::Margherita;
     typename EOS::error_t err;
-    auto eps = 5.e-8 * input[PRESS];
+    // auto eps = 5.e-8 * input[PRESS];
 
     auto k1 = evolve(input, dr);
 
@@ -277,7 +277,7 @@ template <typename EOS> class MargheritaTOV {
     res[RADIUS] += dr;
     res[RHOB] = EOS::rho__press_cold(res[PRESS],err);
    
-    return std::move(res);
+    return res;
   }
 
   // correct PHI based on enforcing Schwarzschild BC
@@ -365,11 +365,12 @@ template <typename EOS> class MargheritaTOV {
     }
   }
 
-    /**
+  /**
    * determine areal radius based on the h=1)
    *
    */
   void determine_ArealR_from_enthalpy(){
+    #ifdef TOV1D_DEBUG
     double ArealR;
     for (auto &el: state ){
         if(el[ENTHALPY]<1){
@@ -377,10 +378,12 @@ template <typename EOS> class MargheritaTOV {
           break;
         }
     }
-    //std::cout << ArealR << std::endl;
+    std::cout << ArealR << std::endl;
+    #endif
   }
 
   void determine_ArealR_from_integral(){
+    #ifdef TOV1D_DEBUG
     double ArealR, IsotropicR, ConfAtR,Conf2AtR;//,Psi4AtR;
     for (auto &el: state ){
 
@@ -392,7 +395,8 @@ template <typename EOS> class MargheritaTOV {
             break;
         }
     }
-    //std::cout << ArealR << std::endl;
+    std::cout << ArealR << std::endl;
+    #endif
   }
 
   /**

@@ -77,24 +77,32 @@ class ns_sequence : public seq_t {
 };
 
 inline bool ns_idx_is_mass_fixing(BCO_PARAMS const & idx) {
+    bool is_mass_fixing{false};
     switch(idx) {
         case BCO_PARAMS::HC:
         case BCO_PARAMS::NC:
         case BCO_PARAMS::MADM:
         case BCO_PARAMS::MB:    
-        return true;
+          is_mass_fixing=true;
+          break;
+        default:
+          break;
     }
-  return false;
+    return is_mass_fixing;
 }
 
 inline bool ns_idx_is_spin_fixing(BCO_PARAMS const & idx) {
+    bool is_spin_fixing{false};
     switch(idx) {
         case BCO_PARAMS::OMEGA:
         case BCO_PARAMS::CHI:
         case BCO_PARAMS::JADM:   
-        return true;
+          is_spin_fixing=true;
+          break;
+        default:
+          break;
     }
-  return false;
+  return is_spin_fixing;
 }
 
 inline void parse_tree_for_fixed(Tree const & tree, std::string const branch_name, 
@@ -144,27 +152,35 @@ template<class seq_t>
 inline bool ns_seq_is_mass_fixing(seq_t& seq) {
   auto seq_indicies = seq.get_indices();
   auto seq_idx = std::get<0>(seq_indicies);
+  bool is_mass_fixing{false};
   switch(seq_idx) {
     case BCO_PARAMS::HC:
     case BCO_PARAMS::NC:
     case BCO_PARAMS::MADM:
     case BCO_PARAMS::MB:    
-      return true;
+      is_mass_fixing = true;
+      break;
+    default:
+      break;
   }
-  return false;
+  return is_mass_fixing;
 }
 
 template<class seq_t>
 inline bool ns_seq_is_spin_fixing(seq_t& seq) {
   auto seq_indicies = seq.get_indices();
   auto seq_idx = std::get<0>(seq_indicies);
+  bool is_spin_fixing{false};
   switch(seq_idx) {
     case BCO_PARAMS::CHI:
     case BCO_PARAMS::JADM:
     case BCO_PARAMS::OMEGA:  
-      return true;
+      is_spin_fixing = true;
+      break;
+    default:
+      break;
   }
-  return false;
+  return is_spin_fixing;
 }
 
 inline std::ostream &operator<<(std::ostream & out, const ns_sequence & Seq) {

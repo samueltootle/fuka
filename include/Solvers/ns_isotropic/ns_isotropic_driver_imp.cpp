@@ -214,7 +214,7 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir,
   std::array<bool, NUM_STAGES> stage_enabled = bconfig.return_stages();
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
   while(exit_status == RELOAD_FILE) { 
-    exit_status == EXIT_FAILURE;
+    exit_status = EXIT_FAILURE;
     // exit_status = ns_isotropic_stationary_driver(bconfig, outputdir);
     if(stage_enabled[STAGES::NOROT_BC]) {
       double const omega = bconfig.set(BCO_PARAMS::OMEGA);
@@ -272,9 +272,7 @@ inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution,
     std::_Exit(EXIT_FAILURE);
   }
 
-  bool res_inc = (resolution.final() > resolution.init());
   auto resolution_indices = resolution.get_indices();
-  auto const & final_res = resolution.final();
   bconfig.set(resolution_indices) = resolution.init();
   
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();

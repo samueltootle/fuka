@@ -36,7 +36,7 @@ namespace FUKA_Solvers {
 
 template<typename config_t>
 int ns_isotropic_diff_rot_regrid(config_t& bconfig, std::string outputfile) {
-  int exit_status = 0;
+  int exit_status = EXIT_SUCCESS;
   using space_t = Space_polar_adapted;
 
   std::string kadath_filename = bconfig.space_filename();
@@ -206,7 +206,7 @@ int ns_isotropic_diff_rot_regrid(config_t& bconfig, std::string outputfile) {
   bconfig.set_filename(outputfile);
   bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh, lap_Bterm, lap_wterm, Omega);
 
-  return EXIT_SUCCESS;
+  return exit_status;
 }
 /** @}*/
 }}

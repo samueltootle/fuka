@@ -14,20 +14,19 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
   int exit_status = EXIT_SUCCESS;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  const int max_iter = bconfig.seq_setting(MAX_ITER);
   
   std::string stagename = (fixed) ? "NOROT_FIXED" : "NOROT_BC";
 
   // We use `config_filename()` vs `config_filename_abs()` since
   // `solution_exists` will probe the HOME_KADATH/COs directory
-  // auto const current = bconfig.config_filename();
-  // if(!bconfig.control(RESOLVE) && solution_exists(stagename)) {    
-  //   if(rank == 0)
-  //     std::cout << "Solved previously: " \
-  //               << bconfig.config_filename_abs() << std::endl;
-  //   return (current == bconfig.config_filename()) ? \
-  //     EXIT_SUCCESS : RELOAD_FILE;
-  // }
+  /*auto const current = bconfig.config_filename();
+  if(!bconfig.control(RESOLVE) && solution_exists(stagename)) {    
+    if(rank == 0)
+      std::cout << "Solved previously: " \
+                << bconfig.config_filename_abs() << std::endl;
+    return (current == bconfig.config_filename()) ? \
+      EXIT_SUCCESS : RELOAD_FILE;
+  }*/
 
   Scalar one(space);
   one = 1.;

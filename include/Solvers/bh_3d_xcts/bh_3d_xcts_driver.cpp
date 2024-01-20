@@ -23,7 +23,8 @@ config_t bh_3d_xcts_sequence (config_t & seqconfig,
                           Res_t const & resolution,
                           std::string outputdir) {
   
-  int rank = 0, exit_status = EXIT_SUCCESS;
+  int rank = 0;
+  int exit_status = EXIT_SUCCESS;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   // Initialize sequence variables
   auto sequence_var_indices = seq.get_indices();

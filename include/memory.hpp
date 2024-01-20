@@ -175,12 +175,14 @@ class MemoryMapper {
 
     template<typename T>
     static T* get_memory(size_t const sz) {
-      return new T [sz];
+      return static_cast<T*>(std::malloc(sz * sizeof(T)));
     }
    
     template<typename T>
-    static void release_memory(T* mem_ptr, size_t const sz) {
-      delete mem_ptr ;
+    static void release_memory(T* raw_mem_ptr, size_t const sz) {
+      if(raw_mem_ptr == nullptr)
+        return;
+      delete raw_mem_ptr ;
     }
     template<typename T, size_t ary_sz>
     static void release_memory(T (*mem_ptr)[ary_sz], size_t const sz) {

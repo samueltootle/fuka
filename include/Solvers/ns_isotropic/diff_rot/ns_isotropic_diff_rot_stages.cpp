@@ -17,19 +17,15 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
 
   // We use `config_filename()` vs `config_filename_abs()` since
   // `solution_exists` will probe the HOME_KADATH/COs directory
-  // auto const current = bconfig.config_filename();
-  // if(!bconfig.control(RESOLVE) && solution_exists(stagename)) {    
-  //   if(rank == 0)
-  //     std::cout << "Solved previously: " \
-  //               << bconfig.config_filename_abs() << std::endl;
-  //   return (current == bconfig.config_filename()) ? \
-  //     EXIT_SUCCESS : RELOAD_FILE;
-  // }
-  
-  const int max_iter = bconfig.seq_setting(MAX_ITER);
-  
-  // logarithm of the central enthalpy, a variable in the system of equations 
-  double loghc = std::log(bconfig(BCO_PARAMS::HC));
+  /* auto const current = bconfig.config_filename();
+  if(!bconfig.control(RESOLVE) && solution_exists(stagename)) {    
+    if(rank == 0)
+      std::cout << "Solved previously: " \
+                << bconfig.config_filename_abs() << std::endl;
+    return (current == bconfig.config_filename()) ? \
+      EXIT_SUCCESS : RELOAD_FILE;
+  }*/
+    
   std::string stagename = "DIFF_ROT";
 
   // Sad tool to make system of equations work with constants

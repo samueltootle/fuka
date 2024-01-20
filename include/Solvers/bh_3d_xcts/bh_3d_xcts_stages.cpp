@@ -232,7 +232,6 @@ int bh_3d_xcts_solver<config_t, space_t>::binary_boost_stage(
   int exit_status = EXIT_SUCCESS;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  const int max_iter = bconfig.seq_setting(MAX_ITER);
 
   if(rank == 0) std::cout << "############################" << std::endl
                           << "Binary boost using von Neumann BC" << std::endl

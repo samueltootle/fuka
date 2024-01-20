@@ -58,14 +58,14 @@ public:
    * Constructor.  Everything is set to nan.
    * this is a feature - not a bug
    */
-  BCO_INFO() {
+  BCO_INFO() : bco_stages(MSTAGE) {
     bco_params.fill(std::nan("1"));
   }
 
   /**
    * BCO_INFO copy constructor
    */
-  BCO_INFO(const BCO_INFO& b) : bco_params{b.bco_params}, bco_stages{b.bco_stages} {}
+  BCO_INFO(const BCO_INFO& b) : bco_params(b.bco_params), bco_stages(b.bco_stages) {}
 
   /**
    * BCO_INFO move constructor

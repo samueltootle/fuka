@@ -14,7 +14,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
   int exit_status = EXIT_SUCCESS;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  const int max_iter = bconfig.seq_setting(MAX_ITER);
   double loghc = std::log(bconfig(HC));
   std::string stagename = (fixed) ? "NOROT_FIXED" : "NOROT_BC";
 
@@ -205,8 +204,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
       EXIT_SUCCESS : RELOAD_FILE;
   }
   
-  const int max_iter = bconfig.seq_setting(MAX_ITER);
-
   double loghc = std::log(bconfig(HC));
   double xo = 0.0;
   update_fields_co(cfields, coord_vectors, {}, xo);
@@ -391,7 +388,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::binary_boost_stage(
   kadath_config_boost<BIN_INFO>& binconfig, const size_t bco) {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  const int max_iter = bconfig.seq_setting(MAX_ITER);
   
   // generate filename string unique to this binary setup
   std::stringstream stage_ss;
@@ -577,16 +573,14 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
 
   // We use `config_filename()` vs `config_filename_abs()` since
   // `solution_exists` will probe the HOME_KADATH/COs directory
-  // auto const current = bconfig.config_filename();
-  // if(!bconfig.control(RESOLVE) && solution_exists("TOTAL_BC")) {
-  //   if(rank == 0)
-  //     std::cout << "Solved previously: " \
-  //               << bconfig.config_filename_abs() << std::endl;
-  //   return (current == bconfig.config_filename()) ? \
-  //     EXIT_SUCCESS : RELOAD_FILE;
-  // }
-
-  const int max_iter = bconfig.seq_setting(MAX_ITER);
+  /*auto const current = bconfig.config_filename();
+  if(!bconfig.control(RESOLVE) && solution_exists("TOTAL_BC")) {
+    if(rank == 0)
+      std::cout << "Solved previously: " \
+                << bconfig.config_filename_abs() << std::endl;
+    return (current == bconfig.config_filename()) ? \
+      EXIT_SUCCESS : RELOAD_FILE;
+  }*/
 
   // logarithm of the central enthalpy, a variable in the system of equations 
   double loghc = std::log(bconfig(BCO_PARAMS::HC));

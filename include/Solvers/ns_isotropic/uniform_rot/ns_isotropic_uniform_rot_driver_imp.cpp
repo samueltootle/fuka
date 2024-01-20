@@ -198,13 +198,13 @@ inline int ns_isotropic_uniform_rot_driver (config_t& bconfig,
   exit_status = ns_isotropic_uniform_rot_stationary_driver(bconfig, outputdir, seq);
 
   while(res_inc) {        
-    int next_res = bco_utils::next_resolution(bconfig(BCO_PARAMS::BCO_RES));
+    int next_res = bco_utils::next_resolution(bconfig(resolution_indices));
     // iterative res increase
     if(next_res >= final_res) {
-      bconfig.set(BCO_PARAMS::BCO_RES) = next_res;
+      bconfig.set(resolution_indices) = next_res;
       res_inc = false;
     } else {
-      bconfig.set(BCO_PARAMS::BCO_RES) = next_res;
+      bconfig.set(resolution_indices) = next_res;
     }
     regrid();
 

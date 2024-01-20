@@ -87,7 +87,7 @@ std::vector<std::string> inline part_string(std::string str,std::size_t part_siz
         pos = str.find_first_not_of(' ');
         str.erase(0,pos);
     }
-    return std::move(parts);
+    return parts;
 }
 
 struct Option_base {

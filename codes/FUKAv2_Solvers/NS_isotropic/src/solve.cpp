@@ -44,7 +44,6 @@ int main(int argc, char** argv) {
   
   // Initialize static member variables
   InitSolver::input_configname = "initial_2dns.info";
-  InitSolver::bconfig;
   InitSolver::rank = rank;
 
   // Run initialize routine based on CLI arguments
