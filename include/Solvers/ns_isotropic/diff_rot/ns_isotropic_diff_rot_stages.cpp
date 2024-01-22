@@ -96,7 +96,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   // This converges, but isn't correct
   // syst.add_def("j = Wsq / N * U");
   // syst.add_def("j = Wsq^2 / N^2 * (Omega - w)");
-  syst.add_def("j = W / N * UphiL");
+  syst.add_def("j = Wsq / N * UphiL");
   syst.add_def("omelaw = omec - j^2 / diffA^2");
 
   for (int d = 0; d < ndom; d++) {
