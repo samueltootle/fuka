@@ -475,6 +475,9 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       rho = 0.;
       eps = 0.;
       press = 0.;
+      out_pw[OUTPUT_VARS::VEL1] = 0.;
+      out_pw[OUTPUT_VARS::VEL2] = 0.;
+      out_pw[OUTPUT_VARS::VEL3] = 0.;
     }
     else {
       rho = EOS<eos_t, DENSITY>::get(h);
