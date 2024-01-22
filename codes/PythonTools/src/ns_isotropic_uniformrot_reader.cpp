@@ -55,9 +55,9 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
                                              config_filename(filename.substr(0,filename.size()-3)+"info"),
                                              bconfig(config_filename), exporter(config_filename) {
     // setup eos to before calling solver
-    const double h_cut = bconfig.eos<double>(HCUT);
-    const std::string eos_file = bconfig.eos<std::string>(EOSFILE);
-    const std::string eos_type = bconfig.eos<std::string>(EOSTYPE);
+    const double h_cut = bconfig.eos<double>(EOS_PARAMS::HCUT);
+    const std::string eos_file = bconfig.eos<std::string>(EOS_PARAMS::EOSFILE);
+    const std::string eos_type = bconfig.eos<std::string>(EOS_PARAMS::EOSTYPE);
 
     if(eos_type == "Cold_PWPoly") {
       using eos_t = Kadath::Margherita::Cold_PWPoly;
@@ -67,8 +67,8 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     } else if(eos_type == "Cold_Table") {
       using eos_t = Kadath::Margherita::Cold_Table;
 
-      const int interp_pts = (bconfig.eos<int>(INTERP_PTS) == 0) ? \
-                              2000 : bconfig.eos<int>(INTERP_PTS);
+      const int interp_pts = (bconfig.eos<int>(EOS_PARAMS::INTERP_PTS) == 0) ? \
+                              2000 : bconfig.eos<int>(EOS_PARAMS::INTERP_PTS);
 
       EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
       this->compute_defs<eos_t>();
@@ -98,8 +98,6 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
 
   	int ndom = space.get_nbr_domains() ;
 
-  	double loghc = bco_utils::get_boundary_val(0, logh, INNER_BC);
-
   	// Setup system of equations and definitions
     System_of_eqs syst (space, 0, ndom-1) ;
     // define numerical constants
@@ -111,15 +109,12 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     syst.add_cst("lapAterm", lap_Aterm);
     syst.add_cst("lapBterm", lap_Bterm);
     syst.add_cst("wrsint", lap_wterm);
-
-    syst.add_cst("ome", bconfig(OMEGA));
+    syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
 
     syst.add_def("N = exp(nu)");
     syst.add_def("A = exp(lapAterm - nu)");
     syst.add_def("B = (divrsint(lapBterm) + 1) / N");
     syst.add_def("w = divrsint(wrsint)");
-    syst.add_def("Fomega = B^2 * multrsint(multrsint(ome - w)) "
-                        "/ (N^2 - multrsint(B * (ome - w))^2)");
 
     // define quantity to be integrated at infinity
     // two (in this case) equivalent definitions of ADM mass
@@ -146,7 +141,10 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     // delta = p / rho
     syst.add_def("delta = h - eps - 1.");
 
-    syst.add_def("U = multrsint(B / N * (ome - w))");
+    // (3.31) Upper Phi component of U vector (r, theta = 0)
+    syst.add_def("UphiU = (Omega - w) / N");
+    // (3.32)
+    syst.add_def("U = multrsint(B * UphiU)");
     syst.add_def("Usq = U*U");
     syst.add_def("Wsq = 1 / (1 - Usq)");
     syst.add_def("W = sqrt(Wsq)");
