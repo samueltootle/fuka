@@ -80,12 +80,12 @@ namespace Kadath::FUKA_Solvers {
      
       if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
         omega.reset(new Scalar(*space.get(), ff1));
-        std::cout << "**** Reading Differentially rotating solution ****\n"
+        std::cout << "**** Reading Differentially rotating solution ****\n";
       } else{
-        std::cout << "**** Reading Uniformly rotating solution ****\n"
+        std::cout << "**** Reading Uniformly rotating solution ****\n";
       }
     } else {
-      std::cout << "**** Reading non-rotating, spherical solution ****\n"
+      std::cout << "**** Reading non-rotating, spherical solution ****\n";
     }
     
     fclose(ff1);
@@ -110,10 +110,10 @@ namespace Kadath::FUKA_Solvers {
     syst.add_cst("lapBterm", *lap_Bterm);
     syst.add_cst("wrsint"  , *lap_omega_term);
     if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
-      std::cout << "**** Importing differential rotation profile ****\n"
+      std::cout << "**** Importing differential rotation profile ****\n";
       syst.add_cst("Omega", *omega);
     } else {
-      std::cout << "**** Importing uniform rotation profile ****\n"
+      std::cout << "**** Importing uniform rotation profile ****\n";
       syst.add_cst("Omega", (*bconfig)(BCO_PARAMS::OMEGA));
     }
     syst.add_def("N = exp(nu)");
