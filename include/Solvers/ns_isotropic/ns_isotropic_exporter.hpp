@@ -471,7 +471,7 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     double rho, eps, press;
 
     // get quantities point-wise, since h is smoothest, and cut data at H=0
-    if(std::fabs(H) <= 1e-12) {
+    if(std::fabs(H) <= 1e-14) {
       rho = 0.;
       eps = 0.;
       press = 0.;
@@ -573,28 +573,30 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     out_pw[OUTPUT_VARS::K22] = 0.0;
     out_pw[OUTPUT_VARS::K23] = -out_pw[OUTPUT_VARS::G33] / 2.0 / N * domega_dt;
     out_pw[OUTPUT_VARS::K33] = 0.0;
-    out_pw[OUTPUT_VARS::VEL1] = 0.0;
-    out_pw[OUTPUT_VARS::VEL2] = 0.0;
-    out_pw[OUTPUT_VARS::VEL3] = quant_vals[ISO_VARS::ISO_U];
 
     double const H = quant_vals[ISO_VARS::ISO_H];
     double h = std::exp(H);
-    double rho, eps, press;
+    double rho, eps, press, vphiU;
 
     // get quantities point-wise, since h is smoothest, and cut data at H=0
-    if(std::fabs(H) <= 1e-12) {
+    if(std::fabs(H) <= 1e-14) {
       rho = 0.;
       eps = 0.;
       press = 0.;
+      vphiU = 0.;
     }
     else {
       rho = EOS<eos_t, DENSITY>::get(h);
       eps = EOS<eos_t, EPSILON>::get(h);
       press = EOS<eos_t, PRESSURE>::get(h);
+      vphi = quant_vals[ISO_VARS::ISO_U];
     }
-    out_pw[OUTPUT_VARS::RHO]   = rho;
-    out_pw[OUTPUT_VARS::EPS]   = eps;
-    out_pw[OUTPUT_VARS::PRESS] = press;
+    out_pw[OUTPUT_VARS::RHO]  = rho;
+    out_pw[OUTPUT_VARS::EPS]  = eps;
+    out_pw[OUTPUT_VARS::PRESS]= press;
+    out_pw[OUTPUT_VARS::VEL1] = 0.0;
+    out_pw[OUTPUT_VARS::VEL2] = 0.0;
+    out_pw[OUTPUT_VARS::VEL3] = vphiU;
     output_base = OUTPUT_BASIS::SPHERICAL;
     return out_pw;
   }
