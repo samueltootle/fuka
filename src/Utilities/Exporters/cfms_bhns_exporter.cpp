@@ -230,7 +230,8 @@ namespace Kadath::FUKA_Solvers {
       using eos_t = Kadath::Margherita::Cold_PWPoly;
       return export_pointwise_imp<eos_t>(x, y, z, interpolation_offset, interp_order, delta_r_rel);
     } // end adding EOS OPEs
-    throw std::invalid_argument("\nExport: Invalid EOS Type\n)");
+    std::string msg("\nExport: Invalid EOS Type: " + eos_type + "\n");
+    throw std::invalid_argument(msg.c_str());
   }
 
   CFMS_BHNS_Exporter::grid_ary_t CFMS_BHNS_Exporter::export_coordinate_array(

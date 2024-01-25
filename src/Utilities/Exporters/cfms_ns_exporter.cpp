@@ -185,7 +185,8 @@ namespace Kadath::FUKA_Solvers {
       using eos_t = Kadath::Margherita::Cold_PWPoly;
       return export_pointwise_imp<eos_t>(x, y, z);
     } // end adding EOS OPEs
-    throw std::invalid_argument("\nExport: Invalid EOS Type\n)");
+    std::string msg("\nExport: Invalid EOS Type: " + eos_type + "\n");
+    throw std::invalid_argument(msg.c_str());
   }
 
   CFMS_NS_Exporter::output_ary_t CFMS_NS_Exporter::export_pointwise_fluid_vars(double const & x, double const & y, double const & z) {
@@ -196,7 +197,8 @@ namespace Kadath::FUKA_Solvers {
       using eos_t = Kadath::Margherita::Cold_PWPoly;
       return export_pointwise_fluid_vars_imp<eos_t>(x, y, z);
     } // end adding EOS OPEs
-    throw std::invalid_argument("\nExport: Invalid EOS Type\n)");
+    std::string msg("\nExport: Invalid EOS Type: " + eos_type + "\n");
+    throw std::invalid_argument(msg.c_str());
   }
 
   CFMS_NS_Exporter::output_ary_t CFMS_NS_Exporter::export_pointwise_spacetime_vars(double const & x, double const & y, double const & z) {
