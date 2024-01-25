@@ -54,7 +54,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
   public:
   ns_isotropic_reader_t(std::string const filename) : Kadath::python_reader_t<space_t, ns_isotropic_vars_t>(filename),
                                              config_filename(filename.substr(0,filename.size()-3)+"info"),
-                                             bconfig(config_filename) {
+                                             bconfig(config_filename), exporter(config_filename) {
     // setup eos to before calling solver
     const double h_cut = bconfig.eos<double>(EOS_PARAMS::HCUT);
     const std::string eos_file = bconfig.eos<std::string>(EOS_PARAMS::EOSFILE);
