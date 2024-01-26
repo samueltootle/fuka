@@ -108,7 +108,7 @@ namespace Kadath::FUKA_Solvers {
     syst.add_cst("nu", *Nu);
     syst.add_cst("lapAterm", *lap_Aterm);
     syst.add_cst("lapBterm", *lap_Bterm);
-    syst.add_cst("wrsint"  , *lap_omega_term);
+
     if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
       std::cout << "**** Importing differential rotation profile ****\n";
       syst.add_cst("Omega", *omega);
@@ -119,18 +119,39 @@ namespace Kadath::FUKA_Solvers {
     syst.add_def("N = exp(nu)");
     syst.add_def("A = exp(lapAterm - nu)");
     syst.add_def("B = (divrsint(lapBterm) + 1) / N");
-    syst.add_def("w = divrsint(wrsint)");
-    syst.add_def("drw = dr(w)");
-    syst.add_def("dtw = dt(w)");
 
     if(bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::LAP_WTERM)) {
+      syst.add_cst("wrsint"  , *lap_omega_term);
+      syst.add_def("w = divrsint(wrsint)");
+      syst.add_def("drw = dr(w)");
+      syst.add_def("dtw = dt(w)");
+
       syst.add_def("UphiU = 1 / N * (Omega - w)");
 
       fluidvel.reset(new Scalar(syst.give_val_def("UphiU")));
       fluidvel->coef();
+
+      metric_omega.reset(new Scalar(syst.give_val_def("w")));
+      metric_omega->coef();
+      domega_dr.reset(new Scalar(syst.give_val_def("drw")));
+      domega_dr->coef();
+      domega_dt.reset(new Scalar(syst.give_val_def("dtw")));
+      domega_dt->coef();
     } else {
+      std::cout << "**** Importing non-rotation profile ****\n";
       fluidvel.reset(new Scalar(*space));
       fluidvel->annule_hard();
+      fluidvel->std_base();
+
+      metric_omega.reset(new Scalar(*space));
+      metric_omega->annule_hard();      
+      metric_omega->std_base();
+      domega_dr.reset(new Scalar(*space));
+      domega_dr->annule_hard();
+      domega_dr->std_base();
+      domega_dt.reset(new Scalar(*space));
+      domega_dt->annule_hard();
+      domega_dt->std_base();
     }
     metric_A.reset(new Scalar(syst.give_val_def("A")));
     metric_A->coef();
@@ -138,12 +159,6 @@ namespace Kadath::FUKA_Solvers {
     metric_B->coef();
     lapse.reset(new Scalar(syst.give_val_def("N")));
     lapse->coef();
-    metric_omega.reset(new Scalar(syst.give_val_def("w")));
-    metric_omega->coef();
-    domega_dr.reset(new Scalar(syst.give_val_def("drw")));
-    domega_dr->coef();
-    domega_dt.reset(new Scalar(syst.give_val_def("dtw")));
-    domega_dt->coef();
   }
 
   void CFMS_NS_ISO_Exporter::populate_quants() {
