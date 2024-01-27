@@ -350,6 +350,8 @@ void constructPythonReader_here(std::string reader_name) {
   reader.def("getExporterKeys", &reader_t::getExporterKeys);
   reader.def("getallExporterFieldValues__cartesian_pointwise", &reader_t::getallExporterFieldValues__cartesian_pointwise);
   reader.def("getallExporterFieldValues__spherical_pointwise", &reader_t::getallExporterFieldValues__spherical_pointwise);
+  reader.def_readonly("vars", &reader_t::vars);
+  reader.def_readonly("config", &reader_t::config);  
 }
 
 BOOST_PYTHON_MODULE(_ns_isotropic_norot_reader)
