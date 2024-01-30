@@ -24,6 +24,7 @@
 #include "bco_utilities.hpp"
 #include "python_reader.hpp"
 #include "include/fuka_py.hpp"
+#include "Solvers/bh_3d_xcts/bh_exporter.hpp"
 
 // the space type
 typedef Kadath::Space_adapted_bh space_t;
@@ -42,12 +43,14 @@ template<> Kadath::var_vector Kadath::vars_base_t<bh_vars_t>::vars = {
 class bh_reader_t : public Kadath::python_reader_t<space_t, bh_vars_t> {
   std::string config_filename;
   kadath_config_boost<BCO_BH_INFO> bconfig;
+  using exporter_t = Kadath::FUKA_Solvers::CFMS_BH_Exporter;
+  exporter_t exporter;
 
   public:
   bh_reader_t(std::string const filename) 
   : Kadath::python_reader_t<space_t, bh_vars_t>(filename),
     config_filename(filename.substr(0,filename.size()-3)+"info"),
-    bconfig(config_filename) { 
+    bconfig(config_filename), exporter(config_filename) { 
     
     this->compute_defs(); 
     bh_Configurator_reader_t pybconfig(config_filename);
@@ -142,10 +145,95 @@ class bh_reader_t : public Kadath::python_reader_t<space_t, bh_vars_t> {
   
 
   }
+
+ boost::python::list getExporterFieldValues__cartesian(std::string const & fieldname, boost::python::list const & coord_list) {
+    // list of values to return
+    boost::python::list values;
+
+    
+    // From CPPReference
+    auto str_tolower = [](std::string s) {
+        std::transform(s.begin(), s.end(), s.begin(), 
+                      [](unsigned char c){ return std::tolower(c); } // correct
+                      );
+        return s;
+    };
+    auto key{str_tolower(fieldname)};
+    size_t idx;
+    if (auto search = exporter.output_var_map.find(key); search == exporter.output_var_map.end()) {
+      std::string msg{"Invalid output fieldname pass: "+fieldname};
+      throw std::invalid_argument(msg.c_str());
+    } else {
+      idx = exporter.output_var_map[key];
+      cout << key << ": " << idx << endl;
+    }
+    
+    // loop through all given coords
+    for(int i = 0; i < boost::python::len(coord_list); ++i) {
+      // extract coords
+      boost::python::list coords = boost::python::extract<boost::python::list>(coord_list[i]);
+      auto output_vars = exporter.export_pointwise(
+        boost::python::extract<double>(coords[0]), 
+        boost::python::extract<double>(coords[1]), 
+        boost::python::extract<double>(coords[2])
+      );
+      values.append(output_vars[idx]);
+    }
+    return values;
+  }
+
+  boost::python::list getExporterKeys() {
+    boost::python::list values;
+    for(auto t : exporter.output_var_map) {
+      values.append(t.first);
+    }
+    return values;
+  }
+
+  boost::python::dict getallExporterFieldValues__cartesian_pointwise(boost::python::list const & coord) {
+    // list of values to return
+    boost::python::dict values;
+
+    if (boost::python::len(coord) > 3) {
+      std::string msg{"getallExporterFieldValues_pointwise accepts a single coordinate only!"};
+      throw std::invalid_argument(msg.c_str());
+    }
+
+    auto output_vars = exporter.export_pointwise(
+      boost::python::extract<double>(coord[0]), 
+      boost::python::extract<double>(coord[1]), 
+      boost::python::extract<double>(coord[2])
+    );
+    
+    // loop through all given coords
+    for(auto& kvp : exporter.output_var_map) {
+      auto k = kvp.first;
+      auto idx = kvp.second;
+
+      // Create dictionary
+      values[k] = output_vars[idx];
+    }
+    return values;
+  }  
 };
+
+// dummy constructor function, defining readers through boost python
+template<typename reader_t>
+void constructPythonReader_here(std::string reader_name) {
+  using namespace boost::python;
+
+  auto reader = class_<reader_t>(reader_name.c_str(), init<std::string>());
+  reader.def("getFieldValues", &reader_t::getFieldValues);
+  reader.def("getExporterFieldValues__cartesian", &reader_t::getExporterFieldValues__cartesian);
+  reader.def("getExporterKeys", &reader_t::getExporterKeys);
+  reader.def("getallExporterFieldValues__cartesian_pointwise", &reader_t::getallExporterFieldValues__cartesian_pointwise);
+  reader.def_readonly("vars", &reader_t::vars);
+  reader.def_readonly("config", &reader_t::config);  
+}
+
 BOOST_PYTHON_MODULE(_bh_reader)
 {
     // initialize python types
     Kadath::initPythonBinding<space_t>();
-    Kadath::constructPythonReader<bh_reader_t>("bh_reader");
+   constructPythonReader_here<bh_reader_t>("bh_reader");
 }
