@@ -272,7 +272,8 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     }
     return values;
   }
-    boost::python::list getExporterFieldValues__spherical(std::string const & fieldname, boost::python::list const & coord_list) {
+  
+  boost::python::list getExporterFieldValues__spherical(std::string const & fieldname, boost::python::list const & coord_list) {
     // list of values to return
     boost::python::list values;
 
@@ -307,6 +308,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     }
     return values;
   }
+  
   boost::python::list getExporterKeys() {
     boost::python::list values;
     for(auto t : exporter.output_var_map) {
@@ -314,6 +316,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     }
     return values;
   }
+  
   boost::python::dict getallExporterFieldValues__spherical_pointwise(boost::python::list const & coord) {
     // list of values to return
     boost::python::dict values;
