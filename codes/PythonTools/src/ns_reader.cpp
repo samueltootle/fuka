@@ -153,7 +153,7 @@ class ns_reader_t : public Kadath::python_reader_t<space_t, ns_vars_t> {
     FUKA_Syst_tools::syst_vars_NS(vars, syst, 2, Madm, matter_Domains);
   }
   
-  boost::python::list getExporterFieldValues(std::string const & fieldname, boost::python::list const & coord_list) {
+  boost::python::list getExporterFieldValues__cartesian(std::string const & fieldname, boost::python::list const & coord_list) {
     // list of values to return
     boost::python::list values;
 
@@ -188,10 +188,37 @@ class ns_reader_t : public Kadath::python_reader_t<space_t, ns_vars_t> {
     }
     return values;
   }
+
   boost::python::list getExporterKeys() {
     boost::python::list values;
     for(auto t : exporter.output_var_map) {
       values.append(t.first);
+    }
+    return values;
+  }
+
+  boost::python::dict getallExporterFieldValues__cartesian_pointwise(boost::python::list const & coord) {
+    // list of values to return
+    boost::python::dict values;
+
+    if (boost::python::len(coord) > 3) {
+      std::string msg{"getallExporterFieldValues_pointwise accepts a single coordinate only!"};
+      throw std::invalid_argument(msg.c_str());
+    }
+
+    auto output_vars = exporter.export_pointwise(
+      boost::python::extract<double>(coord[0]), 
+      boost::python::extract<double>(coord[1]), 
+      boost::python::extract<double>(coord[2])
+    );
+    
+    // loop through all given coords
+    for(auto& kvp : exporter.output_var_map) {
+      auto k = kvp.first;
+      auto idx = kvp.second;
+
+      // Create dictionary
+      values[k] = output_vars[idx];
     }
     return values;
   }
@@ -205,8 +232,9 @@ void constructPythonReader_here(std::string reader_name) {
   auto reader = class_<reader_t>(reader_name.c_str(), init<std::string>());
   reader.def("getFieldValues", &reader_t::getFieldValues);
   reader.def("getEOSValues", &reader_t::getEOSValues);
-  reader.def("getExporterFieldValues", &reader_t::getExporterFieldValues);
+  reader.def("getExporterFieldValues__cartesian", &reader_t::getExporterFieldValues__cartesian);
   reader.def("getExporterKeys", &reader_t::getExporterKeys);
+  reader.def("getallExporterFieldValues__cartesian_pointwise", &reader_t::getallExporterFieldValues__cartesian_pointwise);
   reader.def_readonly("vars", &reader_t::vars);
   reader.def_readonly("config", &reader_t::config);  
 }
