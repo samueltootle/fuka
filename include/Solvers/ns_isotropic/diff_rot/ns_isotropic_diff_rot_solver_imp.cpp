@@ -46,6 +46,10 @@ std::string ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::converged_fi
     auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
     ss << seq_key << "." << bconfig(default_idx) << "."; 
   }
+  if(law == "keh") {
+    ss << "Ar." << bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO) << "."
+       << "Rr." << bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO) << ".";
+  }
   ss << bconfig(BCO_PARAMS::OMEGA)<< ".";
   ss << bconfig(BCO_PARAMS::NSHELLS) << "."
      << std::setfill('0') << std::setw(2) << res;
