@@ -28,6 +28,9 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
     
   std::string stagename = "DIFF_ROT";
 
+  // Extract Constants
+  double diffAratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
+  double diffRratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
   // Sad tool to make system of equations work with constants
   Scalar one(space);
   one = 1;
@@ -48,10 +51,6 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
 
   bconfig.set(BCO_PARAMS::RMID) = R0;
 
-  // Extract Constants
-  double diffAratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
-  double diffRratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
-
   // Initialize rotation law parameter A
   double diffA = diffAratio * R0;
 
@@ -62,6 +61,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
               << "Differential Rotating models (KEH)"  << std::endl
               << firstint << std::endl
               << "Fixed A / R0: " << diffAratio << std::endl
+              << "Fixed Rp / Re: " << diffRratio << std::endl
               << "Initial Rp/Re: " << Rp / R0 << "\n"
               << "Initial R0: " << R0 <<std::endl
               << "###################################" << "\n\n";
