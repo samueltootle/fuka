@@ -34,6 +34,7 @@ void initialize_fields_diff(config_t& bconfig) {
 
   bconfig.set_filename("initns_diffrot");
   bconfig.set_field(BCO_FIELDS::DIFF_OMEGA) = true;
+  bconfig.control(CONTROLS::SEQUENCES) = true;
   if(rank == 0)
     bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh, lap_Bterm, lap_wterm, Omega);
   MPI_Barrier(MPI_COMM_WORLD);
@@ -63,7 +64,14 @@ int ns_isotropic_diff_rot_stationary_driver (config_t& bconfig,
   // Make sure fields needed for rotating solution are initialized before opening files
   if(!bconfig.field(BCO_FIELDS::DIFF_OMEGA))
     initialize_fields_diff(bconfig);
-
+  
+  bconfig.seq_setting(SEQ_SETTINGS::FINAL_RRATIO) = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
+  
+  bconfig.control(CONTROLS::ITERATIVE_RRATIO) = 
+    bconfig.seq_setting(SEQ_SETTINGS::FINAL_RRATIO) < 0.9 && bconfig.control(CONTROLS::SEQUENCES);
+  
+  bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_RRATIO) = (bconfig.control(CONTROLS::ITERATIVE_RRATIO)) ? 0.9 : bconfig.seq_setting(SEQ_SETTINGS::FINAL_RRATIO);
+  // cout << "RATIOS: " << (0 == 0) << " = " << (bconfig.seq_setting(SEQ_SETTINGS::FINAL_RRATIO) >= 0.9) << " - " << !bconfig.control(CONTROLS::SEQUENCES) << ", " << bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO) << '\n';
   // Not important atm
   // if(std::isnan(bconfig.set(BCO_PARAMS::MADM)) && std::isnan(bconfig.set(BCO_PARAMS::MB))){
   //   if(rank == 0)
@@ -81,7 +89,25 @@ int ns_isotropic_diff_rot_stationary_driver (config_t& bconfig,
     }
     std::_Exit(EXIT_FAILURE);
   }
+  std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
+  auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
 
+  bool regridded = false;
+  auto regrid = [&]() {
+    std::string fname{"ns_regrid"};
+
+    if(rank == 0)
+      exit_status = ns_isotropic_diff_rot_regrid(bconfig, fname);
+    MPI_Barrier(MPI_COMM_WORLD);
+    bconfig.set_filename(fname);
+    bconfig.open_config();
+    
+    stage_enabled.fill(false);
+    stage_enabled[STAGES::DIFF_ROT] = true;
+    exit_status = RELOAD_FILE;
+    regridded = true;
+  };
+  
   while(exit_status == RELOAD_FILE) { 
     spacein = bconfig.space_filename();
     // just so you really know
@@ -138,16 +164,23 @@ int ns_isotropic_diff_rot_stationary_driver (config_t& bconfig,
       std::cerr << "Unknown EOSTYPE." << endl;
       std::_Exit(EXIT_FAILURE);
     }
-    
-    if(exit_status == EXIT_SUCCESS){
-      auto [r_min, r_max] = Kadath::bco_utils::get_rmin_rmax(space, 1);
-      bconfig.control(CONTROLS::REGRID) =  \
-          (1. - (bconfig(BCO_PARAMS::RIN) / r_min ) <= 0.3) || 
-          (1. - (r_max / bconfig(BCO_PARAMS::ROUT)) <= 0.1);
+    if(exit_status == EXIT_SUCCESS && !regridded && bconfig.control(CONTROLS::ITERATIVE_RRATIO)){
+      regrid();
+    }
+    else if(bconfig.control(CONTROLS::ITERATIVE_RRATIO)) {
+      double rr = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
+      rr -= 0.05;
+      bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_RRATIO) = (rr < bconfig.seq_setting(SEQ_SETTINGS::FINAL_RRATIO)) ?
+        bconfig.seq_setting(SEQ_SETTINGS::FINAL_RRATIO) : rr;
+      exit_status = RELOAD_FILE;
+      bconfig.control(CONTROLS::ITERATIVE_RRATIO) = 
+        (bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO) != bconfig.seq_setting(SEQ_SETTINGS::FINAL_RRATIO));
+      regridded = false;
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
   }
+  bconfig.control(CONTROLS::SEQUENCES) = false;
   return exit_status;
 }
 
