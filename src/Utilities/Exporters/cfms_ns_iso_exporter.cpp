@@ -80,12 +80,18 @@ namespace Kadath::FUKA_Solvers {
      
       if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
         omega.reset(new Scalar(*space.get(), ff1));
+        #ifdef DEBUG
         std::cout << "**** Reading Differentially rotating solution ****\n";
+        #endif
       } else{
+        #ifdef DEBUG
         std::cout << "**** Reading Uniformly rotating solution ****\n";
+        #endif
       }
     } else {
+      #ifdef DEBUG
       std::cout << "**** Reading non-rotating, spherical solution ****\n";
+      #endif
     }
     
     fclose(ff1);
@@ -110,10 +116,14 @@ namespace Kadath::FUKA_Solvers {
     syst.add_cst("lapBterm", *lap_Bterm);
 
     if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
+      #ifdef DEBUG
       std::cout << "**** Importing differential rotation profile ****\n";
+      #endif
       syst.add_cst("Omega", *omega);
     } else {
+      #ifdef DEBUG
       std::cout << "**** Importing uniform rotation profile ****\n";
+      #endif
       syst.add_cst("Omega", (*bconfig)(BCO_PARAMS::OMEGA));
     }
     syst.add_def("N = exp(nu)");
@@ -138,7 +148,9 @@ namespace Kadath::FUKA_Solvers {
       domega_dt.reset(new Scalar(syst.give_val_def("dtw")));
       domega_dt->coef();
     } else {
+      #ifdef DEBUG
       std::cout << "**** Importing non-rotation profile ****\n";
+      #endif
       fluidvel.reset(new Scalar(*space));
       fluidvel->annule_hard();
       fluidvel->std_base();
