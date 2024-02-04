@@ -96,6 +96,43 @@ using namespace Kadath::FUKA_Config;
   }
 
   /**
+   * @brief Build Differential rotation configuration dictionary for python
+   * 
+   * @tparam bconfig_t Configurator type
+   * @tparam idx_t Optional pack
+   * @param bconfig the Configurator
+   * @param bco Optional index for a subobject
+   * @return boost::python::dict 
+   */
+  template<class bconfig_t, typename... idx_t>
+  void add_diffrot_todict(bconfig_t& bconfig, boost::python::dict& config, idx_t... bco) {
+    // map of <std::string, enum>
+    boost::python::dict diffrot;
+    auto map = bconfig.get_diffrot_map(bco...);  
+    for(auto& tup : map) {
+      auto name{tup.first};
+      auto index{tup.second};
+
+      auto assign_val = [&](auto&& v) {
+        using v_t = std::decay_t<decltype(v)>;
+        if constexpr(std::is_same_v<v_t, double>) {          
+          if(!std::isnan(v))
+            diffrot[name] = v;
+        } else {
+          diffrot[name] = v;
+        }
+      };
+      
+      // Differential Rotation Params are stored in a std::variant
+      std::visit(assign_val, bconfig.set_diffrot(index,bco...)
+      );
+    }
+    if(boost::python::len(diffrot) > 0)
+      config["differential_rotation"] = diffrot;
+    return;
+  }
+
+  /**
    * @brief Base class for the python Configurator reader
    * 
    * @tparam config_t 
@@ -170,6 +207,7 @@ using namespace Kadath::FUKA_Config;
             boost::python::extract<boost::python::dict>(config[dict_name]);
           
           add_eos_todict(bconfig, dict);
+          add_diffrot_todict(bconfig, dict);
           config[dict_name] = dict;
       }
   };
