@@ -342,6 +342,10 @@ struct kadath_config_boost : public configurator_base {
     auto get_eos_map(idx_t... BCOidx) {
       return container.get_eos_map(BCOidx...);
     }
+    template<typename... idx_t>
+    auto get_diffrot_map(idx_t... BCOidx) {
+      return container.get_diffrot_map(BCOidx...);
+    }
     
     inline void set_seq_defaults();
 
