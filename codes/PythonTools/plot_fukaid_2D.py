@@ -88,7 +88,7 @@ if __name__ == "__main__":
   })
   nrows = 1
   cbarbottom = args.cbar_bottom
-  cbarpad = 15
+  cbarpad = 20
   plt.rcParams['figure.constrained_layout.use'] = True
   fig = plt.figure()
   norm = colors.Normalize(vmin=args.vmin, vmax = args.vmax, clip=False)
