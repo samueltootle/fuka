@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt, matplotlib
 pyFUKA_libspath = os.getenv('HOME_KADATH')+'/codes/PythonTools/lib/'
 sys.path.append(pyFUKA_libspath)
 
-LabelSize=15
+LabelSize=25
 TickSize=15
-CbarLabelSize=15
+CbarLabelSize=20
 
 # Set default matplotlib settings
 plt.rcParams.update({
@@ -41,7 +41,7 @@ def gen_cbarlabel(var_name,sq=False,inv=False,log=False):
   if inv:
     cbarlabel = r'1 / ' + cbarlabel
   if log:
-    cbarlabel = r'\log \left( '+cbarlabel+r' \right)'
+    cbarlabel = r'\log_{10} \left( '+cbarlabel+r' \right)'
   cbarlabel = r'$'+cbarlabel+r'$'
   return cbarlabel
 
