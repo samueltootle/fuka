@@ -246,6 +246,36 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     auto r(space.get_domain(1)->get_radius());
     double CR = B(pos_eq) * r(pos_eq);
     vars["CR"] = CR;
+
+    // this was used to do a colored plot of the domains
+    // like kids coloring books - color the numbered areas.
+    Scalar dom_colors(space);
+    dom_colors.annule_hard();
+    int c = 1;
+    for(int d = 0; d < ndom; ++d){
+        //set BH interiors to the same color
+        if( d == 0){
+          dom_colors.set_domain(d) = 0;
+        }
+        //set inner_adapted domains to the same color
+        else if( d == space.ADAPTED_OUTER){
+          dom_colors.set_domain(d) = 1;
+        }
+        else if( d == space.ADAPTED_INNER){
+          dom_colors.set_domain(d) = 2;
+        }
+        //set chi_first domains to the same color
+        else if( d > space.ADAPTED_INNER && d < ndom-1) {
+          dom_colors.set_domain(d) = 3;
+        }
+        //eta + shells + compactified domains
+        else {
+          dom_colors.set_domain(d) = 3 + c;
+          c++;
+        }
+    }
+    dom_colors.std_base();
+    vars["dom_color_chart"] = dom_colors;
   }
 
   boost::python::list getExporterFieldValues__cartesian(std::string const & fieldname, boost::python::list const & coord_list) {
