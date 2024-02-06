@@ -10,11 +10,20 @@ namespace Kadath::FUKA_Solvers {
     space.reset(new space_t((*r.get_space())));
     // Copy ID fields
     lap_Aterm.reset(new Scalar(*space, *r.lap_Aterm.get()));
-    lap_Bterm.reset(new Scalar(*space, *r.lap_Bterm.get()));
     Nu.reset(new Scalar(*space, *r.Nu.get()));
-    lap_omega_term.reset(new Scalar(*space, *r.lap_omega_term.get()));
     logh.reset(new Scalar(*space, *r.logh.get()));
-    omega.reset(new Scalar(*space, *r.omega.get()));
+    lap_Bterm.reset(new Scalar(*space, *r.lap_Bterm.get()));
+
+    // For uniform rotation solutions
+    if(r.lap_omega_term)
+      lap_omega_term.reset(new Scalar(*space, *r.lap_omega_term.get()));
+    else
+      lap_omega_term = nullptr;
+    // For differential rotation solutions
+    if(r.omega)
+      omega.reset(new Scalar(*space, *r.omega.get()));
+    else
+      omega = nullptr;
 
     // Copy Computed Terms    
     lapse.reset(new Scalar(*space, *r.lapse.get()));
