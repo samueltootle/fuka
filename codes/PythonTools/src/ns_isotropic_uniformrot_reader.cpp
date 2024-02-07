@@ -299,7 +299,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     for(int i = 0; i < boost::python::len(coord_list); ++i) {
       // extract coords
       boost::python::list coords = boost::python::extract<boost::python::list>(coord_list[i]);
-      auto output_vars = exporter.export_pointwise(
+      auto output_vars = exporter.export_pointwise__spherical(
         boost::python::extract<double>(coords[0]), 
         boost::python::extract<double>(coords[1]), 
         boost::python::extract<double>(coords[2])

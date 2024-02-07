@@ -119,6 +119,10 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     syst.add_def("A = exp(lapAterm - nu)");
     syst.add_def("B = (divrsint(lapBterm) + 1) / N");
     syst.add_def("w = divrsint(wrsint)");
+    syst.add_def("drw = dr(w)");
+    syst.add_def("dtw = dt(w)");
+    syst.add_def("divrdtw = divr(dt(w))");
+    syst.add_def("dtdivrw = dt(divr(w))");
 
     // define quantity to be integrated at infinity
     // two (in this case) equivalent definitions of ADM mass
@@ -237,6 +241,12 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     add_from_def("eqAterm", "cA");
     add_from_def("eqBterm", "cB");
     add_from_def("eqwrsint", "comega");
+    add_from_def("drw", "domega_dr");
+    add_from_def("dtw", "domega_dt");
+    add_from_def("divrdtw", "divr(domega_dt)");
+    add_from_def("dtdivrw", "d(divromega)_dt");
+    
+    
 
     auto npts = space.get_domain(1)->get_nbr_points();
     Index pos_eq (npts);
@@ -313,7 +323,8 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     }
     return values;
   }
-    boost::python::list getExporterFieldValues__spherical(std::string const & fieldname, boost::python::list const & coord_list) {
+  
+  boost::python::list getExporterFieldValues__spherical(std::string const & fieldname, boost::python::list const & coord_list) {
     // list of values to return
     boost::python::list values;
 
@@ -339,7 +350,7 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     for(int i = 0; i < boost::python::len(coord_list); ++i) {
       // extract coords
       boost::python::list coords = boost::python::extract<boost::python::list>(coord_list[i]);
-      auto output_vars = exporter.export_pointwise(
+      auto output_vars = exporter.export_pointwise__spherical(
         boost::python::extract<double>(coords[0]), 
         boost::python::extract<double>(coords[1]), 
         boost::python::extract<double>(coords[2])
