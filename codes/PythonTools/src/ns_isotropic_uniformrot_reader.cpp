@@ -115,6 +115,9 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     syst.add_def("A = exp(lapAterm - nu)");
     syst.add_def("B = (divrsint(lapBterm) + 1) / N");
     syst.add_def("w = divrsint(wrsint)");
+    syst.add_def("drw = dr(w)");
+    syst.add_def("dtw = dt(w)");
+    syst.add_def("dtN = dt(N)");
 
     // define quantity to be integrated at infinity
     // two (in this case) equivalent definitions of ADM mass
@@ -220,12 +223,37 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
       tmp.std_base();
       vars[out_str.c_str()] = tmp;
     };
-    add_from_def("A");
-    add_from_def("N");
+    add_from_def("w", "metric_omega");
+    add_from_def("A", "metric_A");
+    add_from_def("B", "metric_B");
+    add_from_def("U");
+    add_from_def("W");
+    add_from_def("N", "lapse");
     add_from_def("eqnu", "cLapse");
     add_from_def("eqAterm", "cA");
-    add_from_def("eqBterm", "cNB");
+    add_from_def("eqBterm", "cB");
     add_from_def("eqwrsint", "comega");
+    add_from_def("dtN", "dLapse_dt");
+
+    Scalar omega(syst.give_val_def("w")());
+    Scalar domega_dr(omega.der_var(1));
+    Scalar domega_dt(omega.der_var(2));
+    vars["domega_dr"] = domega_dr;
+    vars["domega_dt"] = domega_dt;
+    
+    Scalar N(syst.give_val_def("N")());
+    // (divrsint(lapBterm) + 1) / N
+    Scalar mB((lap_Bterm.div_rsint() + 1) / N);
+    Scalar Brsint(mB.mult_sin_theta().mult_r());
+    Scalar Brsint2(Brsint * Brsint);
+    // Brsint.coef();
+    vars["Brsint"] = Brsint;
+    vars["Brsintsq"] = Brsint2;
+
+    // Scalar one(space);
+    // Scalar rsint(one.mult_r().mult_sin_theta());
+    // rsint.coef();
+    // vars["rsint"] = rsint;
 
     auto npts = space.get_domain(1)->get_nbr_points();
     Index pos_eq (npts);
