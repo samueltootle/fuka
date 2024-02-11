@@ -37,7 +37,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   one.std_base();
 
   auto npts = space.get_domain(1)->get_nbr_points();
-  Index pos_origin (npts);
+  Index pos_origin (space.get_domain(0)->get_nbr_points());
   Index pos_eq (npts);
   pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
   pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
@@ -54,7 +54,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   // Initialize rotation law parameter A
   double diffA = diffAratio * R0;
 
-  std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsq)) - 0.5 * j^2 / diffA^2"};
+  std::string firstint{"firstint = (H + log(N) - log(W)) - 0.5 * j^2 / diffA^2"};
 
   if (rank == 0)
     std::cout << "###################################" << std::endl
@@ -93,14 +93,10 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_def("r = multr(one)");
   syst.add_def("omeratio = omec / Omega");
 
-  // This converges, but isn't correct
-  // syst.add_def("j = Wsq / N * U");
-  // syst.add_def("j = Wsq^2 / N^2 * (Omega - w)");
   syst.add_def("j = Wsq / N * UphiL");
   syst.add_def("omelaw = omec - j / diffA^2");
 
   for (int d = 0; d < ndom; d++) {
-    // syst.add_eq_full(d, "Omega - omelaw = 0");
     switch (d) {
     // in the star the constraint equations are sourced by the matter
     case 0:
