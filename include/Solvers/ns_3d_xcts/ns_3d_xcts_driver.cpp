@@ -93,8 +93,6 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
     // the final ADM mass and spin
     bconfig(BCO_PARAMS::MADM) = final_MADM;
     bconfig.control(CONTROLS::SEQUENCES) = false;
-    
-
   }
   exit_status = ns_3d_xcts_base_solution_driver(bconfig, outputdir, &seq);
   // Ensure only the final stage is used
@@ -123,8 +121,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
       }
     }
     exit_status = ns_3d_xcts_driver(bconfig, resolution, outputdir, &seq); 
-    const auto r = resolution.final();
-    resolution.set(r,r,r);
+    resolution.set(resolution.final(), resolution.final(), resolution.final());
     return exit_status;
   };
 
