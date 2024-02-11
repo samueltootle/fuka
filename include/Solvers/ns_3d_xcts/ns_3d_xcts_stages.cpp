@@ -557,15 +557,16 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
   double loghc = std::log(bconfig(BCO_PARAMS::HC));
   std::string stagename = "DIFF_ROT";
 
+  // Extract Constants
+  double diffAratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
+  double diffRratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
+
   Scalar ones(space);
   ones = 1;
   ones.std_base();
-
-  scalar_ary_t coord_scalars;
-  coord_scalars[R_BCO1] = Scalar(space);
   
   double xo = 0.0;
-  update_fields_co(cfields, coord_vectors, coord_scalars, xo);
+  update_fields_co(cfields, coord_vectors, {}, xo);
   
   auto npts = space.get_domain(1)->get_nbr_points();
   Index pos_origin (space.get_domain(0)->get_nbr_points());
@@ -582,70 +583,24 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
 
   bconfig.set(BCO_PARAMS::RMID) = R0;
 
-  // FIXME should be user driven
-  double diffAratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
-  double diffRratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
-
   // Initialize rotation law parameter A
   double diffA = diffAratio * R0;
 
-  std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsq)) - 0.5 * j^2 / diffA^2"};
+  std::string firstint{"firstint = (H + log(N) - log(W)) - 0.5 * j^2 / diffA^2"};
 
   if (rank == 0)
     std::cout << "###################################" << std::endl
               << "Differential Rotating models (KEH)"  << std::endl
               << firstint << std::endl
               << "Fixed A / R0: " << diffAratio << std::endl
+              << "Fixed Rp / Re: " << diffRratio << std::endl
               << "Initial Rp/Re: " << Rp / R0 << "\n"
               << "Initial R0: " << R0 <<std::endl
               << "###################################" << "\n\n";
-    
-  // Scalar level(space);
-  // auto update_level = [&] () {
-  //   Scalar x(space.get_cart_field(1));
-  //   Scalar y(space.get_cart_field(2));
-  //   Scalar z(space.get_cart_field(3));
-  //   // level = (*coord_scalars[R_BCO1]) * (*coord_scalars[R_BCO1]) -  bconfig(RMID) * bconfig(RMID);
-    
-    
-  //   // only valid for equator and pole
-  //   // level = (x*x + y*y) / Rx / Rx + z*z / Rz / Rz - 1.;
-  //   // level = sqrt(level);
-  //   level = sqrt(x*x + y*y + z*z);
-  //   level.set_domain(ndom-1).annule_hard();
-  //   level.std_base();
-  //   // if(rank == 0)
-  //   //   std::cout << level << std::endl;
-  // };
-  // update_level();
 
   Scalar Omega(space);
   Omega = bconfig(BCO_PARAMS::OMEGA);
   Omega.std_base();
-
-  // std::string jint{};
-  // std::string jome{"diffA^2 * Omega * (omeratio^"+std::to_string(q)+" - 1)"};
-  // std::string F{"F = " + jome};
-  // switch(q) {
-  //   case 2:
-  //     jint = "diffA^2 * Omega^2 * (omeratio^2 * log(Omega) - 0.5)"; // - omec^2 * (log(omec) - 0.5)";
-  //     break;
-  //   default:
-  //     jint = "diffA^2 * Omega^2 * ((1 / (2-q)) * omeratio^"+std::to_string(q)+" - 0.5)"; // - omec^2 * q / (4 - 2 * q)";
-  //     break;
-  // }
-  // std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsquare)) + " + jint};
-  // if (rank == 0)
-  //   std::cout << "###################################" << std::endl
-  //             << "Differential Rotating models"      << std::endl
-  //             << "Law: " << F << std::endl
-  //             << firstint << std::endl
-  //             // << eqOme << std::endl
-  //             << "q: " << q << std::endl
-  //             << "A: " << diffA << std::endl
-  //             << "Rp/Re: " << Rratio << std::endl
-  //             << "R0: " << R0 <<std::endl
-  //             << "###################################" << std::endl;
 
   System_of_eqs syst(space, 0, ndom - 1);
   syst.add_var("H"   , logh);
@@ -687,27 +642,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
   // This converges, but isn't correct
   // syst.add_def("j = Wsq / N * U");
   syst.add_def("j = P^4 * Wsquare * f_ij * U^i * mg^j / N");
-  syst.add_def("omelaw = omec - j^2 / diffA^2");
-  
-  // DEBUG
-  // for (auto [ P, str ] : {std::make_tuple(pos_pole,"pole"), std::make_tuple(pos_eq, "equ")}) {
-  //   if(rank == 0)
-  //     std::cout << "Coord at " + std::string{str} + " ["
-  //               << space.get_domain(1)->get_cart(1)(P) << ", "
-  //               << space.get_domain(1)->get_cart(2)(P) << ", "
-  //               << space.get_domain(1)->get_cart(3)(P) << "]" << std::endl;
-  // }
-  
-  
-  // syst.add_cst("lev", level);
-
-
-  
-  // OLD
-  // syst.add_def(F.c_str());
-  // syst.add_def("Fomega = P^4 * Wsquare * f_ij * U^i * mg^j / N");
-  // cout << syst.give_val_def("F")();
-  // cout << syst.give_val_def("Fomega")();
+  syst.add_def("omelaw = omec - j / diffA^2");
 
   syst.add_def("A^ij = (D^i bet^j + D^j bet^i - 2. / 3.* D_k bet^k * f^ij) / "
                "2. / Ntilde");
@@ -717,12 +652,10 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_def(2,"intS = A_ij * mg^i * sm^j / 2. / 4piG") ;
 
   for (int d = 0; d < ndom; d++) {
-    // syst.add_eq_full(d, "Fomega - F = 0");
-    syst.add_eq_full(d, "Omega - omelaw = 0");
+    // syst.add_eq_full(d, "Omega - omelaw = 0");
     switch (d) {
     case 0:
     case 1:
-
 
       syst.add_def(d, "Etilde = press * h * Wsquare - press * delta") ;
       syst.add_def(d, "Stilde = 3 * press * delta + (Etilde + press * delta) * Usquare") ;
@@ -737,8 +670,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
       syst.add_def(d, "intMb = P^6 * rho(h) * W");
       
       syst.add_def(d, firstint.c_str());
-      syst.add_def(d, "UH = U^i * D_i H");
-
+      syst.add_eq_full(d, "Omega - omelaw = 0");
       break;
     default:
       syst.add_eq_full(d, "H = 0");
@@ -750,6 +682,12 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
       break;
     }
   }
+  // Ensure Omega field matches the interior solution, but is zero otherwise.
+  // Much more reliable convergence
+  syst.add_eq_matching(2, INNER_BC, "Omega");
+  syst.add_eq_matching(2, INNER_BC, "dn(Omega)");
+  syst.add_eq_inside(2,"Omega = 0");
+  syst.add_eq_full(3, "Omega = 0");
 
   space.add_eq(syst, "eqNP= 0", "N", "dn(N)");
   space.add_eq(syst, "eqP= 0", "P", "dn(P)");
@@ -792,19 +730,10 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
     // update_config_quantities(syst);
     std::stringstream ss;
     ss << "diffrot_3d_total" << ite - 1 ;
-    bconfig.set(QLMADM) = bconfig(MADM);
     bconfig.set_filename(ss.str());
-    update_fields_co(cfields, coord_vectors, coord_scalars, xo, &syst);
-    // update_level();
-    // bconfig(RMID) = level(1)(pos_eq);
-    // R0 = (*coord_scalars[R_BCO1])(1)(pos_eq);
-    // for(int d = 0; d < ndom; ++d) {
-    //   update_field(syst, d, "lev", level);
-    //   //update_field(syst, d, "r", coord_dist);
-    // }
-    // syst.sec_member();
+    update_fields_co(cfields, coord_vectors, {}, xo, &syst);
     if (rank == 0) {
-      std::cout << "R0 = " << bconfig(RMID) << std::endl;
+      // std::cout << "R0 = " << bconfig(RMID) << std::endl;
       print_diagnostics(syst, ite, conv);
       if(bconfig.control(CHECKPOINT))
         Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, Omega);
