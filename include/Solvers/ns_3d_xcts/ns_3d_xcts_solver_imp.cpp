@@ -100,9 +100,11 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve() {
     }
   }
   
-  if(stage_enabled[STAGES::TESTING] &&  exit_status != RELOAD_FILE) {
-    this->solver_stage = STAGES::TESTING;
-    exit_status = differential_rot_stage();
+  if(stage_enabled[STAGES::DIFF_ROT] &&  exit_status != RELOAD_FILE) {
+    this->solver_stage = STAGES::DIFF_ROT;
+    auto law = str_tolower(bconfig.template diffrot<std::string>(DIFFROT_PARAMS::DIFF_LAW));
+    if(law == "keh")
+      exit_status = keh_stage();
   }
 
   // Barrier needed in case we need to read from the previous output
@@ -297,6 +299,7 @@ void ns_3d_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(Syste
       bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
       bconfig.set(BCO_PARAMS::CHI) = chi;
     }
+    bconfig.set(QLMADM) = bconfig(MADM) ;
   }
 /** @}*/
 }}
