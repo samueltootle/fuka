@@ -141,8 +141,6 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(bool fixed)
         space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
         break;
       case BCO_PARAMS::MB:
-        syst.add_var("hc", bconfig(BCO_PARAMS::HC));
-        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
         space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         break;
       default:
