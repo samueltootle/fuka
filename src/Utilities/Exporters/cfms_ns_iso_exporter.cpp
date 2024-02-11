@@ -423,14 +423,11 @@ namespace Kadath::FUKA_Solvers {
           xx0 = tmp0;
           if(std::fabs(xx0) < 1e-12) {
             xx0 = 1e-12;
-            xx1 = acos(xCart[2] / xx0); //theta (angle from Z to xy plane)
-            const double xfixed = std::copysign(1e-12, xCart[0]);
-            xx2 = atan2(xCart[1], xfixed); // phi (angle from x to y axis)
+            xx1 = 1e-12;
+            xx2 = 1e-12;
           } else if(std::fabs(x) < 1e-12 && std::fabs(y) < 1e-12) {
-            xx1 = 1e-10; //theta (angle from Z to xy plane)
-            
-            const double xfixed = std::copysign(1e-12, xCart[0]);
-            xx2 = atan2(xCart[1], xfixed); // phi (angle from x to y axis)
+            xx1 = 1e-12;
+            xx2 = 1e-12;
           } else {
             xx1 = acos(xCart[2] / xx0); //theta (angle from Z to xy plane)
             xx2 = atan2(xCart[1], xCart[0]); // phi (angle from x to y axis)
