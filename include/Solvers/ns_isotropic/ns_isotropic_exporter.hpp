@@ -102,17 +102,38 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
   using output_ary_t = std::array<double, NUM_OUTPUT_VARS>; 
   using grid_ary_t = std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
-  std::vector<ISO_VARS> iso_spacetime_indicies{
-    ISO_ALPHA,
-    ISO_METRIC_A,
-    ISO_METRIC_B,
-    ISO_METRIC_OMEGA,
-    ISO_DOMEGA_DR,
-    ISO_DOMEGA_DTHETA,
+  std::vector<ISO_VARS> spacetime_indicies__iso{
+    ISO_VARS::ISO_ALPHA,
+    ISO_VARS::ISO_METRIC_A,
+    ISO_VARS::ISO_METRIC_B,
+    ISO_VARS::ISO_METRIC_OMEGA,
+    ISO_VARS::ISO_DOMEGA_DR,
+    ISO_VARS::ISO_DOMEGA_DTHETA,
   };
-  std::vector<ISO_VARS> iso_fluid_indicies{
-    ISO_H,
-    ISO_U
+  std::vector<ISO_VARS> fluid_indicies__iso{
+    ISO_VARS::ISO_H,
+    ISO_VARS::ISO_U
+  };
+  std::vector<CART_VARS> spacetime_indicies__cart{
+    CART_VARS::CART_ALPHA,
+    CART_VARS::CART_G11,
+    CART_VARS::CART_G12,
+    CART_VARS::CART_G13,
+    CART_VARS::CART_G22,
+    CART_VARS::CART_G23,
+    CART_VARS::CART_G33,
+    CART_VARS::CART_K11,
+    CART_VARS::CART_K12,
+    CART_VARS::CART_K13,
+    CART_VARS::CART_K22,
+    CART_VARS::CART_K23,
+    CART_VARS::CART_K33,
+  };
+  std::vector<CART_VARS> fluid_indicies__cart{
+    CART_VARS::CART_H,
+    CART_VARS::CART_VEL1,
+    CART_VARS::CART_VEL2,
+    CART_VARS::CART_VEL3,
   };  
 
   // Types from Base class
@@ -125,13 +146,15 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
   using Exporter<config_t, space_t>::ndom;
 
   // CFMS_NS imported fields from file
+  // In principle these can be reset to nullptr
+  // after the Spherical basis quantities are
+  // computed.
   ptr_data_member(Scalar, lap_Aterm, shared);
   ptr_data_member(Scalar, lap_Bterm, shared);
   ptr_data_member(Scalar, Nu, shared);
   ptr_data_member(Scalar, lap_omega_term, shared);
   ptr_data_member(Scalar, logh, shared);
   ptr_data_member(Scalar, omega, shared);
-
 
   // Constructed objects - Spherical Basis
   ptr_data_member(Scalar, lapse, shared);
@@ -143,6 +166,7 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
   ptr_data_member(Scalar, fluidvel, shared);
 
   // Constructed objects - Cartesian Basis
+  // see basis_transform()
   ptr_data_member(Scalar, gxx, shared);
   ptr_data_member(Scalar, gxy, shared);
   ptr_data_member(Scalar, gxz, shared);
@@ -215,6 +239,11 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
    */
   void populate_quants();
 
+  void initialize_Cartesian_fields();
+
+    // Initialize 
+    
+
   public:
   std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
   bool is_export_ready() const { return export_ready; }  
@@ -238,57 +267,10 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
             velUx(nullptr), velUy(nullptr), velUz(nullptr) {
 
     load_solution_from_file();
-    
-    // Initialize Cartesian fields
-    gxx.reset(new Scalar(*space));
-    gxy.reset(new Scalar(*space));
-    gxz.reset(new Scalar(*space));
-    gyy.reset(new Scalar(*space));
-    gyz.reset(new Scalar(*space));
-    gzz.reset(new Scalar(*space));
-    Kxx.reset(new Scalar(*space));
-    Kxy.reset(new Scalar(*space));
-    Kxz.reset(new Scalar(*space));
-    Kyy.reset(new Scalar(*space));
-    Kyz.reset(new Scalar(*space));
-    Kzz.reset(new Scalar(*space));
-    gxx->annule_hard();
-    gxy->annule_hard();
-    gxz->annule_hard();
-    gyy->annule_hard();
-    gyz->annule_hard();
-    gzz->annule_hard();
-    Kxx->annule_hard();
-    Kxy->annule_hard();
-    Kxz->annule_hard();
-    Kyy->annule_hard();
-    Kyz->annule_hard();
-    Kzz->annule_hard();
-    gxx->std_base();
-    gxy->std_base();
-    gxz->std_base();
-    gyy->std_base();
-    gyz->std_base();
-    gzz->std_base();
-    Kxx->std_base();
-    Kxy->std_base();
-    Kxz->std_base();
-    Kyy->std_base();
-    Kyz->std_base();
-    Kzz->std_base();
-    velUx.reset(new Scalar(*space));
-    velUy.reset(new Scalar(*space));
-    velUz.reset(new Scalar(*space));
-    velUx->annule_hard();
-    velUy->annule_hard();
-    velUz->annule_hard();
-    velUx->std_base();
-    velUy->std_base();
-    velUz->std_base();
-
+    initialize_Cartesian_fields();
     initialize_eos();
     extract_computed_grid_functions();
-    basis_transform();
+    basis_transform__Spherical_to_Cart();
     populate_quants();
     
     // This is to avoid a "bug" where "something" in kadath is not
@@ -299,11 +281,11 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
   }
 
   /**
-   * @brief Transform from Spherical to Cartesian basis at each
-   * collocation point
+   * @brief QI solutions are computed in a spherical basis.  Here we transform
+   * to a Cartesian basis prior to interpolation since most code
    * 
    */
-  void basis_transform();
+  void basis_transform__Spherical_to_Cart();
 
   /**
    * @brief Construct a new object - a mutex is used to allow for thread safety in
@@ -325,6 +307,16 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
    * @return interp_ary_t 
    */
   interp_cart_ary_t interpolate_pointwise(double const & x, double const & y, double const & z);
+
+    /**
+   * @brief For a given coordinate, interpolate the ID solution in a spherical basis
+   * 
+   * @param x 
+   * @param y 
+   * @param z 
+   * @return interp_ary_t 
+   */
+  interp_ary_t interpolate_pointwise__spherical(double const & x, double const & y, double const & z);
   
   /**
    * @brief For a given coordinate, interpolate the ID solution for a subset of the ID variables
@@ -335,70 +327,70 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
    * @param slice indicies of array subset to interpolate
    * @return interp_ary_t 
    */
-  interp_ary_t interpolate_pointwise_subset(double const & x, double const & y, double const & z,
-    std::vector<ISO_VARS> slice);
+  interp_cart_ary_t interpolate_pointwise_subset(double const & x, double const & y, double const & z,
+    std::vector<CART_VARS> slice);
   
-  // /**
-  //  * @brief Export: Load only the spacetime variables
-  //  * 
-  //  * @param x 
-  //  * @param y 
-  //  * @param z
-  //  * @return output_ary_t 
-  //  */
-  // output_ary_t export_pointwise_spacetime_vars(double const & x, double const & y, double const & z);
+  /**
+   * @brief Export: Load only the spacetime variables in Cartesian coordinates
+   * 
+   * @param x 
+   * @param y 
+   * @param z
+   * @return output_ary_t 
+   */
+  output_ary_t export_pointwise_spacetime_vars(double const & x, double const & y, double const & z);
 
-  // /**
-  //  * @brief Export: Load only the fluid variables
-  //  * 
-  //  * @tparam eos_t EOS type
-  //  * @param x 
-  //  * @param y 
-  //  * @param z
-  //  * @return output_ary_t 
-  //  */
-  // template<class eos_t>
-  // output_ary_t export_pointwise_fluid_vars_imp(double const & x, double const & y, double const & z) {
+  /**
+   * @brief Export: Load only the fluid variables
+   * 
+   * @tparam eos_t EOS type
+   * @param x 
+   * @param y 
+   * @param z
+   * @return output_ary_t 
+   */
+  template<class eos_t>
+  output_ary_t export_pointwise_fluid_vars_imp(double const & x, double const & y, double const & z) {
     
-  //   // Reset to NAN
-  //   quant_vals.fill(NAN);
-  //   quant_vals = interpolate_pointwise_subset(x, y, z, iso_fluid_indicies);
+    // Reset to NAN
+    quant_vals.fill(NAN);
+    quant_vals = interpolate_pointwise_subset(x, y, z, fluid_indicies__cart);
 
-  //   double const H = quant_vals[ISO_VARS::ISO_H];
-  //   double h = std::exp(H);
-  //   double rho, eps, press;
+    double const H = quant_vals[CART_VARS::CART_H];
+    double h = std::exp(H);
+    double rho, eps, press;
 
-  //   // get quantities point-wise, since h is smoothest, and cut data at H=0
-  //   if(std::fabs(H) <= 1e-12) {
-  //     rho = 0.;
-  //     eps = 0.;
-  //     press = 0.;
-  //   }
-  //   else {
-  //     rho = EOS<eos_t, DENSITY>::get(h);
-  //     eps = EOS<eos_t, EPSILON>::get(h);
-  //     press = EOS<eos_t, PRESSURE>::get(h);
-  //   }
-  //   out_pw[OUTPUT_VARS::RHO]   = rho;
-  //   out_pw[OUTPUT_VARS::EPS]   = eps;
-  //   out_pw[OUTPUT_VARS::PRESS] = press;
-  //   // FIXME
-  //   // out_pw[OUTPUT_VARS::VEL1]  = quant_vals[ISO_VARS::XCTS_UX];
-  //   // out_pw[OUTPUT_VARS::VEL2]  = quant_vals[ISO_VARS::XCTS_UY];
-  //   // out_pw[OUTPUT_VARS::VEL3]  = quant_vals[ISO_VARS::XCTS_UZ];
-  //   return out_pw;
-  // }
+    // get quantities point-wise, since h is smoothest, and cut data at H=0
+    if(std::fabs(H) <= 1e-14) {
+      rho = 0.;
+      eps = 0.;
+      press = 0.;
+    }
+    else {
+      rho = EOS<eos_t, DENSITY>::get(h);
+      eps = EOS<eos_t, EPSILON>::get(h);
+      press = EOS<eos_t, PRESSURE>::get(h);
+    }
+    out_pw[OUTPUT_VARS::RHO]   = rho;
+    out_pw[OUTPUT_VARS::EPS]   = eps;
+    out_pw[OUTPUT_VARS::PRESS] = press;
+    out_pw[OUTPUT_VARS::VEL1] = quant_vals[CART_VARS::CART_VEL1];
+    out_pw[OUTPUT_VARS::VEL2] = quant_vals[CART_VARS::CART_VEL2];
+    out_pw[OUTPUT_VARS::VEL3] = quant_vals[CART_VARS::CART_VEL3];
+    output_base = OUTPUT_BASIS::CARTESIAN;
+    return out_pw;
+  }
 
-  // /**
-  //  * @brief Export: Interface for only loading the fluid variables
-  //  * 
-  //  * @tparam eos_t EOS type
-  //  * @param x 
-  //  * @param y 
-  //  * @param z
-  //  * @return output_ary_t 
-  //  */
-  // output_ary_t export_pointwise_fluid_vars(double const & x, double const & y, double const & z);
+  /**
+   * @brief Export: Interface for only loading the fluid variables
+   * 
+   * @tparam eos_t EOS type
+   * @param x 
+   * @param y 
+   * @param z
+   * @return output_ary_t 
+   */
+  output_ary_t export_pointwise_fluid_vars(double const & x, double const & y, double const & z);
 
   /**
    * @brief Export an array of OUTPUT_VARS for a given point
@@ -453,7 +445,6 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       eps = EOS<eos_t, EPSILON>::get(h);
       press = EOS<eos_t, PRESSURE>::get(h);
     }
-    out_pw[OUTPUT_VARS::ALPHA] = quant_vals[ISO_VARS::ISO_ALPHA];
     out_pw[OUTPUT_VARS::RHO]   = rho;
     out_pw[OUTPUT_VARS::EPS]   = eps;
     out_pw[OUTPUT_VARS::PRESS] = press;
@@ -499,11 +490,10 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
    * @return output_ary_t Interpolated solution at x,y,z
    */
   template<class eos_t>
-  output_ary_t export_pointwise__spherical_imp(double const & x, double const & y, double const & z) {        
+  output_ary_t export_pointwise__spherical_imp(double const x, double const y, double const z) {        
 
     // Reset to NAN
-    quant_vals.fill(NAN);
-    quant_vals = interpolate_pointwise(x, y, z);
+    auto quant_vals__sph = interpolate_pointwise__spherical(x, y, z);
 
     const double r2 = x * x + y * y + z * z;
     const double r  = std::sqrt(r2);
@@ -520,18 +510,18 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     const double theta = get_theta();
     const double sint  = std::sin(theta);
 
-    const double domega_dr = quant_vals[ISO_VARS::ISO_DOMEGA_DR];
-    const double domega_dt = quant_vals[ISO_VARS::ISO_DOMEGA_DTHETA];
+    const double domega_dr = quant_vals__sph[ISO_VARS::ISO_DOMEGA_DR];
+    const double domega_dt = quant_vals__sph[ISO_VARS::ISO_DOMEGA_DTHETA];
 
-    const double N = quant_vals[ISO_VARS::ISO_ALPHA];
-    const double A = quant_vals[ISO_VARS::ISO_METRIC_A];
-    const double B = quant_vals[ISO_VARS::ISO_METRIC_B];
+    const double N = quant_vals__sph[ISO_VARS::ISO_ALPHA];
+    const double A = quant_vals__sph[ISO_VARS::ISO_METRIC_A];
+    const double B = quant_vals__sph[ISO_VARS::ISO_METRIC_B];
 
     out_pw[OUTPUT_VARS::ALPHA] = N;
 
     out_pw[OUTPUT_VARS::BETA1] = 0.0;
     out_pw[OUTPUT_VARS::BETA2] = 0.0;
-    out_pw[OUTPUT_VARS::BETA3] = -quant_vals[ISO_VARS::ISO_METRIC_OMEGA];
+    out_pw[OUTPUT_VARS::BETA3] = -quant_vals__sph[ISO_VARS::ISO_METRIC_OMEGA];
 
     out_pw[OUTPUT_VARS::G11] = A * A;
     out_pw[OUTPUT_VARS::G12] = 0.0;
@@ -546,7 +536,7 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
     out_pw[OUTPUT_VARS::K23] = -out_pw[OUTPUT_VARS::G33] / 2.0 / N * domega_dt;
     out_pw[OUTPUT_VARS::K33] = 0.0;
 
-    double const H = quant_vals[ISO_VARS::ISO_H];
+    double const H = quant_vals__sph[ISO_VARS::ISO_H];
     double h = std::exp(H);
     double rho, eps, press, vphiU;
 
@@ -561,7 +551,7 @@ struct CFMS_NS_ISO_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config
       rho = EOS<eos_t, DENSITY>::get(h);
       eps = EOS<eos_t, EPSILON>::get(h);
       press = EOS<eos_t, PRESSURE>::get(h);
-      vphiU = quant_vals[ISO_VARS::ISO_U];
+      vphiU = quant_vals__sph[ISO_VARS::ISO_U];
     }
     out_pw[OUTPUT_VARS::RHO]  = rho;
     out_pw[OUTPUT_VARS::EPS]  = eps;
