@@ -28,25 +28,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
       EXIT_SUCCESS : RELOAD_FILE;
   }
 
-  if (fixed) {
-    if (rank == 0)
-      std::cout << "############################" << std::endl
-                << "FIXED stage is deprecated" << std::endl
-                << "############################" << std::endl;
-    std::__throw_runtime_error("Fixed stage is deprecated.\n");
-  } else {
-    if (rank == 0) {
-      std::cout << "############################" << std::endl
-                << "TOV with a resolved surface" << std::endl;
-      if(bconfig.control(MB_FIXING))
-        std::cout << "with Baryonic Mass fixing\n";
-      else
-        std::cout << "with ADM Mass fixing\n";
-                
-      std::cout << "############################" << std::endl;
-    }
-  }
-
   update_fields_co(cfields, coord_vectors, {}, 0.);
 
   // setup a system of equations
@@ -82,6 +63,35 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
       break;
     }
   }
+
+  std::string central_fixing_definition{"h - hc"};
+  std::string output_str{};
+  if(seq && !fixed) {
+    central_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_mass_fixing(syst, bconfig, seq);
+    output_str = ::Kadath::FUKA_Syst_tools::get_ns_mass_fixing_output(bconfig, seq);
+  } else {
+    syst.add_var("hc", bconfig(BCO_PARAMS::HC));
+    syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
+    syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
+    std::stringstream output;
+    output << "Mass fixed using ADM Mass = " << bconfig(BCO_PARAMS::HC);
+    output_str = output.str();
+  }
+
+  if (fixed) {
+    if (rank == 0)
+      std::cout << "############################" << std::endl
+                << "FIXED stage is deprecated" << std::endl
+                << "############################" << std::endl;
+    std::__throw_runtime_error("Fixed stage is deprecated.\n");
+  } else {
+    if (rank == 0) {
+      std::cout << "############################" << std::endl
+                << "TOV with a resolved surface" << std::endl
+                << output_str << std::endl                
+                << "############################" << std::endl;
+    }
+  }
  
   // add the constraint equations and demand continuity their normal derivative across domain boundaries
   space.add_eq(syst, "eqNP= 0", "N", "dn(N)");
@@ -93,50 +103,30 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
 
   // if the surface is resolved, define it to be where the matter vanishes
   syst.add_eq_bc(1, OUTER_BC, "H = 0");
-  
-  std::string central_fixing_definition{"H - Hc"};
-  if(seq && seq->is_set()) {
-    auto idx{std::get<0>(seq->get_indices())};
-    switch(idx) {
-      case BCO_PARAMS::HC:
-        syst.add_cst("Hc", loghc);
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-        break;
-      case BCO_PARAMS::NC:
-        syst.add_cst("Nc", bconfig(BCO_PARAMS::NC));
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-        central_fixing_definition = "rho - Nc";
-        break;
-      case BCO_PARAMS::MADM:
-        syst.add_var("Hc", loghc);
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
-        break;
-      case BCO_PARAMS::MB:
-        syst.add_var("Hc", loghc);
-        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-        break;
-      default:
-        std::string msg{"Sequence initialized, but not implemented for BCO_PARAMS index = " + std::to_string(int(idx))};
-        throw std::runtime_error(msg.c_str());
-        break;
-    }
-  } else {
-    syst.add_var("Hc", loghc);
-    syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-    syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
-  }
+
   // first integral in the innermost domains with non-zero matter content
   // and condition on the central value, either fixed directly or by the
   // integral below
   syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
  
   // constrain stellar mass by these integrals and the central log enthalpy
-  space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
-  space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+  if(seq) {
+    auto idx{seq->mass_idx()};
+    switch(idx) {
+      case BCO_PARAMS::MADM:
+        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+        space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+        break;
+      case BCO_PARAMS::MB:
+        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+        break;
+      default:
+        break;
+    }
+  } else {
+    space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+    space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+  }
  
   // print the variation of the surface radius over the whole star
   if(rank == 0) {
@@ -165,7 +155,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
       ss << "norot_bc";
     }
     ss << "_" << ite - 1;
-    bconfig.set(QLMADM) = bconfig(MADM) ;
+    
     bconfig.set_filename(ss.str());
     if (rank == 0) {
       print_diagnostics_norot(syst, ite, conv);
@@ -208,14 +198,11 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
   double xo = 0.0;
   update_fields_co(cfields, coord_vectors, {}, xo);
   
-  if (rank == 0 && bconfig.control(MB_FIXING))
-    std::cout << "###################################" << std::endl
-              << "Rotating - with fixed Baryonic Mass" << std::endl
-              << "###################################" << std::endl;
-  else if (rank == 0) 
-    std::cout << "###################################" << std::endl
-              << "Rotating - with fixed ADM Mass"      << std::endl
-              << "###################################" << std::endl;
+  if (rank == 0)
+    std::cout << "############################" << std::endl
+              << "Uniformly Rotating NS Solver" << std::endl
+              << "Omega: " << bconfig(BCO_PARAMS::OMEGA) <<std::endl
+              << "############################" << std::endl;
 
   System_of_eqs syst(space, 0, ndom - 1);
   syst.add_var("H"   , logh);
@@ -233,66 +220,9 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
   std::string central_fixing_definition{"H - Hc"};
   std::string spin_fixing_definition{"integ(intJ) - chi * Madm * Madm = 0"};
   
-  if(seq && seq->is_set()) {
-    auto idx{std::get<0>(seq->get_indices())};
-    switch(idx) {
-      case BCO_PARAMS::HC:
-        syst.add_cst("Hc", loghc);
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
-        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
-        break;
-      case BCO_PARAMS::NC:
-        syst.add_cst("Nc", bconfig(BCO_PARAMS::NC));
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
-        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
-        central_fixing_definition = "rho - Nc";
-        break;
-      case BCO_PARAMS::MADM:
-        syst.add_var("Hc", loghc);
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
-        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
-        break;
-      case BCO_PARAMS::MB:
-        syst.add_var("Hc", loghc);
-        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
-        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
-        break;
-      case BCO_PARAMS::OMEGA:
-        syst.add_var("Hc", loghc);
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_var("chi" , bconfig(BCO_PARAMS::CHI));
-        syst.add_cst("ome" , bconfig(BCO_PARAMS::OMEGA));
-        break;
-      case BCO_PARAMS::JADM:
-        spin_fixing_definition = "integ(intJ) - Jadm = 0";
-        syst.add_var("Hc", loghc);
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_cst("Jadm", bconfig(BCO_PARAMS::JADM));
-        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
-        bconfig.set(BCO_PARAMS::CHI) = bconfig(BCO_PARAMS::JADM) / bconfig(BCO_PARAMS::MADM) / bconfig(BCO_PARAMS::MADM);
-        break;
-      case BCO_PARAMS::CHI:
-        syst.add_var("Hc", loghc);
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
-        syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
-        syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
-        syst.add_var("ome" , bconfig(BCO_PARAMS::OMEGA));
-        break;
-      default:
-        std::string msg{"Sequence initialized, but not implemented for BCO_PARAMS index = " + std::to_string(int(idx))};
-        throw std::runtime_error(msg.c_str());
-        break;
-    }
+  if(seq) {
+    central_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_mass_fixing(syst, bconfig, seq);
+    spin_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_spin_fixing(syst, bconfig, seq);
   } else {
     syst.add_var("Hc", loghc);
     syst.add_cst("chi" , bconfig(BCO_PARAMS::CHI));
@@ -348,11 +278,52 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
   syst.add_eq_bc(1, OUTER_BC, "H = 0");
 
   syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
-  space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+  
+  if(seq) {
+    auto idx{seq->mass_idx()};
+    bool add_Madm_int = true;
+    switch(idx) {
+      case BCO_PARAMS::MADM:
+        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+        space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+        add_Madm_int = false;
+        break;
+      case BCO_PARAMS::MB:
+        syst.add_var("hc", bconfig(BCO_PARAMS::HC));
+        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
+        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
+        break;
+      default:
+        break;
+    }
 
-  space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
-  space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+    idx = seq->spin_idx();
+    switch(idx) {
+      case BCO_PARAMS::JADM:
+        space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
+        break;
+      case BCO_PARAMS::CHI:
+        // Since we need MADM to compute CHI, we need to ensure
+        // that if it isn't a fixed quantity that it becomes a
+        // variable in our system of equations and the appropriate
+        // constraint equation is added
+        if(add_Madm_int) {
+          syst.add_var("Madm", bconfig(BCO_PARAMS::MADM));
+          space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+        }
+        
+        space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
+        break;
+      default:
+        break;
+    }
+  } else {
+    space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
 
+    space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
+    space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
+  }
+  
   if (rank == 0)
       print_diagnostics(syst, 0, 0);
   bool endloop = false;
@@ -567,7 +538,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::binary_boost_stage(
 }
 
 template<class eos_t, typename config_t, typename space_t>
-int ns_3d_xcts_solver<eos_t, config_t, space_t>::differential_rot_stage() {
+int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
