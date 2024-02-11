@@ -8,12 +8,20 @@ namespace Kadath::FUKA_Solvers {
     eos_type = r.eos_type;
 
     space.reset(new space_t((*r.get_space())));
+    
+    // Copy solution fields
     conformal_factor.reset(new Scalar(*space.get(), *r.conformal_factor.get()));
     lapse.reset(new Scalar(*space, *r.lapse.get()));
     shift.reset(new Vector(*space, *r.shift.get()));
     logh.reset(new Scalar(*space, *r.logh.get()));
-    fluidvel.reset(new Vector(*space, *r.fluidvel.get()));
-    
+    if(r.diff_omega) {
+      diff_omega.reset(new Scalar(*space, *r.diff_omega.get()));
+    }else {
+      diff_omega = nullptr;
+    }
+
+    // Copy computed fields
+    fluidvel.reset(new Vector(*space, *r.fluidvel.get()));    
     A.reset(new Tensor(*space, *r.A.get()));
 
     bconfig.reset(new config_t(*r.bconfig));
@@ -67,7 +75,10 @@ namespace Kadath::FUKA_Solvers {
     lapse.reset( new Scalar(*space.get(), ff1)) ;
     shift.reset( new Vector(*space.get(), ff1)) ;
     logh.reset( new Scalar(*space.get(), ff1)) ;
-
+    
+    if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)){
+      diff_omega.reset(new Scalar(*space.get(), ff1));
+    }
     
     fclose(ff1);
         
@@ -106,10 +117,20 @@ namespace Kadath::FUKA_Solvers {
     syst.add_cst("N"  , *lapse) ;
     syst.add_cst("bet", *shift) ;
     
-    syst.add_cst("ome" , (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA));
+    if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
+      #ifdef DEBUG
+      std::cout << "**** Importing differential rotation profile ****\n";
+      #endif
+      syst.add_cst("Omega", *diff_omega);
+    } else {
+      #ifdef DEBUG
+      std::cout << "**** Importing uniform rotation profile ****\n";
+      #endif
+      syst.add_cst("Omega", (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA));
+    }
     
     syst.add_cst("mg"  , *coord_vectors[GLOBAL_ROT]);
-    syst.add_def("omega^i = bet^i + ome * mg^i");
+    syst.add_def("omega^i = bet^i + Omega * mg^i");
 
     syst.add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
     A.reset(new Tensor(syst.give_val_def("A")));
@@ -220,23 +241,12 @@ namespace Kadath::FUKA_Solvers {
     out_pw[OUTPUT_VARS::BETA2] = quant_vals[XCTS_VARS::XCTS_BETA2];
     out_pw[OUTPUT_VARS::BETA3] = quant_vals[XCTS_VARS::XCTS_BETA3];
 
-    double g[3][3];
-    g[0][0] = psi4;
-    g[0][1] = 0.0;
-    g[0][2] = 0.0;
-    g[1][1] = psi4;
-    g[1][2] = 0.0;
-    g[2][2] = psi4;
-    g[1][0] = g[0][1];
-    g[2][0] = g[0][2];
-    g[2][1] = g[1][2];
-
-    out_pw[OUTPUT_VARS::G11] = g[0][0];
-    out_pw[OUTPUT_VARS::G12] = g[0][1];
-    out_pw[OUTPUT_VARS::G13] = g[0][2];
-    out_pw[OUTPUT_VARS::G22] = g[1][1];
-    out_pw[OUTPUT_VARS::G23] = g[1][2];
-    out_pw[OUTPUT_VARS::G33] = g[2][2];
+    out_pw[OUTPUT_VARS::G11] = psi4;
+    out_pw[OUTPUT_VARS::G12] = 0.0;
+    out_pw[OUTPUT_VARS::G13] = 0.0;
+    out_pw[OUTPUT_VARS::G22] = psi4;
+    out_pw[OUTPUT_VARS::G23] = 0.0;
+    out_pw[OUTPUT_VARS::G33] = psi4;
 
     out_pw[OUTPUT_VARS::K11] = quant_vals[XCTS_VARS::XCTS_A11] * psi4;
     out_pw[OUTPUT_VARS::K12] = quant_vals[XCTS_VARS::XCTS_A12] * psi4;

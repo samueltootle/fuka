@@ -116,6 +116,7 @@ struct CFMS_NS_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
   ptr_data_member(Scalar, lapse, shared);
   ptr_data_member(Vector, shift, shared);
   ptr_data_member(Scalar, logh, shared);
+  ptr_data_member(Scalar, diff_omega, shared);
 
   // Constructed objects
   ptr_data_member(Tensor, A, shared);
