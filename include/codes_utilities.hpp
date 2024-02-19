@@ -12,6 +12,14 @@
 
 #ifndef __KADATH_CODES_UTILITY_HPP_
 #define __KADATH_CODES_UTILITY_HPP_
+    /**
+     * Template alias to select the (usually) optimal access type, either to pass an argument
+     * or to return an object. \c cutoff_factor allows to let bigger objects be passed or
+     * returned by value instead of reference to const.
+     * Added from KADATH master, will need to remove later
+     */
+    template<typename T,std::size_t cutoff_factor=1> using optimal_access_type =
+        typename std::conditional<(sizeof(T) <= cutoff_factor*sizeof(T*)),T,T const &>::type;
 
 //! Macro to declare a pointer data member with associated trivial accessors.
 #define ptr_data_member(type,identifier,smart_ptr_type) \
@@ -26,7 +34,8 @@ public:\
 protected:\
     type identifier;\
 public:\
-    optimal_access_type<type> get_##identifier () const {return identifier;}
+    optimal_access_type<type> get_##identifier () const {return identifier;}\
+    type & set_##identifier () {return identifier;}
 
 
 
