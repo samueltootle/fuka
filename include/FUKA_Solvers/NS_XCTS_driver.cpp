@@ -81,16 +81,19 @@ NS_XCTS_BASE::base_config_t ns_xcts_norot_seq_driver(NS_XCTS_BASE::base_config_t
     Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);      
     tmp_res.set(res_init,res_init,res_init);
 
-    // exit_status = ns_3d_xcts_driver(bconfig, tmp_res, outputdir);
-    // exit_status = ns_3d_xcts_base_solution_driver(bconfig, outputdir, &seq);
-    NS_XCTS_NOROT<eos_t> solver(bconfig, seq, resolution, outputdir)
-
-    // Update config such that the next solving round uses
-    // the final ADM mass and spin
-    bconfig(BCO_PARAMS::MADM) = final_MADM;
-    bconfig.control(CONTROLS::SEQUENCES) = false;
+    NS_XCTS_NOROT<eos_t> solver(bconfig, seq, tmp_res, outputdir);
+    // solver.solve();
+  } else {
+    NS_XCTS_NOROT<eos_t> solver(bconfig, seq, resolution, outputdir);
+    // sequence...
+    // solver.solve();
   }
   
+  // Update config such that the next solving round uses
+  // the final ADM mass and spin if applicable
+  bconfig(BCO_PARAMS::MADM) = final_MADM;
+  bconfig.control(CONTROLS::SEQUENCES) = false;
+
   return bconfig;
 }
 /** @}*/

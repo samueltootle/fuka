@@ -77,7 +77,7 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
 
   public:
   void save_to_file() const;
-  void solve();
+  int solve(bool fixed = false);
   std::string converged_filename(const std::string stage) const;
 
   NS_XCTS_NOROT() = default;

@@ -21,7 +21,5 @@ namespace Kadath::FUKA_Solvers {
 
     cfields.reset(new cfgen_t(*space));
     coord_vectors = std::make_unique<cfary_t>(default_co_vector_ary(*space));
-    update_fields_co(*cfields, *coord_vectors,{}, 0.);
-    syst.reset(new System_of_eqs(*space));
   }
 }

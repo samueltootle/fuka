@@ -28,11 +28,63 @@ namespace Kadath::FUKA_Solvers {
   }
 
   template<class eos_t>
+  int NS_XCTS_NOROT<eos_t>::solve(bool fixed) {
+    int exit_status = EXIT_SUCCESS;
+    double loghc = std::log((*bconfig)(BCO_PARAMS::HC));
+    std::string stagename = (fixed) ? "NOROT_FIXED" : "NOROT_BC";
+
+    // We use `config_filename()` vs `config_filename_abs()` since
+    // `solution_exists` will probe the HOME_KADATH/COs directory
+    // auto const current = bconfig.config_filename();
+    // if(!bconfig.control(RESOLVE) && solution_exists(stagename)) {    
+    //   if(rank == 0)
+    //     std::cout << "Solved previously: " \
+    //               << bconfig.config_filename_abs() << std::endl;
+    //   return (current == bconfig.config_filename()) ? \
+    //     EXIT_SUCCESS : RELOAD_FILE;
+    // }
+
+    update_fields_co(*cfields, *coord_vectors,{}, 0.);
+    syst.reset(new System_of_eqs(*space));
+    syst_init();
+    for (int d = 0; d < ndom; d++) {
+    switch (d) {
+    // in the star the constraint equations are sourced by the matter
+    case 0:
+    case 1:
+      // sources
+      syst->add_def(d, "Etilde = press * h - press * delta") ;
+      syst->add_def(d, "Stilde = 3 * press * delta") ;
+ 
+      // constraint equations
+      syst->add_def(d, "eqP    = delta * D^i D_i P + 4piG / 2. * P^5 * Etilde") ;
+      syst->add_def(d, "eqNP   = delta * D^i D_i NP - 4piG / 2. * N * P^5 * (Etilde + 2. * Stilde)");
+ 
+      // definition for the baryonic mass integral
+      syst->add_def(d, "intMb = P^6 * rho");
+      // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
+      syst->add_def(d, "firstint = H + log(N)");
+ 
+      break;
+    // outside the matter is absent and the sources are zero
+    default:
+      syst->add_eq_full(d, "H = 0");
+ 
+      syst->add_def(d, "eqP = D^i D_i P");
+      syst->add_def(d, "eqNP = D^i D_i NP");
+      break;
+    }
+  }
+
+  }
+
+  template<class eos_t>
   void NS_XCTS_NOROT<eos_t>::syst_init() {
     using namespace ::Kadath::Margherita;
     
     // call the (flat) conformal metric "f"
     fmet->set_system(*syst, "f");
+    syst->add_var("H"   , logh);
   
     // define numerical constants
     syst->add_cst("4piG", (*bconfig)(BCO_QPIG));

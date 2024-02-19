@@ -20,8 +20,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "mpi.h"
-#include "FUKA_Solvers/NS_XCTS.hpp"
+// #include "FUKA_Solvers/NS_XCTS.hpp"
 // #include "Solvers/ns_3d_xcts/ns_3d_xcts_driver.hpp"
+#include "FUKA_Solvers/NS_XCTS_driver.cpp"
 #include "Solvers/solver_startup.hpp"
 #include "Solvers/sequences/ns_sequence.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
@@ -89,7 +90,9 @@ int main(int argc, char** argv) {
     }
 
     verify_ns_fixing_values(bconfig, seq);
-    NS_XCTS_NOROT<Kadath::Margherita::Cold_PWPoly> solver(bconfig, seq, resolution, InitSolver::outputdir, rank);
+    // NS_XCTS_NOROT<Kadath::Margherita::Cold_PWPoly> solver(bconfig, seq, resolution, InitSolver::outputdir, rank);
+    ns_xcts_norot_seq_driver<Kadath::Margherita::Cold_PWPoly>(bconfig, seq, resolution, InitSolver::outputdir);
+    // NS_XCTS_NOROT solver(bconfig, seq, resolution, InitSolver::outputdir, rank);
   }
   MPI_Finalize();
   return EXIT_SUCCESS;
