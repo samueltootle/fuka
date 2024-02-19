@@ -18,8 +18,7 @@ namespace Kadath::FUKA_Solvers {
 // using ::Kadath::FUKA_Config;
 // using ::Kadath::FUKA_Config_Utils;
 
-template<class eos_t>
-struct NS_XCTS_NOROT {
+struct NS_XCTS_BASE {
   using base_space_t = Space_spheric_adapted;
   using base_config_t = Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_NS_INFO>;
   
@@ -30,14 +29,13 @@ struct NS_XCTS_NOROT {
   using cfary_t  = std::array<std::optional<Vector>, NUM_VECTORS>;
 
   protected:
-  static constexpr int dim{3};
   internal_variable(int, rank)
   internal_variable(int, verbosity)
   internal_variable(int, ndom)
   internal_variable(std::string, outputdir)
-  ::Kadath::FUKA_Config::STAGES solver_stage{::Kadath::FUKA_Config::STAGES::NOROT_BC};
+  ::Kadath::FUKA_Config::STAGES solver_stage{::Kadath::FUKA_Config::STAGES::NUM_STAGES};
 
-  // EOS Parameters
+  // EOS Parameters - Perhaps this should be a container?
   internal_variable(double, h_cut);
   internal_variable(std::string, eos_file);
   internal_variable(std::string, eos_type);
@@ -47,7 +45,7 @@ struct NS_XCTS_NOROT {
   ptr_data_member(Metric_flat, fmet, unique);
   ptr_data_member(System_of_eqs, syst, unique);
   ptr_data_member(cfgen_t, cfields, unique);
-  ptr_data_member(cfary_t, coord_vectors, unique);  
+  ptr_data_member(cfary_t, coord_vectors, unique);
 
   // Sequence containers
   ptr_data_member(ns_sequence, seq, unique);
@@ -59,23 +57,34 @@ struct NS_XCTS_NOROT {
   ptr_data_member(Vector, shift, unique);
   ptr_data_member(Scalar, logh, unique);
 
+  NS_XCTS_BASE();
+  NS_XCTS_BASE(base_config_t& config_, ns_sequence const & seq_, 
+    Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
+      int const rank_ = 0);
+
+  protected:
+  void initialize_support_containers();
+};
+
+template<class eos_t>
+struct NS_XCTS_NOROT : NS_XCTS_BASE {
+
   private:
   void syst_init();
   void print_diagnostics(const int ite, const double conv) const;
   void update_config_quantities();
-  void load_solution_from_file();
-  void initialize_support_containers();
+  void load_solution_from_file();  
 
   public:
   void save_to_file() const;
-  
-  std::string converged_filename(const std::string stage) const;
-
   void solve();
+  std::string converged_filename(const std::string stage) const;
 
   NS_XCTS_NOROT() = default;
   NS_XCTS_NOROT(std::string filename);
-  NS_XCTS_NOROT(base_config_t& config_, ns_sequence const & seq_, Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_ = 0);
+  NS_XCTS_NOROT(base_config_t& config_, ns_sequence const & seq_, 
+    Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
+      int const rank_ = 0);
 };
 
 
@@ -117,4 +126,5 @@ struct NS_XCTS_DIFFROT {
 };
 /** @}*/
 };
+#include "NS_XCTS_BASE.cpp"
 #include "NS_XCTS_NOROT.cpp"

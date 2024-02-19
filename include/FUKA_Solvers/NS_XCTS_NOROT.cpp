@@ -179,25 +179,11 @@ namespace Kadath::FUKA_Solvers {
   }
 
   template<class eos_t>
-  void NS_XCTS_NOROT<eos_t>::initialize_support_containers() {
-
-    basis.reset(new Base_tensor(shift->get_basis()));
-    fmet.reset(new Metric_flat(*space, *basis));
-
-    cfields.reset(new cfgen_t(*space));
-    coord_vectors = std::make_unique<cfary_t>(default_co_vector_ary(*space));
-    update_fields_co(*cfields, *coord_vectors,{}, 0.);
-    syst.reset(new System_of_eqs(*space));
-  }
-
-  template<class eos_t>
-  NS_XCTS_NOROT<eos_t>::NS_XCTS_NOROT(NS_XCTS_NOROT<eos_t>::base_config_t& config_, ns_sequence const & seq_, 
+  NS_XCTS_NOROT<eos_t>::NS_XCTS_NOROT(NS_XCTS_BASE::base_config_t& config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_) :
-      rank(rank_), verbosity(0), ndom(-1), bconfig(new base_config_t(config_)), basis(nullptr), fmet(nullptr), 
-        cfields(nullptr), coord_vectors(nullptr), seq(new ns_sequence(seq_)), 
-          resolution(new Parameter_sequence<BCO_PARAMS>(res_)), syst(nullptr), conformal_factor(nullptr), 
-            lapse(nullptr), shift(nullptr), logh(nullptr), outputdir(outputdir_) {
+      NS_XCTS_BASE(config_, seq_, res_, outputdir_, rank_) {
     
+    solver_stage = ::Kadath::FUKA_Config::STAGES::NOROT_BC;
     if(!seq->is_set() && !bconfig->control(CONTROLS::SEQUENCES)) {
       initialize_config_from_fixing_values(*bconfig, *seq);
     }
