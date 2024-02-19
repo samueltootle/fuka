@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
 
     ns_sequence seq = find_ns_sequence(tree);
     verify_ns_fixing_values(bconfig, seq);
-    NS_XCTS_DIFFROT solver(bconfig);
+    NS_XCTS_NOROT<Kadath::Margherita::Cold_PWPoly> solver(bconfig, seq, 0);
 
     // if(!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES)) {
     //   initialize_config_from_fixing_values(bconfig, seq);
