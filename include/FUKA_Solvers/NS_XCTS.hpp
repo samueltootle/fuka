@@ -18,6 +18,63 @@ namespace Kadath::FUKA_Solvers {
 // using ::Kadath::FUKA_Config;
 // using ::Kadath::FUKA_Config_Utils;
 
+template<class eos_t>
+struct NS_XCTS_NOROT {
+  using base_space_t = Space_spheric_adapted;
+  using base_config_t = Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_NS_INFO>;
+  
+  ptr_data_member(base_space_t, space, unique);
+  ptr_data_member(base_config_t, bconfig, unique);
+
+  using cfgen_t  = CoordFields<base_space_t>;
+  using cfary_t  = std::array<std::optional<Vector>, NUM_VECTORS>;
+
+  protected:
+  static constexpr int dim{3};
+  internal_variable(int, rank)
+  internal_variable(int, verbosity)
+  internal_variable(int, ndom)
+  ::Kadath::FUKA_Config::STAGES solver_stage{::Kadath::FUKA_Config::STAGES::NOROT_BC};
+
+  // EOS Parameters
+  internal_variable(double, h_cut);
+  internal_variable(std::string, eos_file);
+  internal_variable(std::string, eos_type);
+
+  // Support containers
+  ptr_data_member(Base_tensor, basis, unique);
+  ptr_data_member(Metric_flat, fmet, unique);
+  ptr_data_member(cfgen_t, cfields, unique);
+  ptr_data_member(cfary_t, coord_vectors, unique);
+  ptr_data_member(ns_sequence, seq, unique);
+  ptr_data_member(System_of_eqs, syst, unique);
+
+  // Variable fields - i.e. Solution
+  ptr_data_member(Scalar, conformal_factor, unique);
+  ptr_data_member(Scalar, lapse, unique);
+  ptr_data_member(Vector, shift, unique);
+  ptr_data_member(Scalar, logh, unique);
+
+  private:
+  void syst_init();
+  void print_diagnostics(const int ite, const double conv) const;
+  void update_config_quantities();
+  void load_solution_from_file();
+  void initialize_support_containers();
+
+  public:
+  void save_to_file() const;
+  
+  std::string converged_filename(const std::string stage) const;
+
+  void solve();
+
+  NS_XCTS_NOROT() = default;
+  NS_XCTS_NOROT(std::string filename);
+  NS_XCTS_NOROT(base_config_t& config_, ns_sequence& seq_, int const rank_ = 0);
+};
+
+
 struct NS_XCTS_DIFFROT {
   using base_space_t = Space_spheric_adapted;
   using base_config_t = Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_NS_INFO>;
@@ -56,3 +113,4 @@ struct NS_XCTS_DIFFROT {
 };
 /** @}*/
 };
+#include "NS_XCTS_NOROT.cpp"
