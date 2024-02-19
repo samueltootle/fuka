@@ -69,7 +69,8 @@ int main(int argc, char** argv) {
     bconfig.open_config();
     bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
 
-    auto tree = bconfig.get_config_tree();
+    Tree tree;
+    pt::read_info(bconfig.config_filename_abs(), tree);
     auto N = number_of_sequences(tree, MBCO_PARAMS, "ns");
     if(N > 1) {
       if(rank == 0) {
