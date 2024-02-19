@@ -191,13 +191,20 @@ namespace Kadath::FUKA_Solvers {
   }
 
   template<class eos_t>
-  NS_XCTS_NOROT<eos_t>::NS_XCTS_NOROT(NS_XCTS_NOROT<eos_t>::base_config_t& config_, ns_sequence& seq_, int const rank_) :
-    rank(rank_), verbosity(0), ndom(-1), bconfig(new base_config_t(config_)), basis(nullptr), fmet(nullptr), cfields(nullptr), coord_vectors(nullptr),
-      seq(new ns_sequence(seq_)), syst(nullptr), conformal_factor(nullptr), lapse(nullptr), shift(nullptr), logh(nullptr)
-  {
+  NS_XCTS_NOROT<eos_t>::NS_XCTS_NOROT(NS_XCTS_NOROT<eos_t>::base_config_t& config_, ns_sequence const & seq_, 
+    Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_) :
+      rank(rank_), verbosity(0), ndom(-1), bconfig(new base_config_t(config_)), basis(nullptr), fmet(nullptr), 
+        cfields(nullptr), coord_vectors(nullptr), seq(new ns_sequence(seq_)), 
+          resolution(new Parameter_sequence<BCO_PARAMS>(res_)), syst(nullptr), conformal_factor(nullptr), 
+            lapse(nullptr), shift(nullptr), logh(nullptr), outputdir(outputdir_) {
+    
+    if(!seq->is_set() && !bconfig->control(CONTROLS::SEQUENCES)) {
+      initialize_config_from_fixing_values(*bconfig, *seq);
+    }
     load_solution_from_file();
     initialize_EOS(*this);
     initialize_support_containers();
+    cout << *seq << endl;
   }
     
   // template<class config_t>

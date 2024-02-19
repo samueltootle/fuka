@@ -34,6 +34,7 @@ struct NS_XCTS_NOROT {
   internal_variable(int, rank)
   internal_variable(int, verbosity)
   internal_variable(int, ndom)
+  internal_variable(std::string, outputdir)
   ::Kadath::FUKA_Config::STAGES solver_stage{::Kadath::FUKA_Config::STAGES::NOROT_BC};
 
   // EOS Parameters
@@ -44,10 +45,13 @@ struct NS_XCTS_NOROT {
   // Support containers
   ptr_data_member(Base_tensor, basis, unique);
   ptr_data_member(Metric_flat, fmet, unique);
-  ptr_data_member(cfgen_t, cfields, unique);
-  ptr_data_member(cfary_t, coord_vectors, unique);
-  ptr_data_member(ns_sequence, seq, unique);
   ptr_data_member(System_of_eqs, syst, unique);
+  ptr_data_member(cfgen_t, cfields, unique);
+  ptr_data_member(cfary_t, coord_vectors, unique);  
+
+  // Sequence containers
+  ptr_data_member(ns_sequence, seq, unique);
+  ptr_data_member(Parameter_sequence<BCO_PARAMS>, resolution, unique);
 
   // Variable fields - i.e. Solution
   ptr_data_member(Scalar, conformal_factor, unique);
@@ -71,7 +75,7 @@ struct NS_XCTS_NOROT {
 
   NS_XCTS_NOROT() = default;
   NS_XCTS_NOROT(std::string filename);
-  NS_XCTS_NOROT(base_config_t& config_, ns_sequence& seq_, int const rank_ = 0);
+  NS_XCTS_NOROT(base_config_t& config_, ns_sequence const & seq_, Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_ = 0);
 };
 
 

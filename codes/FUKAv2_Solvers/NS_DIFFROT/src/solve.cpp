@@ -79,23 +79,17 @@ int main(int argc, char** argv) {
       }
     }
 
-    auto resolution = parse_seq_tree(tree, "ns", "res", BCO_PARAMS::BCO_RES);
+    Parameter_sequence<BCO_PARAMS> resolution = parse_seq_tree(tree, "ns", "res", BCO_PARAMS::BCO_RES);
     verify_resolution_sequence(bconfig, resolution);
 
     ns_sequence seq = find_ns_sequence(tree);
+    if(seq.is_set()) {
+      auto [ branch_name, key, val ] = find_leaf(tree, "N");
+      if(!key.empty()) seq.set_N(std::stoi(val));
+    }
+
     verify_ns_fixing_values(bconfig, seq);
-    NS_XCTS_NOROT<Kadath::Margherita::Cold_PWPoly> solver(bconfig, seq, 0);
-
-    // if(!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES)) {
-    //   initialize_config_from_fixing_values(bconfig, seq);
-    //   int err = ns_3d_xcts_driver(bconfig, resolution, InitSolver::outputdir);
-    // } else {
-      
-    //   auto [ branch_name, key, val ] = find_leaf(tree, "N");
-    //   if(!key.empty()) seq.set_N(std::stoi(val));
-
-    //   ns_3d_xcts_sequence(bconfig, seq, resolution, InitSolver::outputdir);
-    // }
+    NS_XCTS_NOROT<Kadath::Margherita::Cold_PWPoly> solver(bconfig, seq, resolution, InitSolver::outputdir, rank);
   }
   MPI_Finalize();
   return EXIT_SUCCESS;
