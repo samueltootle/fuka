@@ -65,6 +65,7 @@ struct NS_XCTS_BASE {
   protected:
   void initialize_support_containers();
 
+  public:
   /**
    * @brief Consistent interface for writing a checkpoint
    * 
