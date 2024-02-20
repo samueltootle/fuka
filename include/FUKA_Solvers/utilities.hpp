@@ -30,16 +30,16 @@ namespace Kadath::FUKA_Solvers {
     int rank = solver.get_rank();
     auto& bconfig = *solver.get_bconfig();
     bool exceeded = (ite > bconfig.seq_setting(MAX_ITER)) && conv >= bconfig.seq_setting(PREC);
+    
+    std::stringstream msg;
     if(exceeded && \
-       conv < 10. * bconfig.seq_setting(PREC)) {
-      if(rank == 0)
-        std::cout << "Max iterations exceeded at precison, " << conv
-                  << "\nFinishing since precision < 10. * PREC....\n"
-                  << "Running at higher resolution may help.\n";
+      conv < 10. * bconfig.seq_setting(PREC)) {
+      msg << "Max iterations exceeded at precison, " << conv
+          << "\nFinishing since precision < 10. * PREC....\n"
+          << "Running at higher resolution may help.\n";
     }
     else if(exceeded) {
-      if(rank == 0)
-        std::cout << "Max iterations exceeded at precison, " << conv;
+        msg << "Max iterations exceeded at precison, " << conv << "\n";
     }
     else {
       return;
@@ -49,8 +49,7 @@ namespace Kadath::FUKA_Solvers {
     if(rank == 0)
       solver.checkpoint(true);
     
-    // FIXME this should be handled better than hard termination
-    std::_Exit(EXIT_FAILURE);
+    throw std::runtime_error(msg.str().c_str());
   }
   
   /**
