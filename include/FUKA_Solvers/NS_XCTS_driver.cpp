@@ -1,10 +1,15 @@
 #include "NS_XCTS.hpp"
 #include "Solvers/co_solver_utils.hpp"
+#include "name_tools.hpp"
 /**
  * \addtogroup NS_XCTS
  * \ingroup FUKA
  * @{*/
 namespace Kadath::FUKA_Solvers {
+
+template<class eos_t>
+inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence const & seq, 
+  Parameter_sequence<BCO_PARAMS> & resolution, std::string outputdir);
 
 inline NS_XCTS_BASE::base_config_t ns_xcts_sequence_setup (NS_XCTS_BASE::base_config_t& seqconfig, std::string outputdir) {
   using config_t = NS_XCTS_BASE::base_config_t;
@@ -21,7 +26,7 @@ inline NS_XCTS_BASE::base_config_t ns_xcts_sequence_setup (NS_XCTS_BASE::base_co
 }
 
 template<class eos_t>
-NS_XCTS_BASE::base_config_t ns_xcts_norot_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig, ns_sequence& seq, 
+int ns_xcts_norot_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig, ns_sequence const & seq, 
   Parameter_sequence<BCO_PARAMS>& resolution, std::string const outputdir) {
   
   using config_t = NS_XCTS_BASE::base_config_t;
@@ -81,10 +86,10 @@ NS_XCTS_BASE::base_config_t ns_xcts_norot_seq_driver(NS_XCTS_BASE::base_config_t
     Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);      
     tmp_res.set(res_init,res_init,res_init);
 
-    NS_XCTS_NOROT<eos_t> solver(bconfig, seq, tmp_res, outputdir);
+    ns_isotropic_norot_driver<eos_t>(bconfig, seq, tmp_res, outputdir);
     // solver.solve();
   } else {
-    NS_XCTS_NOROT<eos_t> solver(bconfig, seq, resolution, outputdir);
+    ns_isotropic_norot_driver<eos_t>(bconfig, seq, resolution, outputdir);
     // sequence...
     // solver.solve();
   }
@@ -94,7 +99,110 @@ NS_XCTS_BASE::base_config_t ns_xcts_norot_seq_driver(NS_XCTS_BASE::base_config_t
   bconfig(BCO_PARAMS::MADM) = final_MADM;
   bconfig.control(CONTROLS::SEQUENCES) = false;
 
-  return bconfig;
+  return EXIT_SUCCESS;
+}
+
+template<class eos_t>
+inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence const & seq, 
+  Parameter_sequence<BCO_PARAMS> & resolution, std::string outputdir) {
+  int exit_status = RELOAD_FILE;
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  // make sure NS directory exists for outputs
+  if(outputdir == "./") {
+    std::filesystem::path cwd = std::filesystem::current_path();
+    outputdir = cwd.string();
+  }
+
+  auto spacein = bconfig.space_filename();
+  // just so you really know
+  if(rank == 0) {
+    std::cout << "Config File: " 
+              << bconfig.config_filename_abs() << std::endl
+              << "Fields File: " << spacein << std::endl
+              << bconfig << std::endl;
+  }
+  FILE* ff1 = fopen (spacein.c_str(), "r") ;
+  if(ff1 == NULL){
+    // mainly for debugging MPI bugs
+    std::stringstream ss;
+    ss << spacein.c_str() << " failed to open for rank " << rank << "\n";
+    throw std::runtime_error(ss.str().c_str());
+  }
+
+  NS_XCTS_NOROT<eos_t> solver(bconfig, seq, resolution, outputdir);
+  
+  MPI_Barrier(MPI_COMM_WORLD);
+  return exit_status;
+}
+
+template<class eos_t>
+inline int launch_final_stage_driver(NS_XCTS_BASE::base_config_t& bconfig, ns_sequence const & seq, 
+  Parameter_sequence<BCO_PARAMS> & resolution, std::string outputdir) {
+  
+  using config_t = NS_XCTS_BASE::base_config_t;
+  using Res_t = Parameter_sequence<BCO_PARAMS>;
+
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
+  auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
+
+  std::function<int(config_t&, ns_sequence const &, Res_t&, std::string)> final_stage_driver;
+  if(rank == 0)
+    std::cout << "Last stage: " << last_stage << '\n';
+  if(seq.is_set() || bconfig.control(CONTROLS::SEQUENCES)) {
+    final_stage_driver = &ns_xcts_norot_seq_driver<eos_t>;
+  } else {
+    switch(last_stage_idx) {
+      case STAGES::NOROT_BC:
+        final_stage_driver = &ns_isotropic_norot_driver<eos_t>;
+        break;
+      // case STAGES::UNIFORM_ROT:
+      //   final_stage_driver = &ns_isotropic_uniform_rot_driver<config_t, Res_t>;
+      //   break;
+      // case STAGES::DIFF_ROT:
+      //   final_stage_driver = &ns_isotropic_diff_rot_driver<config_t, Res_t>;
+      //   break;
+      default:
+        throw std::runtime_error("No valid stages enabled.\n");
+    }
+  }
+  return final_stage_driver(bconfig, seq, resolution, outputdir);
+}
+
+inline int ns_3d_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence const & seq, 
+  Parameter_sequence<BCO_PARAMS> & resolution, std::string outputdir) {
+  
+  int exit_status = EXIT_SUCCESS;
+  auto resolution_indices = resolution.get_indices();
+  bconfig.set(resolution_indices) = resolution.init();  
+
+  // load and setup the EOS
+  const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
+  const std::string eos_file = bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
+  const std::string eos_type_ = bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
+
+  const std::string eos_type = str_tolower(eos_type_);
+  if(eos_type == "cold_pwpoly") {
+    using eos_t = Kadath::Margherita::Cold_PWPoly;
+
+    EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
+    exit_status = launch_final_stage_driver<eos_t>(bconfig, seq, resolution, outputdir);
+  } else if(eos_type == "cold_table") {
+    using eos_t = Kadath::Margherita::Cold_Table;
+
+    const int interp_pts = (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0) ? \
+                            2000 : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
+
+    EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
+    exit_status = launch_final_stage_driver<eos_t>(bconfig, seq, resolution, outputdir);
+  } else { 
+    throw std::runtime_error("Unknown EOS type \n");
+  }
+  return exit_status;
 }
 /** @}*/
 };
