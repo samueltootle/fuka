@@ -65,6 +65,7 @@ namespace Kadath::FUKA_Solvers {
     syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
     syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
     syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
+    syst.add_ope("dHdlnrho", &EOS<eos_t,DHDRHO>::action, &p);
   }
 
   template<class solver_t>
