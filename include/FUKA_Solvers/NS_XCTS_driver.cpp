@@ -99,6 +99,8 @@ int ns_xcts_norot_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig, ns_sequence
   bconfig(BCO_PARAMS::MADM) = final_MADM;
   bconfig.control(CONTROLS::SEQUENCES) = false;
 
+  seqconfig = bconfig;
+
   return EXIT_SUCCESS;
 }
 
@@ -132,8 +134,19 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
   }
 
   NS_XCTS_NOROT<eos_t> solver(bconfig, seq, resolution, outputdir);
-  solver.setup_syst();
-  solver.do_newton();
+  
+  do {
+    // initial solution
+    solver.setup_syst();
+    solver.do_newton();
+    
+    // Make sure final solution uses optimal domain decomposition
+    solver.regrid();
+    
+    // resolve
+    solver.setup_syst();
+    solver.do_newton();
+  }while(solver.increment_seq());
   
   MPI_Barrier(MPI_COMM_WORLD);
   return exit_status;
