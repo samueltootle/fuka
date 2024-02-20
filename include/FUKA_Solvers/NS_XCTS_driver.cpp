@@ -26,7 +26,7 @@ inline NS_XCTS_BASE::base_config_t ns_xcts_sequence_setup (NS_XCTS_BASE::base_co
 }
 
 template<class eos_t>
-int ns_xcts_norot_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig, ns_sequence const & seq, 
+int ns_xcts_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig, ns_sequence const & seq, 
   Parameter_sequence<BCO_PARAMS>& resolution, std::string const outputdir) {
   
   using config_t = NS_XCTS_BASE::base_config_t;
@@ -79,21 +79,21 @@ int ns_xcts_norot_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig, ns_sequence
       throw std::runtime_error(ss.str().c_str());
     }
   }
-  if(last_stage_idx != STAGES::NOROT_BC){
 
-    // Only obtain the iterative solution at the initial_resolution
-    auto const res_init{resolution.init()};
-    Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);
-    tmp_res.set(res_init,res_init,res_init);
+  // Get non-rotating solution for the given mass or TOV mass if bconfig.control(CONTROLS::ITERATIVE_M)
+  ns_isotropic_norot_driver<eos_t>(bconfig, seq, resolution, outputdir);
 
-    ns_isotropic_norot_driver<eos_t>(bconfig, seq, tmp_res, outputdir);
-  } else {
-    ns_isotropic_norot_driver<eos_t>(bconfig, seq, resolution, outputdir);
-  }
+  // if(stage_enabled[STAGES::UNIFORM_ROT]) {
+
+  // } else if(stage_enabled[STAGES::DIFF_ROT]) {
+
+  // }
   
   // Update config such that the next solving round uses
   // the final ADM mass and spin if applicable
-  bconfig(BCO_PARAMS::MADM) = final_MADM;
+  if(bconfig.control(CONTROLS::ITERATIVE_M)) {
+    bconfig(BCO_PARAMS::MADM) = final_MADM;
+  }
   bconfig.control(CONTROLS::SEQUENCES) = false;
 
   seqconfig = bconfig;
@@ -166,7 +166,7 @@ inline int launch_final_stage_driver(NS_XCTS_BASE::base_config_t& bconfig, ns_se
   if(rank == 0)
     std::cout << "Last stage: " << last_stage << '\n';
   if(seq.is_set() || bconfig.control(CONTROLS::SEQUENCES)) {
-    final_stage_driver = &ns_xcts_norot_seq_driver<eos_t>;
+    final_stage_driver = &ns_xcts_seq_driver<eos_t>;
   } else {
     switch(last_stage_idx) {
       case STAGES::NOROT_BC:
