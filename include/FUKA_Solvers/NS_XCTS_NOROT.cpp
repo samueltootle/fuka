@@ -108,7 +108,6 @@ namespace Kadath::FUKA_Solvers {
     if (rank == 0) {
       std::cout << "############################" << std::endl
                 << "Non-rotating TOV solver" << std::endl
-                << output_str << std::endl                
                 << "############################" << std::endl;
     }
 
