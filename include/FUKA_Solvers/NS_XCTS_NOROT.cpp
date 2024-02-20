@@ -14,7 +14,8 @@ namespace Kadath::FUKA_Solvers {
     load_solution_from_file();
     initialize_EOS(*this);
     initialize_support_containers();
-    cout << *seq << endl;
+    if(rank == 0)
+      cout << *seq << endl;
   }
   
   template<class eos_t>

@@ -130,7 +130,7 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
     throw std::runtime_error(ss.str().c_str());
   }
 
-  NS_XCTS_NOROT<eos_t> solver(bconfig, seq, resolution, outputdir);
+  NS_XCTS_NOROT<eos_t> solver(bconfig, seq, resolution, outputdir, rank);
   
   do {
     // initial solution
