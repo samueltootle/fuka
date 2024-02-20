@@ -323,30 +323,6 @@ namespace Kadath::FUKA_Solvers {
   }
 
   template<class eos_t>
-  void NS_XCTS_NOROT<eos_t>::save_to_file() const {
-    Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift, *logh);
-  }
-  
-  template<class eos_t>
-  void NS_XCTS_NOROT<eos_t>::reset_all_ptrs() {
-    // Fields
-    conformal_factor.reset(nullptr) ;
-    lapse.reset(nullptr);
-    shift.reset(nullptr);
-    logh.reset(nullptr);
-
-    // Containers
-    basis.reset(nullptr);
-    fmet.reset(nullptr);
-    syst.reset(nullptr);
-    cfields.reset(nullptr);
-    coord_vectors.reset(nullptr);
-
-    // Space
-    space.reset(nullptr);
-  }
-
-  template<class eos_t>
   void NS_XCTS_NOROT<eos_t>::load_solution_from_file() {
     std::string spacein{bconfig->space_filename()};
     FILE* ff1 = fopen (spacein.c_str(), "r") ;

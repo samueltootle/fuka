@@ -62,8 +62,8 @@ struct NS_XCTS_BASE {
   NS_XCTS_BASE(base_config_t& config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
-  virtual void save_to_file() const = 0;
-  virtual void reset_all_ptrs() = 0;
+  virtual void save_to_file() const;
+  virtual void reset_all_ptrs();
   protected:
   void initialize_support_containers();
 
@@ -107,8 +107,6 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
   void load_solution_from_file();  
 
   public:
-  void save_to_file() const override;
-  void reset_all_ptrs() override;
   void setup_syst();
   int do_newton();
   bool increment_seq();

@@ -27,4 +27,26 @@ namespace Kadath::FUKA_Solvers {
     cfields.reset(new cfgen_t(*space));
     coord_vectors = std::make_unique<cfary_t>(default_co_vector_ary(*space));
   }
+
+  inline void NS_XCTS_BASE::save_to_file() const {
+    Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift, *logh);
+  }
+
+  inline void NS_XCTS_BASE::reset_all_ptrs() {
+    // Fields
+    conformal_factor.reset(nullptr) ;
+    lapse.reset(nullptr);
+    shift.reset(nullptr);
+    logh.reset(nullptr);
+
+    // Containers
+    basis.reset(nullptr);
+    fmet.reset(nullptr);
+    syst.reset(nullptr);
+    cfields.reset(nullptr);
+    coord_vectors.reset(nullptr);
+
+    // Space
+    space.reset(nullptr);
+  }
 }
