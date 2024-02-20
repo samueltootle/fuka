@@ -63,9 +63,10 @@ struct NS_XCTS_BASE {
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
   virtual void save_to_file() const;
-  virtual void reset_all_ptrs();
+  virtual bool increment_resolution() = 0;
   protected:
   void initialize_support_containers();
+  virtual void reset_all_ptrs();
 
   public:
   /**
@@ -110,6 +111,7 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
   void setup_syst();
   int do_newton();
   bool increment_seq();
+  bool increment_resolution();
   void regrid();
   std::string converged_filename(const std::string stage) const;
 
@@ -119,7 +121,6 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
 };
-
 
 struct NS_XCTS_DIFFROT {
   using base_space_t = Space_spheric_adapted;

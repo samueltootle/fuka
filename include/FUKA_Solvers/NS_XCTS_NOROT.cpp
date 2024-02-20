@@ -351,6 +351,29 @@ namespace Kadath::FUKA_Solvers {
     }
     return false;
   }
+
+  template<class eos_t>
+  bool NS_XCTS_NOROT<eos_t>::increment_resolution() {
+    if(!(resolution->final() > resolution->init()) || last_stage_idx != ::Kadath::FUKA_Config::STAGES::NOROT_BC)
+      return false;
+    
+    auto resolution_indices = resolution->get_indices();
+    auto const & final_res = resolution->final();
+    if((*bconfig)(resolution_indices) > final_res)
+      return false;
+
+    int next_res = bco_utils::next_resolution((*bconfig)(resolution_indices));
+
+    // Greater would mean that the desired resolution may not be possible
+    // (see bco_utils::next_resolution) so we go to the next available
+    // resolution
+    if(next_res >= final_res) {
+      bconfig->set(resolution_indices) = next_res;
+    } else {
+      bconfig->set(resolution_indices) = next_res;
+    }
+    return true;
+  }
     
   template<class eos_t>
   void NS_XCTS_NOROT<eos_t>::regrid() {
