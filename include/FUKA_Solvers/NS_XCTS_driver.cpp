@@ -132,6 +132,8 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
   }
 
   NS_XCTS_NOROT<eos_t> solver(bconfig, seq, resolution, outputdir);
+  solver.setup_syst();
+  solver.do_newton();
   
   MPI_Barrier(MPI_COMM_WORLD);
   return exit_status;
