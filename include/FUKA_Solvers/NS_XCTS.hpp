@@ -48,7 +48,7 @@ struct NS_XCTS_BASE {
   ptr_data_member(cfary_t, coord_vectors, unique);
 
   // Sequence containers
-  ptr_data_member(ns_sequence, seq, unique);
+  ptr_data_member(ns_sequence const, seq, unique);
   ptr_data_member(Parameter_sequence<BCO_PARAMS>, resolution, unique);
 
   // Variable fields - i.e. Solution
@@ -61,9 +61,37 @@ struct NS_XCTS_BASE {
   NS_XCTS_BASE(base_config_t& config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
-
+  virtual void save_to_file() const = 0;
   protected:
   void initialize_support_containers();
+
+  /**
+   * @brief Consistent interface for writing a checkpoint
+   * 
+   * @param termination_chkpt Toggle writing to stdout for termination
+   */
+  void checkpoint(bool termination_chkpt = false) const  {
+    // Backup activated stages
+    auto const final_stages{bconfig->return_stages()};
+
+    // Clear stages and only set the current stage as active
+    auto & stages = bconfig->return_stages();
+    stages.fill(false);
+    stages[this->solver_stage] = true;
+
+    // Save to file
+    save_to_file();
+
+    // Reset to original stages
+    stages = final_stages;
+    
+    if(termination_chkpt) {
+      std::stringstream ss;
+      ss  << "***Writing early termination chkpt " 
+          << bconfig->config_filename() << "***\n";
+      throw std::runtime_error(ss.str().c_str());
+    }
+  }
 };
 
 template<class eos_t>
@@ -76,8 +104,9 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
   void load_solution_from_file();  
 
   public:
-  void save_to_file() const;
-  int solve(bool fixed = false);
+  void save_to_file() const override;
+  void setup_syst();
+  int do_newton();
   std::string converged_filename(const std::string stage) const;
 
   NS_XCTS_NOROT() = default;

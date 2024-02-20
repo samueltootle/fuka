@@ -1,6 +1,22 @@
+#include "Solvers/fuka_syst/fuka_syst_setup.hpp"
 #include "utilities.hpp"
 namespace Kadath::FUKA_Solvers {
   // NOROT Routines
+  template<class eos_t>
+  NS_XCTS_NOROT<eos_t>::NS_XCTS_NOROT(NS_XCTS_BASE::base_config_t& config_, ns_sequence const & seq_, 
+    Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_) :
+      NS_XCTS_BASE(config_, seq_, res_, outputdir_, rank_) {
+    
+    solver_stage = ::Kadath::FUKA_Config::STAGES::NOROT_BC;
+    if(!seq->is_set() && !bconfig->control(CONTROLS::SEQUENCES)) {
+      initialize_config_from_fixing_values(*bconfig, *seq);
+    }
+    load_solution_from_file();
+    initialize_EOS(*this);
+    initialize_support_containers();
+    cout << *seq << endl;
+  }
+  
   template<class eos_t>
   std::string NS_XCTS_NOROT<eos_t>::converged_filename(const std::string stage) const {
     // FIXME assumes a fix resolution for all domains
@@ -28,10 +44,9 @@ namespace Kadath::FUKA_Solvers {
   }
 
   template<class eos_t>
-  int NS_XCTS_NOROT<eos_t>::solve(bool fixed) {
+  void NS_XCTS_NOROT<eos_t>::setup_syst() {
     int exit_status = EXIT_SUCCESS;
     double loghc = std::log((*bconfig)(BCO_PARAMS::HC));
-    std::string stagename = (fixed) ? "NOROT_FIXED" : "NOROT_BC";
 
     // We use `config_filename()` vs `config_filename_abs()` since
     // `solution_exists` will probe the HOME_KADATH/COs directory
@@ -48,34 +63,132 @@ namespace Kadath::FUKA_Solvers {
     syst.reset(new System_of_eqs(*space));
     syst_init();
     for (int d = 0; d < ndom; d++) {
-    switch (d) {
-    // in the star the constraint equations are sourced by the matter
-    case 0:
-    case 1:
-      // sources
-      syst->add_def(d, "Etilde = press * h - press * delta") ;
-      syst->add_def(d, "Stilde = 3 * press * delta") ;
- 
-      // constraint equations
-      syst->add_def(d, "eqP    = delta * D^i D_i P + 4piG / 2. * P^5 * Etilde") ;
-      syst->add_def(d, "eqNP   = delta * D^i D_i NP - 4piG / 2. * N * P^5 * (Etilde + 2. * Stilde)");
- 
-      // definition for the baryonic mass integral
-      syst->add_def(d, "intMb = P^6 * rho");
-      // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
-      syst->add_def(d, "firstint = H + log(N)");
- 
-      break;
-    // outside the matter is absent and the sources are zero
-    default:
-      syst->add_eq_full(d, "H = 0");
- 
-      syst->add_def(d, "eqP = D^i D_i P");
-      syst->add_def(d, "eqNP = D^i D_i NP");
-      break;
+      switch (d) {
+      // in the star the constraint equations are sourced by the matter
+      case 0:
+      case 1:
+        // sources
+        syst->add_def(d, "Etilde = press * h - press * delta") ;
+        syst->add_def(d, "Stilde = 3 * press * delta") ;
+  
+        // constraint equations
+        syst->add_def(d, "eqP    = delta * D^i D_i P + 4piG / 2. * P^5 * Etilde") ;
+        syst->add_def(d, "eqNP   = delta * D^i D_i NP - 4piG / 2. * N * P^5 * (Etilde + 2. * Stilde)");
+  
+        // definition for the baryonic mass integral
+        syst->add_def(d, "intMb = P^6 * rho");
+        // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
+        syst->add_def(d, "firstint = H + log(N)");
+  
+        break;
+      // outside the matter is absent and the sources are zero
+      default:
+        syst->add_eq_full(d, "H = 0");
+  
+        syst->add_def(d, "eqP = D^i D_i P");
+        syst->add_def(d, "eqNP = D^i D_i NP");
+        break;
+      }
+    }
+
+    std::string central_fixing_definition{"h - hc"};
+    std::string output_str{};
+    if(seq) {
+      central_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_mass_fixing(*syst, *bconfig, seq);
+      output_str = ::Kadath::FUKA_Syst_tools::get_ns_mass_fixing_output(*bconfig, seq);
+    } else {
+      syst->add_var("hc"  , (*bconfig)(BCO_PARAMS::HC));
+      syst->add_var("Mb"  , (*bconfig)(BCO_PARAMS::MB));
+      syst->add_cst("Madm", (*bconfig)(BCO_PARAMS::MADM));
+      std::stringstream output;
+      output << "Mass fixed using ADM Mass = " << (*bconfig)(BCO_PARAMS::HC);
+      output_str = output.str();
+    }
+
+    if (rank == 0) {
+      std::cout << "############################" << std::endl
+                << "Non-rotating TOV solver" << std::endl
+                << output_str << std::endl                
+                << "############################" << std::endl;
+    }
+
+    // add the constraint equations and demand continuity their normal derivative across domain boundaries
+    space->add_eq(*syst, "eqNP= 0", "N", "dn(N)");
+    space->add_eq(*syst, "eqP = 0", "P", "dn(P)");
+    
+    // boundary conditions at infinity
+    syst->add_eq_bc(ndom - 1, OUTER_BC, "N=1");
+    syst->add_eq_bc(ndom - 1, OUTER_BC, "P=1");
+
+    // if the surface is resolved, define it to be where the matter vanishes
+    syst->add_eq_bc(1, OUTER_BC, "H = 0");
+
+    // first integral in the innermost domains with non-zero matter content
+    // and condition on the central value, either fixed directly or by the
+    // integral below
+    syst->add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
+  
+    // constrain stellar mass by these integrals and the central log enthalpy
+    if(seq) {
+      auto idx{seq->mass_idx()};
+      switch(idx) {
+        case BCO_PARAMS::MADM:
+          space->add_eq_int_volume(*syst, 2, "integvolume(intMb) = Mb");
+          space->add_eq_int_inf(*syst, "integ(intMadm) = Madm");
+          break;
+        case BCO_PARAMS::MB:
+          space->add_eq_int_volume(*syst, 2, "integvolume(intMb) = Mb");
+          break;
+        default:
+          break;
+      }
+    } else {
+      space->add_eq_int_volume(*syst, 2, "integvolume(intMb) = Mb");
+      space->add_eq_int_inf(*syst, "integ(intMadm) = Madm");
     }
   }
 
+  template<class eos_t>
+  int NS_XCTS_NOROT<eos_t>::do_newton() {
+    int exit_status = EXIT_SUCCESS;
+    std::string stagename = "NOROT_BC";
+    // parameters for the solver loop
+    bool endloop = false;
+    int ite = 1;
+    double conv;
+  
+    // solve until convergence is achieved
+    while (!endloop) {  
+      // do exactly one newton step, given the system above
+      endloop = syst->do_newton(bconfig->seq_setting(SEQ_SETTINGS::PREC), conv);
+  
+      update_config_quantities();
+      // output files at this iteration and print diagnostics
+      std::stringstream ss;
+      ss << "norot_3d_"
+         << "norot_bc"
+         << "_" << ite - 1;
+      
+      bconfig->set_filename(ss.str());
+      if (rank == 0) {
+        print_diagnostics(ite, conv);
+        std::cout << std::endl;
+        if(bconfig->control(CHECKPOINT))
+          checkpoint();
+      }
+  
+      // update all coordinate fields, in case the domain extents have changed
+      update_fields_co(*cfields, *coord_vectors, {}, 0.);
+
+      ite++;
+      check_max_iter_exceeded(*this, ite, conv);
+    }
+  
+    bconfig->set_filename(converged_filename(stagename));
+    if (rank == 0) {
+      checkpoint();
+    }
+    return exit_status;
   }
 
   template<class eos_t>
@@ -84,7 +197,6 @@ namespace Kadath::FUKA_Solvers {
     
     // call the (flat) conformal metric "f"
     fmet->set_system(*syst, "f");
-    syst->add_var("H"   , logh);
   
     // define numerical constants
     syst->add_cst("4piG", (*bconfig)(BCO_QPIG));
@@ -95,6 +207,7 @@ namespace Kadath::FUKA_Solvers {
     // the basic fields, conformal factor, lapse and (log) enthalpy
     syst->add_var("P"   , *conformal_factor);
     syst->add_var("N"   , *lapse);
+    syst->add_var("H"   , *logh);
     
     // define common combinations of conformal factor and lapse
     syst->add_def("NP = P*N");
@@ -230,20 +343,7 @@ namespace Kadath::FUKA_Solvers {
     ndom = space->get_nbr_domains();
   }
 
-  template<class eos_t>
-  NS_XCTS_NOROT<eos_t>::NS_XCTS_NOROT(NS_XCTS_BASE::base_config_t& config_, ns_sequence const & seq_, 
-    Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_) :
-      NS_XCTS_BASE(config_, seq_, res_, outputdir_, rank_) {
-    
-    solver_stage = ::Kadath::FUKA_Config::STAGES::NOROT_BC;
-    if(!seq->is_set() && !bconfig->control(CONTROLS::SEQUENCES)) {
-      initialize_config_from_fixing_values(*bconfig, *seq);
-    }
-    load_solution_from_file();
-    initialize_EOS(*this);
-    initialize_support_containers();
-    cout << *seq << endl;
-  }
+
     
   // template<class config_t>
   // inline auto initialize_NS_XCTS_NOROT_solver(config_t& bconfig) {
