@@ -12,7 +12,12 @@ namespace Kadath::FUKA_Solvers {
       rank(rank_), verbosity(0), ndom(-1), bconfig(new base_config_t(config_)), basis(nullptr), fmet(nullptr), 
         cfields(nullptr), coord_vectors(nullptr), syst(nullptr), conformal_factor(nullptr), 
           lapse(nullptr), shift(nullptr), logh(nullptr), seq(new ns_sequence(seq_)), 
-            resolution(new Parameter_sequence<BCO_PARAMS>(res_)), outputdir(outputdir_) {}
+            resolution(new Parameter_sequence<BCO_PARAMS>(res_)), outputdir(outputdir_) {
+    
+    std::array<bool, NUM_STAGES>& stage_enabled = bconfig->return_stages();
+    auto [ last_stage_, last_stage_idx_ ] = get_last_enabled(MSTAGE, stage_enabled);
+    last_stage_idx = last_stage_idx_;
+  }
 
   inline void NS_XCTS_BASE::initialize_support_containers() {
 

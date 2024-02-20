@@ -33,6 +33,7 @@ struct NS_XCTS_BASE {
   internal_variable(int, verbosity)
   internal_variable(int, ndom)
   internal_variable(std::string, outputdir)
+  internal_variable(int, last_stage_idx)
   ::Kadath::FUKA_Config::STAGES solver_stage{::Kadath::FUKA_Config::STAGES::NUM_STAGES};
 
   // EOS Parameters - Perhaps this should be a container?
@@ -62,6 +63,7 @@ struct NS_XCTS_BASE {
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
   virtual void save_to_file() const = 0;
+  virtual void reset_all_ptrs() = 0;
   protected:
   void initialize_support_containers();
 
@@ -106,8 +108,11 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
 
   public:
   void save_to_file() const override;
+  void reset_all_ptrs() override;
   void setup_syst();
   int do_newton();
+  bool increment_seq();
+  void regrid();
   std::string converged_filename(const std::string stage) const;
 
   NS_XCTS_NOROT() = default;
