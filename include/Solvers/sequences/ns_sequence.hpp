@@ -257,7 +257,7 @@ inline void verify_ns_fixing_values(config_t& bconfig, ns_sequence& seq) {
 }
 
 template<class config_t>
-inline void initialize_config_from_fixing_values(config_t& bconfig, ns_sequence& seq) {
+inline void initialize_config_from_fixing_values(config_t& bconfig, ns_sequence const & seq) {
   bconfig.set(seq.mass_idx()) = seq.mass_val();
   bconfig.set(seq.spin_idx()) = seq.spin_val();
 }
