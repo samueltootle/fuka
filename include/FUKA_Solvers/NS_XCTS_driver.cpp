@@ -83,15 +83,12 @@ int ns_xcts_norot_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig, ns_sequence
 
     // Only obtain the iterative solution at the initial_resolution
     auto const res_init{resolution.init()};
-    Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);      
+    Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);
     tmp_res.set(res_init,res_init,res_init);
 
     ns_isotropic_norot_driver<eos_t>(bconfig, seq, tmp_res, outputdir);
-    // solver.solve();
   } else {
     ns_isotropic_norot_driver<eos_t>(bconfig, seq, resolution, outputdir);
-    // sequence...
-    // solver.solve();
   }
   
   // Update config such that the next solving round uses
