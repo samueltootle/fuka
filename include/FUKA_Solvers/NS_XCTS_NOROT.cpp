@@ -133,7 +133,6 @@ namespace Kadath::FUKA_Solvers {
       auto idx{seq->mass_idx()};
       switch(idx) {
         case BCO_PARAMS::MADM:
-          space->add_eq_int_volume(*syst, 2, "integvolume(intMb) = Mb");
           space->add_eq_int_inf(*syst, "integ(intMadm) = Madm");
           break;
         case BCO_PARAMS::MB:
@@ -143,7 +142,6 @@ namespace Kadath::FUKA_Solvers {
           break;
       }
     } else {
-      space->add_eq_int_volume(*syst, 2, "integvolume(intMb) = Mb");
       space->add_eq_int_inf(*syst, "integ(intMadm) = Madm");
     }
   }
