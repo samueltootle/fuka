@@ -151,7 +151,6 @@ struct NS_XCTS_UNIFORM_ROT : NS_XCTS_BASE {
 
   public:
   void setup_syst();
-  int do_newton();
   bool increment_spin();
   std::string converged_filename(const std::string stage) const;
 
