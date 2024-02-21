@@ -57,9 +57,13 @@ int main(int argc, char** argv) {
       // Generate <example name>.info and terminate      
       if(InitSolver::minimal_config) {
         bconfig.set_minimal_defaults();
+        bconfig.set_stage(STAGES::TOTAL_BC) = false;
+        bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
         bconfig.write_minimal_config();
       } else {
         bconfig.set_defaults();
+        bconfig.set_stage(STAGES::TOTAL_BC) = false;
+        bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
         bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
         bconfig.write_config();
       }
@@ -69,6 +73,10 @@ int main(int argc, char** argv) {
     // that contains sequences _init/_final
     bconfig.open_config();
     bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
+    if(bconfig.set_stage(STAGES::TOTAL_BC)) {
+      bconfig.set_stage(STAGES::TOTAL_BC) = false;  
+      bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
+    }
 
     Tree tree;
     pt::read_info(bconfig.config_filename_abs(), tree);
