@@ -130,34 +130,40 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
     throw std::runtime_error(ss.str().c_str());
   }
 
-  NS_XCTS_NOROT<eos_t> solver(bconfig, seq, resolution, outputdir, rank);
   
-  do {
-    // initial solution
-    solver.setup_syst();
-    solver.do_newton();
-    
-    // Make sure final solution uses optimal domain decomposition
-    solver.regrid();
-    
-    // resolve at current resolution
-    solver.setup_syst();
-    solver.do_newton();
-    
-    // Obtain final resolution for the desired
-    // solution or the first solution in a sequence
-    // All remaining sequences will be computed
-    // at the final resolution only
-    // Note: only occurs if the last stage is NOROT_BC
-    while(solver.increment_resolution()) {
-      // regrid to new resolution
-      solver.regrid();
-
+  auto launch = [](auto& solver) {
+    do {
       // initial solution
       solver.setup_syst();
       solver.do_newton();
-    }
-  }while(solver.increment_seq());
+      
+      // Make sure final solution uses optimal domain decomposition
+      solver.regrid();
+      
+      // resolve at current resolution
+      solver.setup_syst();
+      solver.do_newton();
+      
+      // Obtain final resolution for the desired
+      // solution or the first solution in a sequence
+      // All remaining sequences will be computed
+      // at the final resolution only
+      // Note: only occurs if the last stage is NOROT_BC
+      while(solver.increment_resolution()) {
+        // regrid to new resolution
+        solver.regrid();
+
+        // initial solution
+        solver.setup_syst();
+        solver.do_newton();
+      }
+    }while(solver.increment_seq());
+  };
+  NS_XCTS_NOROT<eos_t> norot_solver(bconfig, seq, resolution, outputdir, rank);
+  launch(norot_solver);
+  NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(bconfig, seq, resolution, outputdir, rank);
+  // launch(uniformrot_solver);
+
   
   MPI_Barrier(MPI_COMM_WORLD);
   return exit_status;
