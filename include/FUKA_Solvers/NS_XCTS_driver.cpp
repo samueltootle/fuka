@@ -129,7 +129,6 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
     ss << spacein.c_str() << " failed to open for rank " << rank << "\n";
     throw std::runtime_error(ss.str().c_str());
   }
-
   
   auto launch = [](auto& solver) {
     do {
@@ -159,11 +158,17 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
       }
     }while(solver.increment_seq());
   };
-  NS_XCTS_NOROT<eos_t> norot_solver(bconfig, seq, resolution, outputdir, rank);
-  launch(norot_solver);
-  NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(bconfig, seq, resolution, outputdir, rank);
-  // launch(uniformrot_solver);
-
+  
+  std::array<bool, NUM_STAGES> const & stage_enabled = bconfig.return_stages();
+  if(stage_enabled[STAGES::NOROT_BC]) {
+    NS_XCTS_NOROT<eos_t> norot_solver(bconfig, seq, resolution, outputdir, rank);
+    launch(norot_solver);
+  } else if(stage_enabled[STAGES::UNIFORM_ROT]) {
+    NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(bconfig, seq, resolution, outputdir, rank);
+    launch(uniformrot_solver);
+    
+  } //else if(stage_enabled[STAGES::DIFF_ROT]) {
+  // }
   
   MPI_Barrier(MPI_COMM_WORLD);
   return exit_status;
@@ -188,19 +193,7 @@ inline int launch_final_stage_driver(NS_XCTS_BASE::base_config_t& bconfig, ns_se
   if(seq.is_set() || bconfig.control(CONTROLS::SEQUENCES)) {
     final_stage_driver = &ns_xcts_seq_driver<eos_t>;
   } else {
-    switch(last_stage_idx) {
-      case STAGES::NOROT_BC:
-        final_stage_driver = &ns_isotropic_norot_driver<eos_t>;
-        break;
-      // case STAGES::UNIFORM_ROT:
-      //   final_stage_driver = &ns_isotropic_uniform_rot_driver<config_t, Res_t>;
-      //   break;
-      // case STAGES::DIFF_ROT:
-      //   final_stage_driver = &ns_isotropic_diff_rot_driver<config_t, Res_t>;
-      //   break;
-      default:
-        throw std::runtime_error("No valid stages enabled.\n");
-    }
+    final_stage_driver = &ns_isotropic_norot_driver<eos_t>;
   }
   return final_stage_driver(bconfig, seq, resolution, outputdir);
 }
