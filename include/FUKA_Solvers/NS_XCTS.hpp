@@ -77,6 +77,8 @@ struct NS_XCTS_BASE {
       int const rank_ = 0);
   virtual void save_to_file() const;
   virtual bool increment_resolution() = 0;
+  virtual void regrid();
+  virtual void load_solution_from_file();
   protected:
   void initialize_support_containers();
   virtual void reset_all_ptrs();
@@ -118,14 +120,12 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
   void syst_init();
   void print_diagnostics(const int ite, const double conv) const;
   void update_config_quantities();
-  void load_solution_from_file();  
 
   public:
   void setup_syst();
   int do_newton();
   bool increment_seq();
   bool increment_resolution();
-  void regrid();
   std::string converged_filename(const std::string stage) const;
 
   NS_XCTS_NOROT() = default;
@@ -142,7 +142,6 @@ struct NS_XCTS_UNIFORM_ROT : NS_XCTS_BASE {
   void syst_init();
   void print_diagnostics(const int ite, const double conv) const;
   void update_config_quantities();
-  void load_solution_from_file();
   void initialize_spinup();
   ptr_data_member(ns_sequence, spinup, unique);
 
@@ -152,7 +151,6 @@ struct NS_XCTS_UNIFORM_ROT : NS_XCTS_BASE {
   bool increment_seq();
   bool increment_resolution();
   bool increment_spin();
-  void regrid();
   std::string converged_filename(const std::string stage) const;
 
   NS_XCTS_UNIFORM_ROT() = default;
