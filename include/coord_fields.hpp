@@ -447,7 +447,9 @@ void update_fields (CoordFields<space_t> const & cf_generator,
                    scalar_ary_t& coord_scalars,
                    const double xo, const double xc1, const double xc2, 
                    System_of_eqs* syst_) {
-  auto syst = std::make_unique<System_of_eqs>(*syst_);
+  std::unique_ptr<System_of_eqs> syst;
+  if(syst_ != nullptr)
+    syst = std::make_unique<System_of_eqs>(*syst_);
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xc1, xc2, syst);
 }
 
@@ -457,7 +459,9 @@ void update_fields (CoordFields<space_t> const & cf_generator,
                    scalar_ary_t&& coord_scalars,
                    const double xo, const double xc1, const double xc2, 
                    System_of_eqs* syst_) {
-  auto syst = std::make_unique<System_of_eqs>(*syst_);
+  std::unique_ptr<System_of_eqs> syst;
+  if(syst_ != nullptr)
+    syst = std::make_unique<System_of_eqs>(*syst_);
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xc1, xc2, syst);
 }
 
@@ -466,7 +470,9 @@ void update_fields_co (CoordFields<space_t> const & cf_generator,
                    vec_ary_t & coord_vectors,
                    scalar_ary_t && coord_scalars,
                    const double xo, System_of_eqs* syst_) {
-  auto syst = std::make_unique<System_of_eqs>(*syst_);
+  std::unique_ptr<System_of_eqs> syst;
+  if(syst_ != nullptr)
+    syst = std::make_unique<System_of_eqs>(*syst_);
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xo, 0., syst);
 }
 
@@ -475,7 +481,9 @@ void update_fields_co (CoordFields<space_t> const & cf_generator,
                    vec_ary_t & coord_vectors,
                    scalar_ary_t & coord_scalars,
                    const double xo, System_of_eqs* syst_) {
-  auto syst = std::make_unique<System_of_eqs>(*syst_);
+  std::unique_ptr<System_of_eqs> syst;
+  if(syst_ != nullptr)
+    syst = std::make_unique<System_of_eqs>(*syst_);
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xo, 0., syst);
 }
 
