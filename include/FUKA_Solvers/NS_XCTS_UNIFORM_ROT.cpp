@@ -387,7 +387,9 @@ namespace Kadath::FUKA_Solvers {
           break;
       }
     } else {
+      bconfig->set(BCO_PARAMS::HC) = std::exp(loghc);
       bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
+      bconfig->set(BCO_PARAMS::MB) = baryonic_mass;
       bconfig->set(BCO_PARAMS::CHI) = chi;
     }
     bconfig->set(BCO_PARAMS::QLMADM) = bconfig->set(BCO_PARAMS::MADM) ;
