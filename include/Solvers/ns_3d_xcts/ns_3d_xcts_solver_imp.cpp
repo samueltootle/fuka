@@ -272,18 +272,28 @@ void ns_3d_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(Syste
       chi = Jadm / Madm / Madm;
     }
 
-    if(seq) {
+if(seq) {
       auto idx{seq->mass_idx()};
       switch(idx) {
         case BCO_PARAMS::HC:
-          bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+          bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
+          bconfig->set(BCO_PARAMS::MADM) = Madm;
+          bconfig->set(BCO_PARAMS::MB) = baryonic_mass;
           break;
         case BCO_PARAMS::NC:
-          bconfig.set(BCO_PARAMS::HC) = std::exp(loghc);
+          bconfig->set(BCO_PARAMS::HC) = std::exp(loghc);
+          bconfig->set(BCO_PARAMS::MADM) = Madm;
+          bconfig->set(BCO_PARAMS::MB) = baryonic_mass;
+          break;
+        case BCO_PARAMS::MB:
+          bconfig->set(BCO_PARAMS::HC) = std::exp(loghc);
+          bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
+          bconfig->set(BCO_PARAMS::MADM) = Madm;
           break;
         default:
-          bconfig.set(BCO_PARAMS::HC) = std::exp(loghc);
-          bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+          bconfig->set(BCO_PARAMS::HC) = std::exp(loghc);
+          bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
+          bconfig->set(BCO_PARAMS::MB) = baryonic_mass;
           break;
       }
 
@@ -292,12 +302,12 @@ void ns_3d_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(Syste
         case BCO_PARAMS::CHI:
           break;
         default:
-          bconfig.set(BCO_PARAMS::CHI) = chi;
+          bconfig->set(BCO_PARAMS::CHI) = chi;
           break;
       }
     } else {
-      bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
-      bconfig.set(BCO_PARAMS::CHI) = chi;
+      bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
+      bconfig->set(BCO_PARAMS::CHI) = chi;
     }
     bconfig.set(QLMADM) = bconfig(MADM) ;
   }

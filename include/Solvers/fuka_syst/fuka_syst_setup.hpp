@@ -241,7 +241,6 @@ inline std::string set_ns_mass_fixing(System_of_eqs& syst, config_t& bconfig, st
         break;
       case BCO_PARAMS::MADM:
         syst.add_var("hc", bconfig(BCO_PARAMS::HC));
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
         syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
         break;
       case BCO_PARAMS::MB:

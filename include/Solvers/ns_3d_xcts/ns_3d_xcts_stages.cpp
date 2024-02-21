@@ -71,7 +71,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
     output_str = ::Kadath::FUKA_Syst_tools::get_ns_mass_fixing_output(bconfig, seq);
   } else {
     syst.add_var("hc", bconfig(BCO_PARAMS::HC));
-    syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
     syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
     std::stringstream output;
     output << "Mass fixed using ADM Mass = " << bconfig(BCO_PARAMS::HC);
@@ -284,13 +283,10 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
     bool add_Madm_int = true;
     switch(idx) {
       case BCO_PARAMS::MADM:
-        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
         add_Madm_int = false;
         break;
       case BCO_PARAMS::MB:
-        syst.add_var("hc", bconfig(BCO_PARAMS::HC));
-        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
         space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         break;
       default:
@@ -318,8 +314,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
         break;
     }
   } else {
-    space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
-
     space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
     space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
   }
