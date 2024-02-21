@@ -1,3 +1,16 @@
+/**
+ * @file NS_XCTS.hpp
+ * @author Samuel Tootle (sdtootle@gmail.com)
+ * @brief This is a rewrite of the isolated neutron star solvers using the XCTS formulation
+ * The rewrite was both motivated to drastically clean up the code for future maintenance as
+ * well as prepare for merger with Kadath master branch
+ * @date 2024-02-21
+ * 
+ * @copyright Copyright (c) 2024, GNU General Public Licensev3
+ * This file is part of the KADATH library and published under
+ * https://arxiv.org/abs/2103.09911 
+ */
+#pragma once
 #include "kadath.hpp"
 #include "kadath_adapted.hpp"
 #include "codes_utilities.hpp"
@@ -122,6 +135,32 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
       int const rank_ = 0);
 };
 
+template<class eos_t>
+struct NS_XCTS_UNIFORM_ROT : NS_XCTS_BASE {
+
+  private:
+  void syst_init();
+  void print_diagnostics(const int ite, const double conv) const;
+  void update_config_quantities();
+  void load_solution_from_file();
+  void initialize_spinup();
+  ptr_data_member(ns_sequence, spinup, unique);
+
+  public:
+  void setup_syst();
+  int do_newton();
+  bool increment_seq();
+  bool increment_resolution();
+  bool increment_spin();
+  void regrid();
+  std::string converged_filename(const std::string stage) const;
+
+  NS_XCTS_UNIFORM_ROT() = default;
+  NS_XCTS_UNIFORM_ROT(base_config_t& config_, ns_sequence const & seq_, 
+    Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
+      int const rank_ = 0);
+};
+
 struct NS_XCTS_DIFFROT {
   using base_space_t = Space_spheric_adapted;
   using base_config_t = Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_NS_INFO>;
@@ -162,3 +201,4 @@ struct NS_XCTS_DIFFROT {
 };
 #include "NS_XCTS_BASE.cpp"
 #include "NS_XCTS_NOROT.cpp"
+#include "NS_XCTS_UNIFORM_ROT.cpp"
