@@ -102,6 +102,13 @@ void update_fields (CoordFields<space_t> const & cf_generator,
                    vec_ary_t & coord_vectors,
                    scalar_ary_t & coord_scalars,
                    const double xo, const double xc1, const double xc2, 
+                   std::unique_ptr<System_of_eqs>& syst);
+
+template<typename space_t>
+void update_fields (CoordFields<space_t> const & cf_generator,
+                   vec_ary_t & coord_vectors,
+                   scalar_ary_t & coord_scalars,
+                   const double xo, const double xc1, const double xc2, 
                    System_of_eqs* syst=nullptr);
 
 // Helper function to avoid declaring unnecessary coord_scalar arrays
@@ -385,7 +392,7 @@ void update_fields (CoordFields<space_t> const & cf_generator,
                    vec_ary_t & coord_vectors,
                    scalar_ary_t & coord_scalars,
                    const double xo, const double xc1, const double xc2, 
-                   System_of_eqs* syst) {
+                   std::unique_ptr<System_of_eqs>& syst) {
 
   if(coord_vectors[GLOBAL_ROT]) 
     *coord_vectors[GLOBAL_ROT] = cf_generator.template rot_z(xo);
@@ -421,7 +428,7 @@ void update_fields (CoordFields<space_t> const & cf_generator,
       #endif
     }
   };
-  if(syst != nullptr) {
+  if(syst) {
     for(int i = 0; i < NUM_VECTORS; ++i) {
       if(coord_vectors[i])
         update(cv_names[i], *coord_vectors[i]);
@@ -437,9 +444,20 @@ void update_fields (CoordFields<space_t> const & cf_generator,
 template<typename space_t>
 void update_fields (CoordFields<space_t> const & cf_generator,
                    vec_ary_t & coord_vectors,
+                   scalar_ary_t& coord_scalars,
+                   const double xo, const double xc1, const double xc2, 
+                   System_of_eqs* syst_) {
+  auto syst = std::make_unique<System_of_eqs>(*syst_);
+  update_fields(cf_generator, coord_vectors, coord_scalars, xo, xc1, xc2, syst);
+}
+
+template<typename space_t>
+void update_fields (CoordFields<space_t> const & cf_generator,
+                   vec_ary_t & coord_vectors,
                    scalar_ary_t&& coord_scalars,
                    const double xo, const double xc1, const double xc2, 
-                   System_of_eqs* syst) {
+                   System_of_eqs* syst_) {
+  auto syst = std::make_unique<System_of_eqs>(*syst_);
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xc1, xc2, syst);
 }
 
@@ -447,7 +465,8 @@ template<typename space_t>
 void update_fields_co (CoordFields<space_t> const & cf_generator,
                    vec_ary_t & coord_vectors,
                    scalar_ary_t && coord_scalars,
-                   const double xo, System_of_eqs* syst) {
+                   const double xo, System_of_eqs* syst_) {
+  auto syst = std::make_unique<System_of_eqs>(*syst_);
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xo, 0., syst);
 }
 
@@ -455,7 +474,24 @@ template<typename space_t>
 void update_fields_co (CoordFields<space_t> const & cf_generator,
                    vec_ary_t & coord_vectors,
                    scalar_ary_t & coord_scalars,
-                   const double xo, System_of_eqs* syst) {
+                   const double xo, System_of_eqs* syst_) {
+  auto syst = std::make_unique<System_of_eqs>(*syst_);
+  update_fields(cf_generator, coord_vectors, coord_scalars, xo, xo, 0., syst);
+}
+
+template<typename space_t>
+void update_fields_co (CoordFields<space_t> const & cf_generator,
+                   vec_ary_t & coord_vectors,
+                   scalar_ary_t && coord_scalars,
+                   const double xo, std::unique_ptr<System_of_eqs>& syst) {
+  update_fields(cf_generator, coord_vectors, coord_scalars, xo, xo, 0., syst);
+}
+
+template<typename space_t>
+void update_fields_co (CoordFields<space_t> const & cf_generator,
+                   vec_ary_t & coord_vectors,
+                   scalar_ary_t & coord_scalars,
+                   const double xo, std::unique_ptr<System_of_eqs>& syst) {
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xo, 0., syst);
 }
 
