@@ -199,4 +199,80 @@ namespace Kadath::FUKA_Solvers {
         
     ndom = space->get_nbr_domains();
   }
+
+  bool NS_XCTS_BASE::increment_resolution() {
+    if(!(resolution->final() > resolution->init()) || last_stage_idx != solver_stage)
+      return false;
+    
+    auto resolution_indices = resolution->get_indices();
+    auto const & final_res = resolution->final();
+    if((*bconfig)(resolution_indices) > final_res)
+      return false;
+
+    int next_res = bco_utils::next_resolution((*bconfig)(resolution_indices));
+
+    // Greater would mean that the desired resolution may not be possible
+    // (see bco_utils::next_resolution) so we go to the next available
+    // resolution
+    if(next_res >= final_res) {
+      bconfig->set(resolution_indices) = next_res;
+    } else {
+      bconfig->set(resolution_indices) = next_res;
+    }
+    return true;
+  }
+
+  bool NS_XCTS_BASE::increment_seq() {
+    if(!seq->is_set() || last_stage_idx != solver_stage)
+      return false;
+    
+    auto sequence_var_indices = seq->get_indices();
+    auto const & dx = seq->step_size();
+    auto x = bconfig->set(sequence_var_indices) + dx;
+    if(seq->loop_condition(x)) {
+      bconfig->set(sequence_var_indices) = x;
+      return true;
+    }
+    return false;
+  }
+
+  int NS_XCTS_BASE::do_newton() {
+    int exit_status = EXIT_SUCCESS;
+    // parameters for the solver loop
+    bool endloop = false;
+    int ite = 1;
+    double conv;
+  
+    // solve until convergence is achieved
+    while (!endloop) {  
+      // do exactly one newton step, given the system above
+      endloop = syst->do_newton(bconfig->seq_setting(SEQ_SETTINGS::PREC), conv);
+  
+      update_config_quantities();
+      // output files at this iteration and print diagnostics
+      std::stringstream ss;
+      ss << stagename
+         << "_ckpt_" << ite - 1;
+      
+      bconfig->set_filename(ss.str());
+      if (rank == 0) {
+        print_diagnostics(ite, conv);
+        std::cout << std::endl;
+        if(bconfig->control(CHECKPOINT))
+          checkpoint();
+      }
+  
+      // update all coordinate fields, in case the domain extents have changed
+      update_fields_co(*cfields, *coord_vectors, {}, 0.);
+
+      ite++;
+      check_max_iter_exceeded(*this, ite, conv);
+    }
+  
+    bconfig->set_filename(converged_filename(stagename));
+    if (rank == 0) {
+      checkpoint();
+    }
+    return exit_status;
+  }
 }

@@ -7,7 +7,8 @@ namespace Kadath::FUKA_Solvers {
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_) :
       NS_XCTS_BASE(config_, seq_, res_, outputdir_, rank_) {
     
-    solver_stage = ::Kadath::FUKA_Config::STAGES::NOROT_BC;
+    stagename = "UNIFORM_ROT";
+    solver_stage = ::Kadath::FUKA_Config::STAGES::UNIFORM_ROT;
     if(!seq->is_set() && !bconfig->control(CONTROLS::SEQUENCES)) {
       initialize_config_from_fixing_values(*bconfig, *seq);
     }
@@ -182,47 +183,6 @@ namespace Kadath::FUKA_Solvers {
     space->add_eq_int_inf(*syst, spin_fixing_definition.c_str());
     space->add_eq_int_inf(*syst, "integ(intMadm) = Madm");
     }
-  }
-
-  template<class eos_t>
-  int NS_XCTS_UNIFORM_ROT<eos_t>::do_newton() {
-    int exit_status = EXIT_SUCCESS;
-    std::string stagename = "NOROT_BC";
-    // parameters for the solver loop
-    bool endloop = false;
-    int ite = 1;
-    double conv;
-  
-    // solve until convergence is achieved
-    while (!endloop) {  
-      // do exactly one newton step, given the system above
-      endloop = syst->do_newton(bconfig->seq_setting(SEQ_SETTINGS::PREC), conv);
-  
-      update_config_quantities();
-      // output files at this iteration and print diagnostics
-      std::stringstream ss;
-      ss << "rot_3d_"
-         << "_" << ite - 1;
-      
-      bconfig->set_filename(ss.str());
-      if (rank == 0) {
-        print_diagnostics(ite, conv);
-        if(bconfig->control(CHECKPOINT))
-          checkpoint();
-      }
-  
-      // update all coordinate fields, in case the domain extents have changed
-      update_fields_co(*cfields, *coord_vectors, {}, 0., &(*syst));
-
-      ite++;
-      check_max_iter_exceeded(*this, ite, conv);
-    }
-  
-    bconfig->set_filename(converged_filename(stagename));
-    if (rank == 0) {
-      checkpoint();
-    }
-    return exit_status;
   }
 
   template<class eos_t>
@@ -408,43 +368,5 @@ namespace Kadath::FUKA_Solvers {
       return true;
     }
     return false;
-  }
-
-  template<class eos_t>
-  bool NS_XCTS_UNIFORM_ROT<eos_t>::increment_seq() {
-    if(!seq->is_set() || last_stage_idx != ::Kadath::FUKA_Config::STAGES::NOROT_BC)
-      return false;
-    
-    auto sequence_var_indices = seq->get_indices();
-    auto const & dx = seq->step_size();
-    auto x = bconfig->set(sequence_var_indices) + dx;
-    if(seq->loop_condition(x)) {
-      bconfig->set(sequence_var_indices) = x;
-      return true;
-    }
-    return false;
-  }
-
-  template<class eos_t>
-  bool NS_XCTS_UNIFORM_ROT<eos_t>::increment_resolution() {
-    if(!(resolution->final() > resolution->init()) || last_stage_idx != ::Kadath::FUKA_Config::STAGES::NOROT_BC)
-      return false;
-    
-    auto resolution_indices = resolution->get_indices();
-    auto const & final_res = resolution->final();
-    if((*bconfig)(resolution_indices) > final_res)
-      return false;
-
-    int next_res = bco_utils::next_resolution((*bconfig)(resolution_indices));
-
-    // Greater would mean that the desired resolution may not be possible
-    // (see bco_utils::next_resolution) so we go to the next available
-    // resolution
-    if(next_res >= final_res) {
-      bconfig->set(resolution_indices) = next_res;
-    } else {
-      bconfig->set(resolution_indices) = next_res;
-    }
-    return true;
   }
 }

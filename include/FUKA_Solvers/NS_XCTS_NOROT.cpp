@@ -6,7 +6,7 @@ namespace Kadath::FUKA_Solvers {
   NS_XCTS_NOROT<eos_t>::NS_XCTS_NOROT(NS_XCTS_BASE::base_config_t& config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_) :
       NS_XCTS_BASE(config_, seq_, res_, outputdir_, rank_) {
-    
+    stagename = "NOROT_BC";
     solver_stage = ::Kadath::FUKA_Config::STAGES::NOROT_BC;
     if(!seq->is_set() && !bconfig->control(CONTROLS::SEQUENCES)) {
       initialize_config_from_fixing_values(*bconfig, *seq);
@@ -149,49 +149,6 @@ namespace Kadath::FUKA_Solvers {
   }
 
   template<class eos_t>
-  int NS_XCTS_NOROT<eos_t>::do_newton() {
-    int exit_status = EXIT_SUCCESS;
-    std::string stagename = "NOROT_BC";
-    // parameters for the solver loop
-    bool endloop = false;
-    int ite = 1;
-    double conv;
-  
-    // solve until convergence is achieved
-    while (!endloop) {  
-      // do exactly one newton step, given the system above
-      endloop = syst->do_newton(bconfig->seq_setting(SEQ_SETTINGS::PREC), conv);
-  
-      update_config_quantities();
-      // output files at this iteration and print diagnostics
-      std::stringstream ss;
-      ss << "norot_3d_"
-         << "norot_bc"
-         << "_" << ite - 1;
-      
-      bconfig->set_filename(ss.str());
-      if (rank == 0) {
-        print_diagnostics(ite, conv);
-        std::cout << std::endl;
-        if(bconfig->control(CHECKPOINT))
-          checkpoint();
-      }
-  
-      // update all coordinate fields, in case the domain extents have changed
-      update_fields_co(*cfields, *coord_vectors, {}, 0.);
-
-      ite++;
-      check_max_iter_exceeded(*this, ite, conv);
-    }
-  
-    bconfig->set_filename(converged_filename(stagename));
-    if (rank == 0) {
-      checkpoint();
-    }
-    return exit_status;
-  }
-
-  template<class eos_t>
   void NS_XCTS_NOROT<eos_t>::syst_init() {
     using namespace ::Kadath::Margherita;
     
@@ -321,43 +278,5 @@ namespace Kadath::FUKA_Solvers {
       bconfig->set(BCO_PARAMS::CHI) = chi;
     }
     bconfig->set(BCO_PARAMS::QLMADM) = bconfig->set(BCO_PARAMS::MADM) ;
-  }
-
-  template<class eos_t>
-  bool NS_XCTS_NOROT<eos_t>::increment_seq() {
-    if(!seq->is_set() || last_stage_idx != ::Kadath::FUKA_Config::STAGES::NOROT_BC)
-      return false;
-    
-    auto sequence_var_indices = seq->get_indices();
-    auto const & dx = seq->step_size();
-    auto x = bconfig->set(sequence_var_indices) + dx;
-    if(seq->loop_condition(x)) {
-      bconfig->set(sequence_var_indices) = x;
-      return true;
-    }
-    return false;
-  }
-
-  template<class eos_t>
-  bool NS_XCTS_NOROT<eos_t>::increment_resolution() {
-    if(!(resolution->final() > resolution->init()) || last_stage_idx != ::Kadath::FUKA_Config::STAGES::NOROT_BC)
-      return false;
-    
-    auto resolution_indices = resolution->get_indices();
-    auto const & final_res = resolution->final();
-    if((*bconfig)(resolution_indices) > final_res)
-      return false;
-
-    int next_res = bco_utils::next_resolution((*bconfig)(resolution_indices));
-
-    // Greater would mean that the desired resolution may not be possible
-    // (see bco_utils::next_resolution) so we go to the next available
-    // resolution
-    if(next_res >= final_res) {
-      bconfig->set(resolution_indices) = next_res;
-    } else {
-      bconfig->set(resolution_indices) = next_res;
-    }
-    return true;
   }
 }

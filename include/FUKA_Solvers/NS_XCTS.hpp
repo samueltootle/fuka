@@ -47,6 +47,7 @@ struct NS_XCTS_BASE {
   internal_variable(int, ndom)
   internal_variable(std::string, outputdir)
   internal_variable(int, last_stage_idx)
+  internal_variable(std::string, stagename)
   ::Kadath::FUKA_Config::STAGES solver_stage{::Kadath::FUKA_Config::STAGES::NUM_STAGES};
 
   // EOS Parameters - Perhaps this should be a container?
@@ -76,12 +77,18 @@ struct NS_XCTS_BASE {
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
   virtual void save_to_file() const;
-  virtual bool increment_resolution() = 0;
+  bool increment_resolution();
+  bool increment_seq();
+  int do_newton();
+
   virtual void regrid();
   virtual void load_solution_from_file();
+  virtual std::string converged_filename(const std::string stage) const = 0;
   protected:
   void initialize_support_containers();
   virtual void reset_all_ptrs();
+  virtual void update_config_quantities() = 0;
+  virtual void print_diagnostics(const int ite, const double conv) const = 0;
 
   public:
   /**
@@ -118,15 +125,12 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
 
   private:
   void syst_init();
-  void print_diagnostics(const int ite, const double conv) const;
-  void update_config_quantities();
+  void print_diagnostics(const int ite, const double conv) const override;
+  void update_config_quantities() override;
 
   public:
   void setup_syst();
-  int do_newton();
-  bool increment_seq();
-  bool increment_resolution();
-  std::string converged_filename(const std::string stage) const;
+  std::string converged_filename(const std::string stage) const override;
 
   NS_XCTS_NOROT() = default;
   NS_XCTS_NOROT(std::string filename);
@@ -140,16 +144,14 @@ struct NS_XCTS_UNIFORM_ROT : NS_XCTS_BASE {
 
   private:
   void syst_init();
-  void print_diagnostics(const int ite, const double conv) const;
-  void update_config_quantities();
+  void print_diagnostics(const int ite, const double conv) const override;
+  void update_config_quantities() override;
   void initialize_spinup();
   ptr_data_member(ns_sequence, spinup, unique);
 
   public:
   void setup_syst();
   int do_newton();
-  bool increment_seq();
-  bool increment_resolution();
   bool increment_spin();
   std::string converged_filename(const std::string stage) const;
 
