@@ -273,6 +273,7 @@ namespace Kadath::FUKA_Solvers {
     if (rank == 0) {
       checkpoint();
     }
+    MPI_Barrier(MPI_COMM_WORLD);
     return exit_status;
   }
 }
