@@ -17,8 +17,10 @@ namespace Kadath::FUKA_Solvers {
     initialize_support_containers();
     initialize_spinup();
 
-    if(rank == 0)
+    if(rank == 0) {
       cout << *seq << endl;
+      cout << *resolution << endl;
+    }
   }
   
   template<class eos_t>
