@@ -160,14 +160,10 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
   };
   
   std::array<bool, NUM_STAGES> const stage_enabled = bconfig.return_stages();
-  if(rank == 0 || rank == 1)
-    cout << bconfig.config_filename_abs() << std::endl;
   if(stage_enabled[STAGES::NOROT_BC]) {
     NS_XCTS_NOROT<eos_t> norot_solver(&bconfig, seq, resolution, outputdir, rank);
     launch(norot_solver);
   }
-  if(rank == 0 || rank == 1)
-    cout << bconfig.config_filename_abs() << std::endl;
   if(stage_enabled[STAGES::UNIFORM_ROT]) {
     NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(&bconfig, seq, resolution, outputdir, rank);
     do {
