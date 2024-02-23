@@ -159,16 +159,22 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
     }while(solver.increment_seq());
   };
   
-  std::array<bool, NUM_STAGES> const & stage_enabled = bconfig.return_stages();
+  std::array<bool, NUM_STAGES> const stage_enabled = bconfig.return_stages();
+  if(rank == 0 || rank == 1)
+    cout << bconfig.config_filename_abs() << std::endl;
   if(stage_enabled[STAGES::NOROT_BC]) {
-    NS_XCTS_NOROT<eos_t> norot_solver(bconfig, seq, resolution, outputdir, rank);
+    NS_XCTS_NOROT<eos_t> norot_solver(&bconfig, seq, resolution, outputdir, rank);
     launch(norot_solver);
-  } else if(stage_enabled[STAGES::UNIFORM_ROT]) {
-    NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(bconfig, seq, resolution, outputdir, rank);
+  }
+  if(rank == 0 || rank == 1)
+    cout << bconfig.config_filename_abs() << std::endl;
+  if(stage_enabled[STAGES::UNIFORM_ROT]) {
+    NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(&bconfig, seq, resolution, outputdir, rank);
     do {
       launch(uniformrot_solver);
     }while(uniformrot_solver.increment_spin());
-  } //else if(stage_enabled[STAGES::DIFF_ROT]) {
+  } 
+  //if(stage_enabled[STAGES::DIFF_ROT]) {
   // }
   
   MPI_Barrier(MPI_COMM_WORLD);
