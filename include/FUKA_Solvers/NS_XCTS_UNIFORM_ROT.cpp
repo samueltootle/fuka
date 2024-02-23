@@ -282,8 +282,8 @@ namespace Kadath::FUKA_Solvers {
               << FORMAT << "Madm_ql: " << Madmalt 
               << " [" << std::abs(Madm - Madmalt) / Madm << "]" << std::endl
               << FORMAT << "Mk: " << Mk << " [" 
-              << std::abs(Madm - Mk) / Madm << "]" << std::endl;
-    std::cout << FORMAT << "R: " << rs[0] << " " << rs[1];
+              << std::abs(Madm - Mk) / Madm << "]" << std::endl
+              << FORMAT << "R: " << rs[0] << " " << rs[1] << std::endl;
     std::cout << FORMAT << "Jadm: " << J << std::endl
               << FORMAT << "Chi: " << J / Madm / Madm << " [" << (*bconfig)(CHI) << "]\n"
               << FORMAT << "Omega: " << (*bconfig)(OMEGA) << std::endl;
