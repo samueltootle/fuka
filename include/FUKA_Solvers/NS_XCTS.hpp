@@ -147,7 +147,7 @@ struct NS_XCTS_UNIFORM_ROT : NS_XCTS_BASE {
   void print_diagnostics(const int ite, const double conv) const override;
   void update_config_quantities() override;
   void initialize_spinup();
-  ptr_data_member(ns_sequence, spinup, unique);
+  ptr_data_member(Parameter_sequence<BCO_PARAMS>, spinup, unique);
 
   public:
   void setup_syst();

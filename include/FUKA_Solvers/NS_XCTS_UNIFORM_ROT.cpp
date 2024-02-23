@@ -5,7 +5,7 @@ namespace Kadath::FUKA_Solvers {
   template<class eos_t>
   NS_XCTS_UNIFORM_ROT<eos_t>::NS_XCTS_UNIFORM_ROT(NS_XCTS_BASE::base_config_t& config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_) :
-      NS_XCTS_BASE(config_, seq_, res_, outputdir_, rank_) {
+      NS_XCTS_BASE(config_, seq_, res_, outputdir_, rank_), spinup(nullptr) {
     
     stagename = "UNIFORM_ROT";
     solver_stage = ::Kadath::FUKA_Config::STAGES::UNIFORM_ROT;
@@ -15,6 +15,7 @@ namespace Kadath::FUKA_Solvers {
     load_solution_from_file();
     initialize_EOS(*this);
     initialize_support_containers();
+    initialize_spinup();
 
     if(rank == 0)
       cout << *seq << endl;
@@ -356,12 +357,48 @@ namespace Kadath::FUKA_Solvers {
   }
 
   template<class eos_t>
+  void NS_XCTS_UNIFORM_ROT<eos_t>::initialize_spinup() {
+    auto const spinidx = seq->spin_idx();
+    auto finalspin = (*bconfig)(spinidx);
+    
+    // No need to spinup if we're computing a sequence of
+    // spinning NS starting from ~zero
+    if(ns_seq_is_spin_fixing(*seq) && std::fabs(seq->init()) < 1e-2) {
+      return;
+    } else if(ns_seq_is_spin_fixing(*seq)) {
+      finalspin = seq->init();
+    }
+
+    auto npts = space->get_domain(1)->get_nbr_points();
+    Index pos_eq (npts);
+    pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
+    pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+
+    Index pos_pole (npts);
+    pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
+    
+    auto adpt_dom = space->get_domain(1);
+    double const R0 = adpt_dom->get_radius()(pos_eq);
+    double const Rp = adpt_dom->get_radius()(pos_pole);
+    double const axis_ratio = Rp / R0;
+
+    // no reason to spinup if the solution is already sufficiently rotating
+    if( 1. - axis_ratio > 1e-3){
+      return;
+    }
+    spinup.reset(new ns_sequence(seq->spin_str(), seq->spin_idx()));
+    spinup->set(0., 0., finalspin);
+    spinup->set_N(3);
+    bconfig->set(spinidx) = 0.;
+  }
+
+  template<class eos_t>
   bool NS_XCTS_UNIFORM_ROT<eos_t>::increment_spin() {
     if(!spinup || !spinup->is_set())
       return false;
     
-    auto sequence_var_indices = seq->get_indices();
-    auto const & dx = seq->step_size();
+    auto sequence_var_indices = spinup->get_indices();
+    auto const & dx = spinup->step_size();
     auto x = bconfig->set(sequence_var_indices) + dx;
     if(seq->loop_condition(x)) {
       bconfig->set(sequence_var_indices) = x;

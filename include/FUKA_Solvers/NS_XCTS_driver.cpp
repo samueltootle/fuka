@@ -165,8 +165,9 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
     launch(norot_solver);
   } else if(stage_enabled[STAGES::UNIFORM_ROT]) {
     NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(bconfig, seq, resolution, outputdir, rank);
-    launch(uniformrot_solver);
-    
+    do {
+      launch(uniformrot_solver);
+    }while(uniformrot_solver.increment_spin());
   } //else if(stage_enabled[STAGES::DIFF_ROT]) {
   // }
   
