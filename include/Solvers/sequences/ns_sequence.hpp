@@ -168,6 +168,8 @@ inline bool ns_seq_is_mass_fixing(seq_t& seq) {
 
 template<class seq_t>
 inline bool ns_seq_is_spin_fixing(seq_t& seq) {
+  if(!seq.is_set())
+    return false;
   auto seq_indicies = seq.get_indices();
   auto seq_idx = std::get<0>(seq_indicies);
   bool is_spin_fixing{false};
