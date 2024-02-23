@@ -72,8 +72,9 @@ struct NS_XCTS_BASE {
   ptr_data_member(Vector, shift, unique);
   ptr_data_member(Scalar, logh, unique);
 
+  virtual ~NS_XCTS_BASE() {bconfig.release();};
   NS_XCTS_BASE();
-  NS_XCTS_BASE(base_config_t& config_, ns_sequence const & seq_, 
+  NS_XCTS_BASE(base_config_t* config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
   virtual void save_to_file() const;
@@ -134,7 +135,7 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
 
   NS_XCTS_NOROT() = default;
   NS_XCTS_NOROT(std::string filename);
-  NS_XCTS_NOROT(base_config_t& config_, ns_sequence const & seq_, 
+  NS_XCTS_NOROT(base_config_t* config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
 };
@@ -155,7 +156,7 @@ struct NS_XCTS_UNIFORM_ROT : NS_XCTS_BASE {
   std::string converged_filename(const std::string stage) const;
 
   NS_XCTS_UNIFORM_ROT() = default;
-  NS_XCTS_UNIFORM_ROT(base_config_t& config_, ns_sequence const & seq_, 
+  NS_XCTS_UNIFORM_ROT(base_config_t* config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
 };

@@ -3,7 +3,7 @@
 namespace Kadath::FUKA_Solvers {
   // NOROT Routines
   template<class eos_t>
-  NS_XCTS_UNIFORM_ROT<eos_t>::NS_XCTS_UNIFORM_ROT(NS_XCTS_BASE::base_config_t& config_, ns_sequence const & seq_, 
+  NS_XCTS_UNIFORM_ROT<eos_t>::NS_XCTS_UNIFORM_ROT(NS_XCTS_BASE::base_config_t* config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_) :
       NS_XCTS_BASE(config_, seq_, res_, outputdir_, rank_), spinup(nullptr) {
     
