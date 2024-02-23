@@ -130,25 +130,27 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
     throw std::runtime_error(ss.str().c_str());
   }
   
-  auto launch = [](auto& solver) {
+  auto launch = [](auto& solver, bool ignore_resinc = false) {
     do {
       // initial solution
       solver.setup_syst();
       solver.do_newton();
       
-      // Make sure final solution uses optimal domain decomposition
-      solver.regrid();
+      if(!ignore_resinc) {
+        // Make sure final solution uses optimal domain decomposition
+        solver.regrid();
       
-      // resolve at current resolution
-      solver.setup_syst();
-      solver.do_newton();
+        // resolve at current resolution
+        solver.setup_syst();
+        solver.do_newton();
+      }
       
       // Obtain final resolution for the desired
       // solution or the first solution in a sequence
       // All remaining sequences will be computed
       // at the final resolution only
       // Note: only occurs if the last stage is NOROT_BC
-      while(solver.increment_resolution()) {
+      while(!ignore_resinc && solver.increment_resolution()) {
         // regrid to new resolution
         solver.regrid();
 
@@ -166,9 +168,11 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
   }
   if(stage_enabled[STAGES::UNIFORM_ROT]) {
     NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(&bconfig, seq, resolution, outputdir, rank);
+    auto spinup(*uniformrot_solver.get_spinup());
     do {
-      launch(uniformrot_solver);
+      launch(uniformrot_solver, spinup.is_set());
     }while(uniformrot_solver.increment_spin());
+    launch(uniformrot_solver);
   } 
   //if(stage_enabled[STAGES::DIFF_ROT]) {
   // }
