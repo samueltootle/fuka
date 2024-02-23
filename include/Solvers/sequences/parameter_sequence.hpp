@@ -59,7 +59,7 @@ struct Parameter_sequence_base {
   Parameter_sequence_base(std::string _str) : parameter_str(_str) {}
   /// Determine if a sequence has been initialized
   bool is_set() const {
-      return !std::isnan(seqinit) && !std::isnan(seqfinal);
+      return !std::isnan(seqinit) && !std::isnan(seqfinal) && seqinit != seqfinal;
   }
   /// Determine if a default value is initialized
   bool is_default_set() const {
