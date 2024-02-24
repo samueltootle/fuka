@@ -402,6 +402,7 @@ namespace Kadath::FUKA_Solvers {
     auto const & dx = spinup->step_size();
     auto x = bconfig->set(sequence_var_indices) + dx;
     if(spinup->loop_condition(x)) {
+      x = (x > spinup->final()) ? spinup->final() : x;
       bconfig->set(sequence_var_indices) = x;
       return true;
     }
