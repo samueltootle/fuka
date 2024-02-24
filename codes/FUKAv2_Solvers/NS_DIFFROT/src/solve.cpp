@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
     if(!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES)) {
       initialize_config_from_fixing_values(bconfig, seq);
     }
-    ns_3d_xcts_driver(bconfig, seq, resolution, InitSolver::outputdir);
+    ns_xcts_driver(bconfig, seq, resolution, InitSolver::outputdir);
   }
   MPI_Finalize();
   return EXIT_SUCCESS;

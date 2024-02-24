@@ -8,7 +8,7 @@
 namespace Kadath::FUKA_Solvers {
 
 template<class eos_t>
-inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence const & seq, 
+inline int ns_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence const & seq, 
   Parameter_sequence<BCO_PARAMS> & resolution, std::string outputdir);
 
 inline NS_XCTS_BASE::base_config_t ns_xcts_sequence_setup (NS_XCTS_BASE::base_config_t& seqconfig, std::string outputdir) {
@@ -81,13 +81,7 @@ int ns_xcts_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig, ns_sequence const
   }
 
   // Get non-rotating solution for the given mass or TOV mass if bconfig.control(CONTROLS::ITERATIVE_M)
-  ns_isotropic_norot_driver<eos_t>(bconfig, seq, resolution, outputdir);
-
-  // if(stage_enabled[STAGES::UNIFORM_ROT]) {
-
-  // } else if(stage_enabled[STAGES::DIFF_ROT]) {
-
-  // }
+  ns_xcts_driver<eos_t>(bconfig, seq, resolution, outputdir);
   
   // Update config such that the next solving round uses
   // the final ADM mass and spin if applicable
@@ -102,7 +96,7 @@ int ns_xcts_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig, ns_sequence const
 }
 
 template<class eos_t>
-inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence const & seq, 
+inline int ns_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence const & seq, 
   Parameter_sequence<BCO_PARAMS> & resolution, std::string outputdir) {
   int exit_status = RELOAD_FILE;
   int rank = 0;
@@ -207,12 +201,12 @@ inline int launch_final_stage_driver(NS_XCTS_BASE::base_config_t& bconfig, ns_se
   if(seq.is_set() || bconfig.control(CONTROLS::SEQUENCES)) {
     final_stage_driver = &ns_xcts_seq_driver<eos_t>;
   } else {
-    final_stage_driver = &ns_isotropic_norot_driver<eos_t>;
+    final_stage_driver = &ns_xcts_driver<eos_t>;
   }
   return final_stage_driver(bconfig, seq, resolution, outputdir);
 }
 
-inline int ns_3d_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence const & seq, 
+inline int ns_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence const & seq, 
   Parameter_sequence<BCO_PARAMS> & resolution, std::string outputdir) {
   
   int exit_status = EXIT_SUCCESS;
