@@ -99,10 +99,9 @@ namespace Kadath::FUKA_Solvers {
       output_str = ::Kadath::FUKA_Syst_tools::get_ns_mass_fixing_output(*bconfig, seq);
     } else {
       syst->add_var("hc"  , (*bconfig)(BCO_PARAMS::HC));
-      syst->add_var("Mb"  , (*bconfig)(BCO_PARAMS::MB));
       syst->add_cst("Madm", (*bconfig)(BCO_PARAMS::MADM));
       std::stringstream output;
-      output << "Mass fixed using ADM Mass = " << (*bconfig)(BCO_PARAMS::HC);
+      output << "Mass fixed using ADM Mass = " << (*bconfig)(BCO_PARAMS::MADM);
       output_str = output.str();
     }
 
