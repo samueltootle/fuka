@@ -170,12 +170,19 @@ struct NS_XCTS_DIFF_ROT : NS_XCTS_BASE {
   void update_config_quantities() override;
   void initialize_spinup();
   void initialize_diffrot_params();
-  internal_variable(double, axis_ratio);
   
+  /// Variables needed for DIFFROT solver
   using diffparams_t = std::array<double, DIFFROT_PARAMS::NUM_DIFFROT_PARAMS>;
   internal_variable(diffparams_t, diffrot_params);
   ptr_data_member(Parameter_sequence<DIFFROT_PARAMS>, spinup, unique);
-  ptr_data_member(Scalar, ones, unique);
+  ptr_data_member(Kadath::Scalar, ones, unique);
+  ptr_data_member(Kadath::Scalar, diff_omega, unique);
+  ptr_data_member(Kadath::Index, pos_origin, unique);
+  ptr_data_member(Kadath::Index, pos_eq, unique);
+  ptr_data_member(Kadath::Index, pos_pole, unique);
+  internal_variable(double, diffA);
+  internal_variable(double, axis_ratio);
+  internal_variable(std::string, law);
 
   public:
   void setup_syst();
@@ -186,6 +193,11 @@ struct NS_XCTS_DIFF_ROT : NS_XCTS_BASE {
   NS_XCTS_DIFF_ROT(base_config_t* config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
+
+  void load_solution_from_file() override;
+  void save_to_file() const override;
+  void regrid() override;
+  void reset_all_ptrs() override;
 };
 /** @}*/
 };

@@ -18,16 +18,35 @@ namespace Kadath::FUKA_Solvers {
     initialize_diffrot_params();
     initialize_spinup();
 
-    ones.reset(new Scalar(*space));
-    *ones = 1.;
-    ones->std_base();
-
     if(rank == 0) {
       cout << *seq << endl;
       cout << *resolution << endl;
     }
   }
   
+  template<class eos_t>
+  void NS_XCTS_DIFF_ROT<eos_t>::load_solution_from_file() {
+    std::string spacein{bconfig->space_filename()};
+    FILE* ff1 = fopen (spacein.c_str(), "r") ;
+
+    space.reset(new base_space_t{ff1});
+    conformal_factor.reset( new Scalar(*space, ff1)) ;
+    lapse.reset( new Scalar(*space, ff1)) ;
+    shift.reset( new Vector(*space, ff1)) ;
+    logh.reset( new Scalar(*space, ff1)) ;
+    
+    if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)){
+      diff_omega.reset(new Scalar(*space.get(), ff1));
+    } else {
+      diff_omega.reset(new Scalar(*space));
+      *diff_omega = (*bconfig)(OMEGA); //((*bconfig)(OMEGA) == 0) ? 1e-8 : (*bconfig)(OMEGA);
+      diff_omega->std_base();
+    }
+    fclose(ff1);
+        
+    ndom = space->get_nbr_domains();
+  }
+
   template<class eos_t>
   std::string NS_XCTS_DIFF_ROT<eos_t>::converged_filename(const std::string stage) const {
     // FIXME assumes a fix resolution for all domains
@@ -37,7 +56,8 @@ namespace Kadath::FUKA_Solvers {
     ss << "NS";
     if(stage != "") ss  << "_" << stage << ".";
     else ss << ".";
-    ss << eosname << ".";
+    ss << eosname << "."
+       << law << ".";
     
     // Add mass fixing parameter to filename
     auto default_idx = BCO_PARAMS::MADM;
@@ -48,12 +68,9 @@ namespace Kadath::FUKA_Solvers {
       ss << seq_key << "." << (*bconfig)(default_idx) << "."; 
     }  
     
-    default_idx = BCO_PARAMS::CHI;
-    if(seq) {
-      update_filename_from_spin_fixing(*bconfig, seq, ss);
-    } else {
-      auto [ seq_key, tidx ] = get_key_val_pair_from_val(MBCO_PARAMS, default_idx);
-      ss << seq_key << "." << (*bconfig)(default_idx) << "."; 
+    if(law == "keh") {
+      ss << "Ar." << (*bconfig).template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO) << "."
+         << "Rr." << (*bconfig).template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO) << ".";
     }
     ss << (*bconfig)(BCO_PARAMS::NSHELLS) << "."
        <<std::setfill('0') << std::setw(2) << res;
@@ -63,7 +80,6 @@ namespace Kadath::FUKA_Solvers {
   template<class eos_t>
   void NS_XCTS_DIFF_ROT<eos_t>::setup_syst() {
     int exit_status = EXIT_SUCCESS;
-    double loghc = std::log((*bconfig)(BCO_PARAMS::HC));
 
     // We use `config_filename()` vs `config_filename_abs()` since
     // `solution_exists` will probe the HOME_KADATH/COs directory
@@ -75,34 +91,71 @@ namespace Kadath::FUKA_Solvers {
     //   return (current == bconfig.config_filename()) ? \
     //     EXIT_SUCCESS : RELOAD_FILE;
     // }
-
+    
+    // Update vector fields
     update_fields_co(*cfields, *coord_vectors,{}, 0.);
+
+    // Initialize KEH parameters
+    auto adpt_dom = space->get_domain(1);
+    double R0 = adpt_dom->get_radius()(*pos_eq);
+    double Rp = adpt_dom->get_radius()(*pos_pole);
+    auto& diffAratio = diffrot_params[DIFFROT_PARAMS::DIFF_ARATIO];
+    auto& diffRratio = diffrot_params[DIFFROT_PARAMS::DIFF_RRATIO];
+    diffA = diffrot_params[DIFFROT_PARAMS::DIFF_ARATIO] * R0;
+    bconfig->set(BCO_PARAMS::RMID) = R0;
+    std::string firstint{"firstint = (H + log(N) - log(W)) - 0.5 * j^2 / diffA^2"};
+
+    if (rank == 0) {
+      std::cout << "###################################" << std::endl
+                << "Differential Rotating models (KEH)"  << std::endl
+                << firstint << std::endl
+                << "Fixed A / R0: " << diffAratio << std::endl
+                << "Fixed Rp / Re: " << diffRratio << std::endl
+                << "Initial Rp/Re: " << Rp / R0 << "\n"
+                << "Initial R0: " << R0 <<std::endl
+                << "###################################" << "\n\n";
+    }
+    // Setup System of equations
     syst.reset(new System_of_eqs(*space));
     syst_init();
-    
-    std::string central_fixing_definition{"H - Hc"};
-    std::string spin_fixing_definition{"integ(intJ) - chi * Madm * Madm = 0"};
-    
+
+    // Setup mass fixing parameter
+    std::string central_fixing_definition{"h - hc"};    
     if(seq) {
       central_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_mass_fixing(*syst, *bconfig, seq);
-      spin_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_spin_fixing(*syst, *bconfig, seq);
     } else {
-      syst->add_var("Hc", loghc);
-      syst->add_cst("chi" , (*bconfig)(BCO_PARAMS::CHI));
-      syst->add_var("ome" , (*bconfig)(BCO_PARAMS::OMEGA));
-      syst->add_cst("Madm", (*bconfig)(BCO_PARAMS::MADM));
+      syst->add_cst("hc", (*bconfig)(BCO_PARAMS::HC));
     }
-    syst->add_def("omega^i = bet^i + ome * mg^i");
+    
+    // Utility field
+    syst->add_cst("one", *ones);
+    
+    // KEH Constants
+    syst->add_cst("diffAratio", diffrot_params[DIFFROT_PARAMS::DIFF_ARATIO]);
+    syst->add_cst("Rratio"    , diffrot_params[DIFFROT_PARAMS::DIFF_RRATIO]);
 
+    // KEH vars
+    syst->add_var("diffA", diffA);
+    syst->add_var("omec", (*bconfig)(BCO_PARAMS::OMEGA));
+    syst->add_var("R0"  , (*bconfig)(BCO_PARAMS::RMID));
+    syst->add_var("Omega", *diff_omega);
+
+    // KEH Definitions
+    syst->add_def("diffAField = one * diffA");
+    syst->add_def("r = multr(one)");
+
+    syst->add_def("omega^i = bet^i + Omega * mg^i");
+    syst->add_def("U^i = omega^i / N");
+    syst->add_def("Usquare = P^4 * U_i * U^i");
+    syst->add_def("Wsquare = 1. / (1. - Usquare)");
+    syst->add_def("W = sqrt(Wsquare)");
+    syst->add_def("j = P^4 * Wsquare * f_ij * U^i * mg^j / N");
+    syst->add_def("omelaw = omec - j / diffA^2");
+    
     for (int d = 0; d < ndom; d++) {
       switch (d) {
       case 0:
       case 1:
-        syst->add_def(d, "U^i = omega^i / N");
-        syst->add_def(d, "Usquare = P^4 * U_i * U^i");
-        syst->add_def(d, "Wsquare = 1. / (1. - Usquare)");
-        syst->add_def(d, "W = sqrt(Wsquare)");
-
         syst->add_def(d, "Etilde = press * h * Wsquare - press * delta") ;
         syst->add_def(d, "Stilde = 3 * press * delta + (Etilde + press * delta) * Usquare") ;
         syst->add_def(d, "ptilde^i = press * h * Wsquare * U^i") ;
@@ -114,8 +167,8 @@ namespace Kadath::FUKA_Solvers {
                               "- 2. * delta * A^ij * D_j Ntilde - 4. * 4piG * N * P^4 * ptilde^i");
 
         syst->add_def(d, "intMb = P^6 * rho(h) * W");
-        syst->add_def(d, "firstint = H + log(N) - log(W)");
-
+        syst->add_def(d, firstint.c_str());
+        syst->add_eq_full(d, "Omega - omelaw = 0");
         break;
       default:
         syst->add_eq_full(d, "H = 0");
@@ -127,14 +180,21 @@ namespace Kadath::FUKA_Solvers {
         break;
       }
     }
+    // Ensure Omega field matches the interior solution, but is zero otherwise.
+    // Much more reliable convergence
+    syst->add_eq_matching(2, INNER_BC, "Omega");
+    syst->add_eq_matching(2, INNER_BC, "dn(Omega)");
+    syst->add_eq_inside(2,"Omega = 0");
+    syst->add_eq_full(3, "Omega = 0");
 
-    if (rank == 0) {
-      std::cout << "############################" << std::endl
-                << "Uniformly Rotating NS Solver" << std::endl
-                << "############################" << std::endl;
-    }
+    // Enforce Differential rotation parameters at the origin,
+    // equator, and pole.
+    syst->add_eq_val(0, "diffAField/R0 - diffAratio", *pos_origin);
+    syst->add_eq_val(1, "r/R0 - 1", *pos_eq);
+    syst->add_eq_val(1, "r/R0 - Rratio", *pos_pole);
 
-    // add the constraint equations and demand continuity their normal derivative across domain boundaries
+    // add the constraint equations and demand continuity 
+    // of their normal derivative across domain boundaries
     space->add_eq(*syst, "eqNP= 0", "N", "dn(N)");
     space->add_eq(*syst, "eqP = 0", "P", "dn(P)");
     space->add_eq(*syst, "eqbet^i= 0", "bet^i", "dn(bet^i)");
@@ -167,29 +227,6 @@ namespace Kadath::FUKA_Solvers {
         default:
           break;
       }
-      idx = seq->spin_idx();
-      switch(idx) {
-        case BCO_PARAMS::JADM:
-          space->add_eq_int_inf(*syst, spin_fixing_definition.c_str());
-          break;
-        case BCO_PARAMS::CHI:
-          // Since we need MADM to compute CHI, we need to ensure
-          // that if it isn't a fixed quantity that it becomes a
-          // variable in our system of equations and the appropriate
-          // constraint equation is added
-          if(add_Madm_int) {
-            syst->add_var("Madm", (*bconfig)(BCO_PARAMS::MADM));
-            space->add_eq_int_inf(*syst, "integ(intMadm) = Madm");
-          }
-          
-          space->add_eq_int_inf(*syst, spin_fixing_definition.c_str());
-          break;
-        default:
-          break;
-      }
-    } else {
-    space->add_eq_int_inf(*syst, spin_fixing_definition.c_str());
-    space->add_eq_int_inf(*syst, "integ(intMadm) = Madm");
     }
   }
 
@@ -290,7 +327,8 @@ namespace Kadath::FUKA_Solvers {
               << " [" << std::abs(Madm - Madmalt) / Madm << "]" << std::endl
               << FORMAT << "Mk: " << Mk << " [" 
               << std::abs(Madm - Mk) / Madm << "]" << std::endl
-              << FORMAT << "R: " << rs[0] << " " << rs[1] << std::endl;
+              << FORMAT << "R: " << rs[0] << " " << rs[1] 
+                        << " [" << rs[0] / rs[1] << "]" << std::endl;
     std::cout << FORMAT << "Jadm: " << J << std::endl
               << FORMAT << "Chi: " << J / Madm / Madm << " [" << (*bconfig)(CHI) << "]\n"
               << FORMAT << "Omega: " << (*bconfig)(OMEGA) << std::endl;
@@ -365,20 +403,12 @@ namespace Kadath::FUKA_Solvers {
 
   template<class eos_t>
   void NS_XCTS_DIFF_ROT<eos_t>::initialize_spinup() {
-
-    auto npts = space->get_domain(1)->get_nbr_points();
-    Index pos_eq (npts);
-    pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
-    pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
-
-    Index pos_pole (npts);
-    pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
     
     auto adpt_dom = space->get_domain(1);
-    double const R0 = adpt_dom->get_radius()(pos_eq);
-    double const Rp = adpt_dom->get_radius()(pos_pole);
+    double const R0 = adpt_dom->get_radius()(*pos_eq);
+    double const Rp = adpt_dom->get_radius()(*pos_pole);
     axis_ratio = Rp / R0;
-    double const diffRratio = (*bconfig).template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
+    double const diffRratio = diffrot_params[DIFFROT_PARAMS::DIFF_RRATIO];
 
     // no reason to spinup if the solution is already sufficiently rotating
     if( std::fabs(1. - axis_ratio / diffRratio) < 0.1){
@@ -391,6 +421,7 @@ namespace Kadath::FUKA_Solvers {
     const int N = int((axis_ratio - diffRratio) / dx);
     spinup->set_N(N);
     bconfig->set(spinidx) = 1.0;
+    diffrot_params[spinidx] = 1.0;
   }
 
   template<class eos_t>
@@ -411,7 +442,7 @@ namespace Kadath::FUKA_Solvers {
 
   template<class eos_t>
   void NS_XCTS_DIFF_ROT<eos_t>::initialize_diffrot_params() {
-    std::string const law = [&]() -> std::string {
+    law = [&]() -> std::string {
       auto v = (*bconfig).template diffrot<std::string>(DIFFROT_PARAMS::DIFF_LAW);
       return str_tolower(v);
     }();
@@ -419,5 +450,188 @@ namespace Kadath::FUKA_Solvers {
       diffrot_params[DIFFROT_PARAMS::DIFF_ARATIO] = (*bconfig).template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
       diffrot_params[DIFFROT_PARAMS::DIFF_RRATIO] = (*bconfig).template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
     }
+    pos_origin.reset(new Index(space->get_domain(0)->get_nbr_points()));
+    auto npts = space->get_domain(1)->get_nbr_points();
+    pos_eq.reset(new Index(npts));
+    pos_eq->set(0) = npts(0) - 1; /// Set to outer radius
+    pos_eq->set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+
+    pos_pole.reset(new Index(npts));
+    pos_pole->set(0) = npts(0) - 1; /// Set to outer radius
+  
+    ones.reset(new Scalar(*space));
+    *ones = 1.;
+    ones->std_base();
+  }
+
+  template<class eos_t>
+  void NS_XCTS_DIFF_ROT<eos_t>::save_to_file() const {
+    Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift, *logh, *diff_omega);
+  }
+
+  template<class eos_t>
+  void NS_XCTS_DIFF_ROT<eos_t>::reset_all_ptrs() {
+    // Fields
+    conformal_factor.reset(nullptr) ;
+    lapse.reset(nullptr);
+    shift.reset(nullptr);
+    logh.reset(nullptr);
+    diff_omega.reset(nullptr);
+
+    // Containers
+    basis.reset(nullptr);
+    fmet.reset(nullptr);
+    syst.reset(nullptr);
+    cfields.reset(nullptr);
+    coord_vectors.reset(nullptr);
+    ones.reset(nullptr);
+    pos_origin.reset(nullptr);
+    pos_eq.reset(nullptr);
+    pos_pole.reset(nullptr);
+
+    // Space
+    space.reset(nullptr);
+  }
+
+  template<class eos_t>
+  void NS_XCTS_DIFF_ROT<eos_t>::regrid() {
+    std::string outputfile{"ns_regrid"};
+    
+    if(rank == 0) {
+    std::cout << "Resolution of old space: "
+      << space->get_domain(0)->get_nbr_points()(0) << " (r), "
+      << space->get_domain(0)->get_nbr_points()(1) << " (theta), "
+      << space->get_domain(0)->get_nbr_points()(2) << " (phi)" << std::endl;
+  
+    int ndim = 3;
+    // get the adapted domain and cast it to its correct type to be able to call its member functions
+    const Domain_shell_outer_adapted* old_outer_adapted =
+        dynamic_cast<const Domain_shell_outer_adapted*>(space->get_domain(1));
+    
+    // setup a scalar field representing the old radius
+    Scalar old_space_radius(*space);
+    old_space_radius = 0.;
+
+    // get the radius from each domain
+    for(int i = 0; i < space->get_nbr_domains(); ++i)
+      old_space_radius.set_domain(i) = space->get_domain(i)->get_radius();
+    // get the adapted radius of the adapted domain
+    old_space_radius.set_domain(1) = old_outer_adapted->get_outer_radius();
+
+    // define a standard decomposition, compatible with the parity of this field
+    old_space_radius.std_base();
+    //end setup old radius field
+
+    // get the minimal and maximal radius from the adapted domain
+    auto [r_min, r_max] = Kadath::bco_utils::get_rmin_rmax(*space, 1);
+
+    std::cout << "Rmin/max: " << r_min << " " << r_max << std::endl;
+
+    // set new resolutions in each spatial dimension
+    Dim_array res(ndim);
+    res.set(0) = (*bconfig)(BCO_RES);
+    res.set(1) = res(0);
+    res.set(2) = res(0) - 1;
+
+    // FIXME not sure if it's only about oddness...
+    if(res(0) % 2 == 0 || res(2) % 2 != 0){
+      std::cout << "New Resolution is invalid.  Must be odd (9,11,13,etc)" << std::endl;
+      std::_Exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Resolution of new space: "
+      << res(0) << " (r), "
+      << res(1) << " (theta), "
+      << res(2) << " (phi)" << std::endl;
+
+    // get the type of the colocation points
+    int type_coloc = space->get_type_base();
+
+    // Update config
+    bconfig->set(BCO_PARAMS::RIN)  = 0.5 * r_min;
+    bconfig->set(BCO_PARAMS::ROUT) = 1.5 * r_max;
+    bconfig->set(BCO_PARAMS::RMID) = r_max;
+    // end update config
+    
+    // setup radius bounds of the domains
+
+    int ndom = 4 + (*bconfig)(BCO_PARAMS::NSHELLS);
+    std::vector<double> bounds(ndom-1);
+    Kadath::bco_utils::set_NS_bounds(bounds, *bconfig);
+    
+    Kadath::bco_utils::print_bounds("New bounds: ", bounds);
+
+    // get origin of nucleus domain
+    Point center = space->get_domain(0)->get_center();
+
+    // initialize space with new resolution and domain decomposition
+    Space_spheric_adapted new_space(type_coloc, center, res, bounds);
+    Base_tensor new_basis(new_space, CARTESIAN_BASIS);
+
+    // get adapted domains to update the radius
+    const Domain_shell_outer_adapted* new_outer_adapted = dynamic_cast<const Domain_shell_outer_adapted*>(new_space.get_domain(1));
+    const Domain_shell_inner_adapted* new_inner_adapted = dynamic_cast<const Domain_shell_inner_adapted*>(new_space.get_domain(2));
+
+    // update adapted domain mapping
+    Kadath::bco_utils::interp_adapted_mapping(new_outer_adapted, 1, old_space_radius);
+    Kadath::bco_utils::interp_adapted_mapping(new_inner_adapted, 1, old_space_radius);
+
+    // setup new fields
+    // initialize to one or zero first
+    Scalar new_conf(new_space);
+    new_conf = 1.;
+    new_conf.std_base();
+
+    Scalar new_lapse(new_space);
+    new_lapse = 1.;
+    new_lapse.std_base();
+
+    Vector new_shift(new_space, CON, new_basis);
+    for (int i = 1; i <= 3; i++)
+      new_shift.set(i).annule_hard();
+    new_shift.std_base();
+
+    Scalar new_logh(new_space);
+    new_logh.annule_hard();
+    new_logh.std_base();
+
+    Scalar new_diff_omega(new_space);
+    new_diff_omega.annule_hard();
+    // end setup new fields
+    
+    // import data from fields in the old space
+    new_conf.import(*conformal_factor);
+    new_lapse.import(*lapse);
+    new_logh.import(*logh);
+    new_diff_omega.import(*diff_omega);
+
+    new_shift.set(1).import(shift->set(1));
+    new_shift.set(2).import(shift->set(2));
+    new_shift.set(3).import(shift->set(3));
+
+    // end import old fields
+
+    // enforce spectral decomposition compatible with the parities
+    new_lapse.std_base();
+    new_conf.std_base();
+    new_logh.std_base();
+    new_shift.std_base();
+    new_diff_omega.std_base();
+    
+    // output data  
+    bconfig->set_filename(outputfile);
+    Kadath::bco_utils::save_to_file(new_space, *bconfig, new_conf, new_lapse, new_shift, new_logh, new_diff_omega);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // Ensure all ranks have the same config file
+    bconfig->set_filename(outputfile);
+    bconfig->open_config();
+    
+    // Update stored fields and containers
+    reset_all_ptrs();
+    load_solution_from_file();
+    initialize_support_containers();
+    initialize_diffrot_params();
   }
 }
