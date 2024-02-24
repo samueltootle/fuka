@@ -388,7 +388,7 @@ namespace Kadath::FUKA_Solvers {
     if( 1. - axis_ratio > 1e-3){
       return;
     }
-    spinup.reset(new ns_sequence(seq->spin_str(), seq->spin_idx()));
+    spinup.reset(new Parameter_sequence<BCO_PARAMS>(seq->spin_str(), seq->spin_idx()));
     spinup->set(0., 0., finalspin);
     spinup->set_N(3);
     bconfig->set(spinidx) = 0.;
