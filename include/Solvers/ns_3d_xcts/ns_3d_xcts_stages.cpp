@@ -633,8 +633,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_def("Wsquare = 1. / (1. - Usquare)");
   syst.add_def("W = sqrt(Wsquare)");
 
-  // This converges, but isn't correct
-  // syst.add_def("j = Wsq / N * U");
   syst.add_def("j = P^4 * Wsquare * f_ij * U^i * mg^j / N");
   syst.add_def("omelaw = omec - j / diffA^2");
 
@@ -646,7 +644,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_def(2,"intS = A_ij * mg^i * sm^j / 2. / 4piG") ;
 
   for (int d = 0; d < ndom; d++) {
-    // syst.add_eq_full(d, "Omega - omelaw = 0");
     switch (d) {
     case 0:
     case 1:
