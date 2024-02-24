@@ -293,6 +293,18 @@ struct kadath_config_boost : public configurator_base {
       return container.set_diffrot_param(idxs...); 
     }
 
+    template<class... T, size_t... I>
+    constexpr auto& set_diffrot(std::tuple<T...> const & t, std::index_sequence<I...>) {
+      auto tt{t};
+      return this->set_diffrot(std::get<I>(std::forward<std::tuple<T...>>(tt))...);
+    }
+
+    template<typename... T>
+    constexpr auto& set_diffrot(std::tuple<T...> const & t)
+    {        
+      return this->set_diffrot(t, std::index_sequence_for<T...>{});
+    }
+
     /**
       * kadath_config_boost::diffrot()
       * get parameter value of the std::variant eos_parameter for base or child parameter container
