@@ -226,7 +226,7 @@ namespace Kadath::FUKA_Solvers {
     
     auto resolution_indices = resolution->get_indices();
     auto const & final_res = resolution->final();
-    if((*bconfig)(resolution_indices) > final_res)
+    if((*bconfig)(resolution_indices) >= final_res)
       return false;
 
     int next_res = bco_utils::next_resolution((*bconfig)(resolution_indices));
