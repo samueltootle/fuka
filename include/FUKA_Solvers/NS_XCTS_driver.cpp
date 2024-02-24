@@ -174,8 +174,15 @@ inline int ns_isotropic_norot_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_s
     }while(uniformrot_solver.increment_spin());
     launch(uniformrot_solver);
   } 
-  //if(stage_enabled[STAGES::DIFF_ROT]) {
-  // }
+  if(stage_enabled[STAGES::DIFF_ROT]) {
+    NS_XCTS_DIFF_ROT<eos_t> diffrot_solver(&bconfig, seq, resolution, outputdir, rank);
+    // auto spinup(*uniformrot_solver.get_spinup());
+    do {
+      // launch(uniformrot_solver, spinup.is_set());
+      launch(diffrot_solver);
+    }while(diffrot_solver.increment_spin());
+    launch(diffrot_solver);
+  } 
   
   MPI_Barrier(MPI_COMM_WORLD);
   return exit_status;
