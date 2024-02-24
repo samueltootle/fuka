@@ -15,7 +15,12 @@ namespace Kadath::FUKA_Solvers {
     load_solution_from_file();
     initialize_EOS(*this);
     initialize_support_containers();
+    initialize_diffrot_params();
     initialize_spinup();
+
+    ones.reset(new Scalar(*space));
+    *ones = 1.;
+    ones->std_base();
 
     if(rank == 0) {
       cout << *seq << endl;
@@ -402,5 +407,17 @@ namespace Kadath::FUKA_Solvers {
       return true;
     }
     return false;
+  }
+
+  template<class eos_t>
+  void NS_XCTS_DIFF_ROT<eos_t>::initialize_diffrot_params() {
+    std::string const law = [&]() -> std::string {
+      auto v = (*bconfig).template diffrot<std::string>(DIFFROT_PARAMS::DIFF_LAW);
+      return str_tolower(v);
+    }();
+    if(law == "keh") {
+      diffrot_params[DIFFROT_PARAMS::DIFF_ARATIO] = (*bconfig).template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
+      diffrot_params[DIFFROT_PARAMS::DIFF_RRATIO] = (*bconfig).template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
+    }
   }
 }

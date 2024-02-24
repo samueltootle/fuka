@@ -169,8 +169,13 @@ struct NS_XCTS_DIFF_ROT : NS_XCTS_BASE {
   void print_diagnostics(const int ite, const double conv) const override;
   void update_config_quantities() override;
   void initialize_spinup();
+  void initialize_diffrot_params();
   internal_variable(double, axis_ratio);
+  
+  using diffparams_t = std::array<double, DIFFROT_PARAMS::NUM_DIFFROT_PARAMS>;
+  internal_variable(diffparams_t, diffrot_params);
   ptr_data_member(Parameter_sequence<DIFFROT_PARAMS>, spinup, unique);
+  ptr_data_member(Scalar, ones, unique);
 
   public:
   void setup_syst();
