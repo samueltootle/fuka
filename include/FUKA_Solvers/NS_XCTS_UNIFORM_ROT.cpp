@@ -75,17 +75,24 @@ namespace Kadath::FUKA_Solvers {
     syst.reset(new System_of_eqs(*space));
     syst_init();
     
-    std::string central_fixing_definition{"H - Hc"};
+    std::string central_fixing_definition{"h - hc"};
     std::string spin_fixing_definition{"integ(intJ) - chi * Madm * Madm = 0"};
+    std::string output_str_M{};
+    std::string output_str_Spin{};
     
     if(seq) {
       central_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_mass_fixing(*syst, *bconfig, seq);
       spin_fixing_definition = ::Kadath::FUKA_Syst_tools::set_ns_spin_fixing(*syst, *bconfig, seq);
+
+      output_str_M = ::Kadath::FUKA_Syst_tools::get_ns_mass_fixing_output(*bconfig, seq);
+      output_str_Spin = ::Kadath::FUKA_Syst_tools::get_ns_spin_fixing_output(*bconfig, seq);
     } else {
-      syst->add_var("Hc", loghc);
+      syst->add_var("Hc"  , (*bconfig)(BCO_PARAMS::HC));
       syst->add_cst("chi" , (*bconfig)(BCO_PARAMS::CHI));
       syst->add_var("ome" , (*bconfig)(BCO_PARAMS::OMEGA));
       syst->add_cst("Madm", (*bconfig)(BCO_PARAMS::MADM));
+      output_str_M = "Mass fixed using ADM mass (madm)";
+      output_str_Spin = "Spin fixed using dimensionless spin parameter (chi)";
     }
     syst->add_def("omega^i = bet^i + ome * mg^i");
 
