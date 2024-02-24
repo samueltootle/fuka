@@ -29,7 +29,12 @@ namespace Kadath::FUKA_Solvers {
   }
 
   inline void NS_XCTS_BASE::save_to_file() const {
-    Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift, *logh);
+    if(diff_omega) {
+      bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA) = true;
+      Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift, *logh, *diff_omega);
+    } else {
+      Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift, *logh);
+    }
   }
 
   inline void NS_XCTS_BASE::reset_all_ptrs() {
@@ -150,7 +155,6 @@ namespace Kadath::FUKA_Solvers {
     Scalar new_logh(new_space);
     new_logh.annule_hard();
     new_logh.std_base();
-
     // end setup new fields
     
     // import data from fields in the old space
@@ -169,10 +173,18 @@ namespace Kadath::FUKA_Solvers {
     new_conf.std_base();
     new_logh.std_base();
     new_shift.std_base();
-    
-    // output data  
+
+    // output data
     bconfig->set_filename(outputfile);
-    Kadath::bco_utils::save_to_file(new_space, *bconfig, new_conf, new_lapse, new_shift, new_logh);
+
+    // Account for Differential rotation
+    Scalar new_diff_omega(new_space);
+    new_diff_omega.annule_hard();
+    if(diff_omega) {      
+      new_diff_omega.import(*diff_omega);
+      new_diff_omega.std_base();
+    }
+    save_to_file();
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -194,7 +206,15 @@ namespace Kadath::FUKA_Solvers {
     conformal_factor.reset( new Scalar(*space, ff1)) ;
     lapse.reset( new Scalar(*space, ff1)) ;
     shift.reset( new Vector(*space, ff1)) ;
-    logh.reset( new Scalar(*space, ff1)) ;    
+    logh.reset( new Scalar(*space, ff1)) ;
+    
+    if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)){
+      diff_omega.reset(new Scalar(*space.get(), ff1));
+    } else {
+      diff_omega.reset(new Scalar(*space));
+      *diff_omega = (*bconfig)(OMEGA); //((*bconfig)(OMEGA) == 0) ? 1e-8 : (*bconfig)(OMEGA);
+      diff_omega->std_base();
+    }
     fclose(ff1);
         
     ndom = space->get_nbr_domains();

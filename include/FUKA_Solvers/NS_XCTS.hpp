@@ -71,21 +71,22 @@ struct NS_XCTS_BASE {
   ptr_data_member(Scalar, lapse, unique);
   ptr_data_member(Vector, shift, unique);
   ptr_data_member(Scalar, logh, unique);
+  ptr_data_member(Scalar, diff_omega, unique);
 
   virtual ~NS_XCTS_BASE() {bconfig.release();};
   NS_XCTS_BASE();
   NS_XCTS_BASE(base_config_t* config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
-  virtual void save_to_file() const;
+  void save_to_file() const;
   bool increment_resolution();
   bool increment_seq();
   int do_newton();
+  void regrid();
 
-  virtual void regrid();
-  virtual void load_solution_from_file();
   virtual std::string converged_filename(const std::string stage) const = 0;
   protected:
+  void load_solution_from_file();
   void initialize_support_containers();
   virtual void reset_all_ptrs();
   virtual void update_config_quantities() = 0;
@@ -176,7 +177,6 @@ struct NS_XCTS_DIFF_ROT : NS_XCTS_BASE {
   internal_variable(diffparams_t, diffrot_params);
   ptr_data_member(Parameter_sequence<DIFFROT_PARAMS>, spinup, unique);
   ptr_data_member(Kadath::Scalar, ones, unique);
-  ptr_data_member(Kadath::Scalar, diff_omega, unique);
   ptr_data_member(Kadath::Index, pos_origin, unique);
   ptr_data_member(Kadath::Index, pos_eq, unique);
   ptr_data_member(Kadath::Index, pos_pole, unique);
@@ -194,9 +194,6 @@ struct NS_XCTS_DIFF_ROT : NS_XCTS_BASE {
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, 
       int const rank_ = 0);
 
-  void load_solution_from_file() override;
-  void save_to_file() const override;
-  void regrid() override;
   void reset_all_ptrs() override;
 };
 /** @}*/
