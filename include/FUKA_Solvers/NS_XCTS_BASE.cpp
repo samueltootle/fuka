@@ -183,8 +183,11 @@ namespace Kadath::FUKA_Solvers {
     if(diff_omega) {      
       new_diff_omega.import(*diff_omega);
       new_diff_omega.std_base();
-    }
-    save_to_file();
+      bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA) = true;
+      Kadath::bco_utils::save_to_file(new_space, *bconfig, new_conf, new_lapse, new_shift, new_logh, new_diff_omega);
+    }else {
+      Kadath::bco_utils::save_to_file(new_space, *bconfig, new_conf, new_lapse, new_shift, new_logh);
+    }    
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -249,6 +252,7 @@ namespace Kadath::FUKA_Solvers {
     auto sequence_var_indices = seq->get_indices();
     auto const & dx = seq->step_size();
     auto x = bconfig->set(sequence_var_indices) + dx;
+    x = (std::fabs(1. - x / seq->final()) < 1e-4) ? seq->final() : x;
     if(seq->loop_condition(x)) {
       bconfig->set(sequence_var_indices) = x;
       return true;
