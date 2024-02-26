@@ -405,8 +405,9 @@ namespace Kadath::FUKA_Solvers {
 
   template<class eos_t>
   bool NS_XCTS_UNIFORM_ROT<eos_t>::increment_spin() {
-    if(!spinup || !spinup->is_set())
+    if(!spinup || !spinup->is_set() || !spinup->is_varying()) {
       return false;
+    }
     auto sequence_var_indices = spinup->get_indices();
     auto const & dx = spinup->step_size();
     auto x = bconfig->set(sequence_var_indices) + dx;
