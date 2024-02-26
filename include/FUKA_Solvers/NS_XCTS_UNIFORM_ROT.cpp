@@ -133,6 +133,8 @@ namespace Kadath::FUKA_Solvers {
     if (rank == 0) {
       std::cout << "############################" << std::endl
                 << "Uniformly Rotating NS Solver" << std::endl
+                << output_str_M << std::endl
+                << output_str_Spin << std::endl
                 << "############################" << std::endl;
     }
 
@@ -409,7 +411,7 @@ namespace Kadath::FUKA_Solvers {
     auto const & dx = spinup->step_size();
     auto x = bconfig->set(sequence_var_indices) + dx;
     if(spinup->loop_condition(x)) {
-      x = (x > spinup->final()) ? spinup->final() : x;
+      x = (std::fabs(1. - x / spinup->final()) < 1e-4) ? spinup->final() : x;
       bconfig->set(sequence_var_indices) = x;
       return true;
     }
