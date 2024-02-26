@@ -98,10 +98,7 @@ int main(int argc, char** argv) {
     }
 
     verify_ns_fixing_values(bconfig, seq);
-
-    if(!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES)) {
-      initialize_config_from_fixing_values(bconfig, seq);
-    }
+    initialize_config_from_fixing_values(bconfig, seq);
     ns_xcts_driver(bconfig, seq, resolution, InitSolver::outputdir);
   }
   MPI_Finalize();
