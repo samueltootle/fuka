@@ -124,7 +124,7 @@ inline int ns_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence con
     throw std::runtime_error(ss.str().c_str());
   }
   
-  auto launch = [](auto& solver, bool ignore_resinc = false) {
+  auto launch = [](auto& solver, bool ignore_resinc = false, bool ignore_seq = false) {
     do {
       // initial solution
       solver.setup_syst();
@@ -152,7 +152,7 @@ inline int ns_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence con
         solver.setup_syst();
         solver.do_newton();
       }
-    }while(solver.increment_seq());
+    }while(!ignore_seq && solver.increment_seq());
   };
   
   std::array<bool, NUM_STAGES> const stage_enabled = bconfig.return_stages();
@@ -164,16 +164,16 @@ inline int ns_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence con
     NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(&bconfig, seq, resolution, outputdir, rank);
     auto spinup(*uniformrot_solver.get_spinup());
     do {
-      launch(uniformrot_solver, spinup.is_set());
+      launch(uniformrot_solver, spinup.is_set(), spinup.is_set());
     }while(uniformrot_solver.increment_spin());
     launch(uniformrot_solver);
   } 
   if(stage_enabled[STAGES::DIFF_ROT]) {
     NS_XCTS_DIFF_ROT<eos_t> diffrot_solver(&bconfig, seq, resolution, outputdir, rank);
-    // auto spinup(*uniformrot_solver.get_spinup());
+    auto spinup(*diffrot_solver.get_spinup());
     do {
       // launch(uniformrot_solver, spinup.is_set());
-      launch(diffrot_solver);
+      launch(diffrot_solver, false, spinup.is_set());
     }while(diffrot_solver.increment_spin());
     launch(diffrot_solver);
   } 
@@ -198,7 +198,7 @@ inline int launch_final_stage_driver(NS_XCTS_BASE::base_config_t& bconfig, ns_se
   std::function<int(config_t&, ns_sequence const &, Res_t&, std::string)> final_stage_driver;
   if(rank == 0)
     std::cout << "Last stage: " << last_stage << '\n';
-  if(seq.is_set() || bconfig.control(CONTROLS::SEQUENCES)) {
+  if(seq.is_set() && bconfig.control(CONTROLS::SEQUENCES)) {
     final_stage_driver = &ns_xcts_seq_driver<eos_t>;
   } else {
     final_stage_driver = &ns_xcts_driver<eos_t>;
