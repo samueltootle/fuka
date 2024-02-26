@@ -162,18 +162,20 @@ inline int ns_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence con
   }
   if(stage_enabled[STAGES::UNIFORM_ROT]) {
     NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(&bconfig, seq, resolution, outputdir, rank);
-    auto spinup(*uniformrot_solver.get_spinup());
+    auto const & spinup(uniformrot_solver.get_spinup());
+    bool check = (spinup && spinup->is_set() && spinup->is_varying());
     do {
-      launch(uniformrot_solver, spinup.is_set(), spinup.is_set());
+      launch(uniformrot_solver, check, check);
     }while(uniformrot_solver.increment_spin());
     launch(uniformrot_solver);
   } 
   if(stage_enabled[STAGES::DIFF_ROT]) {
     NS_XCTS_DIFF_ROT<eos_t> diffrot_solver(&bconfig, seq, resolution, outputdir, rank);
-    auto spinup(*diffrot_solver.get_spinup());
+    auto const & spinup(diffrot_solver.get_spinup());
+    bool check = (spinup && spinup->is_set() && spinup->is_varying());
     do {
       // launch(uniformrot_solver, spinup.is_set());
-      launch(diffrot_solver, false, spinup.is_set());
+      launch(diffrot_solver, false, check);
     }while(diffrot_solver.increment_spin());
     launch(diffrot_solver);
   } 
