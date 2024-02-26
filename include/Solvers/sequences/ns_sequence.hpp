@@ -234,11 +234,15 @@ inline void verify_ns_fixing_values(config_t& bconfig, ns_sequence& seq) {
         seq.set_mass_idx(idx);
         seq.set_mass_val(seq.init());
       }
-    } else if(std::isnan(bconfig.set(seq.mass_idx()))) {
-      std::string msg{seq.mass_str() + " value not found. Check your config.\n"};
-      throw std::runtime_error(msg.c_str());
-    } else {
-      seq.set_mass_val(bconfig(seq.mass_idx()));
+    } 
+
+    if(!seq.is_mass_set()) {
+      if(std::isnan(bconfig.set(seq.mass_idx()))) {
+        std::string msg{seq.mass_str() + " value not found. Check your config.\n"};
+        throw std::runtime_error(msg.c_str());
+      } else {
+        seq.set_mass_val(bconfig(seq.mass_idx()));
+      }
     }
   }
 
@@ -249,11 +253,15 @@ inline void verify_ns_fixing_values(config_t& bconfig, ns_sequence& seq) {
         seq.set_spin_idx(idx);
         seq.set_spin_val(seq.init());
       }
-    } else if(std::isnan(bconfig.set(seq.spin_idx()))) {
-      std::string msg{seq.spin_str() + " value not found. Check your config.\n"};
-      throw std::runtime_error(msg.c_str());
-    } else {
-      seq.set_spin_val(bconfig(seq.spin_idx()));
+    } 
+
+    if(!seq.is_spin_set()) {
+      if(std::isnan(bconfig.set(seq.spin_idx()))) {
+        std::string msg{seq.spin_str() + " value not found. Check your config.\n"};
+        throw std::runtime_error(msg.c_str());
+      } else {
+        seq.set_spin_val(bconfig(seq.spin_idx()));
+      }
     }
   }  
 }
