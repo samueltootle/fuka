@@ -5,7 +5,14 @@
 using namespace Kadath::FUKA_Config;
 namespace Kadath {
 namespace FUKA_Solvers {
+
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#include <filesystem>
 namespace fs = std::filesystem;
+#endif
 
 template<class config_t>
 config_t binary_generate_sequence_config (
@@ -56,7 +63,7 @@ config_t binary_generate_sequence_config (
 
   // make sure directory exists for outputs
   if(outputdir == "./") {
-    std::filesystem::path cwd = std::filesystem::current_path();
+    fs::path cwd = fs::current_path();
     outputdir = cwd.string();
   }
   if(rank == 0)
@@ -98,7 +105,7 @@ config_t generate_sequence_config (config_t & seqconfig, std::string outputdir) 
 
   // make sure BH directory exists for outputs
   if(outputdir == "./") {
-    std::filesystem::path cwd = std::filesystem::current_path();
+    fs::path cwd = fs::current_path();
     outputdir = cwd.string();
   }
   // Activate all controls that are active in the seq config

@@ -24,7 +24,13 @@
 #include "bhns_xcts_solver.hpp"
 #include <array>
 #include <string>
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 /**
  * \addtogroup BHNS_XCTS
@@ -34,7 +40,6 @@
 // using namespace Kadath::FUKA_Config;
 namespace Kadath {
 namespace FUKA_Solvers {
-namespace fs = std::filesystem;
 
 /**
  * bhns_xcts_setup_bin

@@ -27,11 +27,16 @@
 #include <sstream>
 #include <iterator>
 #include <cmath>
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 #include "Configurator/config_binary.hpp"
 #include "bco_utilities.hpp"
 
-namespace fs = std::filesystem;
 using namespace Kadath ;
 using namespace Kadath::FUKA_Config;
 

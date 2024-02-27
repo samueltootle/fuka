@@ -1,12 +1,17 @@
 #include "bbh_xcts_driver.hpp"
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 /**
  * \addtogroup BBH_XCTS
  * \ingroup FUKA
  * @{*/
 
-namespace fs = std::filesystem;
 
 namespace Kadath {
 namespace FUKA_Solvers {

@@ -14,7 +14,7 @@ int ns_isotropic_norot_stationary_driver (config_t& bconfig,
 
   // make sure NS directory exists for outputs
   if(outputdir == "./") {
-    std::filesystem::path cwd = std::filesystem::current_path();
+    fs::path cwd = fs::current_path();
     outputdir = cwd.string();
   }
 

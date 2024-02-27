@@ -19,12 +19,17 @@
 
 #include <cstdlib>
 #include <string>
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 #include <mutex>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
-namespace fs = std::filesystem;
 
 namespace Kadath::FUKA_Solvers {
 static std::mutex copy_mutex;

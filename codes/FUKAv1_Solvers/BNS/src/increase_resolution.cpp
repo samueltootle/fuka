@@ -26,8 +26,13 @@
 #include <math.h>
 #include <sstream>
 #include "mpi.h"
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
 namespace fs = std::filesystem;
+#endif
 using namespace Kadath;
 using namespace Kadath::FUKA_Config;
 using bin_space_t = Space_bin_ns;
