@@ -113,7 +113,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
     auto idx{seq->mass_idx()};
     switch(idx) {
       case BCO_PARAMS::MADM:
-        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
         break;
       case BCO_PARAMS::MB:
