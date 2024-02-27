@@ -5,13 +5,13 @@ namespace Kadath::FUKA_Solvers {
       rank(0.), verbosity(0), ndom(-1), bconfig(nullptr), basis(nullptr), fmet(nullptr), 
         cfields(nullptr), coord_vectors(nullptr), seq(nullptr), 
           resolution(nullptr), syst(nullptr), conformal_factor(nullptr), 
-            lapse(nullptr), shift(nullptr), logh(nullptr), outputdir("") {}
+            lapse(nullptr), shift(nullptr), logh(nullptr), diff_omega(nullptr), outputdir("") {}
 
   inline NS_XCTS_BASE::NS_XCTS_BASE(NS_XCTS_BASE::base_config_t* config_, ns_sequence const & seq_, 
     Parameter_sequence<BCO_PARAMS> const & res_, std::string outputdir_, int const rank_) :
       rank(rank_), verbosity(0), ndom(-1), bconfig(config_), basis(nullptr), fmet(nullptr), 
         cfields(nullptr), coord_vectors(nullptr), syst(nullptr), conformal_factor(nullptr), 
-          lapse(nullptr), shift(nullptr), logh(nullptr), seq(new ns_sequence(seq_)), 
+          lapse(nullptr), shift(nullptr), logh(nullptr), diff_omega(nullptr), seq(new ns_sequence(seq_)), 
             resolution(new Parameter_sequence<BCO_PARAMS>(res_)), outputdir(outputdir_) {
     
     std::array<bool, NUM_STAGES>& stage_enabled = bconfig->return_stages();
@@ -43,6 +43,7 @@ namespace Kadath::FUKA_Solvers {
     lapse.reset(nullptr);
     shift.reset(nullptr);
     logh.reset(nullptr);
+    diff_omega.reset(nullptr);
 
     // Containers
     basis.reset(nullptr);
@@ -186,6 +187,7 @@ namespace Kadath::FUKA_Solvers {
       bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA) = true;
       Kadath::bco_utils::save_to_file(new_space, *bconfig, new_conf, new_lapse, new_shift, new_logh, new_diff_omega);
     }else {
+      bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA) = false;
       Kadath::bco_utils::save_to_file(new_space, *bconfig, new_conf, new_lapse, new_shift, new_logh);
     }    
     }
@@ -213,9 +215,9 @@ namespace Kadath::FUKA_Solvers {
     
     if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)){
       diff_omega.reset(new Scalar(*space.get(), ff1));
-    } else {
+    } else if(solver_stage == ::Kadath::FUKA_Config::STAGES::DIFF_ROT) {
       diff_omega.reset(new Scalar(*space));
-      *diff_omega = (*bconfig)(OMEGA); //((*bconfig)(OMEGA) == 0) ? 1e-8 : (*bconfig)(OMEGA);
+      *diff_omega = (*bconfig)(OMEGA);
       diff_omega->std_base();
     }
     fclose(ff1);
