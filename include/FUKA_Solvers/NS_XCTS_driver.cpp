@@ -200,7 +200,7 @@ inline int launch_final_stage_driver(NS_XCTS_BASE::base_config_t& bconfig, ns_se
   std::function<int(config_t&, ns_sequence const &, Res_t&, std::string)> final_stage_driver;
   if(rank == 0)
     std::cout << "Last stage: " << last_stage << '\n';
-  if(seq.is_set() && bconfig.control(CONTROLS::SEQUENCES)) {
+  if(bconfig.control(CONTROLS::SEQUENCES)) {
     final_stage_driver = &ns_xcts_seq_driver<eos_t>;
   } else {
     final_stage_driver = &ns_xcts_driver<eos_t>;
