@@ -217,7 +217,7 @@ namespace Kadath::FUKA_Solvers {
       diff_omega.reset(new Scalar(*space.get(), ff1));
     } else if(solver_stage == ::Kadath::FUKA_Config::STAGES::DIFF_ROT) {
       diff_omega.reset(new Scalar(*space));
-      *diff_omega = (*bconfig)(OMEGA);
+      *diff_omega = ((*bconfig)(BCO_PARAMS::OMEGA) == 0.) ? 1e-7 : (*bconfig)(BCO_PARAMS::OMEGA);
       diff_omega->std_base();
     }
     fclose(ff1);
