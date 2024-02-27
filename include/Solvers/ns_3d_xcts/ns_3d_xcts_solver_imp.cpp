@@ -276,24 +276,24 @@ if(seq) {
       auto idx{seq->mass_idx()};
       switch(idx) {
         case BCO_PARAMS::HC:
-          bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
-          bconfig->set(BCO_PARAMS::MADM) = Madm;
-          bconfig->set(BCO_PARAMS::MB) = baryonic_mass;
+          bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig.set(BCO_PARAMS::HC));
+          bconfig.set(BCO_PARAMS::MADM) = Madm;
+          bconfig.set(BCO_PARAMS::MB) = baryonic_mass;
           break;
         case BCO_PARAMS::NC:
-          bconfig->set(BCO_PARAMS::HC) = std::exp(loghc);
-          bconfig->set(BCO_PARAMS::MADM) = Madm;
-          bconfig->set(BCO_PARAMS::MB) = baryonic_mass;
+          bconfig.set(BCO_PARAMS::HC) = std::exp(loghc);
+          bconfig.set(BCO_PARAMS::MADM) = Madm;
+          bconfig.set(BCO_PARAMS::MB) = baryonic_mass;
           break;
         case BCO_PARAMS::MB:
-          bconfig->set(BCO_PARAMS::HC) = std::exp(loghc);
-          bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
-          bconfig->set(BCO_PARAMS::MADM) = Madm;
+          bconfig.set(BCO_PARAMS::HC) = std::exp(loghc);
+          bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig.set(BCO_PARAMS::HC));
+          bconfig.set(BCO_PARAMS::MADM) = Madm;
           break;
         default:
-          bconfig->set(BCO_PARAMS::HC) = std::exp(loghc);
-          bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
-          bconfig->set(BCO_PARAMS::MB) = baryonic_mass;
+          bconfig.set(BCO_PARAMS::HC) = std::exp(loghc);
+          bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig.set(BCO_PARAMS::HC));
+          bconfig.set(BCO_PARAMS::MB) = baryonic_mass;
           break;
       }
 
@@ -302,12 +302,12 @@ if(seq) {
         case BCO_PARAMS::CHI:
           break;
         default:
-          bconfig->set(BCO_PARAMS::CHI) = chi;
+          bconfig.set(BCO_PARAMS::CHI) = chi;
           break;
       }
     } else {
-      bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
-      bconfig->set(BCO_PARAMS::CHI) = chi;
+      bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig.set(BCO_PARAMS::HC));
+      bconfig.set(BCO_PARAMS::CHI) = chi;
     }
     bconfig.set(QLMADM) = bconfig(MADM) ;
   }
