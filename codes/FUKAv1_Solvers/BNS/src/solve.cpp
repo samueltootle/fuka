@@ -31,8 +31,13 @@
 #include "Configurator/config_binary.hpp"
 #include "bco_utilities.hpp"
 #include <sstream>
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
 namespace fs = std::filesystem;
+#endif
 
 using namespace Kadath;
 using namespace Kadath::Margherita;

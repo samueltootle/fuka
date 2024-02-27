@@ -2,9 +2,14 @@
 #include "Configurator/config_binary.hpp"
 
 #include <sstream>
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
-using namespace Kadath::FUKA_Config;
 namespace fs = std::filesystem;
+#endif
+using namespace Kadath::FUKA_Config;
 
 int main(int argc, char** argv) {
 

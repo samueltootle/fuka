@@ -3,7 +3,12 @@
 #include "parameter_sequence.hpp"
 #include<mpi.h>
 #include<string>
-#include<filesystem>
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+using namespace std::experimental;
+#else
+#include <filesystem>
+#endif
 #include<algorithm>
 
 /**

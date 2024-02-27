@@ -100,7 +100,7 @@ int bh_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir){
 
   // make sure BH directory exists for outputs
   if(outputdir == "./") {
-    std::filesystem::path cwd = std::filesystem::current_path();
+    fs::path cwd = fs::current_path();
     outputdir = cwd.string();
   }
   if(rank == 0)
