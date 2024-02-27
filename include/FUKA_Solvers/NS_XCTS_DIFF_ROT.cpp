@@ -77,6 +77,7 @@ namespace Kadath::FUKA_Solvers {
     auto adpt_dom = space->get_domain(1);
     double R0 = adpt_dom->get_radius()(*pos_eq);
     double Rp = adpt_dom->get_radius()(*pos_pole);
+
     auto& diffAratio = diffrot_params[DIFFROT_PARAMS::DIFF_ARATIO];
     auto& diffRratio = diffrot_params[DIFFROT_PARAMS::DIFF_RRATIO];
     diffA = diffrot_params[DIFFROT_PARAMS::DIFF_ARATIO] * R0;
@@ -394,12 +395,14 @@ namespace Kadath::FUKA_Solvers {
     }
     spinup.reset(new Parameter_sequence<DIFFROT_PARAMS>("R_ratio",DIFFROT_PARAMS::DIFF_RRATIO));
     spinup->set(axis_ratio, axis_ratio, diffRratio);
-    auto const spinidx = seq->spin_idx();
-    const double dx = 0.1;
+    auto const spinidx = std::get<0>(spinup->get_indices());
+    const double dx = 0.05;
     const int N = int((axis_ratio - diffRratio) / dx);
     spinup->set_N(N);
-    bconfig->set(spinidx) = 1.0;
-    diffrot_params[spinidx] = 1.0;
+    bconfig->set_diffrot(spinidx) = axis_ratio - 1e-7;
+    diffrot_params[spinidx] = axis_ratio - 1e-7;
+    if(rank == 0)
+      cout << *spinup << endl;
   }
 
   template<class eos_t>
@@ -411,7 +414,7 @@ namespace Kadath::FUKA_Solvers {
     double const diffRratio = (*bconfig).template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
     auto x = diffRratio + dx;
     if(spinup->loop_condition(x)) {
-      x = (x > spinup->final()) ? spinup->final() : x;
+      x = (std::fabs(1. - x / spinup->final()) < 1e-4) ? spinup->final() : x; 
       bconfig->set_diffrot(sequence_var_indices) = x;
       return true;
     }
