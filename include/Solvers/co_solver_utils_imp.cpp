@@ -260,9 +260,7 @@ void write_ns_init_setup_tofile_XCTS(Space_spheric_adapted& space, config_t& bco
       auto rho = (all_ltp[ltpQ::RHO] <= 0) ? 1e-15 : all_ltp[ltpQ::RHO];
 
       auto h = EOS<eos_t, eos_var_t::DENSITY>::h_cold__rho(rho);
-      if(pos(0) == 0 && pos(1) == 0 && pos(2) == 0)
-        bconfig.set(HC) = h;
-      logh.set_domain(dom).set(pos) = (h < 1) ? 0. : std::log(h); 
+      logh.set_domain(dom).set(pos) = (h <= 1) ? 0. : std::log(h); 
       lapse.set_domain(dom).set(pos) = all_ltp[ltpQ::LAPSE];
       conf.set_domain(dom).set(pos) = all_ltp[ltpQ::CONF];
     }while(pos.inc());
