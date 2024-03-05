@@ -34,19 +34,18 @@
 
 namespace Kadath {
 namespace FUKA_Solvers {
-namespace bco_u = ::Kadath::bco_utils;
 using config_t = kadath_config_boost<BIN_INFO>;
 
 inline
 void update_bin_config(config_t& bconfig, const Space_bin_bh& space, const Scalar& conf, const Scalar& lapse){
-
+  using namespace ::Kadath::bco_utils;
   if(std::isnan(bconfig.set(OUTER_SHELLS)))
     bconfig.set(OUTER_SHELLS) = 0;
   
   bconfig.set(Q) = bconfig(MCH, BCO1) / bconfig(MCH, BCO2);
 
-  bconfig.set(MIRR,BCO1) = bco_u::mirr_from_mch(bconfig(CHI, BCO1), bconfig(MCH, BCO1));
-  bconfig.set(MIRR,BCO2) = bco_u::mirr_from_mch(bconfig(CHI, BCO2), bconfig(MCH, BCO2));
+  bconfig.set(MIRR,BCO1) = mirr_from_mch(bconfig(CHI, BCO1), bconfig(MCH, BCO1));
+  bconfig.set(MIRR,BCO2) = mirr_from_mch(bconfig(CHI, BCO2), bconfig(MCH, BCO2));
 
   if(!bconfig.control(USE_CONFIG_VARS)) {
     int i = BCO1;
@@ -55,7 +54,7 @@ void update_bin_config(config_t& bconfig, const Space_bin_bh& space, const Scala
       // estimate how small the inner radius should be based on relation
       // between conformal factor and numerical radius.
       // see https://arxiv.org/pdf/0805.4192, eq(64)
-      double conf_inner = bco_u::get_boundary_val(d+1, conf, INNER_BC);
+      double conf_inner = get_boundary_val(d+1, conf, INNER_BC);
       double conf_i_sq  = conf_inner * conf_inner;
       double est_r_div2 = bconfig(MCH, i) / conf_i_sq;
       bconfig.set(RIN, i) =  est_r_div2;
@@ -63,7 +62,7 @@ void update_bin_config(config_t& bconfig, const Space_bin_bh& space, const Scala
       // set this here only for shell bounds to be calculated.
       bconfig.set(RMID, i) = 2. * est_r_div2;
 
-      auto [fmin, fmax] = bco_u::get_field_min_max(lapse, 2, INNER_BC);
+      auto [fmin, fmax] = get_field_min_max(lapse, 2, INNER_BC);
       bconfig.set(FIXED_LAPSE, i) = fmin;
 
       i = BCO2;
@@ -75,6 +74,7 @@ void update_bin_config(config_t& bconfig, const Space_bin_bh& space, const Scala
 
 inline 
 int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
+  using namespace ::Kadath::bco_utils;
   int exit_status = EXIT_SUCCESS;
   std::string kadath_filename = bconfig.space_filename();
 
@@ -102,45 +102,54 @@ int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
   for(int e = 0; e < out_bounds.size(); ++e)
     out_bounds[e] = bconfig(REXT) * (1. + e * 0.25);
 
-  std::vector<double> BH1_bounds(3+bconfig(NSHELLS,BCO1));
-  std::vector<double> BH2_bounds(3+bconfig(NSHELLS,BCO2));
-  bco_u::set_BH_bounds(BH1_bounds, bconfig, BCO1);
-  bco_u::set_BH_bounds(BH2_bounds, bconfig, BCO2);
+  std::vector<int> exclusion_doms{
+    old_space.BH1, 
+    old_space.BH1+1,
+    old_space.BH2, 
+    old_space.BH2+1};
+  auto ddrPsi(compute_ddrPsi(
+    old_space, 
+    old_conf, 
+    Metric_flat(old_space, old_shift.get_basis()), 
+    exclusion_doms, old_space.OUTER
+  ));
+  std::vector<double> BH1_bounds;
+  std::vector<double> BH2_bounds;
+  BH1_bounds = set_arb_bounds(bconfig, BCO1, ddrPsi, old_space.BH1+2, 0.9);
+  BH2_bounds = set_arb_bounds(bconfig, BCO2, ddrPsi, old_space.BH2+2, 0.9);
 
   // Set radius of the excision boundary to the current radius so that the solver
   // starts from the originial solution
-  BH1_bounds[1] = bco_u::get_radius(old_space.get_domain(old_space.BH1+1), OUTER_BC) ;
-  BH2_bounds[1] = bco_u::get_radius(old_space.get_domain(old_space.BH2+1), OUTER_BC) ;
+  BH1_bounds[1] = get_radius(old_space.get_domain(old_space.BH1+1), OUTER_BC) ;
+  BH2_bounds[1] = get_radius(old_space.get_domain(old_space.BH2+1), OUTER_BC) ;
   // end setup bounds
 
   Space_bin_bh space (type_coloc, bconfig(DIST), BH1_bounds, BH2_bounds, out_bounds, bconfig(BIN_RES));
   Base_tensor basis  (space, CARTESIAN_BASIS);
   
   std::cout << "Resolution of old space: ";
-  bco_u::print_constant_space_resolution(old_space);
+  print_constant_space_resolution(old_space);
 
   std::cout << "Resolution of new space: ";
-  bco_u::print_constant_space_resolution(space);
+  print_constant_space_resolution(space);
 
   std::cout << "\nold bounds:" << std::endl;
-  bco_u::print_bounds_from_space(old_space);  
+  print_bounds_from_space(old_space);  
 	
   std::cout << "New bounds:" << std::endl;
-  bco_u::print_bounds_from_space(space);
+  print_bounds_from_space(space);
 
   // needed in some cases, since there is no data in 0,1 and the interpolation can go crazy
-  std::array<const int, 2> old_nuc_doms{old_space.BH1, old_space.BH2};
-  std::array<const Domain_shell_outer_homothetic*, 2> old_outer_homothetic {
-    dynamic_cast<const Domain_shell_outer_homothetic*>(old_space.get_domain(old_space.BH1+1)),
-    dynamic_cast<const Domain_shell_outer_homothetic*>(old_space.get_domain(old_space.BH2+1))
-  };
-  for(auto& i : {0, 1}){
-    // update BH fields to help with interpolation later
-    bco_u::update_adapted_field(old_conf , old_nuc_doms[i]+2, old_nuc_doms[i]+1, old_outer_homothetic[i], OUTER_BC);
-    bco_u::update_adapted_field(old_lapse, old_nuc_doms[i]+2, old_nuc_doms[i]+1, old_outer_homothetic[i], OUTER_BC);
+  auto interp_BH_fields = [&](const int old_nuc_dom) {
+    const Domain_shell_outer_homothetic* old_outer_homothetic =
+      dynamic_cast<const Domain_shell_outer_homothetic*>(old_space.get_domain(old_nuc_dom+1));
+    update_adapted_field(old_conf , old_nuc_dom+2, old_nuc_dom+1, old_outer_homothetic, OUTER_BC);
+    update_adapted_field(old_lapse, old_nuc_dom+2, old_nuc_dom+1, old_outer_homothetic, OUTER_BC);
     for(int j = 1; j < 4; ++j)
-      bco_u::update_adapted_field(old_shift.set(j), old_nuc_doms[i]+2, old_nuc_doms[i]+1, old_outer_homothetic[i], OUTER_BC);
-  }
+      update_adapted_field(old_shift.set(j), old_nuc_dom+2, old_nuc_dom+1, old_outer_homothetic, OUTER_BC);
+  };
+  interp_BH_fields(old_space.BH1);
+  interp_BH_fields(old_space.BH2);
 
   // setup new fields
   Scalar conf(space);
@@ -181,7 +190,7 @@ int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
   shift.std_base();
 
   bconfig.set_filename(outputfile);
-  bco_u::save_to_file(space, bconfig, conf, lapse, shift);
+  save_to_file(space, bconfig, conf, lapse, shift);
   return exit_status;
 }
 /** @}*/
