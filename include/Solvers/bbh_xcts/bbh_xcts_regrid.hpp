@@ -147,7 +147,6 @@ int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
     update_adapted_field(old_lapse, old_nuc_dom+2, old_nuc_dom+1, old_outer_homothetic, OUTER_BC);
     for(int j = 1; j < 4; ++j)
       update_adapted_field(old_shift.set(j), old_nuc_dom+2, old_nuc_dom+1, old_outer_homothetic, OUTER_BC);
-    delete old_outer_homothetic;
   };
   interp_BH_fields(old_space.BH1);
   interp_BH_fields(old_space.BH2);
