@@ -186,8 +186,10 @@ inline int ns_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence con
     bool check = (spinup && spinup->is_set() && spinup->is_varying());
     do {
       // launch(uniformrot_solver, spinup.is_set());
+      // FIXME? launch(diffrot_solver, false, check); ????
       launch(diffrot_solver, true, true);
     }while(diffrot_solver.increment_spin());
+    // FIXME? launch(diffrot_solver);
     launch(diffrot_solver, true, true);
   } 
   
