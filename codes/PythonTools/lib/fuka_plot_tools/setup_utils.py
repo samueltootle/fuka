@@ -64,6 +64,7 @@ def get_reader_args(args, filepathabs):
     bbh = args.bbh,
     bns = args.bns,
     ns = args.ns,
+    ns_diffrot= args.ns_diffrot,
     ns_iso_norot = args.ns_iso_norot,
     ns_iso_diffrot = args.ns_iso_diffrot,
     ns_iso_uniformrot = args.ns_iso_uniformrot,
@@ -75,6 +76,7 @@ def get_reader(filepathabs,
                bns=False,
                bbh=False,
                ns=False,
+               ns_diffrot=False,
                ns_iso_norot=False,
                ns_iso_uniformrot=False,
                ns_iso_diffrot=False,
@@ -95,6 +97,9 @@ def get_reader(filepathabs,
   elif ns:
     from fukaID_readers.ns import ns_reader
     reader = ns_reader(filepathabs)
+  elif ns_diffrot:
+    from fukaID_readers.ns import ns_diffrot_reader
+    reader = ns_diffrot_reader(filepathabs)    
   elif ns_iso_norot:
     from fukaID_readers.ns import ns_isotropic_norot_reader
     reader = ns_isotropic_norot_reader(filepathabs)

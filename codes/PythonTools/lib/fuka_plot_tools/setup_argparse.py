@@ -59,6 +59,7 @@ def add_base_arguments(parser):
   parser.add_argument('--bns' , action='store_true', help='Use BNS ID reader')
   parser.add_argument('--bh'  , action='store_true', help='Use BH ID reader')  
   parser.add_argument('--ns'  , action='store_true', help='Use NS ID reader')
+  parser.add_argument('--ns-diffrot'  , action='store_true', help='Use NS Differential Rotation ID reader')
   parser.add_argument('--ns-iso-norot', action='store_true', help='Use NS Isotropic NOROT ID reader')
   parser.add_argument('--ns-iso-uniformrot', action='store_true', help='Use NS Isotropic UNIFORMROT ID reader')
   parser.add_argument('--ns-iso-diffrot', action='store_true', help='Use NS Isotropic DIFFROT ID reader')
@@ -170,6 +171,7 @@ def get_args(print_vars=False):
     not args.bns and \
     not args.bh and \
     not args.ns and \
+    not args.ns_diffrot and \
     not args.ns_iso_norot and \
     not args.ns_iso_uniformrot and \
     not args.ns_iso_diffrot:
