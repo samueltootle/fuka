@@ -133,7 +133,6 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::uniform_rot_stage
     bool add_Madm_int = true;
     switch(idx) {
       case BCO_PARAMS::MADM:
-        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
         add_Madm_int = false;
         break;
@@ -313,7 +312,6 @@ int ns_isotropic_uniform_rot_solver<eos_t, config_t, space_t>::keplerian_rot_sta
     auto idx{seq->mass_idx()};
     switch(idx) {
       case BCO_PARAMS::MADM:
-        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
         break;
       case BCO_PARAMS::MB:
