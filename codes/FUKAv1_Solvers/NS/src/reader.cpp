@@ -55,7 +55,6 @@ int main(int argc, char **argv) {
   // load the configuration
   std::string ifilename{argv[1]};
   kadath_config_boost<BCO_NS_INFO> bconfig(ifilename);
-
   // setup the EOS
   const double h_cut = bconfig.eos<double>(HCUT);
   const std::string eos_file = bconfig.eos<std::string>(EOSFILE);
@@ -94,7 +93,6 @@ void reader_3d(config_t bconfig) {
   std::string ifilename{bconfig.config_filename()};
   int idx = ifilename.rfind(".");
   std::string spacein = bconfig.config_outputdir()+'/'+ifilename.substr(0,idx)+".dat";
-
   // load domain decomposition and fields from binary file
   FILE* ff1 = fopen(spacein.c_str(), "r") ;
 	Space_spheric_adapted space (ff1) ;
@@ -102,6 +100,11 @@ void reader_3d(config_t bconfig) {
 	Scalar lapse  (space, ff1) ;
   Vector shift  (space, ff1) ;
   Scalar logh   (space, ff1) ;
+
+  Scalar diff_omega(space);
+  if(bconfig.field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)){
+    diff_omega = Scalar(space, ff1);
+  }
 	fclose(ff1) ;
 
   // number of dimensions, a cartesian type of basis and the flat bg metric  
@@ -142,7 +145,11 @@ void reader_3d(config_t bconfig) {
   syst.add_cst("Mb"  , bconfig(MB));
   syst.add_cst("chi" , bconfig(CHI));
   syst.add_cst("Hc"  , loghc);
-  syst.add_cst("ome" , bconfig(OMEGA));
+  if(bconfig.field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)){
+    syst.add_cst("ome", diff_omega);
+  } else {
+    syst.add_cst("ome" , bconfig(OMEGA));
+  }
   syst.add_cst("Madm", bconfig(MADM));
 
   // coordinate dependent fields
