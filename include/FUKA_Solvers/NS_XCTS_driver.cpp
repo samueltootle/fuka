@@ -79,7 +79,6 @@ int ns_xcts_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig, ns_sequence const
       throw std::runtime_error(ss.str().c_str());
     }
   }
-
   // Get non-rotating solution for the given mass or TOV mass if bconfig.control(CONTROLS::ITERATIVE_M)
   ns_xcts_driver<eos_t>(bconfig, seq, resolution, outputdir);
   
@@ -154,12 +153,12 @@ inline int ns_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence con
       }
     }while(!ignore_seq && solver.increment_seq());
   };
-  
   std::array<bool, NUM_STAGES> const stage_enabled = bconfig.return_stages();
   if(stage_enabled[STAGES::NOROT_BC]) {
     NS_XCTS_NOROT<eos_t> norot_solver(&bconfig, seq, resolution, outputdir, rank);
     launch(norot_solver);
   }
+  
   if(stage_enabled[STAGES::UNIFORM_ROT]) {
     NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(&bconfig, seq, resolution, outputdir, rank);
     auto const & spinup(uniformrot_solver.get_spinup());
@@ -168,16 +167,28 @@ inline int ns_xcts_driver (NS_XCTS_BASE::base_config_t& bconfig, ns_sequence con
       launch(uniformrot_solver, check, check);
     }while(uniformrot_solver.increment_spin());
     launch(uniformrot_solver);
-  } 
+  } else if( stage_enabled[STAGES::DIFF_ROT] && bconfig.control(CONTROLS::SEQUENCES)) {
+    auto tmp_seq(seq);
+    tmp_seq.set_spin_idx(BCO_PARAMS::CHI);
+    tmp_seq.set_spin_val(0.1);
+    bconfig.set(BCO_PARAMS::CHI) = tmp_seq.spin_val();
+    NS_XCTS_UNIFORM_ROT<eos_t> uniformrot_solver(&bconfig, tmp_seq, resolution, outputdir, rank);
+    auto const & spinup(uniformrot_solver.get_spinup());
+    bool check = (spinup && spinup->is_set() && spinup->is_varying());
+    do {
+      launch(uniformrot_solver, check, check);
+    } while(uniformrot_solver.increment_spin());
+  }
+
   if(stage_enabled[STAGES::DIFF_ROT]) {
     NS_XCTS_DIFF_ROT<eos_t> diffrot_solver(&bconfig, seq, resolution, outputdir, rank);
     auto const & spinup(diffrot_solver.get_spinup());
     bool check = (spinup && spinup->is_set() && spinup->is_varying());
     do {
       // launch(uniformrot_solver, spinup.is_set());
-      launch(diffrot_solver, false, check);
+      launch(diffrot_solver, true, true);
     }while(diffrot_solver.increment_spin());
-    launch(diffrot_solver);
+    launch(diffrot_solver, true, true);
   } 
   
   MPI_Barrier(MPI_COMM_WORLD);
