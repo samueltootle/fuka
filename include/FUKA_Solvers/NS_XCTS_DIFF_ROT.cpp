@@ -69,9 +69,9 @@ namespace Kadath::FUKA_Solvers {
     //     EXIT_SUCCESS : RELOAD_FILE;
     // }
     
+    initialize_diffrot_params();
     // Update vector fields
     update_fields_co(*cfields, *coord_vectors,{}, 0.);
-    initialize_diffrot_params();
 
     // Initialize KEH parameters
     auto adpt_dom = space->get_domain(1);
@@ -309,8 +309,9 @@ namespace Kadath::FUKA_Solvers {
               << FORMAT << "R: " << rs[0] << " " << rs[1] 
                         << " [" << rs[0] / rs[1] << "]" << std::endl;
     std::cout << FORMAT << "Jadm: " << J << std::endl
-              << FORMAT << "Chi: " << J / Madm / Madm << " [" << (*bconfig)(CHI) << "]\n"
-              << FORMAT << "Omega: " << (*bconfig)(OMEGA) << std::endl;
+              << FORMAT << "Chi: " << J / Madm / Madm << " [" << bconfig->set(BCO_PARAMS::CHI) << "]\n"
+              << FORMAT << "Omega: " << (*bconfig)(OMEGA) << std::endl
+              << FORMAT << "diff_A: " << diffA << std::endl;
     std::cout.flags(f);
     #undef FORMAT
     std::cout << "=======================================" << "\n\n";
@@ -318,9 +319,6 @@ namespace Kadath::FUKA_Solvers {
 
   template<class eos_t>
   void NS_XCTS_DIFF_ROT<eos_t>::update_config_quantities() {
-
-    auto rs = bco_utils::get_rmin_rmax(*space, 1);
-    bconfig->set(BCO_PARAMS::RMID) = rs[0];
 
     // compute the ADM mass as surface integral at infinity
     Val_domain integMadm(syst->give_val_def("intMadm")()(ndom - 1));
@@ -352,27 +350,16 @@ namespace Kadath::FUKA_Solvers {
           bconfig->set(BCO_PARAMS::MB) = baryonic_mass;
           break;
         case BCO_PARAMS::MB:
-          bconfig->set(BCO_PARAMS::HC) = std::exp(loghc);
           bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
           bconfig->set(BCO_PARAMS::MADM) = Madm;
           break;
         default:
-          bconfig->set(BCO_PARAMS::HC) = std::exp(loghc);
           bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
           bconfig->set(BCO_PARAMS::MB) = baryonic_mass;
           break;
       }
-
-      idx = seq->spin_idx();
-      switch(idx) {
-        case BCO_PARAMS::CHI:
-          break;
-        default:
-          bconfig->set(BCO_PARAMS::CHI) = chi;
-          break;
-      }
+      bconfig->set(BCO_PARAMS::CHI) = chi;
     } else {
-      bconfig->set(BCO_PARAMS::HC) = std::exp(loghc);
       bconfig->set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig->set(BCO_PARAMS::HC));
       bconfig->set(BCO_PARAMS::MB) = baryonic_mass;
       bconfig->set(BCO_PARAMS::CHI) = chi;
@@ -390,17 +377,18 @@ namespace Kadath::FUKA_Solvers {
     double const diffRratio = diffrot_params[DIFFROT_PARAMS::DIFF_RRATIO];
 
     // no reason to spinup if the solution is already sufficiently rotating
-    if( std::fabs(1. - axis_ratio / diffRratio) < 0.1){
+    if( (diffRratio < 0.7) || (1. - axis_ratio / diffRratio > 0)){
       return;
     }
+    return;
     spinup.reset(new Parameter_sequence<DIFFROT_PARAMS>("R_ratio",DIFFROT_PARAMS::DIFF_RRATIO));
-    spinup->set(axis_ratio, axis_ratio, diffRratio);
+    spinup->set(0.7, 0.7, diffRratio);
     auto const spinidx = std::get<0>(spinup->get_indices());
     const double dx = 0.05;
-    const int N = int((axis_ratio - diffRratio) / dx);
+    const int N = std::ceil((axis_ratio - diffRratio) / dx) + 1;
     spinup->set_N(N);
-    bconfig->set_diffrot(spinidx) = axis_ratio - 1e-7;
-    diffrot_params[spinidx] = axis_ratio - 1e-7;
+    diffrot_params[spinidx] = axis_ratio - 1e-6;
+    bconfig->set_diffrot(spinidx) = diffrot_params[spinidx];
     if(rank == 0)
       cout << *spinup << endl;
   }
@@ -412,8 +400,9 @@ namespace Kadath::FUKA_Solvers {
     auto sequence_var_indices = spinup->get_indices();
     auto const & dx = spinup->step_size();
     double const diffRratio = (*bconfig).template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
-    auto x = diffRratio + dx;
+    auto x = diffRratio;
     if(spinup->loop_condition(x)) {
+      x += dx;
       x = (std::fabs(1. - x / spinup->final()) < 1e-4) ? spinup->final() : x; 
       bconfig->set_diffrot(sequence_var_indices) = x;
       return true;
