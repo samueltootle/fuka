@@ -29,6 +29,7 @@ namespace Kadath::FUKA_Solvers {
   }
 
   inline void NS_XCTS_BASE::save_to_file() const {
+    bconfig->set_outputdir(outputdir);
     if(diff_omega) {
       bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA) = true;
       Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift, *logh, *diff_omega);
@@ -111,7 +112,7 @@ namespace Kadath::FUKA_Solvers {
 
     // Update config
     bconfig->set(BCO_PARAMS::RIN)  = 0.5 * r_min;
-    bconfig->set(BCO_PARAMS::ROUT) = 1.5 * r_max;
+    bconfig->set(BCO_PARAMS::ROUT) = bco_utils::gold_ratio * r_max;
     bconfig->set(BCO_PARAMS::RMID) = r_max;
     // end update config
     
@@ -268,7 +269,9 @@ namespace Kadath::FUKA_Solvers {
     bool endloop = false;
     int ite = 1;
     double conv;
-  
+    if (rank == 0) {
+      print_diagnostics(ite-1, std::nan("1"));
+    }
     // solve until convergence is achieved
     while (!endloop) {  
       // do exactly one newton step, given the system above
@@ -289,7 +292,7 @@ namespace Kadath::FUKA_Solvers {
       }
   
       // update all coordinate fields, in case the domain extents have changed
-      update_fields_co(*cfields, *coord_vectors, {}, 0.);
+      update_fields_co(*cfields, *coord_vectors, {}, 0., syst);
 
       ite++;
       check_max_iter_exceeded(*this, ite, conv);
