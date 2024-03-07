@@ -374,7 +374,8 @@ namespace Kadath::FUKA_Solvers {
     
     // No need to spinup if we're computing a sequence of
     // spinning NS starting from ~zero
-    if(ns_seq_is_spin_fixing(*seq) && std::fabs(seq->init()) < 1e-2) {
+    if((ns_seq_is_spin_fixing(*seq) && std::fabs(seq->init()) < 1e-2)
+      || ((seq->spin_idx() == BCO_PARAMS::CHI) && (std::fabs(seq->spin_val()) < 0.2))) {
       return;
     } else if(ns_seq_is_spin_fixing(*seq)) {
       finalspin = seq->init();
@@ -410,8 +411,9 @@ namespace Kadath::FUKA_Solvers {
     }
     auto sequence_var_indices = spinup->get_indices();
     auto const & dx = spinup->step_size();
-    auto x = bconfig->set(sequence_var_indices) + dx;
+    auto x = bconfig->set(sequence_var_indices);
     if(spinup->loop_condition(x)) {
+      x += dx;
       x = (std::fabs(1. - x / spinup->final()) < 1e-4) ? spinup->final() : x;
       bconfig->set(sequence_var_indices) = x;
       return true;
