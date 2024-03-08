@@ -95,11 +95,13 @@ void ISO_XCTS_convert(config_t& in_bconfig) {
     shift.annule_hard();
     
     auto convert_fields= [&](const size_t dom) {
-        Index pos(space.get_domain(dom)->get_nbr_points());
+        auto npts = space.get_domain(dom)->get_nbr_points();
+        Index pos(npts);
         Val_domain xx = space.get_domain(dom)->get_cart(1);
         Val_domain yy = space.get_domain(dom)->get_cart(2);
         Val_domain zz = space.get_domain(dom)->get_cart(3);
         do {
+            if(!(dom == ndom-1 && pos(0) == npts(0) - 1)) {
             auto x = xx(pos);
             auto y = yy(pos);
             auto z = zz(pos);
@@ -126,10 +128,17 @@ void ISO_XCTS_convert(config_t& in_bconfig) {
             shift.set(1).set_domain(dom).set(pos) = all_data[input_reader_t::OUTPUT_VARS::BETA1];
             shift.set(2).set_domain(dom).set(pos) = all_data[input_reader_t::OUTPUT_VARS::BETA2];
             shift.set(3).set_domain(dom).set(pos) = all_data[input_reader_t::OUTPUT_VARS::BETA3];
-
+            } else {
+              lapse.set_domain(dom).set(pos)= 1.;
+              conf.set_domain(dom).set(pos) = 1.;
+              shift.set(1).set_domain(dom).set(pos) = 0;
+              shift.set(2).set_domain(dom).set(pos) = 0;
+              shift.set(3).set_domain(dom).set(pos) = 0;
+              logh.set_domain(dom).set(pos) = 0.;
+            }
         }while(pos.inc());
     };
-    for(int i = 0; i < 3; ++i)
+    for(int i = 0; i < ndom; ++i)
         convert_fields(i);
 
     for (int d = 2; d < ndom; ++d)
