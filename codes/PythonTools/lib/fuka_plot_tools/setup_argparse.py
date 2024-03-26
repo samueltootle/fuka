@@ -73,6 +73,7 @@ def add_plot_arguments(parser):
   parser.add_argument('--vmax', type=float, help='norm max', default=None)
   parser.add_argument('--vmin', type=float, help='norm min', default=None)
   parser.add_argument('--log', action='store_true', help='toggle log scaling')
+  parser.add_argument('--annotate', action='store_true', help='toggle annotate grid function name')
   parser.add_argument('--cbar', action='store_true', help='toggle colorbar')
   parser.add_argument(
     '--extent', 
@@ -96,9 +97,10 @@ def add_plot_arguments(parser):
         type=str,
     )
   parser.add_argument(
-    '--cbar_bottom', 
-    action='store_true', 
-    help='set if colorbar is at the bottom instead of the top. only useful for multiple 2D plots')
+    '--cbar-location', 
+    type=str,
+    default="right",
+    help='Set colorbar location, default: right')
 
   # FIXME - add l2norm
   # parser.add_argument('--L2', action='store_true', help='only compute L2norm')
