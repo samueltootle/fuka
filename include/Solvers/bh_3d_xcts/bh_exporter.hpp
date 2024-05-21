@@ -60,7 +60,29 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
     {"k22"  , OUTPUT_VARS::K22},
     {"k23"  , OUTPUT_VARS::K23},
     {"k33"  , OUTPUT_VARS::K33}
-  };  
+  };
+
+  std::vector<CFMS_BH_Exporter::XCTS_VARS> xcts_solution_indicies{
+    XCTS_PSI,
+    XCTS_ALPHA,
+    XCTS_BETA1,
+    XCTS_BETA2,
+    XCTS_BETA3
+  };
+
+  std::vector<CFMS_BH_Exporter::XCTS_VARS> xcts_all_indicies{
+    XCTS_PSI,
+    XCTS_ALPHA,
+    XCTS_BETA1,
+    XCTS_BETA2,
+    XCTS_BETA3,
+    XCTS_A11,
+    XCTS_A12,
+    XCTS_A13,
+    XCTS_A22,
+    XCTS_A23,
+    XCTS_A33
+  };
 
   using interp_ary_t = std::array<double, NUM_XCTS_VARS>; 
   using output_ary_t = std::array<double, NUM_OUTPUT_VARS>; 
@@ -112,11 +134,13 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
         conformal_factor(nullptr), lapse(nullptr), shift(nullptr) {
 
     load_solution_from_file();
+    populate_quants();
+    // Fill outer adapted domain with smooth junk
+    export_utils::partial_fill_excision(*this, 1, 2);
+
     extract_computed_grid_functions();
     populate_quants();
     
-    // Fill outer adapted domain with smooth junk
-    export_utils::partial_fill_excision(*this, 1, 2);
     // Store origin value for use by excision filling of nucleus dom
     this->export_pointwise(0., 0., 0.);
     std::copy(quant_vals.begin(), quant_vals.end(), quant_vals_origin.begin());
@@ -129,6 +153,10 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
 
   public:
 
+  interp_ary_t interpolate_pointwise_subset(double const & x, double const & y, double const & z,
+    std::vector<XCTS_VARS> slice, double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
+  interp_ary_t interpolate_pointwise__solution_gfs(double const & x, double const & y, double const & z,
+    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
   interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z,
     double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
   

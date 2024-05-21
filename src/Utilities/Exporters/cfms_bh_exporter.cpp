@@ -68,17 +68,21 @@ namespace Kadath::FUKA_Solvers {
     quants[XCTS_VARS::XCTS_BETA2] = std::cref((*shift)(2));
     quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
-    export_utils::add_tensor_refs(quants, {
-      XCTS_VARS::XCTS_A11, 
-      XCTS_VARS::XCTS_A12, 
-      XCTS_VARS::XCTS_A13, 
-      XCTS_VARS::XCTS_A22, 
-      XCTS_VARS::XCTS_A23, 
-      XCTS_VARS::XCTS_A33}, *A);
+    if(A) {
+      export_utils::add_tensor_refs(quants, {
+        XCTS_VARS::XCTS_A11, 
+        XCTS_VARS::XCTS_A12, 
+        XCTS_VARS::XCTS_A13, 
+        XCTS_VARS::XCTS_A22, 
+        XCTS_VARS::XCTS_A23, 
+        XCTS_VARS::XCTS_A33}, *A);
+    }
   }
 
-  CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z,
-    double const interpolation_offset, int const interp_order, double const delta_r_rel) {
+  CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise_subset(double const & x, double const & y, double const & z,
+    std::vector<CFMS_BH_Exporter::XCTS_VARS> slice, double const interpolation_offset, int const interp_order, double const delta_r_rel) {
+    
+    quant_vals.fill(0);
 
     // interpolation_factor determines which region we interpolate from.
     // When we fill the nucleus, we fill starting at 0.85 * r_ah after prefilling is complete
@@ -90,44 +94,41 @@ namespace Kadath::FUKA_Solvers {
 
     double r = std::sqrt(x * x + r2yz);
 
-    // lambda function for filling excised region
-    auto interp_f = [&](auto& ah_r, auto& extrap_r, auto bh_ori) {
-      // Avoid division by "0"
-      extrap_r = (extrap_r <= 1e-12) ? 1e-12 : extrap_r;
-      double x_shifted = (x == 0.) ? 1e-14 : x;
-      double theta = std::acos(z / extrap_r);
-      
-      // atan2 is needed here
-      double phi = std::atan2(y, (x_shifted - bh_ori)); 
-
-      // Where the filling takes places
-      if(export_ready) {
-        export_utils::spherical_turduck_fit_origin(
-          quants, quant_vals, quant_vals_origin, interp_order, delta_r_rel, interpolation_offset, 
-          ah_r, extrap_r, theta, phi, 2, bh_ori
-        );
-      } else {
-        export_utils::spherical_turduck(
-          quants, quant_vals, interp_order, delta_r_rel, interpolation_offset, 
-          ah_r, extrap_r, theta, phi, 2, bh_ori
-        );
-      }
-      
-    };
+    double const bh_ori = 0.0;
 
     if (r <= (1. + interpolation_offset) * rbh) {
-      interp_f(rbh, r, 0.);
+      if(export_ready) {
+        export_utils::spherical_turduck_fit_origin__all_gfs(quants, quant_vals, quant_vals_origin, slice, x, y, z, rbh, r,
+          interp_order, delta_r_rel, interpolation_offset, bh_ori
+        );
+      } else {
+        export_utils::spherical_turduck__all_gfs(quants, quant_vals, slice, x, y, z, rbh, r,
+          interp_order, delta_r_rel, interpolation_offset, bh_ori
+        );
+      }
     } else { 
       Point abs_coords(ndim);
       abs_coords.set(1) = x;
       abs_coords.set(2) = y;
       abs_coords.set(3) = z;
 
-      for (size_t k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
+      for (const auto k : slice) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
       }
     }
     return quant_vals;
+  }
+
+  CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z,
+    double const interpolation_offset, int const interp_order, double const delta_r_rel) {
+
+    return interpolate_pointwise_subset(x, y, z, xcts_all_indicies, interpolation_offset, interp_order, delta_r_rel);
+  }
+
+  CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise__solution_gfs(double const & x, double const & y, double const & z,
+    double const interpolation_offset, int const interp_order, double const delta_r_rel) {
+
+    return interpolate_pointwise_subset(x, y, z, xcts_solution_indicies, interpolation_offset, interp_order, delta_r_rel);
   }
 
   CFMS_BH_Exporter::output_ary_t CFMS_BH_Exporter::export_pointwise(double const & x, double const & y, double const & z,
