@@ -307,5 +307,53 @@ void spherical_turduck_fit_origin(fields_ary_t& quants, quant_ary_t& quant_vals,
       lagrange_gen_k(order_, r_, r_points.data(), vals.data());
   }
 }
+
+template<class bh_exporter_t>
+void partial_fill_excision(bh_exporter_t& bh_exporter, const int dom_to_fill, const int src_dom) {
+  using namespace Kadath;
+  
+  // We set this to false to ensure that bh_exporter.interpolate_pointwise will not fit to origin
+  bh_exporter.set__export_ready(false);
+  
+  auto dom = bh_exporter.get_space()->get_domain(dom_to_fill);
+  auto npts = dom->get_nbr_points();
+  
+  Index pos(npts);
+  Val_domain xx = dom->get_cart(1);
+  Val_domain yy = dom->get_cart(2);
+  Val_domain zz = dom->get_cart(3);
+
+  auto& lapse = bh_exporter.get_lapse();
+  auto& conf  = bh_exporter.get_conformal_factor();
+  auto& shift = bh_exporter.get_shift();
+
+  do {
+    if(pos(0) < npts(0)-1){
+      double x = xx(pos);
+      double y = yy(pos);
+      double z = zz(pos);
+      bh_exporter.interpolate_pointwise(x, y, z);
+      auto qv = bh_exporter.get__quant_vals();
+      conf->set_domain(dom_to_fill).set(pos) = qv[bh_exporter_t::XCTS_VARS::XCTS_PSI];
+      lapse->set_domain(dom_to_fill).set(pos) = qv[bh_exporter_t::XCTS_VARS::XCTS_ALPHA];
+      
+      shift->set(1).set_domain(dom_to_fill).set(pos) = qv[bh_exporter_t::XCTS_VARS::XCTS_BETA1];
+      shift->set(2).set_domain(dom_to_fill).set(pos) = qv[bh_exporter_t::XCTS_VARS::XCTS_BETA2];
+      shift->set(3).set_domain(dom_to_fill).set(pos) = qv[bh_exporter_t::XCTS_VARS::XCTS_BETA3];
+    } else {
+      Index bcpos(pos);
+      bcpos.set(0) = 0;
+      conf->set_domain(dom_to_fill).set(pos) = conf->set_domain(src_dom)(bcpos);
+      lapse->set_domain(dom_to_fill).set(pos) = lapse->set_domain(src_dom)(bcpos);
+      for(int i = 1; i <=3; ++i) {
+        shift->set(i).set_domain(dom_to_fill).set(pos) = shift->set(i).set_domain(src_dom)(bcpos);
+      }
+    }
+  }while(pos.inc());
+
+  conf->std_base();
+  lapse->std_base();
+  shift->std_base();
+}
 /** @}*/
 }
