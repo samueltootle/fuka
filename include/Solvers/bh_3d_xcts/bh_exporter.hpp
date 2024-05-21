@@ -98,8 +98,10 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
   void populate_quants();
 
   public:
+  interp_ary_t const & get__quant_vals() const { return quant_vals; }
   std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
-  bool is_export_ready() const { return export_ready; }  
+  bool is_export_ready() const { return export_ready; }
+  void set__export_ready(bool v) { export_ready = v; }
   const int & get_ndim() const { return ndim; }
 
   CFMS_BH_Exporter() : Exporter<config_t, space_t>(),
@@ -113,10 +115,9 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
     extract_computed_grid_functions();
     populate_quants();
     
-    // This is to avoid a "bug" where "something" in kadath is not
-    // correctly initialized prior to copying to other threads resulting
-    // in undefined behavior.  By running the interpolator once, this
-    // bug seems to be avoided.
+    // Fill outer adapted domain with smooth junk
+    export_utils::partial_fill_excision(*this, 1, 2);
+    // Store origin value for use by excision filling of nucleus dom
     this->export_pointwise(0., 0., 0.);
     std::copy(quant_vals.begin(), quant_vals.end(), quant_vals_origin.begin());
     export_ready = true;

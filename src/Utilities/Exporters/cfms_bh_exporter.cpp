@@ -80,9 +80,11 @@ namespace Kadath::FUKA_Solvers {
   CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z,
     double const interpolation_offset, int const interp_order, double const delta_r_rel) {
 
-    // Initial guess of the excision radius - needed for filling
-    // FIXME make excision generic
-    double rbh = 0.85 * bco_utils::get_radius(space->get_domain(2), INNER_BC);
+    // interpolation_factor determines which region we interpolate from.
+    // When we fill the nucleus, we fill starting at 0.85 * r_ah after prefilling is complete
+    // otherwise interpolation_factor is 1 (e.g. the excision radius)
+    double interpolation_factor = (export_ready) ? 0.85 : 1. ;
+    double rbh = interpolation_factor * bco_utils::get_radius(space->get_domain(2), INNER_BC);
 
     double r2yz = y * y + z * z;
 
