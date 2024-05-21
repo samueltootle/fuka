@@ -197,16 +197,14 @@ void add_tensor_refs(qarray_t& quants, std::vector<int>&& ary_indicies, Kadath::
  * excision surface before filling excision
  * 
  * [input] quant_vals: vector to be manipulated for alp, psi, bet, and kij
- * [input] KMQ_vals: vector to be manipulated for gij
  * [input] order_: Interpolation order
  * [input] dr_: spacing of points to use in interpolation
  * [input] offset_: offset from excision to start interpolation
  * [input] r_: radius to evaluate
  * [input] r_bound_: initial guess of boundary radius
  * [input] theta_: angle from z to xy plane [0, pi]
- * [input] theta_: angle inside xy plane [0, 2pi]
+ * [input] phi_: angle inside xy plane [0, 2pi]
  * [input] dom_: dom just outside excision surface
- * [input] extrapolate_metric: toggle whether gij is extrapolated inside
  * [input] xshift_: coordinate x shift (for binaries)
  */
 template<class T, class quant_ary_t, class fields_ary_t, size_t N = NUM_VQUANTS>
@@ -241,6 +239,66 @@ void spherical_turduck(fields_ary_t& quants, quant_ary_t& quant_vals,
       }
     } 
     for (int j = 0; j < order_; j++) {
+      auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
+      vals[j] = quants[k].get().val_point(p);
+    }
+    
+    quant_vals[k] =
+      lagrange_gen_k(order_, r_, r_points.data(), vals.data());
+  }
+}
+
+/**
+ * spherical_turduck_fit_origin
+ * 
+ * We interpolate radially in 3D - f(r, theta, phi) - for an arbitrary
+ * excision surface before filling excision but matching to the provided
+ * values (quant_vals_origin) for the grid functions at the origin.
+ * 
+ * [input] quant_vals: vector to be manipulated for alp, psi, bet, and kij
+ * [input] quant_vals_origin: values of grid functions at the origin to be fit to
+ * [input] order_: Interpolation order
+ * [input] dr_: spacing of points to use in interpolation
+ * [input] offset_: offset from excision to start interpolation
+ * [input] r_: radius to evaluate
+ * [input] r_bound_: initial guess of boundary radius
+ * [input] theta_: angle from z to xy plane [0, pi]
+ * [input] phi_: angle inside xy plane [0, 2pi]
+ * [input] dom_: dom just outside excision surface
+ * [input] xshift_: coordinate x shift (for binaries)
+ */
+template<class T, class quant_ary_t, class fields_ary_t, size_t N = NUM_VQUANTS>
+void spherical_turduck_fit_origin(fields_ary_t& quants, quant_ary_t& quant_vals, quant_ary_t& quant_vals_origin,
+  int const order_, T const dr_, T const offset_, T const r_bound_, 
+  T const r_, T const theta_, T const phi_, const int dom_, 
+  T const xshift_) {
+  
+  //auto& space = quants[0].get().get_space();
+  T const ah_r = r_bound_;
+  
+  std::vector<T> r_points(order_);
+  r_points[0] = 0.;
+  for (int j = 1; j < order_; j++) {
+    r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
+  }
+
+  for (size_t k = 0; k < N; ++k) {
+    std::vector<T> vals(order_);
+    vals[0] = quant_vals_origin[k];
+
+    // Avoid computations if fluid quantities are encountered
+    // Necessary only for BHNS
+    if constexpr(N == NUM_QUANTS) {
+      if(k == H) {
+        quant_vals[k] = 0;
+        continue;
+      }
+      else if(k == UX || k == UY || k == UZ) {
+        quant_vals[k] = 0;
+        continue;
+      }
+    } 
+    for (int j = 1; j < order_; j++) {
       auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
       vals[j] = quants[k].get().val_point(p);
     }
