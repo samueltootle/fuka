@@ -308,6 +308,163 @@ void spherical_turduck_fit_origin(fields_ary_t& quants, quant_ary_t& quant_vals,
   }
 }
 
+/**
+ * spherical_turduck
+ * 
+ * We interpolate radially in 3D - f(r, theta, phi) - for an arbitrary
+ * excision surface before filling excision
+ * 
+ * [input] quant_vals: vector to be manipulated for alp, psi, bet, and kij
+ * [input] order_: Interpolation order
+ * [input] dr_: spacing of points to use in interpolation
+ * [input] offset_: offset from excision to start interpolation
+ * [input] r_: radius to evaluate
+ * [input] r_bound_: initial guess of boundary radius
+ * [input] theta_: angle from z to xy plane [0, pi]
+ * [input] phi_: angle inside xy plane [0, 2pi]
+ * [input] dom_: dom just outside excision surface
+ * [input] xshift_: coordinate x shift (for binaries)
+ */
+template<class quant_ary_t, class fields_ary_t>
+void spherical_turduck__gf(fields_ary_t& quants, quant_ary_t& quant_vals,
+  int const order_, std::vector<double> r_points,
+  double const r_, double const theta_, double const phi_, int const gf, double const xshift_) {
+
+  std::vector<double> vals(order_);
+
+  for (int j = 0; j < order_; j++) {
+    auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
+    vals[j] = quants[gf].get().val_point(p);
+  }
+  
+  quant_vals[gf] =
+    lagrange_gen_k(order_, r_, r_points.data(), vals.data());
+}
+
+/**
+ * spherical_turduck
+ * 
+ * We interpolate radially in 3D - f(r, theta, phi) - for an arbitrary
+ * excision surface before filling excision
+ * 
+ * [input] quant_vals: vector to be manipulated for alp, psi, bet, and kij
+ * [input] order_: Interpolation order
+ * [input] dr_: spacing of points to use in interpolation
+ * [input] offset_: offset from excision to start interpolation
+ * [input] r_: radius to evaluate
+ * [input] r_bound_: initial guess of boundary radius
+ * [input] theta_: angle from z to xy plane [0, pi]
+ * [input] phi_: angle inside xy plane [0, 2pi]
+ * [input] dom_: dom just outside excision surface
+ * [input] xshift_: coordinate x shift (for binaries)
+ */
+template<class quant_ary_t, class fields_ary_t, class slice_t>
+void spherical_turduck__all_gfs(fields_ary_t& quants, quant_ary_t& quant_vals, slice_t& slice,
+  double const x, double const y, double const z, double const ah_r, double extrap_r,
+  int const order_, double const dr_, double const offset_, double const bh_ori) {
+
+  // Avoid division by "0"
+  extrap_r = (extrap_r <= 1e-12) ? 1e-12 : extrap_r;
+  double x_shifted = (x == 0.) ? 1e-14 : x;
+  double theta = std::acos(z / extrap_r);
+  
+  // atan2 is needed here
+  double phi = std::atan2(y, (x_shifted - bh_ori)); 
+
+  std::vector<double> r_points(order_);
+  for (int j = 0; j < order_; j++) {
+    r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
+  }
+
+  for(auto & gf : slice) {
+    // Where the filling takes places
+    export_utils::spherical_turduck__gf(
+      quants, quant_vals, order_, r_points, extrap_r, theta, phi, gf, bh_ori
+    );
+  }
+}
+
+
+/**
+ * spherical_turduck_fit_origin
+ * 
+ * We interpolate radially in 3D - f(r, theta, phi) - for an arbitrary
+ * excision surface before filling excision but matching to the provided
+ * values (quant_vals_origin) for the grid functions at the origin.
+ * 
+ * [input] quant_vals: vector to be manipulated for alp, psi, bet, and kij
+ * [input] quant_vals_origin: values of grid functions at the origin to be fit to
+ * [input] order_: Interpolation order
+ * [input] dr_: spacing of points to use in interpolation
+ * [input] offset_: offset from excision to start interpolation
+ * [input] r_: radius to evaluate
+ * [input] r_bound_: initial guess of boundary radius
+ * [input] theta_: angle from z to xy plane [0, pi]
+ * [input] phi_: angle inside xy plane [0, 2pi]
+ * [input] xshift_: coordinate x shift (for binaries)
+ */
+template<class quant_ary_t, class fields_ary_t>
+void spherical_turduck_fit_origin__gf(fields_ary_t& quants, quant_ary_t& quant_vals, quant_ary_t& quant_vals_origin,
+  int const order_, std::vector<double> r_points,
+  double const r_, double const theta_, double const phi_, int const gf, double const xshift_) {
+
+  std::vector<double> vals(order_);
+  vals[0] = quant_vals_origin[gf];
+
+  for (int j = 1; j < order_; j++) {
+    auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
+    vals[j] = quants[gf].get().val_point(p);
+  }
+  
+  quant_vals[gf] =
+    lagrange_gen_k(order_, r_, r_points.data(), vals.data());
+}
+
+/**
+ * spherical_turduck
+ * 
+ * We interpolate radially in 3D - f(r, theta, phi) - for an arbitrary
+ * excision surface before filling excision
+ * 
+ * [input] quant_vals: vector to be manipulated for alp, psi, bet, and kij
+ * [input] order_: Interpolation order
+ * [input] dr_: spacing of points to use in interpolation
+ * [input] offset_: offset from excision to start interpolation
+ * [input] r_: radius to evaluate
+ * [input] r_bound_: initial guess of boundary radius
+ * [input] theta_: angle from z to xy plane [0, pi]
+ * [input] phi_: angle inside xy plane [0, 2pi]
+ * [input] dom_: dom just outside excision surface
+ * [input] xshift_: coordinate x shift (for binaries)
+ */
+template<class quant_ary_t, class fields_ary_t, class slice_t>
+void spherical_turduck_fit_origin__all_gfs(fields_ary_t& quants, quant_ary_t& quant_vals, quant_ary_t& quant_vals_origin,
+  slice_t& slice, double const x, double const y, double const z, double const ah_r, double extrap_r,
+  int const order_, double const dr_, double const offset_, double const bh_ori) {
+
+  // Avoid division by "0"
+  extrap_r = (extrap_r <= 1e-12) ? 1e-12 : extrap_r;
+  double x_shifted = (x == 0.) ? 1e-14 : x;
+  double theta = std::acos(z / extrap_r);
+  
+  // atan2 is needed here
+  double phi = std::atan2(y, (x_shifted - bh_ori)); 
+
+  std::vector<double> r_points(order_);
+  r_points[0] = 0.;
+  for (int j = 1; j < order_; j++) {
+    r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
+  }
+
+  for(auto & gf : slice) {
+    export_utils::spherical_turduck_fit_origin__gf(
+      quants, quant_vals, quant_vals_origin, order_, r_points, 
+      extrap_r, theta, phi, gf, bh_ori
+    );
+  }
+}
+
+
 template<class bh_exporter_t>
 void partial_fill_excision(bh_exporter_t& bh_exporter, const int dom_to_fill, const int src_dom) {
   using namespace Kadath;
@@ -332,7 +489,7 @@ void partial_fill_excision(bh_exporter_t& bh_exporter, const int dom_to_fill, co
       double x = xx(pos);
       double y = yy(pos);
       double z = zz(pos);
-      bh_exporter.interpolate_pointwise(x, y, z);
+      bh_exporter.interpolate_pointwise__solution_gfs(x, y, z);
       auto qv = bh_exporter.get__quant_vals();
       conf->set_domain(dom_to_fill).set(pos) = qv[bh_exporter_t::XCTS_VARS::XCTS_PSI];
       lapse->set_domain(dom_to_fill).set(pos) = qv[bh_exporter_t::XCTS_VARS::XCTS_ALPHA];
