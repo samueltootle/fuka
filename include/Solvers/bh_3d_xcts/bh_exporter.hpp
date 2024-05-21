@@ -1,6 +1,7 @@
 #pragma once
 #include "Solvers/exporter.hpp"
 #include "adapted_bh.hpp"
+#include <algorithm>
 namespace Kadath::FUKA_Solvers {
 
 struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BCO_BH_INFO>, Space_adapted_bh> {
@@ -85,6 +86,7 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
   protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
   interp_ary_t quant_vals;
+  interp_ary_t quant_vals_origin;
   output_ary_t out_pw;
   bool export_ready{false};
   int const ndim{3};
@@ -115,7 +117,9 @@ struct CFMS_BH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boo
     // correctly initialized prior to copying to other threads resulting
     // in undefined behavior.  By running the interpolator once, this
     // bug seems to be avoided.
-    this->export_pointwise(0.5, 0., 0.);
+    this->export_pointwise(0., 0., 0.);
+    std::copy(quant_vals.begin(), quant_vals.end(), quant_vals_origin.begin());
+    export_ready = true;
   }
 
   CFMS_BH_Exporter(CFMS_BH_Exporter const & r);

@@ -11,10 +11,10 @@ namespace Kadath::FUKA_Solvers {
     A.reset(new Tensor(*space, *r.A.get()));
 
     bconfig.reset(new config_t(*r.bconfig));
-    
-    export_ready = false;
 
     populate_quants();
+    std::copy(r.quant_vals_origin.begin(), r.quant_vals_origin.end(), quant_vals_origin.begin());
+    export_ready = true;
     // For testing only
     // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
     // std::cout << "copy\n";
@@ -75,7 +75,6 @@ namespace Kadath::FUKA_Solvers {
       XCTS_VARS::XCTS_A22, 
       XCTS_VARS::XCTS_A23, 
       XCTS_VARS::XCTS_A33}, *A);
-    export_ready = true;
   }
 
   CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z,
@@ -83,7 +82,7 @@ namespace Kadath::FUKA_Solvers {
 
     // Initial guess of the excision radius - needed for filling
     // FIXME make excision generic
-    double rbh = bco_utils::get_radius(space->get_domain(2), INNER_BC);
+    double rbh = 0.85 * bco_utils::get_radius(space->get_domain(2), INNER_BC);
 
     double r2yz = y * y + z * z;
 
@@ -100,10 +99,18 @@ namespace Kadath::FUKA_Solvers {
       double phi = std::atan2(y, (x_shifted - bh_ori)); 
 
       // Where the filling takes places
-      export_utils::spherical_turduck(
-        quants, quant_vals, interp_order, delta_r_rel, interpolation_offset, 
-        ah_r, extrap_r, theta, phi, 2, bh_ori
-      );
+      if(export_ready) {
+        export_utils::spherical_turduck_fit_origin(
+          quants, quant_vals, quant_vals_origin, interp_order, delta_r_rel, interpolation_offset, 
+          ah_r, extrap_r, theta, phi, 2, bh_ori
+        );
+      } else {
+        export_utils::spherical_turduck(
+          quants, quant_vals, interp_order, delta_r_rel, interpolation_offset, 
+          ah_r, extrap_r, theta, phi, 2, bh_ori
+        );
+      }
+      
     };
 
     if (r <= (1. + interpolation_offset) * rbh) {
