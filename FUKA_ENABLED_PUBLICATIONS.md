@@ -3,49 +3,26 @@
 ## Known scientific works enabled by the FUKA suite of initial data solvers
 
 1. ***Black hole-neutron star mergers in Einstein-scalar-Gauss-Bonnet gravity***; Corman, Maxence and East, William E.; [arxiv:2405.18496](https://arxiv.org/abs/2405.18496)
-
 1. ***Effect of spin in binary neutron star mergers***; Karakas, Beyhan and Matur, Rahime and Ruffert, Maximilian; [arxiv:2405.13687](https://arxiv.org/abs/2405.13687)
-
 1. ***Black hole-neutron star mergers with massive neutron stars in numerical relativity***; Chen, Shichuan and Wang, Luohan and Hayashi, Kota and Kawaguchi, Kyohei and Kiuchi, Kenta and Shibata, Masaru; [arxiv:2404.18714](https://arxiv.org/abs/2404.18714)
-
 1. ***Large Eddy Simulations of Magnetized Mergers of Black Holes and Neutron Stars***; Izquierdo, Manuel R. and Bezares, Miguel and Liebling, Steven and Palenzuela, Carlos; [arxiv:2403.09770](https://arxiv.org/abs/2403.09770)
-
 1. ***Listening to the long ringdown: a novel way to pinpoint the equation of state in neutron-star cores***; Ecker, Christian and Gorda, Tyler and Kurkela, Aleksi and Rezzolla, Luciano; [arxiv:2403.03246](https://arxiv.org/abs/2403.03246)
-
 1. ***Prompt Black Hole Formation in Binary Neutron Star Mergers***; Ecker, Christian and Topolski, Konrad and J\***arvinen, Matti and Stehr, Alina; [arxiv:2402.11013](https://arxiv.org/abs/2402.11013)
-
 1. ***Hybrid approach to long-term binary neutron-star simulations***; Ng, Harry Ho-Yin and Jiang, Jin-Liang and Musolino, Carlo and Ecker, Christian and Tootle, Samuel D. and Rezzolla, Luciano; [DOI:10.1103/PhysRevD.109.064061](doi.org/10.1103/PhysRevD.109.064061)
-
 1. ***Dissipative and shearing dynamics in astrophysical compact objects***; Chabanov, Michail; [Thesis: GSI-2024-00046](https://repository.gsi.de/record/347992)
-
 1. ***Impact of a mean field dynamo on neutron star mergers leading to magnetar remnants***; Most, Elias R.; [DOI:10.1103/PhysRevD.108.123012](https://doi.org/10.1103/PhysRevD.108.123012)
-
 1. ***Mergers of double NSs with one high-spin component: brighter kilonovae and fallback accretion, weaker gravitational waves***; Rosswog, S. and Diener, P. and Torsello, F. and Tauris, T. M. and Sarin, N.; [DOI:10.1093/mnras/stae454](https://doi.org/10.1093/mnras/stae454)
-
 1. ***Post-merger Gravitational-wave Signal from Neutron-star Binaries: A New Look at an Old Problem***; Topolski, Konrad and Tootle, Samuel D. and Rezzolla, Luciano; [DOI:10.3847/1538-4357/ad0152](https://doi.org/10.3847/1538-4357/ad0152)
-
 1. ***Electromagnetic Precursors to Black Hole–Neutron Star Gravitational Wave Events: Flares and Reconnection-powered Fast Radio Transients from the Late Inspiral***; Most, Elias R. and Philippov, Alexander A.; [DOI:10.3847/2041-8213/acfdae](https://doi.org/10.3847/2041-8213/acfdae)
-
 1. ***Binary neutron star mergers in massive scalar-tensor theory: Quasiequilibrium states and dynamical enhancement of the scalarization***; Kuan, Hao-Jui and Van Aelst, Karim and Lam, Alan Tsz-Lok and Shibata, Masaru; [DOI:10.1103/PhysRevD.108.064057](https://doi.org/10.1103/PhysRevD.108.064057)
-
 1. ***Impact of bulk viscosity on the post-merger gravitational-wave signal from merging neutron stars***; Chabanov, Michail and Rezzolla, Luciano; [arxiv:2307.10464](https://arxiv.org/abs/2307.10464)
-
 1. ***The Lagrangian Numerical Relativity code SPHINCS_BSSN_v1.0***; Rosswog, Stephan and Torsello, Francesco and Diener, Peter; [DOI:10.3389/fams.2023.1236586](https://doi.org/10.3389/fams.2023.1236586)
-
 1. ***General-relativistic hydrodynamics simulation of a neutron star–sub-solar-mass black hole merger***; Markin, Ivan and Neuweiler, Anna and Abac, Adrian and Chaurasia, Swami Vivekanandji and Ujevic, Maximiliano and Bulla, Mattia and Dietrich, Tim; [DOI:10.1103/PhysRevD.108.064025](https://doi.org/10.1103/PhysRevD.108.064025)
-
 1. ***Flares, Jets, and Quasiperiodic Outbursts from Neutron Star Merger Remnants***; Most, Elias R. and Quataert, Eliot; [DOI:10.3847/2041-8213/acca84](https://doi.org/10.3847/2041-8213/acca84)
-
 1. ***Dynamical scalarization during neutron star mergers in scalar-Gauss-Bonnet theory***; Kuan, Hao-Jui and Lam, Alan Tsz-Lok and Doneva, Daniela D. and Yazadjiev, Stoytcho S. and Shibata, Masaru and Kiuchi, Kenta; [DOI:10.1103/PhysRevD.108.063033](https://doi.org/10.1103/PhysRevD.108.063033)
-
 1. ***Crustal Magnetic Fields Do Not Lead to Large Magnetic-field Amplifications in Binary Neutron Star Mergers***; Chabanov, Michail and Tootle, Samuel D. and Most, Elias R. and Rezzolla, Luciano; [DOI:10.3847/2041-8213/acbbc5](https://doi.org/10.3847/2041-8213/acbbc5)
-
 1. ***Quark formation and phenomenology in binary neutron-star mergers using V-QCD***; Tootle, Samuel and Ecker, Christian and Topolski, Konrad and Demircik, Tuna and J\***arvinen, Matti and Rezzolla, Luciano; [DOI:10.21468/SciPostPhys.13.5.109](https://doi.org/10.21468/SciPostPhys.13.5.109)
-
 1. ***Impact of extreme spins and mass ratios on the post-merger observables of high-mass binary neutron stars***, Papenfort, L. Jens and Most, Elias R. and Tootle, Samuel and Rezzolla, Luciano; [DOI:10.1093/mnras/stac964](https://doi.org/10.1093/mnras/stac964)
-
 1. ***Quasi-universal Behavior of the Threshold Mass in Unequal-mass, Spinning Binary Neutron Star Mergers***; Tootle, Samuel D. and Papenfort, L. Jens and Most, Elias R. and Rezzolla, Luciano; [DOI:10.3847/2041-8213/ac350d](https://doi.org/10.3847/2041-8213/ac350d)
-
 1. ***On accretion discs formed in MHD simulations of black hole–neutron star mergers with accurate microphysics***; Most, Elias R. and Papenfort, L. Jens and Tootle, Samuel D. and Rezzolla, Luciano; [DOI:10.1093/mnras/stab1824](https://doi.org/10.1093/mnras/stab1824)
-
 1. ***Fast ejecta as a potential way to distinguish black holes from neutron stars in high-mass gravitational-wave events***; Most, Elias R. and Papenfort, L. Jens and Tootle, Samuel and Rezzolla, Luciano; [DOI:10.3847/1538-4357/abf0a5](https://doi.org/10.3847/1538-4357/abf0a5)
