@@ -116,7 +116,7 @@ inline void bbh_xcts_setup_boosted_3d(
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) = bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
 
   std::vector<double> out_bounds(1+bconfig(BIN_PARAMS::OUTER_SHELLS));
-  std::vector<double> BH1_bounds;
+std::vector<double> BH1_bounds;
   {
     auto ddrPsi(compute_ddrPsi(
       spacein1, 
