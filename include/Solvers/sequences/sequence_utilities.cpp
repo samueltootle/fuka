@@ -24,7 +24,7 @@ config_t binary_generate_sequence_config (
   for(auto idx = 0; idx < SEQ_SETTINGS::NUM_SEQ_SETTINGS; ++idx)
     if(!std::isnan(seqconfig.seq_setting(idx)))
       bconfig.seq_setting(idx) = seqconfig.seq_setting(idx);
-  
+
   // Activate all controls that are active in the seq config
   for(auto idx = 0; idx < CONTROLS::NUM_CONTROLS; ++idx)
     if(seqconfig.control(idx))
@@ -32,21 +32,20 @@ config_t binary_generate_sequence_config (
 
   // Activate all controls that are active in the seq config
   for(auto idx = 0; idx < STAGES::NUM_STAGES; ++idx)
-    if(seqconfig.set_stage(idx))
-      bconfig.set_stage(idx) = seqconfig.set_stage(idx);
-  
+    bconfig.set_stage(idx) = seqconfig.set_stage(idx);
+
   // Check for disabled controls that matter
   for(auto [ key, idx] : MMIN_CONTROLS)
     bconfig.control(idx) = seqconfig.control(idx);
 
   // Copy binary parameters
-  for(auto idx = 0; idx < BIN_PARAMS::NUM_BPARAMS; ++idx) 
+  for(auto idx = 0; idx < BIN_PARAMS::NUM_BPARAMS; ++idx)
     if(!std::isnan(seqconfig.set(idx)))
       bconfig.set(idx) = seqconfig.set(idx);
 
   // Copy component parameters
   for(auto bco : {BCO1, BCO2}) {
-    for(auto idx = 0; idx < BCO_PARAMS::NUM_BCO_PARAMS; ++idx) 
+    for(auto idx = 0; idx < BCO_PARAMS::NUM_BCO_PARAMS; ++idx)
       if(!std::isnan(seqconfig.set(idx, bco)))
         bconfig.set(idx, bco) = seqconfig.set(idx, bco);
   }
@@ -81,18 +80,18 @@ config_t generate_sequence_config (config_t & seqconfig, std::string outputdir) 
   for(auto idx = 0; idx < SEQ_SETTINGS::NUM_SEQ_SETTINGS; ++idx)
     if(!std::isnan(seqconfig.seq_setting(idx)))
       bconfig.seq_setting(idx) = seqconfig.seq_setting(idx);
-  
+
   // Activate all controls that are active in the seq config
   for(auto idx = 0; idx < CONTROLS::NUM_CONTROLS; ++idx)
     if(seqconfig.control(idx))
       bconfig.control(idx) = seqconfig.control(idx);
-  
+
   // Check for disabled controls that matter
   for(auto [ key, idx] : MMIN_CONTROLS)
     bconfig.control(idx) = seqconfig.control(idx);
 
   // Copy BH characteristics
-  for(auto idx = 0; idx < BCO_PARAMS::NUM_BCO_PARAMS; ++idx) 
+  for(auto idx = 0; idx < BCO_PARAMS::NUM_BCO_PARAMS; ++idx)
     if(!std::isnan(seqconfig.set(idx)))
       bconfig.set(idx) = seqconfig.set(idx);
 
@@ -114,7 +113,7 @@ config_t generate_sequence_config (config_t & seqconfig, std::string outputdir) 
 
 template<class config_t, class... bco_t>
 void update_eos_parameters (config_t & seqconfig, config_t& bconfig, bco_t... bco) {
-  for(int idx = 0; idx < EOS_PARAMS::NUM_EOS_PARAMS; ++idx) 
+  for(int idx = 0; idx < EOS_PARAMS::NUM_EOS_PARAMS; ++idx)
     bconfig.set_eos(idx, bco...) = seqconfig.set_eos(idx, bco...);
 }
 
@@ -134,14 +133,14 @@ inline bool extract_seq(Tree& branch, std::string seqkey, double& storage) {
 }
 
 template<class... idx_t>
-Parameter_sequence<idx_t...> parse_seq_tree(Tree const & tree, 
+Parameter_sequence<idx_t...> parse_seq_tree(Tree const & tree,
     std::string const branch_name, std::string const parameter_str, idx_t... idx) {
-    
+
     Tree branch = read_branch(tree, branch_name);
     double _val = std::nan("1"), _init = std::nan("1"), _final = std::nan("1");
 
     // bool vset = seqset = false;
-    extract_seq(branch, parameter_str, _val);    
+    extract_seq(branch, parameter_str, _val);
     extract_seq(branch, parameter_str+"_init", _init);
     extract_seq(branch, parameter_str+"_final", _final);
 
@@ -166,10 +165,10 @@ uint number_of_sequences(Tree const & tree, map_t const & map, std::string const
 
 inline uint number_of_sequences_binary(Tree const & tree) {
   uint cnt{0};
-  std::string const branch_name{"binary"};  
+  std::string const branch_name{"binary"};
   cnt += number_of_sequences(tree, MBIN_PARAMS, branch_name);
-  
-  auto const & bco_param_map{MBCO_PARAMS};  
+
+  auto const & bco_param_map{MBCO_PARAMS};
 
   Tree branch = read_branch(tree, branch_name);
 
@@ -177,11 +176,11 @@ inline uint number_of_sequences_binary(Tree const & tree) {
   for(const auto& node : branch) {
     if(!node.second.empty()) {
       std::string const node_str = node.first;
-      
+
       // remove suffix (e,g, bh1 -> bh, ns1 -> ns)
       auto const tstr = node_str.substr(0,2);
       const auto& it = node_map.find(tstr);
-      
+
       if(it != node_map.end())
         cnt += number_of_sequences(branch, bco_param_map, node_str);
     }
@@ -190,9 +189,9 @@ inline uint number_of_sequences_binary(Tree const & tree) {
 }
 
 template<class map_t, class... idx_t>
-decltype(auto) find_sequence(Tree const & tree, map_t const & map, 
+decltype(auto) find_sequence(Tree const & tree, map_t const & map,
   std::string const branch_name, idx_t... idx) {
-  
+
   for(const auto& [ key, index ]: map) {
       // Ignore resolution since this is treated separately
       if(key == "res")
@@ -205,9 +204,9 @@ decltype(auto) find_sequence(Tree const & tree, map_t const & map,
 }
 
 inline decltype(auto) find_sequence_binary(Tree const & tree) {
-  std::string const branch_name{"binary"};  
-  
-  auto const & bco_param_map{MBCO_PARAMS};  
+  std::string const branch_name{"binary"};
+
+  auto const & bco_param_map{MBCO_PARAMS};
 
   Tree branch = read_branch(tree, branch_name);
 
@@ -217,12 +216,12 @@ inline decltype(auto) find_sequence_binary(Tree const & tree) {
   for(const auto& node : branch) {
     if(!node.second.empty()) {
       std::string const node_str = node.first;
-      
+
       // remove suffix (e,g, bh1 -> bh, ns1 -> ns)
       auto const tstr = node_str.substr(0,2);
-      
+
       const auto& it = node_map.find(tstr);
-      
+
       if(it != node_map.end()) {
         // save suffix {1, 2}
         int const tstr_suffix = std::atoi(&node_str.back());
@@ -285,7 +284,7 @@ template<class config_t, class Res_t>
 void verify_resolution_sequence(config_t& bconfig, Res_t& resolution) {
   if(resolution.is_set())
     return;
-  
+
   // Determine lowest resolution
   auto init_res = (std::isnan(bconfig.seq_setting(SEQ_SETTINGS::INIT_RES))) ?
     9 : bconfig.seq_setting(SEQ_SETTINGS::INIT_RES);
@@ -294,7 +293,7 @@ void verify_resolution_sequence(config_t& bconfig, Res_t& resolution) {
   auto final_res = (resolution.is_default_set()) ? resolution.default_val() : init_res;
   if(final_res < init_res)
     std::swap(init_res, final_res);
-  
+
   resolution.set(final_res, init_res, final_res);
 }
 
