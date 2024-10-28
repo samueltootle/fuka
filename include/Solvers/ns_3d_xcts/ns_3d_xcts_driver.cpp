@@ -396,6 +396,7 @@ inline int ns_3d_xcts_binary_boost_driver (config_t& bconfig,
 
   // Obtain stationary solution
   ns_sequence tmp_seq{};
+  verify_ns_fixing_values(bconfig, tmp_seq);
   bconfig = ns_3d_xcts_sequence(bconfig, tmp_seq, resolution, outputdir);
   
   while(exit_status == RUN_BOOST) { 
