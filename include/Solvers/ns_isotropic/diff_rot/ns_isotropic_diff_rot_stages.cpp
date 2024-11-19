@@ -180,7 +180,6 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
     auto idx{seq->mass_idx()};
     switch(idx) {
       case BCO_PARAMS::MADM:
-        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
         break;
       case BCO_PARAMS::MB:
