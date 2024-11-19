@@ -189,18 +189,6 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
       default:
         break;
     }
-
-    // idx = seq->spin_idx();
-    // switch(idx) {
-    //   case BCO_PARAMS::JADM:
-    //     space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
-    //     break;
-    //   case BCO_PARAMS::CHI:
-    //     space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
-    //     break;
-    //   default:
-    //     break;
-    // }
   }
 
   syst.add_eq_val(0, "diffAField/R0 - diffAratio", pos_origin);
