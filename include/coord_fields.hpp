@@ -388,11 +388,11 @@ void update_fields (CoordFields<space_t> const & cf_generator,
                    System_of_eqs* syst) {
 
   if(coord_vectors[GLOBAL_ROT]) 
-    *coord_vectors[GLOBAL_ROT] = cf_generator.template rot_z(xo);
+    *coord_vectors[GLOBAL_ROT] = cf_generator.template rot_z<>(xo);
 	if(coord_vectors[BCO1_ROT])   
-    *coord_vectors[BCO1_ROT]   = cf_generator.template rot_z(xc1) ;
+    *coord_vectors[BCO1_ROT]   = cf_generator.template rot_z<>(xc1) ;
 	if(coord_vectors[BCO2_ROT])   
-    *coord_vectors[BCO2_ROT]   = cf_generator.template rot_z(xc2);
+    *coord_vectors[BCO2_ROT]   = cf_generator.template rot_z<>(xc2);
 	if(coord_vectors[EX])
     *coord_vectors[EX]         = cf_generator.template e_cart<COV>(1);
 	if(coord_vectors[EY])         

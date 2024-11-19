@@ -535,7 +535,7 @@ template <typename EOS> class MargheritaTOV {
         "The density bracketing range may not be sufficiently constrained for the given EOS\n";
       if(maxM > 1.) {
         use_Mmax = true;
-        solve(maxMrho, true);
+        solve(0.99*maxMrho, true);
         return use_Mmax;
         //M_fin = maxM * 0.95;
         //rho_bracketing();
