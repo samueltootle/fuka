@@ -18,14 +18,14 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   // We use `config_filename()` vs `config_filename_abs()` since
   // `solution_exists` will probe the HOME_KADATH/COs directory
   /* auto const current = bconfig.config_filename();
-  if(!bconfig.control(RESOLVE) && solution_exists(stagename)) {    
+  if(!bconfig.control(RESOLVE) && solution_exists(stagename)) {
     if(rank == 0)
       std::cout << "Solved previously: " \
                 << bconfig.config_filename_abs() << std::endl;
     return (current == bconfig.config_filename()) ? \
       EXIT_SUCCESS : RELOAD_FILE;
   }*/
-    
+
   std::string stagename = "DIFF_ROT";
 
   // Extract Constants
@@ -78,10 +78,10 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   }
 
   syst.add_cst("one", one);
-  
+
   // KEH Constants
   syst.add_cst("diffAratio", diffAratio);
-  syst.add_cst("Rratio", diffRratio);  
+  syst.add_cst("Rratio", diffRratio);
 
   // KEH Variables
   syst.add_var("diffA", diffA);
@@ -110,10 +110,10 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
 
       // phi component of pressure
       // pphi = Brsint(E+Srrtt)* U, eq 3.37
-      // however, since it only shows up in eqwrsint term below, 
+      // however, since it only shows up in eqwrsint term below,
       // a factor of Brsint analytically cancels with a 1/Brsint in eq. 3.15
       syst.add_def(d, "pphi = (E + Srrtt) * U");
- 
+
       // constraint equations 3.14 - 3.17
       syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
                             "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
@@ -124,7 +124,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
       syst.add_def(d, "eqAterm = delta * lap2(lapAterm) + delta * scal(grad(nu), grad(nu))"
                       "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
                       "- 2 * 4piG * A^2 * Spp");
- 
+
       // definition for the baryonic mass integral
       syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
 
@@ -152,14 +152,16 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_eq_matching(2, INNER_BC, "Omega");
   syst.add_eq_matching(2, INNER_BC, "dn(Omega)");
   syst.add_eq_inside(2,"Omega = 0");
-  syst.add_eq_full(3, "Omega = 0");
- 
+  for(int d = 3; d < ndom; ++d) {
+    syst.add_eq_full(d, "Omega = 0");
+  }
+
   // add the constraint equations and demand continuity their normal derivative across domain boundaries
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
   space.add_eq(syst, "eqAterm=0", "lapAterm", "dn(lapAterm)");
   space.add_eq(syst, "eqBterm=0", "lapBterm", "dn(lapBterm)");
   space.add_eq(syst, "eqwrsint=0", "wrsint", "dn(wrsint)");
-  
+
   // boundary conditions at infinity
   syst.add_eq_bc(ndom - 1, OUTER_BC, "nu=0");
   syst.add_eq_bc(ndom - 1, OUTER_BC, "lapAterm=0");
@@ -168,12 +170,12 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
 
   // Fix surface based on vanishing log specific enthalpy
   syst.add_eq_bc(1, OUTER_BC, "H = 0");
- 
+
   // first integral in the innermost domains with non-zero matter content
   // and condition on the central value, either fixed directly or by the
   // integral below
   syst.add_eq_first_integral(0, 1, "firstint", central_fixing_definition.c_str());
- 
+
   if(seq) {
     auto idx{seq->mass_idx()};
     switch(idx) {
@@ -204,18 +206,18 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_eq_val(0, "diffAField/R0 - diffAratio", pos_origin);
   syst.add_eq_val(1, "r/R0 - 1", pos_eq);
   syst.add_eq_val(1, "r/R0 - Rratio", pos_pole);
- 
+
   // parameters for the solver loop
   bool endloop = false;
   int ite = 1;
   double conv;
     syst.sec_member();
- 
+
   // solve until convergence is achieved
-  while (!endloop) {  
+  while (!endloop) {
     // do exactly one newton step, given the system above
     endloop = syst.do_newton(bconfig.seq_setting(PREC), conv);
- 
+
     update_config_quantities(syst);
     // output files at this iteration and print diagnostics
     std::stringstream ss;
@@ -232,7 +234,7 @@ int ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::keh_stage() {
     ite++;
     check_max_iter_exceeded(rank, ite, conv);
   }
-  
+
   update_config_quantities(syst);
   bconfig.set_filename(converged_filename(stagename));
   if (rank == 0) {
