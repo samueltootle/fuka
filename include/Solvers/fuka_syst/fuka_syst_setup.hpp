@@ -241,7 +241,6 @@ inline std::string set_ns_mass_fixing(System_of_eqs& syst, config_t& bconfig, st
         break;
       case BCO_PARAMS::MADM:
         syst.add_var("hc", bconfig(BCO_PARAMS::HC));
-        syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
         syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
         break;
       case BCO_PARAMS::MB:
@@ -306,6 +305,29 @@ inline std::string set_ns_spin_fixing(System_of_eqs& syst, config_t& bconfig, st
         break;
     }
     return spin_fixing_definition;
+}
+
+template<class config_t>
+inline std::string get_ns_spin_fixing_output(config_t& bconfig, std::unique_ptr<Kadath::FUKA_Solvers::ns_sequence const>& seq) {
+    std::stringstream output;
+    output << "Spin fixed using ";
+    auto idx{seq->spin_idx()};
+    switch(idx) {
+      case BCO_PARAMS::OMEGA:
+        output << "rotation velocity (omega) = " << bconfig(BCO_PARAMS::OMEGA);
+        break;
+      case BCO_PARAMS::JADM:
+        output << "ADM Angular Momentum (jadm) = " << bconfig(BCO_PARAMS::JADM);
+        break;
+      case BCO_PARAMS::CHI:
+        output << "dimensionless spin parameter (chi) = " << bconfig(BCO_PARAMS::CHI);
+        break;
+      default:
+        std::string msg{"Sequence initialized, but not implemented for Spin index = " + std::to_string(int(idx))};
+        throw std::runtime_error(msg.c_str());
+        break;
+    }
+    return output.str();
 }
 /** @}*/
 }}
