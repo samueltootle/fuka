@@ -168,6 +168,8 @@ inline bool ns_seq_is_mass_fixing(seq_t& seq) {
 
 template<class seq_t>
 inline bool ns_seq_is_spin_fixing(seq_t& seq) {
+  if(!seq.is_set())
+    return false;
   auto seq_indicies = seq.get_indices();
   auto seq_idx = std::get<0>(seq_indicies);
   bool is_spin_fixing{false};
@@ -232,11 +234,15 @@ inline void verify_ns_fixing_values(config_t& bconfig, ns_sequence& seq) {
         seq.set_mass_idx(idx);
         seq.set_mass_val(seq.init());
       }
-    } else if(std::isnan(bconfig.set(seq.mass_idx()))) {
-      std::string msg{seq.mass_str() + " value not found. Check your config.\n"};
-      throw std::runtime_error(msg.c_str());
-    } else {
-      seq.set_mass_val(bconfig(seq.mass_idx()));
+    } 
+
+    if(!seq.is_mass_set()) {
+      if(std::isnan(bconfig.set(seq.mass_idx()))) {
+        std::string msg{seq.mass_str() + " value not found. Check your config.\n"};
+        throw std::runtime_error(msg.c_str());
+      } else {
+        seq.set_mass_val(bconfig(seq.mass_idx()));
+      }
     }
   }
 
@@ -247,17 +253,21 @@ inline void verify_ns_fixing_values(config_t& bconfig, ns_sequence& seq) {
         seq.set_spin_idx(idx);
         seq.set_spin_val(seq.init());
       }
-    } else if(std::isnan(bconfig.set(seq.spin_idx()))) {
-      std::string msg{seq.spin_str() + " value not found. Check your config.\n"};
-      throw std::runtime_error(msg.c_str());
-    } else {
-      seq.set_spin_val(bconfig(seq.spin_idx()));
+    } 
+
+    if(!seq.is_spin_set()) {
+      if(std::isnan(bconfig.set(seq.spin_idx()))) {
+        std::string msg{seq.spin_str() + " value not found. Check your config.\n"};
+        throw std::runtime_error(msg.c_str());
+      } else {
+        seq.set_spin_val(bconfig(seq.spin_idx()));
+      }
     }
   }  
 }
 
 template<class config_t>
-inline void initialize_config_from_fixing_values(config_t& bconfig, ns_sequence& seq) {
+inline void initialize_config_from_fixing_values(config_t& bconfig, ns_sequence const & seq) {
   bconfig.set(seq.mass_idx()) = seq.mass_val();
   bconfig.set(seq.spin_idx()) = seq.spin_val();
 }
