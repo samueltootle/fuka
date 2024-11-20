@@ -13,18 +13,21 @@
 
 #include "EOS/EOS.hh"
 
-#include "Solvers/fuka_syst/fuka_syst_setup.hpp"
-#include "Solvers/fuka_syst/fuka_syst_tools.hpp"
-
+#include "coord_fields.hpp"
 
 #include <cstdlib>
 #include <string>
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 #include <mutex>
 #ifdef _OPENMP
   #include <omp.h>
 #endif
-namespace fs = std::filesystem;
 
 namespace Kadath::FUKA_Solvers {
 static std::mutex copy_mutex;
@@ -35,9 +38,9 @@ static std::mutex copy_mutex;
  * the solvers, however, pointers are used instead of reference thereby allowing
  * the possibility for dynamic allocation for, e.g. multi-threaded importing of
  * the initial data.  It would have no impact on the solving of the system of equations
- * 
- * @tparam config_t 
- * @tparam space_t 
+ *
+ * @tparam config_t
+ * @tparam space_t
  */
 template<class config_t, class space_t>
 struct Exporter {
@@ -46,18 +49,18 @@ struct Exporter {
 
   ptr_data_member(space_t, space, unique);
   ptr_data_member(base_config_t, bconfig, unique);
-  
+
   protected:
   int ndom{};
 
   public:
   Exporter() : space(nullptr) {}
-  Exporter(std::string config_filename) : 
+  Exporter(std::string config_filename) :
     space(nullptr), bconfig(nullptr) {
       bconfig.reset(new base_config_t{config_filename});
       bconfig->open_config();
   }
-  
+
   virtual void load_solution_from_file() {
     std::string spacein{bconfig->space_filename()};
     FILE* ff1 = fopen (spacein.c_str(), "r") ;

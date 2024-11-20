@@ -1,5 +1,11 @@
 // #include "bhns_xcts_driver.hpp"
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 /**
  * \addtogroup BHNS_XCTS
@@ -7,7 +13,6 @@
  * @{*/
 namespace Kadath {
 namespace FUKA_Solvers {
-namespace fs = std::filesystem;
 
 template<class config_t>
 int bhns_xcts_solution_driver (config_t& bconfig, std::string outputdir) {

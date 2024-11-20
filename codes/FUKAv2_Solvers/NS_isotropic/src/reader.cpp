@@ -1,1 +1,1 @@
-../../../FUKAv1_Solvers/NS2D/src/reader.cpp
+../../../FUKAv1_Solvers/NS_isotropic/src/reader.cpp

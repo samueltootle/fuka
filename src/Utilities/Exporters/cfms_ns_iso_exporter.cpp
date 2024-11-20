@@ -1,5 +1,6 @@
 #include "Solvers/ns_isotropic/ns_isotropic_exporter.hpp"
 namespace Kadath::FUKA_Solvers {
+#ifdef DEFAULT_KAD_MEM
   CFMS_NS_ISO_Exporter::CFMS_NS_ISO_Exporter(CFMS_NS_ISO_Exporter const & r) {
     std::lock_guard<std::mutex> lock(copy_mutex);
     ndom = r.ndom;
@@ -25,7 +26,7 @@ namespace Kadath::FUKA_Solvers {
     else
       omega = nullptr;
 
-    // Copy Computed Terms    
+    // Copy Computed Terms
     lapse.reset(new Scalar(*space, *r.lapse.get()));
     metric_A.reset(new Scalar(*space, *r.metric_A.get()));
     metric_B.reset(new Scalar(*space, *r.metric_B.get()));
@@ -35,7 +36,7 @@ namespace Kadath::FUKA_Solvers {
     fluidvel.reset(new Scalar(*space, *r.fluidvel.get()));
 
     bconfig.reset(new config_t(*r.bconfig));
-    
+
     export_ready = false;
 
     populate_quants();
@@ -51,6 +52,17 @@ namespace Kadath::FUKA_Solvers {
     *this = std::move(tmp);
     return *this;
   }
+#else
+  CFMS_NS_ISO_Exporter::CFMS_NS_ISO_Exporter(CFMS_NS_ISO_Exporter const & r) {
+    std::string error_msg = export_utils::throw_no_multithreaded_support_error("CFMS_NS_ISO_Exporter - Copy Constructor");
+    throw std::runtime_error(error_msg);
+  }
+
+  CFMS_NS_ISO_Exporter& CFMS_NS_ISO_Exporter::operator=(const CFMS_NS_ISO_Exporter& b) {
+    std::string error_msg = export_utils::throw_no_multithreaded_support_error("CFMS_NS_ISO_Exporter - Assignment operator");
+    throw std::runtime_error(error_msg);
+  }
+#endif
 
   void CFMS_NS_ISO_Exporter::initialize_eos() {
     // Initialize EOS
@@ -86,7 +98,7 @@ namespace Kadath::FUKA_Solvers {
     lap_Bterm.reset( new Scalar(*space.get(), ff1)) ;
     if(bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::LAP_WTERM)) {
       lap_omega_term.reset(new Scalar(*space.get(), ff1));
-     
+
       if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
         omega.reset(new Scalar(*space.get(), ff1));
         #ifdef DEBUG
@@ -102,7 +114,7 @@ namespace Kadath::FUKA_Solvers {
       std::cout << "**** Reading non-rotating, spherical solution ****\n";
       #endif
     }
-    
+
     fclose(ff1);
     ndom = space->get_nbr_domains();
   }
@@ -133,7 +145,7 @@ namespace Kadath::FUKA_Solvers {
       #ifdef DEBUG
       std::cout << "**** Importing uniform rotation profile ****\n";
       #endif
-      syst.add_cst("Omega", (*bconfig)(BCO_PARAMS::OMEGA));
+      syst.add_cst("Omega", (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA));
     }
     syst.add_def("N = exp(nu)");
     syst.add_def("A = exp(lapAterm - nu)");
@@ -165,7 +177,7 @@ namespace Kadath::FUKA_Solvers {
       fluidvel->std_base();
 
       metric_omega.reset(new Scalar(*space));
-      metric_omega->annule_hard();      
+      metric_omega->annule_hard();
       metric_omega->std_base();
       domega_dr.reset(new Scalar(*space));
       domega_dr->annule_hard();
@@ -194,7 +206,7 @@ namespace Kadath::FUKA_Solvers {
     quants[ISO_VARS::ISO_DOMEGA_DR] = std::cref(*domega_dr);
     quants[ISO_VARS::ISO_DOMEGA_DTHETA] = std::cref(*domega_dt);
 
-    
+
     // Fluid related quantities
     quants[ISO_VARS::ISO_H] = std::cref(*logh);
     quants[ISO_VARS::ISO_U] = std::cref(*fluidvel);
@@ -202,33 +214,33 @@ namespace Kadath::FUKA_Solvers {
   }
 
   CFMS_NS_ISO_Exporter::interp_ary_t CFMS_NS_ISO_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z) {
-    
+
     double r2_xy = x * x + y * y;
     double r_xy = std::sqrt(r2_xy);
     Point abs_coords(ndim);
     abs_coords.set(1) = r_xy;
     abs_coords.set(2) = z;
-    
+
     for (size_t k = 0; k < ISO_VARS::NUM_ISO_VARS; ++k) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
     }
-    
+
     return quant_vals;
   }
 
   CFMS_NS_ISO_Exporter::interp_ary_t CFMS_NS_ISO_Exporter::interpolate_pointwise_subset(double const & x, double const & y, double const & z,
     std::vector<CFMS_NS_ISO_Exporter::ISO_VARS> slice) {
-    
+
     double r2_xy = x * x + y * y;
     double r_xy = std::sqrt(r2_xy);
     Point abs_coords(ndim);
     abs_coords.set(1) = r_xy;
     abs_coords.set(2) = z;
-    
+
     for (const auto k : slice) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
     }
-    
+
     return quant_vals;
   }
 
@@ -256,7 +268,7 @@ namespace Kadath::FUKA_Solvers {
   // }
 
   // CFMS_NS_ISO_Exporter::output_ary_t CFMS_NS_ISO_Exporter::export_pointwise_spacetime_vars(double const & x, double const & y, double const & z) {
-    
+
   //   // Reset to NAN
   //   for(auto& e : quant_vals) {
   //     e = NAN;
@@ -268,7 +280,7 @@ namespace Kadath::FUKA_Solvers {
   //   * Code generated from NrPyv2
   //   */
   //   auto ADM_Spherical_to_Cart =[&]() {
-  //     using REAL = double; 
+  //     using REAL = double;
   //     const double xCart[3] = {x, y, z};
   //     // Perform the basis transform on ADM vectors/tensors from Spherical to Cartesian:
 
@@ -395,19 +407,19 @@ namespace Kadath::FUKA_Solvers {
   //     out_pw[OUTPUT_VARS::K33] = KSphericalDD00 * tmp66 + 2 * KSphericalDD01 * tmp47 * tmp54 + KSphericalDD11 * tmp65;
   //   };
   //   ADM_Spherical_to_Cart();
-    
+
   //   out_pw[OUTPUT_VARS::ALPHA] = quant_vals[ISO_VARS::ISO_ALPHA];
   //   return out_pw;
   // }
 
   // CFMS_NS_ISO_Exporter::grid_ary_t CFMS_NS_ISO_Exporter::export_coordinate_array(
   //   int const npoints, double const * xx, double const * yy, double const * zz) {
-    
+
   //   grid_ary_t out;
   //   for(auto& v : out) {
   //     v.resize(npoints);
   //   }
-    
+
   //   for (size_t i = 0; i < npoints; ++i) {
   //     export_pointwise(xx[i], yy[i], zz[i]);
 

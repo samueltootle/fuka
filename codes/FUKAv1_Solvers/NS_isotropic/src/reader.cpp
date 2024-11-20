@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  * L. Jens Papenfort <papenfort@th.physik.uni-frankfurt.de>
  *
@@ -24,7 +24,6 @@
 #include "Configurator/config_bco.hpp"
 #include "bco_utilities.hpp"
 #include "EOS/EOS.hh"
-// #include "EOS/standalone/tov.hh"
 
 // Kadath includes
 #include "kadath.hpp"
@@ -50,6 +49,15 @@ void reader_2d_norot(config_t bconfig);
 // conversion from solar mass to km
 constexpr double M2km = 1.4769994423016508;
 
+template<class eos_t, typename config_t>
+void reader_select(config_t bconfig) {
+  if(bconfig.set_field(BCO_FIELDS::LAP_BTERM) && bconfig.set_field(BCO_FIELDS::LAP_WTERM)) {
+    reader_2d_diffrot<eos_t>(bconfig);
+  } else {
+    reader_2d_norot<eos_t>(bconfig);
+  }
+}
+
 int main(int argc, char **argv) {
   // expecting a configuration file on execution
   if(argc < 2) {
@@ -73,7 +81,7 @@ int main(int argc, char **argv) {
     EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
 
     // call reader to output diagnostics
-    reader_2d_norot<eos_t>(bconfig);
+    reader_select<eos_t>(bconfig);
   } else if(eos_type == "Cold_Table") {
     using eos_t = Kadath::Margherita::Cold_Table;
 
@@ -83,7 +91,7 @@ int main(int argc, char **argv) {
     EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
 
     // call reader to output diagnostics
-    reader_2d_norot<eos_t>(bconfig);
+    reader_select<eos_t>(bconfig);
   } else {
     std::cerr << "Unknown EOSTYPE." << endl;
     std::_Exit(EXIT_FAILURE);
@@ -94,8 +102,7 @@ int main(int argc, char **argv) {
 
 template<class eos_t, typename config_t>
 void reader_2d_norot(config_t bconfig) {
-  if(bconfig.set_field(BCO_FIELDS::LAP_BTERM) && bconfig.set_field(BCO_FIELDS::LAP_WTERM))
-    return reader_2d_diffrot<eos_t>(bconfig);
+
   // load the space (and thus the domain setup)
   auto spacein = bconfig.space_filename();
 	FILE* ff1 = fopen (spacein.c_str(), "r") ;
@@ -150,7 +157,7 @@ void reader_2d_norot(config_t bconfig) {
   syst.add_def("delta = h - eps - 1.");
 
   syst.add_def(ndom - 1, "intMadmFULL = - (dr(A^2 + B^2) + divr(B^2 - A^2)) / 4 / 4piG ");
-  
+
   // If we assume that at infinity A = B = 1, we can obtain two "equivalent expressions"
   // However, we find that intMadmA does not give as accurate of results as intMadmB
   // intMadmB, however, gives very accurate results as compared to Mkomar and MADM that
@@ -168,7 +175,7 @@ void reader_2d_norot(config_t bconfig) {
       syst.add_def(d, "E = press * h - press * delta");
       syst.add_def(d, "S = delta * 3 * press");
       syst.add_def(d, "Spp = press * delta");
-      
+
       // constraint equations
       syst.add_def(d, "eqnu = delta * ( lap(nu) + scal(grad(nu), grad(lapAterm)) ) - 4piG * A^2 * (E + S)") ;
       syst.add_def(d, "eqlapAterm = delta * ( lap2(lapAterm) + scal(grad(nu), grad(nu)) ) - 2 * 4piG * A^2 * Spp") ;
@@ -179,11 +186,11 @@ void reader_2d_norot(config_t bconfig) {
       // // definition for the baryonic mass integral
       syst.add_def(d, "intMb = rho * A^2 * B * 4piG / 2");
       syst.add_def(d, "intDDA = - lap2(A) * multrsint(A^2) * multr(B)") ;
-      
-      
+
+
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
       syst.add_def(d, "firstint = H + log(N)");
-      
+
       syst.add_def(d, "GRV2 = divrsint(2 * 4piG * A^2 * Spp"
                       " - delta * scal(grad(nu), grad(nu))) / 2");
 
@@ -204,17 +211,17 @@ void reader_2d_norot(config_t bconfig) {
   double baryonic_mass=0;
   Scalar intMb(syst.give_val_def("intMb")());
   intMb.coef_i();
-  
+
   double VMadm=0;
   Scalar intDDA(syst.give_val_def("intDDA")());
   intDDA.coef_i();
-  
+
   for(int i = 0; i < 2; ++i) {
     VMadm += intDDA(i).integ_volume();
     baryonic_mass += intMb(i).integ_volume();
   }
   cout << "VMadm: " << VMadm << endl;
- 
+
   Val_domain integMadm(syst.give_val_def("intMadmFULL")()(ndom - 1));
   double MadmFULL = space.get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
   Val_domain integMadmA(syst.give_val_def("intMadmA")()(ndom - 1));
@@ -237,9 +244,8 @@ void reader_2d_norot(config_t bconfig) {
 
   auto B(syst.give_val_def("A")()(1));
   auto r(space.get_domain(1)->get_radius());
-  // cout << B(pos_eq) << ", " << r(pos_eq) << endl;
   double CR = B(pos_eq) * r(pos_eq);
-  
+
   #ifdef FORMAT
     #undef FORMAT
   #endif
@@ -317,22 +323,6 @@ void reader_2d_diffrot(config_t bconfig) {
   double rin1 = bco_utils::get_radius(space.get_domain(0), OUTER_BC);
 
   int ndom = space.get_nbr_domains();
-  Scalar one(space);
-  one = 1.;
-  one.std_base();
-  one.coef();
-  one.coef_i();
-  
-
-  Scalar rsint(one.mult_r().mult_sin_theta());
-  rsint.coef();
-  rsint.coef_i();
-  for(int d = 0; d < space.get_nbr_domains(); ++d)
-    one.set_domain(d).set_base() = rsint(d).get_base();
-  // for(int d = 0; d < ndom; ++d) {
-    // lap_Bterm.set_domain(d).set_base() = rsint(d).get_base();
-    // lap_wterm.set_domain(d).set_base() = lap_Bterm(d).get_base();  
-  // }
 
   // setup a system of equations
   System_of_eqs syst(space, 0, ndom - 1);
@@ -347,7 +337,6 @@ void reader_2d_diffrot(config_t bconfig) {
     syst.add_cst("Omega", ome);
   else
     syst.add_cst("Omega", bconfig(BCO_PARAMS::OMEGA));
-  syst.add_cst("one", one);
 
   // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
   syst.add_def("h = exp(H)");
@@ -380,9 +369,9 @@ void reader_2d_diffrot(config_t bconfig) {
   syst.add_def("diffAB = B^2 - A^2");
 
   // eq. 4.21 - Full ADM surface integral at spatial infinity.  This does not give accurate
-  // values.
+  // values for some reason.
   syst.add_def(ndom - 1, "intMadmFULL = - (dr(A^2 + B^2) + divr(B^2 - A^2)) / 4 / 4piG ");
-  
+
   // If we assume that at infinity A = B = 1, we can obtain two "equivalent expressions"
   // However, we find that intMadmA does not give as accurate of results as intMadmB
   // intMadmB, however, gives very accurate results as compared to Mkomar and MADM that
@@ -395,7 +384,7 @@ void reader_2d_diffrot(config_t bconfig) {
 
   // eq 4.40 evaluated at spatial infinity, Gourgoulhon
   syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
-	
+
   for (int d = 0; d < ndom; d++) {
     switch (d) {
     // in the star the constraint equations are sourced by the matter
@@ -419,21 +408,13 @@ void reader_2d_diffrot(config_t bconfig) {
       // Volume integral for Angular momentum, eq 4.38 Gourgoulhon
       syst.add_def(d, "intJV = pphi * A^2 * B * 4piG / 2");
 
-      // syst.add_def(d, "Ekin = 0.5 * rho * U^2");
-
-
-      // syst.add_def(d, "intEkin = (4piG * S / delta - 1 / A^2 * (scal(grad(nu), grad(nu)) - 1 / 2 / A / B * scal(grad(A), grad(B)))"
-      // "+divr(0.5) * (1/A^2 - 1/B^2) * (1/A * (dr(A) + divr(multsint(divcost(dt(A))))) - 1/2/B * (dr(B) + divr(multsint(divcost(dt(B)))))))");
-      // "+ divr(divr(3)) * multsint(multsint(B^2)) / 8 / A^2 / N^2 * scal(grad(w), grad(w))) * A^2 * B");
-      
       // constraint equations
       syst.add_def(d, "DDA = -scal(grad(nu), grad(nu)) + 2 * 4piG * A^2 * Spp") ;
       syst.add_def(d, "intDDA = - lap(A) * multrsint(A^2) * multr(B)") ;
-      // syst.add_def(d, "intDDA = (N * (Ereg + Sreg) + 2 * w * B * (Ereg + press) * multrsint(U)) * multrsint(A^2) * multr(B)") ;
 
       // definition for the baryonic mass integral, eq 4.5
-      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");     
-      
+      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
+
       // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
       syst.add_def(d, "firstint = H + log(N) - 0.5 * log(Wsq)");
 
@@ -458,7 +439,7 @@ void reader_2d_diffrot(config_t bconfig) {
               // syst.add_def(0, "OmegaK = w + dr(w)");
   syst.sec_member();
 
-  
+
   double VMadm=0;
   Scalar intDDA(syst.give_val_def("intDDA")());
   intDDA.coef_i();
@@ -472,7 +453,7 @@ void reader_2d_diffrot(config_t bconfig) {
   P_o_rho.coef_i();
 
   double baryonic_mass=0;
-  Scalar intMb(syst.give_val_def("intMb")());  
+  Scalar intMb(syst.give_val_def("intMb")());
   intMb.coef_i();
 
   double GRV2=0;
@@ -482,7 +463,7 @@ void reader_2d_diffrot(config_t bconfig) {
   // double LAM3=0;
   // Scalar intLAM3(syst.give_val_def("lam3")());
   // intLAM3.coef_i();
-  
+
   for(int i = 0; i < 2; ++i) {
     VMadm += intDDA(i).integ_volume();
     // LAM3 += intLAM3(i).integ_volume();
@@ -524,7 +505,7 @@ void reader_2d_diffrot(config_t bconfig) {
     cout << i << ": " << tmp << '\n';
     GRV2 += tmp;
   }
-    
+
   cout << "GRV2: " << GRV2 << '\n';
   // cout << "LAM3: " << LAM3 << '\n';
 
@@ -539,7 +520,7 @@ void reader_2d_diffrot(config_t bconfig) {
   Val_domain integMk(syst.give_val_def("intMk")()(ndom - 1));
   double Mk = space.get_domain(ndom - 1)->integ(integMk, OUTER_BC);
 
-  // ADM angular momentum at infinity 
+  // ADM angular momentum at infinity
   Val_domain integJ(syst.give_val_def("intJ")()(ndom - 1));
   double J = space.get_domain(ndom - 1)->integ(integJ, OUTER_BC);
 
@@ -558,22 +539,9 @@ void reader_2d_diffrot(config_t bconfig) {
   auto B(syst.give_val_def("B")());
   auto N(syst.give_val_def("N")()(1));
   auto r(space.get_domain(1)->get_radius());
-  // cout << B(1)(pos_eq) << ", " << r(pos_eq) << endl;
   auto [ Bmin, Bmax ] = bco_utils::get_field_min_max(B, 2, INNER_BC);
-  // cout << Bmax << ", " << Bmin << endl;
   double CR = B(1)(pos_eq) * r(pos_eq);
 
-  // cout << space.get_domain(1)->get_cart(1)(pos_pole) << ", "
-  //       << space.get_domain(1)->get_cart(2)(pos_pole)<< endl;
-  // cout << space.get_domain(1)->get_cart(1)(pos_eq) << ", "
-  //       << space.get_domain(1)->get_cart(2)(pos_eq)<< endl;
-  // pos_pole.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
-  // std::cout << std::setprecision(15)
-  //   << Madm << '\t'
-  //   << MadmA << '\t'
-  //   << MadmB << '\t'
-  //   << Mk << '\t'
-  //   << J << '\n';
   #ifdef FORMAT
     #undef FORMAT
   #endif
@@ -614,7 +582,7 @@ void reader_2d_diffrot(config_t bconfig) {
             // << FORMAT << "Integrated log(h) = "    << H_integral << "\n\n";
 
   std::cout << FORMAT << "Mk = "   << Mk << std::scientific
-            << ", Diff: " << 2. * fabs(MadmB-Mk)/(MadmB+Mk) << " [" <<  2. * fabs(MadmA-Mk)/(MadmA+Mk) 
+            << ", Diff: " << 2. * fabs(MadmB-Mk)/(MadmB+Mk) << " [" <<  2. * fabs(MadmA-Mk)/(MadmA+Mk)
             <<  ", " << 2. * fabs(MadmFULL-Mk)/(MadmFULL+Mk) << "]\n";
             // << FORMAT << "Px = "   << Px   << std::endl
             // << FORMAT << "Py = "   << Py   << std::endl

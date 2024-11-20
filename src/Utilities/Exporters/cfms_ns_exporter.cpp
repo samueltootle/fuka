@@ -1,5 +1,6 @@
 #include "Solvers/ns_3d_xcts/ns_exporter.hpp"
 namespace Kadath::FUKA_Solvers {
+#ifdef DEFAULT_KAD_MEM
   CFMS_NS_Exporter::CFMS_NS_Exporter(CFMS_NS_Exporter const & r) {
     std::lock_guard<std::mutex> lock(copy_mutex);
     ndom = r.ndom;
@@ -8,7 +9,7 @@ namespace Kadath::FUKA_Solvers {
     eos_type = r.eos_type;
 
     space.reset(new space_t((*r.get_space())));
-    
+
     // Copy solution fields
     conformal_factor.reset(new Scalar(*space.get(), *r.conformal_factor.get()));
     lapse.reset(new Scalar(*space, *r.lapse.get()));
@@ -21,11 +22,11 @@ namespace Kadath::FUKA_Solvers {
     }
 
     // Copy computed fields
-    fluidvel.reset(new Vector(*space, *r.fluidvel.get()));    
+    fluidvel.reset(new Vector(*space, *r.fluidvel.get()));
     A.reset(new Tensor(*space, *r.A.get()));
 
     bconfig.reset(new config_t(*r.bconfig));
-    
+
     export_ready = false;
 
     populate_quants();
@@ -41,6 +42,17 @@ namespace Kadath::FUKA_Solvers {
     *this = std::move(tmp);
     return *this;
   }
+#else
+  CFMS_NS_Exporter::CFMS_NS_Exporter(CFMS_NS_Exporter const & r) {
+    std::string error_msg = export_utils::throw_no_multithreaded_support_error("CFMS_NS_Exporter - Copy Constructor");
+    throw std::runtime_error(error_msg);
+  }
+
+  CFMS_NS_Exporter& CFMS_NS_Exporter::operator=(const CFMS_NS_Exporter& b) {
+    std::string error_msg = export_utils::throw_no_multithreaded_support_error("CFMS_NS_Exporter - Assignment operator");
+    throw std::runtime_error(error_msg);
+  }
+#endif
 
   void CFMS_NS_Exporter::initialize_eos() {
     using namespace Kadath::FUKA_Config;
@@ -75,13 +87,13 @@ namespace Kadath::FUKA_Solvers {
     lapse.reset( new Scalar(*space.get(), ff1)) ;
     shift.reset( new Vector(*space.get(), ff1)) ;
     logh.reset( new Scalar(*space.get(), ff1)) ;
-    
+
     if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)){
       diff_omega.reset(new Scalar(*space.get(), ff1));
     }
-    
+
     fclose(ff1);
-        
+
     ndom = space->get_nbr_domains();
   }
 
@@ -92,8 +104,8 @@ namespace Kadath::FUKA_Solvers {
 
     // get origin of the system and initialize coordinate fields
     double xo = Kadath::bco_utils::get_center(*space,0);
-    
-    
+
+
     update_fields_co(cf_generator, coord_vectors, {}, xo);
 
     // Initialize Flat Metric
@@ -101,7 +113,7 @@ namespace Kadath::FUKA_Solvers {
     Metric_flat fmet(*space, basis);
 
     // Start - Setup System of equations
-    System_of_eqs syst(*space);    
+    System_of_eqs syst(*space);
     fmet.set_system(syst, "f") ;
 
     Param p;
@@ -116,7 +128,7 @@ namespace Kadath::FUKA_Solvers {
     // Fields - must be initialized before common setup
     syst.add_cst("N"  , *lapse) ;
     syst.add_cst("bet", *shift) ;
-    
+
     if(bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
       #ifdef DEBUG
       std::cout << "**** Importing differential rotation profile ****\n";
@@ -128,14 +140,14 @@ namespace Kadath::FUKA_Solvers {
       #endif
       syst.add_cst("Omega", (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA));
     }
-    
+
     syst.add_cst("mg"  , *coord_vectors[GLOBAL_ROT]);
     syst.add_def("omega^i = bet^i + Omega * mg^i");
 
     syst.add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
     A.reset(new Tensor(syst.give_val_def("A")));
     A->coef();
-  
+
     // definitions for the fluid 3-velocity
     syst.add_def("U^i = omega^i / N");
     fluidvel.reset(new Vector(syst.give_val_def("U")));
@@ -154,13 +166,13 @@ namespace Kadath::FUKA_Solvers {
     quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
     export_utils::add_tensor_refs(quants, {
-      XCTS_VARS::XCTS_A11, 
-      XCTS_VARS::XCTS_A12, 
-      XCTS_VARS::XCTS_A13, 
-      XCTS_VARS::XCTS_A22, 
-      XCTS_VARS::XCTS_A23, 
+      XCTS_VARS::XCTS_A11,
+      XCTS_VARS::XCTS_A12,
+      XCTS_VARS::XCTS_A13,
+      XCTS_VARS::XCTS_A22,
+      XCTS_VARS::XCTS_A23,
       XCTS_VARS::XCTS_A33}, *A);
-    
+
     // Fluid related quantities
     quants[XCTS_VARS::XCTS_H] = std::cref(*logh);
     quants[XCTS_VARS::XCTS_UX] = std::cref((*fluidvel)(1));
@@ -170,31 +182,31 @@ namespace Kadath::FUKA_Solvers {
   }
 
   CFMS_NS_Exporter::interp_ary_t CFMS_NS_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z) {
-    
+
     Point abs_coords(ndim);
     abs_coords.set(1) = x;
     abs_coords.set(2) = y;
     abs_coords.set(3) = z;
-    
+
     for (size_t k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
     }
-    
+
     return quant_vals;
   }
 
   CFMS_NS_Exporter::interp_ary_t CFMS_NS_Exporter::interpolate_pointwise_subset(double const & x, double const & y, double const & z,
     std::vector<CFMS_NS_Exporter::XCTS_VARS> slice) {
-    
+
     Point abs_coords(ndim);
     abs_coords.set(1) = x;
     abs_coords.set(2) = y;
     abs_coords.set(3) = z;
-    
+
     for (const auto k : slice) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
     }
-    
+
     return quant_vals;
   }
 
@@ -223,7 +235,7 @@ namespace Kadath::FUKA_Solvers {
   }
 
   CFMS_NS_Exporter::output_ary_t CFMS_NS_Exporter::export_pointwise_spacetime_vars(double const & x, double const & y, double const & z) {
-    
+
     // Reset to NAN
     for(auto& e : quant_vals) {
       e = NAN;
@@ -254,18 +266,18 @@ namespace Kadath::FUKA_Solvers {
     out_pw[OUTPUT_VARS::K22] = quant_vals[XCTS_VARS::XCTS_A22] * psi4;
     out_pw[OUTPUT_VARS::K23] = quant_vals[XCTS_VARS::XCTS_A23] * psi4;
     out_pw[OUTPUT_VARS::K33] = quant_vals[XCTS_VARS::XCTS_A33] * psi4;
-    
+
     return out_pw;
   }
 
   CFMS_NS_Exporter::grid_ary_t CFMS_NS_Exporter::export_coordinate_array(
     int const npoints, double const * xx, double const * yy, double const * zz) {
-    
+
     grid_ary_t out;
     for(auto& v : out) {
       v.resize(npoints);
     }
-    
+
     for (size_t i = 0; i < npoints; ++i) {
       export_pointwise(xx[i], yy[i], zz[i]);
 

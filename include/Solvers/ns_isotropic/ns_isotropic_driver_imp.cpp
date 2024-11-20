@@ -187,7 +187,7 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir,
 
   // make sure NS directory exists for outputs
   if(outputdir == "./") {
-    std::filesystem::path cwd = std::filesystem::current_path();
+    fs::path cwd = fs::current_path();
     outputdir = cwd.string();
   }
   if(rank == 0)

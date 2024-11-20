@@ -26,7 +26,12 @@
 #include "bbh_xcts_setup.hpp"
 #include "bbh_xcts_regrid.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
-#include<filesystem>
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+using namespace std::experimental;
+#else
+#include <filesystem>
+#endif
 
 /**
  * \addtogroup BBH_XCTS

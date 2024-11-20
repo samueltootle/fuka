@@ -20,11 +20,11 @@ config_t ns_3d_xcts_sequence_setup (config_t & seqconfig, std::string outputdir)
 }
 
 template<class Res_t, class config_t>
-config_t ns_3d_xcts_sequence (config_t & seqconfig, 
+config_t ns_3d_xcts_sequence (config_t & seqconfig,
                           ns_sequence const & seq,
                           Res_t & resolution,
                           std::string outputdir) {
-  
+
   int rank = 0, exit_status = EXIT_SUCCESS;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -35,7 +35,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
   // Initialize sequence variables
   auto sequence_var_indices = seq.get_indices();
   auto resolution_indices   = resolution.get_indices();
-  
+
   auto const & dx = seq.step_size();
 
   // // Initialize full configurator
@@ -66,7 +66,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
     bconfig.control(CONTROLS::ITERATIVE_M) = !std::isnan(final_MADM) &&
       (std::fabs(1. - bconfig(BCO_PARAMS::MADM)/final_MADM) > 1e-3);
 
-    if(bconfig.control(CONTROLS::ITERATIVE_M) 
+    if(bconfig.control(CONTROLS::ITERATIVE_M)
         && std::fabs(bconfig(BCO_PARAMS::CHI)) < 1e-5) {
       if(rank == 0)
       std::cerr << "Cannot solve TOV for Madm = " << final_MADM
@@ -79,11 +79,11 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
   // NS mass up to final_MADM
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
-  if(bconfig.control(CONTROLS::ITERATIVE_M)){    
+  if(bconfig.control(CONTROLS::ITERATIVE_M)){
 
     // Only obtain the iterative solution at the initial_resolution
     auto const res_init{resolution.init()};
-    Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);      
+    Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);
     tmp_res.set(res_init,res_init,res_init);
 
     // exit_status = ns_3d_xcts_driver(bconfig, tmp_res, outputdir);
@@ -120,7 +120,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
         exit_status = ns_3d_xcts_base_solution_driver(bconfig, outputdir);
       }
     }
-    exit_status = ns_3d_xcts_driver(bconfig, resolution, outputdir, &seq); 
+    exit_status = ns_3d_xcts_driver(bconfig, resolution, outputdir, &seq);
     resolution.set(resolution.final(), resolution.final(), resolution.final());
     return exit_status;
   };
@@ -140,7 +140,7 @@ config_t ns_3d_xcts_sequence (config_t & seqconfig,
 
 /**
  * @brief Driver to compute a stationary solution for a given resolution
- * 
+ *
  * @tparam config_t Config file type
  * @param bconfig NS config file
  * @param outputdir directory to store solutions in
@@ -154,10 +154,10 @@ int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, ns_s
 
   // make sure NS directory exists for outputs
   if(outputdir == "./") {
-    std::filesystem::path cwd = std::filesystem::current_path();
+    fs::path cwd = fs::current_path();
     outputdir = cwd.string();
   }
-  
+
   std::string spacein = bconfig.space_filename();
   if(!fs::exists(spacein)) {
     // mainly for debugging MPI bugs
@@ -172,7 +172,7 @@ int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, ns_s
   spacein = bconfig.space_filename();
   // just so you really know
   if(rank == 0) {
-    std::cout << "Config File: " 
+    std::cout << "Config File: "
               << bconfig.config_filename_abs() << std::endl
               << "Fields File: " << spacein << std::endl
               << bconfig << std::endl;
@@ -190,7 +190,7 @@ int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, ns_s
   Scalar logh   (space, ff1) ;
   fclose(ff1) ;
   Base_tensor basis(space, CARTESIAN_BASIS);
-  
+
   if(outputdir != "") bconfig.set_outputdir(outputdir) ;
 
   // load and setup the EOS
@@ -202,26 +202,26 @@ int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, ns_s
     using eos_t = Kadath::Margherita::Cold_PWPoly;
 
     EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
-    ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> 
+    ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)>
       ns_solver(bconfig, space, basis, conf, lapse, logh, shift);
     exit_status = ns_solver.solve(seq);
 
   } else if(eos_type == "Cold_Table") {
     using eos_t = Kadath::Margherita::Cold_Table;
 
-    const int interp_pts = (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0) ? 
+    const int interp_pts = (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0) ?
       2000 : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
 
     EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
-    ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> 
+    ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)>
       ns_solver(bconfig, space, basis, conf, lapse, logh, shift);
-    
+
     exit_status = ns_solver.solve(seq);
-  } else { 
+  } else {
     std::cerr << "Unknown EOSTYPE." << endl;
     std::_Exit(EXIT_FAILURE);
   }
-  
+
   MPI_Barrier(MPI_COMM_WORLD);
 
   return exit_status;
@@ -229,7 +229,7 @@ int ns_3d_xcts_stationary_driver (config_t& bconfig, std::string outputdir, ns_s
 
 /**
  * @brief Driver to compute a stationary solution for a given resolution
- * 
+ *
  * @tparam config_t Config file type
  * @param bconfig NS config file
  * @param outputdir directory to store solutions in
@@ -249,20 +249,20 @@ int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir, n
   bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI) = bconfig(BCO_PARAMS::CHI);
 
   // In the event we wish to solve for a highly spinning solution
-  // we need to do an initial slow rotating solution before going to 
+  // we need to do an initial slow rotating solution before going to
   // faster rotations otherwise the solution will diverge.
-  bconfig.control(CONTROLS::ITERATIVE_CHI) = 
-    bconfig.control(CONTROLS::SEQUENCES) 
+  bconfig.control(CONTROLS::ITERATIVE_CHI) =
+    bconfig.control(CONTROLS::SEQUENCES)
       && std::fabs(bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI)) > 0.2;
 
   // Lower chi in case of iterative chi
-  bconfig(BCO_PARAMS::CHI) = (bconfig.control(CONTROLS::ITERATIVE_CHI)) ? 
-    std::copysign(0.1, bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI)) : 
+  bconfig(BCO_PARAMS::CHI) = (bconfig.control(CONTROLS::ITERATIVE_CHI)) ?
+    std::copysign(0.1, bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI)) :
     bconfig(BCO_PARAMS::CHI);
 
   // make sure NS directory exists for outputs
   if(outputdir == "./") {
-    std::filesystem::path cwd = std::filesystem::current_path();
+    fs::path cwd = fs::current_path();
     outputdir = cwd.string();
   }
   if(rank == 0)
@@ -275,7 +275,7 @@ int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir, n
   //     std::cout << "Config error.  No madm nor mb found. \n\n";
   //   std::_Exit(EXIT_FAILURE);
   // }
-  
+
   std::string spacein = bconfig.space_filename();
   if(!fs::exists(spacein)) {
     // mainly for debugging MPI bugs
@@ -287,7 +287,7 @@ int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir, n
     std::_Exit(EXIT_FAILURE);
   }
 
-  while(exit_status == RELOAD_FILE) { 
+  while(exit_status == RELOAD_FILE) {
     exit_status = ns_3d_xcts_stationary_driver(bconfig, outputdir, seq);
     MPI_Barrier(MPI_COMM_WORLD);
   }
@@ -295,7 +295,7 @@ int ns_3d_xcts_base_solution_driver (config_t& bconfig, std::string outputdir, n
 }
 
 template<class config_t, class Res_t>
-inline int ns_3d_xcts_driver (config_t& bconfig, 
+inline int ns_3d_xcts_driver (config_t& bconfig,
   Res_t& resolution, std::string outputdir, ns_sequence const * seq) {
   int exit_status = RELOAD_FILE;
   int rank = 0;
@@ -317,7 +317,7 @@ inline int ns_3d_xcts_driver (config_t& bconfig,
   bool res_inc = (resolution.final() > resolution.init());
   auto resolution_indices = resolution.get_indices();
   auto const & final_res = resolution.final();
-  
+
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
   auto [ last_stage, last_stage_idx ] = get_last_enabled(MSTAGE, stage_enabled);
 
@@ -347,18 +347,18 @@ inline int ns_3d_xcts_driver (config_t& bconfig,
     MPI_Barrier(MPI_COMM_WORLD);
     bconfig.set_filename(fname);
     bconfig.open_config();
-    
+
     stage_enabled.fill(false);
     stage_enabled[last_stage_idx] = true;
   };
-  
+
   // Make sure current solution is using an optimal grid structure
   std::array<bool, NUM_STAGES> saved_stages = bconfig.return_stages();
   regrid();
   stage_enabled = saved_stages;
   exit_status = ns_3d_xcts_stationary_driver(bconfig, outputdir, seq);
 
-  while(res_inc) {        
+  while(res_inc) {
 
     // iterative res increase
     if(bconfig(BCO_PARAMS::BCO_RES) + 2 >= final_res) {
@@ -368,7 +368,7 @@ inline int ns_3d_xcts_driver (config_t& bconfig,
       bconfig.set(BCO_PARAMS::BCO_RES) += 2;
     }
     regrid();
-  
+
     // Placeholder
     // Rerun with new grid
     // if(stage_enabled[STAGES::LINBOOST]) {
@@ -382,7 +382,7 @@ inline int ns_3d_xcts_driver (config_t& bconfig,
 }
 
 template<typename config_t, class Res_t>
-inline int ns_3d_xcts_binary_boost_driver (config_t& bconfig, 
+inline int ns_3d_xcts_binary_boost_driver (config_t& bconfig,
   Res_t& resolution, std::string outputdir,
     kadath_config_boost<BIN_INFO> binconfig, const size_t bco) {
 
@@ -398,13 +398,14 @@ inline int ns_3d_xcts_binary_boost_driver (config_t& bconfig,
   ns_sequence tmp_seq{};
   verify_ns_fixing_values(bconfig, tmp_seq);
   bconfig = ns_3d_xcts_sequence(bconfig, tmp_seq, resolution, outputdir);
-  bconfig.set_stage(STAGES::NOROT_BC) = false;
-  
-  while(exit_status == RUN_BOOST) { 
+  // FIXME make sure only last stage is active?
+  // Used to manually disable norot here.
+  //
+  while(exit_status == RUN_BOOST) {
     auto spacein = bconfig.space_filename();
     // just so you really know
     if(rank == 0) {
-      std::cout << "Config File: " 
+      std::cout << "Config File: "
                 << bconfig.config_filename_abs() << std::endl
                 << "Fields File: " << spacein << std::endl
                 << bconfig << std::endl;
@@ -433,9 +434,9 @@ inline int ns_3d_xcts_binary_boost_driver (config_t& bconfig,
       using eos_t = Kadath::Margherita::Cold_PWPoly;
 
       EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
-      ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> 
+      ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)>
         ns_solver(bconfig, space, basis, conf, lapse, logh, shift);
-      
+
       exit_status = ns_solver.binary_boost_stage(binconfig, bco);
     } else if(eos_type == "Cold_Table") {
       using eos_t = Kadath::Margherita::Cold_Table;
@@ -444,11 +445,11 @@ inline int ns_3d_xcts_binary_boost_driver (config_t& bconfig,
                               2000 : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
 
       EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
-      ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> 
+      ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)>
         ns_solver(bconfig, space, basis, conf, lapse, logh, shift);
-      
+
       exit_status = ns_solver.binary_boost_stage(binconfig, bco);
-    } else { 
+    } else {
       std::cerr << "Unknown EOSTYPE." << endl;
       std::_Exit(EXIT_FAILURE);
     }

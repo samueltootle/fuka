@@ -4,7 +4,7 @@
 #include "kadath.hpp"
 
 //class Point ;
-/** 
+/**
  * @namespace export_utils
  * Utilities for exporting Kadath initial data to evolution kits such as ETK
  */
@@ -99,7 +99,7 @@ Kadath::Point point_spherical(double r, double theta, double phi, double shift_x
  * returns: corrected radius approximately equal to the excision radius
  */
 template<class T, class space_t>
-T get_excision_r (space_t const & space, 
+T get_excision_r (space_t const & space,
   T r, T const & theta_, T const & phi_, int const dom_, T const xshift_) {
   // Generate cartesian point based on (r,t,p)
   auto p = point_spherical(r, theta_, phi_, xshift_);
@@ -110,8 +110,8 @@ T get_excision_r (space_t const & space,
     for(auto d = start; d < stop; ++d)
       result = result || space.get_domain(d)->is_in(p);
     return result;
-  };  
-  
+  };
+
   size_t cnt{0};
   constexpr size_t max_iter = 1000;
   // Excision region consists of two domains, hence, dom_ - 2
@@ -127,7 +127,7 @@ T get_excision_r (space_t const & space,
       std::_Exit(EXIT_FAILURE);
     }
   };
-  
+
   // the point should lay in the domain just outside the excision surface
   // if it's not, there must be a problem.
   if(!space.get_domain(dom_)->is_in(p)){
@@ -140,11 +140,11 @@ T get_excision_r (space_t const & space,
 
 /**
  * interpolate_radial
- * 
+ *
  * We interpolate radially in 3D - f(r, theta, phi) - for an arbitrary
  * excision surface for a given field before extrapolating inside the
  * excision surface
- * 
+ *
  * [input] space: numerical space
  * [input] field_in: field to interpolate on
  * [input] order_: Interpolation order
@@ -159,10 +159,10 @@ T get_excision_r (space_t const & space,
  */
 template<class T = double, class space_t>
 T interpolate_radial(space_t const & space, Kadath::Scalar const & field_in,
-  int const order_, T const dr_, T const offset_, T const ah_r, 
-  T const r_, T const theta_, T const phi_, const int dom_, 
+  int const order_, T const dr_, T const offset_, T const ah_r,
+  T const r_, T const theta_, T const phi_, const int dom_,
   T const xshift_) {
-    
+
   // build vector of radial points
   std::vector<T> r_points(order_);
   for (int j = 0; j < order_; j++) {
@@ -192,10 +192,10 @@ void add_tensor_refs(qarray_t& quants, std::vector<int>&& ary_indicies, Kadath::
 
 /**
  * spherical_turduck
- * 
+ *
  * We interpolate radially in 3D - f(r, theta, phi) - for an arbitrary
  * excision surface before filling excision
- * 
+ *
  * [input] quant_vals: vector to be manipulated for alp, psi, bet, and kij
  * [input] KMQ_vals: vector to be manipulated for gij
  * [input] order_: Interpolation order
@@ -211,15 +211,15 @@ void add_tensor_refs(qarray_t& quants, std::vector<int>&& ary_indicies, Kadath::
  */
 template<class T, class quant_ary_t, class fields_ary_t, size_t N = NUM_VQUANTS>
 void spherical_turduck(fields_ary_t& quants, quant_ary_t& quant_vals,
-  int const order_, T const dr_, T const offset_, T const r_bound_, 
-  T const r_, T const theta_, T const phi_, const int dom_, 
+  int const order_, T const dr_, T const offset_, T const r_bound_,
+  T const r_, T const theta_, T const phi_, const int dom_,
   T const xshift_) {
-  
+
   //auto& space = quants[0].get().get_space();
   T const ah_r = r_bound_;
   // export_utils::get_excision_r(space,
   //   r_bound_, theta_, phi_, dom_, xshift_);
-  
+
   std::vector<T> r_points(order_);
   for (int j = 0; j < order_; j++) {
     r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
@@ -239,15 +239,17 @@ void spherical_turduck(fields_ary_t& quants, quant_ary_t& quant_vals,
         quant_vals[k] = 0;
         continue;
       }
-    } 
+    }
     for (int j = 0; j < order_; j++) {
       auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
       vals[j] = quants[k].get().val_point(p);
     }
-    
+
     quant_vals[k] =
       lagrange_gen_k(order_, r_, r_points.data(), vals.data());
   }
 }
+
+std::string throw_no_multithreaded_support_error(std::string not_implemented);
 /** @}*/
 }

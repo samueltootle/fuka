@@ -27,3 +27,11 @@ double export_utils::lagrange_gen_k(int interp_order, double x, const double *xp
 
   return temp;
 }
+
+std::string export_utils::throw_no_multithreaded_support_error(const std::string not_implemented) {
+  std::string error_msg = "\n" + not_implemented + " is not available when the compile time definition DEFAULT_KAD_MEM is not defined.\n";
+  error_msg += "DEFAULT_KAD_MEM is documented in $HOME_KADATH/include/memory.hpp and should only be defined when multi-threaded\n";
+  error_msg += "support is needed for exporters.  It is highly recommended to have a separate build of FUKA with DEFAULT_KAD_MEM\n";
+  error_msg += "for export only as enabling DEFAULT_KAD_MEM and attempting to using the initial data codes will be drastically slower.\n";
+  return error_msg;
+}
