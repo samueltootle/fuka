@@ -1,5 +1,6 @@
 #include "Solvers/ns_isotropic/ns_isotropic_exporter.hpp"
 namespace Kadath::FUKA_Solvers {
+#ifdef DEFAULT_KAD_MEM
   CFMS_NS_ISO_Exporter::CFMS_NS_ISO_Exporter(CFMS_NS_ISO_Exporter const & r) {
     std::lock_guard<std::mutex> lock(copy_mutex);
     ndom = r.ndom;
@@ -51,6 +52,17 @@ namespace Kadath::FUKA_Solvers {
     *this = std::move(tmp);
     return *this;
   }
+#else
+  CFMS_NS_ISO_Exporter::CFMS_NS_ISO_Exporter(CFMS_NS_ISO_Exporter const & r) {
+    std::string error_msg = export_utils::throw_no_multithreaded_support_error("CFMS_NS_ISO_Exporter - Copy Constructor");
+    throw std::runtime_error(error_msg);
+  }
+
+  CFMS_NS_ISO_Exporter& CFMS_NS_ISO_Exporter::operator=(const CFMS_NS_ISO_Exporter& b) {
+    std::string error_msg = export_utils::throw_no_multithreaded_support_error("CFMS_NS_ISO_Exporter - Assignment operator");
+    throw std::runtime_error(error_msg);
+  }
+#endif
 
   void CFMS_NS_ISO_Exporter::initialize_eos() {
     // Initialize EOS

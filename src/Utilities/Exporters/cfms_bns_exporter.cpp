@@ -1,5 +1,6 @@
 #include "Solvers/bns_xcts/bns_exporter.hpp"
 namespace Kadath::FUKA_Solvers {
+#ifdef DEFAULT_KAD_MEM
   CFMS_BNS_Exporter::CFMS_BNS_Exporter(CFMS_BNS_Exporter const & r) {
     std::lock_guard<std::mutex> lock(copy_mutex);
     ndom = r.ndom;
@@ -17,7 +18,7 @@ namespace Kadath::FUKA_Solvers {
     A.reset(new Tensor(*space, *r.A.get()));
 
     bconfig.reset(new config_t(*r.bconfig));
-    
+
     export_ready = false;
 
     populate_quants();
@@ -25,7 +26,7 @@ namespace Kadath::FUKA_Solvers {
     // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
     // std::cout << "copy\n";
   }
-  
+
   CFMS_BNS_Exporter& CFMS_BNS_Exporter::operator=(const CFMS_BNS_Exporter& b) {
     if (this == &b) return *this;
 
@@ -33,7 +34,18 @@ namespace Kadath::FUKA_Solvers {
     *this = std::move(tmp);
     return *this;
   }
-  
+#else
+  CFMS_BNS_Exporter::CFMS_BNS_Exporter(CFMS_BNS_Exporter const & r) {
+    std::string error_msg = export_utils::throw_no_multithreaded_support_error("CFMS_BNS_Exporter - Copy Constructor");
+    throw std::runtime_error(error_msg);
+  }
+
+  CFMS_BNS_Exporter& CFMS_BNS_Exporter::operator=(const CFMS_BNS_Exporter& b) {
+    std::string error_msg = export_utils::throw_no_multithreaded_support_error("CFMS_BNS_Exporter - Assignment operator");
+    throw std::runtime_error(error_msg);
+  }
+#endif
+
   void CFMS_BNS_Exporter::initialize_eos() {
     using namespace Kadath::FUKA_Config;
     // Initialize EOS
@@ -57,7 +69,7 @@ namespace Kadath::FUKA_Solvers {
       throw std::invalid_argument("\nInvalid EOS Type\n)");
     }// end adding EOS OPEs
   }
-  
+
   void CFMS_BNS_Exporter::load_solution_from_file() {
     std::string spacein{bconfig->space_filename()};
     FILE* ff1 = fopen (spacein.c_str(), "r") ;
@@ -68,9 +80,9 @@ namespace Kadath::FUKA_Solvers {
     shift.reset( new Vector(*space.get(), ff1)) ;
     logh.reset( new Scalar(*space.get(), ff1)) ;
     velpotential.reset( new Scalar(*space.get(), ff1)) ;
-    
+
     fclose(ff1);
-    
+
     ndom = space->get_nbr_domains();
   }
 
@@ -111,7 +123,7 @@ namespace Kadath::FUKA_Solvers {
 
     syst.add_cst("omes1" , (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA, Kadath::FUKA_Config::NODES::BCO1));
     syst.add_cst("omes2" , (*bconfig)(Kadath::FUKA_Config::BCO_PARAMS::OMEGA, Kadath::FUKA_Config::NODES::BCO2));
-    
+
     syst.add_cst("mg", *coord_vectors[Kadath::coord_vector::GLOBAL_ROT]);
     syst.add_cst("mm", *coord_vectors[Kadath::coord_vector::BCO1_ROT]) ;
     syst.add_cst("mp", *coord_vectors[Kadath::coord_vector::BCO2_ROT]) ;
@@ -133,7 +145,7 @@ namespace Kadath::FUKA_Solvers {
     syst.add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
     A.reset(new Tensor(syst.give_val_def("A")));
     A->coef();
-  
+
     // definitions for the fluid 3-velocity
     syst.add_def("Wsquare = eta^i * eta_i / h^2 / P^4 + 1.");
     syst.add_def("W = sqrt(Wsquare)");
@@ -155,13 +167,13 @@ namespace Kadath::FUKA_Solvers {
     quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
     export_utils::add_tensor_refs(quants, {
-      XCTS_VARS::XCTS_A11, 
-      XCTS_VARS::XCTS_A12, 
-      XCTS_VARS::XCTS_A13, 
-      XCTS_VARS::XCTS_A22, 
-      XCTS_VARS::XCTS_A23, 
+      XCTS_VARS::XCTS_A11,
+      XCTS_VARS::XCTS_A12,
+      XCTS_VARS::XCTS_A13,
+      XCTS_VARS::XCTS_A22,
+      XCTS_VARS::XCTS_A23,
       XCTS_VARS::XCTS_A33}, *A);
-    
+
     // Fluid related quantities
     quants[XCTS_VARS::XCTS_H] = std::cref(*logh);
     quants[XCTS_VARS::XCTS_UX] = std::cref((*fluidvel)(1));
@@ -171,35 +183,35 @@ namespace Kadath::FUKA_Solvers {
   }
 
   CFMS_BNS_Exporter::interp_ary_t CFMS_BNS_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z) {
-    
+
     double const & xcom_shift = (*bconfig)(Kadath::FUKA_Config::BIN_PARAMS::COM);
     double const & ycom_shift = (*bconfig)(Kadath::FUKA_Config::BIN_PARAMS::COMY);
     Point abs_coords(ndim);
     abs_coords.set(1) = x - xcom_shift;
     abs_coords.set(2) = y - ycom_shift;
     abs_coords.set(3) = z;
-    
+
     for (size_t k = 0; k < XCTS_VARS::NUM_XCTS_VARS; ++k) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
     }
-    
+
     return quant_vals;
   }
 
   CFMS_BNS_Exporter::interp_ary_t CFMS_BNS_Exporter::interpolate_pointwise_subset(double const & x, double const & y, double const & z,
     std::vector<CFMS_BNS_Exporter::XCTS_VARS> slice) {
-    
+
     double const & xcom_shift = (*bconfig)(Kadath::FUKA_Config::BIN_PARAMS::COM);
     double const & ycom_shift = (*bconfig)(Kadath::FUKA_Config::BIN_PARAMS::COMY);
     Point abs_coords(ndim);
     abs_coords.set(1) = x - xcom_shift;
     abs_coords.set(2) = y - ycom_shift;
     abs_coords.set(3) = z;
-    
+
     for (const auto k : slice) {
         quant_vals[k] = quants[k].get().val_point(abs_coords);
     }
-    
+
     return quant_vals;
   }
 
@@ -228,7 +240,7 @@ namespace Kadath::FUKA_Solvers {
   }
 
   CFMS_BNS_Exporter::output_ary_t CFMS_BNS_Exporter::export_pointwise_spacetime_vars(double const & x, double const & y, double const & z) {
-    
+
     // Reset to NAN
     for(auto& e : quant_vals) {
       e = NAN;
@@ -270,18 +282,18 @@ namespace Kadath::FUKA_Solvers {
     out_pw[OUTPUT_VARS::K22] = quant_vals[XCTS_VARS::XCTS_A22] * psi4;
     out_pw[OUTPUT_VARS::K23] = quant_vals[XCTS_VARS::XCTS_A23] * psi4;
     out_pw[OUTPUT_VARS::K33] = quant_vals[XCTS_VARS::XCTS_A33] * psi4;
-    
+
     return out_pw;
   }
 
   CFMS_BNS_Exporter::grid_ary_t CFMS_BNS_Exporter::export_coordinate_array(
     int const npoints, double const * xx, double const * yy, double const * zz) {
-    
+
     grid_ary_t out;
     for(auto& v : out) {
       v.resize(npoints);
     }
-    
+
     for (size_t i = 0; i < npoints; ++i) {
       export_pointwise(xx[i], yy[i], zz[i]);
 

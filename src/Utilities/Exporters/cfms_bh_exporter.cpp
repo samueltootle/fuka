@@ -1,5 +1,6 @@
 #include "Solvers/bh_3d_xcts/bh_exporter.hpp"
 namespace Kadath::FUKA_Solvers {
+#ifdef DEFAULT_KAD_MEM
   CFMS_BH_Exporter::CFMS_BH_Exporter(CFMS_BH_Exporter const & r) {
     std::lock_guard<std::mutex> lock(copy_mutex);
     ndom = r.ndom;
@@ -11,7 +12,7 @@ namespace Kadath::FUKA_Solvers {
     A.reset(new Tensor(*space, *r.A.get()));
 
     bconfig.reset(new config_t(*r.bconfig));
-    
+
     export_ready = false;
 
     populate_quants();
@@ -19,7 +20,7 @@ namespace Kadath::FUKA_Solvers {
     // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
     // std::cout << "copy\n";
   }
-  
+
   CFMS_BH_Exporter& CFMS_BH_Exporter::operator=(const CFMS_BH_Exporter& b) {
     if (this == &b) return *this;
 
@@ -27,16 +28,27 @@ namespace Kadath::FUKA_Solvers {
     *this = std::move(tmp);
     return *this;
   }
-  
+#else
+  CFMS_BH_Exporter::CFMS_BH_Exporter(CFMS_BH_Exporter const & r) {
+    std::string error_msg = export_utils::throw_no_multithreaded_support_error("CFMS_BH_Exporter - Copy Constructor");
+    throw std::runtime_error(error_msg);
+  }
+
+  CFMS_BH_Exporter& CFMS_BH_Exporter::operator=(const CFMS_BH_Exporter& b) {
+    std::string error_msg = export_utils::throw_no_multithreaded_support_error("CFMS_BH_Exporter - Assignment operator");
+    throw std::runtime_error(error_msg);
+  }
+#endif
+
   void CFMS_BH_Exporter::load_solution_from_file() {
     std::string spacein{bconfig->space_filename()};
     FILE* ff1 = fopen (spacein.c_str(), "r") ;
-    
+
     space.reset(new space_t{ff1});
     conformal_factor.reset( new Scalar(*space.get(), ff1)) ;
     lapse.reset( new Scalar(*space.get(), ff1)) ;
     shift.reset( new Vector(*space.get(), ff1)) ;
-    
+
     fclose(ff1);
 
     ndom = space->get_nbr_domains();
@@ -69,11 +81,11 @@ namespace Kadath::FUKA_Solvers {
     quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
     export_utils::add_tensor_refs(quants, {
-      XCTS_VARS::XCTS_A11, 
-      XCTS_VARS::XCTS_A12, 
-      XCTS_VARS::XCTS_A13, 
-      XCTS_VARS::XCTS_A22, 
-      XCTS_VARS::XCTS_A23, 
+      XCTS_VARS::XCTS_A11,
+      XCTS_VARS::XCTS_A12,
+      XCTS_VARS::XCTS_A13,
+      XCTS_VARS::XCTS_A22,
+      XCTS_VARS::XCTS_A23,
       XCTS_VARS::XCTS_A33}, *A);
     export_ready = true;
   }
@@ -95,20 +107,20 @@ namespace Kadath::FUKA_Solvers {
       extrap_r = (extrap_r <= 1e-12) ? 1e-12 : extrap_r;
       double x_shifted = (x == 0.) ? 1e-14 : x;
       double theta = std::acos(z / extrap_r);
-      
+
       // atan2 is needed here
-      double phi = std::atan2(y, (x_shifted - bh_ori)); 
+      double phi = std::atan2(y, (x_shifted - bh_ori));
 
       // Where the filling takes places
       export_utils::spherical_turduck(
-        quants, quant_vals, interp_order, delta_r_rel, interpolation_offset, 
+        quants, quant_vals, interp_order, delta_r_rel, interpolation_offset,
         ah_r, extrap_r, theta, phi, 2, bh_ori
       );
     };
 
     if (r <= (1. + interpolation_offset) * rbh) {
       interp_f(rbh, r, 0.);
-    } else { 
+    } else {
       Point abs_coords(ndim);
       abs_coords.set(1) = x;
       abs_coords.set(2) = y;
@@ -123,9 +135,9 @@ namespace Kadath::FUKA_Solvers {
 
   CFMS_BH_Exporter::output_ary_t CFMS_BH_Exporter::export_pointwise(double const & x, double const & y, double const & z,
     double const interpolation_offset, int const interp_order, double const delta_r_rel) {
-      
+
     quant_vals = interpolate_pointwise(x, y, z, interpolation_offset, interp_order, delta_r_rel);
-    
+
     // Fill output vector by storing non-conformal quantities
     auto const psi = quant_vals[XCTS_VARS::XCTS_PSI];
     auto const psi2 = psi * psi;
@@ -167,15 +179,15 @@ namespace Kadath::FUKA_Solvers {
   CFMS_BH_Exporter::grid_ary_t CFMS_BH_Exporter::export_coordinate_array(
     int const npoints, double const * xx, double const * yy, double const * zz,
     double const interpolation_offset, int const interp_order, double const delta_r_rel) {
-    
+
     grid_ary_t out;
     for(auto& v : out) {
       v.resize(npoints);
     }
-    
+
     for (int i = 0; i < npoints; ++i) {
       export_pointwise(xx[i], yy[i], zz[i], interpolation_offset, interp_order, delta_r_rel);
-      
+
       out[OUTPUT_VARS::ALPHA][i] = out_pw[OUTPUT_VARS::ALPHA];
 
       out[OUTPUT_VARS::BETA1][i] = out_pw[OUTPUT_VARS::BETA1];
