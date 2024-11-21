@@ -10,7 +10,7 @@ AlignConsecutiveAssignments: None
 AlignOperands: Align
 AllowAllArgumentsOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
-AllowAllParametersOfDeclarationOnNextLine: false
+#AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Inline
@@ -81,6 +81,9 @@ SpacesInSquareBrackets: false
 Standard: c++11
 TabWidth: 4
 UseTab: Never
+
 StatementMacros:
 - internal_variable
-
+AllowAllParametersOfDeclarationOnNextLine: true
+BreakBeforeParameter: true
+#PenaltyBreakFunctionCall: 100
