@@ -1,0 +1,16 @@
+AlwaysBreakTemplateDeclarations: Yes
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterFunction: false
+  AfterControlStatement: false
+  AfterNamespace: true
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: InlineOnly
+StatementMacros:
+  - internal_variable
+
