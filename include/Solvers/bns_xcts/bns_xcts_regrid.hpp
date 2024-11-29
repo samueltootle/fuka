@@ -39,7 +39,7 @@ using bin_space_t = Space_bin_ns;
 template<typename config_t>
 int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   int exit_status = EXIT_SUCCESS;
-  namespace bco_u = ::Kadath::bco_utils;
+  using namespace ::Kadath::bco_utils;
 
   // file containing KADATH fields must have same name as config file with only the extension being different
   std::string kadath_filename = bconfig.space_filename();
@@ -98,7 +98,7 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
     int const dom = old_adapted_doms[i];
 
     // array of {rmin, rmax}
-    auto [ rmin, rmax ] = bco_u::get_rmin_rmax(old_space, dom);
+    auto [ rmin, rmax ] = get_rmin_rmax(old_space, dom);
 	  std::cout << rmin << " " << rmax << std::endl;
 
     bconfig.set(BCO_PARAMS::RIN , i) = 0.5 * rmin;
@@ -107,7 +107,7 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
     r_max_tot = (rmax > r_max_tot) ? rmax : r_max_tot;
   }
   const double rout_sep_est = (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
-  const double rout_max_est = bco_u::gold_ratio * r_max_tot;
+  const double rout_max_est = gold_ratio * r_max_tot;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) = bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
   // end updating config vars
@@ -137,12 +137,12 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   for(int e = 0; e < out_bounds.size(); ++e)
     out_bounds[e] = bconfig(BIN_PARAMS::REXT) * (1. + e * 0.25);
 
-  bco_u::set_NS_bounds(NS1_bounds, bconfig, NODES::BCO1);
-  bco_u::set_NS_bounds(NS2_bounds, bconfig, NODES::BCO2);
+  set_NS_bounds(NS1_bounds, bconfig, NODES::BCO1);
+  set_NS_bounds(NS2_bounds, bconfig, NODES::BCO2);
 
   std::cout << "Bounds:" << std::endl;
-  bco_u::print_bounds("NS1", NS1_bounds);
-  bco_u::print_bounds("NS2", NS2_bounds);
+  print_bounds("NS1", NS1_bounds);
+  print_bounds("NS2", NS2_bounds);
 
 
   bin_space_t space (type_coloc, bconfig(BIN_PARAMS::DIST), NS1_bounds, NS2_bounds, out_bounds, res);
@@ -168,11 +168,11 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
 		int const dom = old_adapted_doms[i];
 
     // Updated mapping for NS
-    bco_u::interp_adapted_mapping(new_inner_adapted[i], dom, old_space_radius);
-    bco_u::interp_adapted_mapping(new_outer_adapted[i], dom, old_space_radius);
+    interp_adapted_mapping(new_inner_adapted[i], dom, old_space_radius);
+    interp_adapted_mapping(new_outer_adapted[i], dom, old_space_radius);
 
     // Interpolate old_phi field outside of the star for import
-    bco_u::update_adapted_field(old_phi, dom, dom+1, old_inner_adapted[i], INNER_BC);
+    update_adapted_field(old_phi, dom, dom+1, old_inner_adapted[i], INNER_BC);
 	}
 
   std::cout << "xc1: " << xc[0] << std::endl;
@@ -231,7 +231,7 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   phi.std_base();
 
   bconfig.set_filename(output_fname);
-  bco_u::save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
+  save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
   return exit_status;
 }
 /** @}*/
