@@ -28,7 +28,8 @@ std::string extract_eos_name(config_t& bconfig, bco_idx... bco) {
  * @param conv Current convergence
  */
 template <class solver_t>
-void check_max_iter_exceeded(solver_t const& solver, const int& ite,
+void check_max_iter_exceeded(solver_t const& solver,
+                             const int& ite,
                              const double& conv) {
   int rank = solver.get_rank();
   auto& bconfig = *solver.get_bconfig();

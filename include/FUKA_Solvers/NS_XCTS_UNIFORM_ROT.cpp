@@ -5,11 +5,12 @@ namespace Kadath::FUKA_Solvers {
 // NOROT Routines
 template <class eos_t>
 NS_XCTS_UNIFORM_ROT<eos_t>::NS_XCTS_UNIFORM_ROT(
-    NS_XCTS_BASE::base_config_t* config_, ns_sequence const& seq_,
-    Parameter_sequence<BCO_PARAMS> const& res_, std::string outputdir_,
+    NS_XCTS_BASE::base_config_t* config_,
+    ns_sequence const& seq_,
+    Parameter_sequence<BCO_PARAMS> const& res_,
+    std::string outputdir_,
     int const rank_)
     : NS_XCTS_BASE(config_, seq_, res_, outputdir_, rank_), spinup(nullptr) {
-
   stagename = "UNIFORM_ROT";
   solver_stage = ::Kadath::FUKA_Config::STAGES::UNIFORM_ROT;
   if (!seq->is_set() && !bconfig->control(CONTROLS::SEQUENCES)) {
@@ -160,8 +161,8 @@ void NS_XCTS_UNIFORM_ROT<eos_t>::setup_syst() {
               << "############################" << std::endl;
   }
 
-  // add the constraint equations and demand continuity their normal derivative across domain
-  // boundaries
+  // add the constraint equations and demand continuity their normal derivative
+  // across domain boundaries
   space->add_eq(*syst, "eqNP= 0", "N", "dn(N)");
   space->add_eq(*syst, "eqP = 0", "P", "dn(P)");
   space->add_eq(*syst, "eqbet^i= 0", "bet^i", "dn(bet^i)");
@@ -261,14 +262,16 @@ void NS_XCTS_UNIFORM_ROT<eos_t>::syst_init() {
   // Quasi-local spin angular momentum
   syst->add_def(2, "intS = A_ij * mg^i * sm^j / 2. / 4piG");
 
-  // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
+  // enthalpy from the logarithmic enthalpy, the latter is the actual variable
+  // in this system
   syst->add_def("h = exp(H)");
 
   // define the EOS operators
   Param p;
   set_eos_ope<eos_t>(*syst, p);
 
-  // define rest-mass density, internal energy and pressure through the enthalpy
+  // define rest-mass density, internal energy and pressure through the
+  // enthalpy
   syst->add_def("rho = rho(h)");
   syst->add_def("eps = eps(h)");
   syst->add_def("press = press(h)");
@@ -282,7 +285,6 @@ void NS_XCTS_UNIFORM_ROT<eos_t>::syst_init() {
 template <class eos_t>
 void NS_XCTS_UNIFORM_ROT<eos_t>::print_diagnostics(const int ite,
                                                    const double conv) const {
-
   // compute the baryonic mass at volume integral from the given integrant
   double baryonic_mass = syst->give_val_def("intMb")()(0).integ_volume() +
                          syst->give_val_def("intMb")()(1).integ_volume();
@@ -331,7 +333,6 @@ void NS_XCTS_UNIFORM_ROT<eos_t>::print_diagnostics(const int ite,
 
 template <class eos_t>
 void NS_XCTS_UNIFORM_ROT<eos_t>::update_config_quantities() {
-
   auto rs = bco_utils::get_rmin_rmax(*space, 1);
   bconfig->set(BCO_PARAMS::RMID) = rs[0];
 

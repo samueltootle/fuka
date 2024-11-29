@@ -1,9 +1,10 @@
 /**
  * @file NS_XCTS.hpp
  * @author Samuel Tootle (sdtootle@gmail.com)
- * @brief This is a rewrite of the isolated neutron star solvers using the XCTS formulation
- * The rewrite was both motivated to drastically clean up the code for future maintenance as
- * well as prepare for merger with Kadath master branch
+ * @brief This is a rewrite of the isolated neutron star solvers using the XCTS
+ * formulation The rewrite was both motivated to drastically clean up the code
+ * for future maintenance as well as prepare for merger with Kadath master
+ * branch
  * @date 2024-02-21
  *
  * @copyright Copyright (c) 2024, GNU General Public Licensev3
@@ -43,14 +44,12 @@ struct NS_XCTS_BASE {
   using cfary_t = std::array<std::optional<Vector>, NUM_VECTORS>;
 
  protected:
-  internal_variable(int, rank)
-  internal_variable(int, verbosity)
-  internal_variable(int, ndom)
-  internal_variable(std::string, outputdir)
-  internal_variable(int, last_stage_idx)
-  internal_variable(std::string, stagename)
-  ::Kadath::FUKA_Config::STAGES solver_stage{
-      ::Kadath::FUKA_Config::STAGES::NUM_STAGES};
+  internal_variable(int, rank) internal_variable(int, verbosity)
+      internal_variable(int, ndom) internal_variable(std::string, outputdir)
+          internal_variable(int, last_stage_idx)
+              internal_variable(std::string,
+                                stagename)::Kadath::FUKA_Config::STAGES
+      solver_stage{::Kadath::FUKA_Config::STAGES::NUM_STAGES};
 
   // EOS Parameters - Perhaps this should be a container?
   internal_variable(double, h_cut);
@@ -78,9 +77,11 @@ struct NS_XCTS_BASE {
   virtual ~NS_XCTS_BASE() { bconfig.release(); };
 
   NS_XCTS_BASE();
-  NS_XCTS_BASE(base_config_t* config_, ns_sequence const& seq_,
+  NS_XCTS_BASE(base_config_t* config_,
+               ns_sequence const& seq_,
                Parameter_sequence<BCO_PARAMS> const& res_,
-               std::string outputdir_, int const rank_ = 0);
+               std::string outputdir_,
+               int const rank_ = 0);
   void save_to_file() const;
   bool increment_resolution();
   bool increment_seq();
@@ -98,10 +99,10 @@ struct NS_XCTS_BASE {
 
  public:
   /**
-     * @brief Consistent interface for writing a checkpoint
-     *
-     * @param termination_chkpt Toggle writing to stdout for termination
-     */
+   * @brief Consistent interface for writing a checkpoint
+   *
+   * @param termination_chkpt Toggle writing to stdout for termination
+   */
   void checkpoint(bool termination_chkpt = false) const {
     // Backup activated stages
     auto const final_stages{bconfig->return_stages()};
@@ -128,7 +129,6 @@ struct NS_XCTS_BASE {
 
 template <class eos_t>
 struct NS_XCTS_NOROT : NS_XCTS_BASE {
-
  private:
   void syst_init();
   void print_diagnostics(const int ite, const double conv) const override;
@@ -140,14 +140,15 @@ struct NS_XCTS_NOROT : NS_XCTS_BASE {
 
   NS_XCTS_NOROT() = default;
   NS_XCTS_NOROT(std::string filename);
-  NS_XCTS_NOROT(base_config_t* config_, ns_sequence const& seq_,
+  NS_XCTS_NOROT(base_config_t* config_,
+                ns_sequence const& seq_,
                 Parameter_sequence<BCO_PARAMS> const& res_,
-                std::string outputdir_, int const rank_ = 0);
+                std::string outputdir_,
+                int const rank_ = 0);
 };
 
 template <class eos_t>
 struct NS_XCTS_UNIFORM_ROT : NS_XCTS_BASE {
-
  private:
   void syst_init();
   void print_diagnostics(const int ite, const double conv) const override;
@@ -161,14 +162,15 @@ struct NS_XCTS_UNIFORM_ROT : NS_XCTS_BASE {
   std::string converged_filename(const std::string stage) const;
 
   NS_XCTS_UNIFORM_ROT() = default;
-  NS_XCTS_UNIFORM_ROT(base_config_t* config_, ns_sequence const& seq_,
+  NS_XCTS_UNIFORM_ROT(base_config_t* config_,
+                      ns_sequence const& seq_,
                       Parameter_sequence<BCO_PARAMS> const& res_,
-                      std::string outputdir_, int const rank_ = 0);
+                      std::string outputdir_,
+                      int const rank_ = 0);
 };
 
 template <class eos_t>
 struct NS_XCTS_DIFF_ROT : NS_XCTS_BASE {
-
  private:
   void syst_init();
   void print_diagnostics(const int ite, const double conv) const override;
@@ -194,9 +196,11 @@ struct NS_XCTS_DIFF_ROT : NS_XCTS_BASE {
   std::string converged_filename(const std::string stage) const;
 
   NS_XCTS_DIFF_ROT() = default;
-  NS_XCTS_DIFF_ROT(base_config_t* config_, ns_sequence const& seq_,
+  NS_XCTS_DIFF_ROT(base_config_t* config_,
+                   ns_sequence const& seq_,
                    Parameter_sequence<BCO_PARAMS> const& res_,
-                   std::string outputdir_, int const rank_ = 0);
+                   std::string outputdir_,
+                   int const rank_ = 0);
 
   void reset_all_ptrs() override;
 };

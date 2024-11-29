@@ -5,11 +5,12 @@ namespace Kadath::FUKA_Solvers {
 // NOROT Routines
 template <class eos_t>
 NS_XCTS_DIFF_ROT<eos_t>::NS_XCTS_DIFF_ROT(
-    NS_XCTS_BASE::base_config_t* config_, ns_sequence const& seq_,
-    Parameter_sequence<BCO_PARAMS> const& res_, std::string outputdir_,
+    NS_XCTS_BASE::base_config_t* config_,
+    ns_sequence const& seq_,
+    Parameter_sequence<BCO_PARAMS> const& res_,
+    std::string outputdir_,
     int const rank_)
     : NS_XCTS_BASE(config_, seq_, res_, outputdir_, rank_), spinup(nullptr) {
-
   stagename = "DIFF_ROT";
   solver_stage = ::Kadath::FUKA_Config::STAGES::DIFF_ROT;
   if (!seq->is_set() && !bconfig->control(CONTROLS::SEQUENCES)) {
@@ -272,14 +273,16 @@ void NS_XCTS_DIFF_ROT<eos_t>::syst_init() {
   // Quasi-local spin angular momentum
   syst->add_def(2, "intS = A_ij * mg^i * sm^j / 2. / 4piG");
 
-  // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
+  // enthalpy from the logarithmic enthalpy, the latter is the actual variable
+  // in this system
   syst->add_def("h = exp(H)");
 
   // define the EOS operators
   Param p;
   set_eos_ope<eos_t>(*syst, p);
 
-  // define rest-mass density, internal energy and pressure through the enthalpy
+  // define rest-mass density, internal energy and pressure through the
+  // enthalpy
   syst->add_def("rho = rho(h)");
   syst->add_def("eps = eps(h)");
   syst->add_def("press = press(h)");
@@ -293,7 +296,6 @@ void NS_XCTS_DIFF_ROT<eos_t>::syst_init() {
 template <class eos_t>
 void NS_XCTS_DIFF_ROT<eos_t>::print_diagnostics(const int ite,
                                                 const double conv) const {
-
   // compute the baryonic mass at volume integral from the given integrant
   double baryonic_mass = syst->give_val_def("intMb")()(0).integ_volume() +
                          syst->give_val_def("intMb")()(1).integ_volume();
@@ -344,7 +346,6 @@ void NS_XCTS_DIFF_ROT<eos_t>::print_diagnostics(const int ite,
 
 template <class eos_t>
 void NS_XCTS_DIFF_ROT<eos_t>::update_config_quantities() {
-
   // compute the ADM mass as surface integral at infinity
   Val_domain integMadm(syst->give_val_def("intMadm")()(ndom - 1));
   double Madm = space->get_domain(ndom - 1)->integ(integMadm, OUTER_BC);
@@ -397,7 +398,6 @@ void NS_XCTS_DIFF_ROT<eos_t>::update_config_quantities() {
 
 template <class eos_t>
 void NS_XCTS_DIFF_ROT<eos_t>::initialize_spinup() {
-
   auto adpt_dom = space->get_domain(1);
   double const R0 = adpt_dom->get_radius()(*pos_eq);
   double const Rp = adpt_dom->get_radius()(*pos_pole);

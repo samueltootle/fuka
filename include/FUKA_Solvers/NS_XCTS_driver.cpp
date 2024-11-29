@@ -15,7 +15,8 @@ inline int ns_xcts_driver(NS_XCTS_BASE::base_config_t& bconfig,
                           std::string outputdir);
 
 inline NS_XCTS_BASE::base_config_t ns_xcts_sequence_setup(
-    NS_XCTS_BASE::base_config_t& seqconfig, std::string outputdir) {
+    NS_XCTS_BASE::base_config_t& seqconfig,
+    std::string outputdir) {
   using config_t = NS_XCTS_BASE::base_config_t;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -35,7 +36,6 @@ int ns_xcts_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig,
                        ns_sequence const& seq,
                        Parameter_sequence<BCO_PARAMS>& resolution,
                        std::string const outputdir) {
-
   using config_t = NS_XCTS_BASE::base_config_t;
   int rank = 0, exit_status = EXIT_SUCCESS;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -222,7 +222,6 @@ inline int launch_final_stage_driver(NS_XCTS_BASE::base_config_t& bconfig,
                                      ns_sequence const& seq,
                                      Parameter_sequence<BCO_PARAMS>& resolution,
                                      std::string outputdir) {
-
   using config_t = NS_XCTS_BASE::base_config_t;
   using Res_t = Parameter_sequence<BCO_PARAMS>;
 
@@ -248,7 +247,6 @@ inline int ns_xcts_driver(NS_XCTS_BASE::base_config_t& bconfig,
                           ns_sequence const& seq,
                           Parameter_sequence<BCO_PARAMS>& resolution,
                           std::string outputdir) {
-
   int exit_status = EXIT_SUCCESS;
   auto resolution_indices = resolution.get_indices();
   bconfig.set(resolution_indices) = resolution.init();

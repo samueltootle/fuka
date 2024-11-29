@@ -24,7 +24,8 @@ inline NS_XCTS_BASE::NS_XCTS_BASE()
 inline NS_XCTS_BASE::NS_XCTS_BASE(NS_XCTS_BASE::base_config_t* config_,
                                   ns_sequence const& seq_,
                                   Parameter_sequence<BCO_PARAMS> const& res_,
-                                  std::string outputdir_, int const rank_)
+                                  std::string outputdir_,
+                                  int const rank_)
     : rank(rank_),
       verbosity(0),
       ndom(-1),
@@ -42,14 +43,12 @@ inline NS_XCTS_BASE::NS_XCTS_BASE(NS_XCTS_BASE::base_config_t* config_,
       seq(new ns_sequence(seq_)),
       resolution(new Parameter_sequence<BCO_PARAMS>(res_)),
       outputdir(outputdir_) {
-
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig->return_stages();
   auto [last_stage_, last_stage_idx_] = get_last_enabled(MSTAGE, stage_enabled);
   last_stage_idx = last_stage_idx_;
 }
 
 inline void NS_XCTS_BASE::initialize_support_containers() {
-
   basis.reset(new Base_tensor(shift->get_basis()));
   fmet.reset(new Metric_flat(*space, *basis));
 
@@ -99,8 +98,8 @@ inline void NS_XCTS_BASE::regrid() {
               << std::endl;
 
     int ndim = 3;
-    // get the adapted domain and cast it to its correct type to be able to call its member
-    // functions
+    // get the adapted domain and cast it to its correct type to be able to
+    // call its member functions
     const Domain_shell_outer_adapted* old_outer_adapted =
         dynamic_cast<const Domain_shell_outer_adapted*>(space->get_domain(1));
 
@@ -114,7 +113,8 @@ inline void NS_XCTS_BASE::regrid() {
     // get the adapted radius of the adapted domain
     old_space_radius.set_domain(1) = old_outer_adapted->get_outer_radius();
 
-    // define a standard decomposition, compatible with the parity of this field
+    // define a standard decomposition, compatible with the parity of this
+    // field
     old_space_radius.std_base();
     // end setup old radius field
 
