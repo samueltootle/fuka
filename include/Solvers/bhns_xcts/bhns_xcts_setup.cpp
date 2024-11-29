@@ -11,19 +11,19 @@ namespace FUKA_Solvers {
 template<class config_t>
 inline void bhns_xcts_setup_bin_config(config_t& bconfig) {
   using namespace ::Kadath::bco_utils;
-  check_dist(bconfig(BIN_PARAMS::DIST), 
+  check_dist(bconfig(BIN_PARAMS::DIST),
     bconfig(BCO_PARAMS::MADM, NODES::BCO1), bconfig(BCO_PARAMS::MCH, NODES::BCO2));
- 
+
   // Binary Parameters
   bconfig.set(BIN_PARAMS::REXT) = 2 * bconfig(BIN_PARAMS::DIST);
-  
-  bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MADM, NODES::BCO1) 
+
+  bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MADM, NODES::BCO1)
                              / bconfig(BCO_PARAMS::MCH, NODES::BCO2);
-  
+
   // classical Newtonian estimate
-  bconfig.set(BIN_PARAMS::COM) = com_estimate(bconfig(BIN_PARAMS::DIST), 
+  bconfig.set(BIN_PARAMS::COM) = com_estimate(bconfig(BIN_PARAMS::DIST),
     bconfig(BCO_PARAMS::MADM, NODES::BCO1), bconfig(BCO_PARAMS::MCH, NODES::BCO2));
-  
+
   // obtain 3PN estimate for the global, orbital omega
   KadathPNOrbitalParams(bconfig, \
         bconfig(BCO_PARAMS::MADM, NODES::BCO1), bconfig(BCO_PARAMS::MCH,NODES::BCO2));
@@ -38,10 +38,10 @@ void bhns_xcts_setup_space (config_t& bconfig) {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   std::array<std::string, 2> filenames;
-  
+
   filenames[0] = solve_NS_from_binary(bconfig, NODES::BCO1);
   filenames[1] = solve_BH_from_binary(bconfig, NODES::BCO2);
-  
+
   // debugging only
   for(auto& f : filenames)
     if(rank == 0)
@@ -56,12 +56,12 @@ void bhns_xcts_setup_space (config_t& bconfig) {
 
 template<class config_t>
 void bhns_xcts_superimposed_import(config_t& bconfig,
-  std::array<std::string, 2> co_filenames) { 
-  
+  std::array<std::string, 2> co_filenames) {
+
   // load single NS configuration
   std::string nsfilename{co_filenames[0]};
   kadath_config_boost<BCO_NS_INFO> NSconfig(nsfilename);
-  
+
   // load single BH configuration
   std::string bhfilename{co_filenames[1]};
   kadath_config_boost<BCO_BH_INFO> BHconfig(bhfilename);
@@ -89,13 +89,13 @@ void bhns_xcts_superimposed_import(config_t& bconfig,
 
 template<typename eos_t>
 inline void bhns_setup_boosted_3d(
-  kadath_config_boost<BCO_NS_INFO>& NSconfig, 
+  kadath_config_boost<BCO_NS_INFO>& NSconfig,
   kadath_config_boost<BCO_BH_INFO>& BHconfig,
   kadath_config_boost<BIN_INFO>& bconfig) {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   using namespace ::Kadath::bco_utils;
-  
+
   // open previous ns solution
   std::string nsspaceinf = NSconfig.space_filename();
   FILE* ff1 = fopen(nsspaceinf.c_str(), "r") ;
@@ -112,28 +112,28 @@ inline void bhns_setup_boosted_3d(
   NSconfig.set(BCO_PARAMS::HC) = std::exp(get_boundary_val(0, nslogh));
   NSconfig.set(BCO_PARAMS::NC) = EOS<eos_t,eos_var_t::DENSITY>::get(NSconfig(BCO_PARAMS::HC)) ;
   update_config_NS_radii(nsspacein, NSconfig, 1);
-  
+
   // obtain adapted NS shells for radius information and copying adapted mapping later
   const Domain_shell_outer_adapted* old_outer_adapted1 =
         dynamic_cast<const Domain_shell_outer_adapted*>(nsspacein.get_domain(1));
   const Domain_shell_inner_adapted* old_inner_adapted1 =
         dynamic_cast<const Domain_shell_inner_adapted*>(nsspacein.get_domain(2));
-  
+
   // setup radius field - needed for copying the adapted domain mappings.
   Scalar old_space_radius(nsspacein);
   old_space_radius.annule_hard();
 
 	int ndominns = nsspacein.get_nbr_domains() ;
 
-  for(int d = 0; d < ndominns; ++d) 
+  for(int d = 0; d < ndominns; ++d)
     old_space_radius.set_domain(d) = nsspacein.get_domain(d)->get_radius();
-  
+
   old_space_radius.set_domain(1) = old_outer_adapted1->get_outer_radius();
   old_space_radius.std_base();
   // end setup radius field
 
   // open old BH solution
-  std::string bhspaceinf = BHconfig.space_filename(); 
+  std::string bhspaceinf = BHconfig.space_filename();
   FILE* ff2 = fopen(bhspaceinf.c_str(), "r") ;
 	Space_adapted_bh bhspacein(ff2) ;
 	Scalar bhconf  (bhspacein, ff2) ;
@@ -142,10 +142,10 @@ inline void bhns_setup_boosted_3d(
 	fclose(ff2) ;
   // end open BH solution
   update_config_BH_radii(bhspacein, BHconfig, 1, bhconf);
-  
+
   auto interp_field = [&](auto& space, int outer_dom, auto& old_phi) {
     const int d = outer_dom;
-    const Domain_shell_inner_adapted* old_inner = 
+    const Domain_shell_inner_adapted* old_inner =
       dynamic_cast<const Domain_shell_inner_adapted*>(space.get_domain(d+1));
     //interpolate old_phi field outside of the star for import
     update_adapted_field(old_phi, d, d+1, old_inner, INNER_BC);
@@ -158,33 +158,33 @@ inline void bhns_setup_boosted_3d(
   //start Update config vars
   double r_max_tot = std::max(bconfig(BCO_PARAMS::RMID, NODES::BCO1), bconfig(BCO_PARAMS::RMID, NODES::BCO2));
   const double rout_sep_est = (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
-  const double rout_max_est = 1.5 * r_max_tot;
+  const double rout_max_est = bco_u::gold_ratio * r_max_tot;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) = bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
   //end updating config vars
 
   // setup domain boundaries
   std::vector<double> out_bounds(1+bconfig(OUTER_SHELLS));
-  
+
   std::vector<double> NS_bounds;
   {
-    auto ddrPsi(compute_ddrPsi(
-      nsspacein, 
-      nsconf, 
-      Metric_flat(nsspacein, nsshift.get_basis()), 
+    auto drPsi(compute_drPsi(
+      nsspacein,
+      nsconf,
+      Metric_flat(nsspacein, nsshift.get_basis()),
       {0,1}
     ));
-    NS_bounds = set_arb_bounds(bconfig, NODES::BCO1, ddrPsi, 2, 0.9);
+    NS_bounds = set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO1);
   }
   std::vector<double> BH_bounds;
   {
-    auto ddrPsi(compute_ddrPsi(
-      bhspacein, 
-      bhconf, 
-      Metric_flat(bhspacein, bhshift.get_basis()), 
+    auto drPsi(compute_drPsi(
+      bhspacein,
+      bhconf,
+      Metric_flat(bhspacein, bhshift.get_basis()),
       {0,1}
     ));
-    BH_bounds = set_arb_bounds(bconfig, NODES::BCO2, ddrPsi, 2, 0.9);
+    BH_bounds = set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO2);
   }
 
   //for out_bounds.size > 1 - add equi-distance shells
@@ -197,24 +197,24 @@ inline void bhns_setup_boosted_3d(
 
   // Setup actual space
   int typer = CHEB_TYPE ;
-  Space_bhns space (typer, bconfig(BIN_PARAMS::DIST), 
-    NS_bounds, BH_bounds, out_bounds, 
+  Space_bhns space (typer, bconfig(BIN_PARAMS::DIST),
+    NS_bounds, BH_bounds, out_bounds,
       bconfig(BIN_PARAMS::BIN_RES), bconfig(BCO_PARAMS::NINSHELLS, NODES::BCO1));
   Base_tensor basis (space, CARTESIAN_BASIS) ;
 
   const Domain_shell_inner_adapted* new_ns_inner = dynamic_cast<const Domain_shell_inner_adapted*>(space.get_domain(space.ADAPTEDNS+1));
   const Domain_shell_outer_adapted* new_ns_outer = dynamic_cast<const Domain_shell_outer_adapted*>(space.get_domain(space.ADAPTEDNS));
-  
+
   const Domain_shell_outer_homothetic* old_bh_outer = dynamic_cast<const Domain_shell_outer_homothetic*>(bhspacein.get_domain(1));
-  
+
   // Update BH fields based to help with interpolation later
   update_adapted_field(bhconf , 2, 1, old_bh_outer, OUTER_BC);
   update_adapted_field(bhlapse, 2, 1, old_bh_outer, OUTER_BC);
-  
+
   // Updated mapping for NS
   interp_adapted_mapping(new_ns_inner, 1, old_space_radius);
   interp_adapted_mapping(new_ns_outer, 1, old_space_radius);
-  
+
   double xc1 = get_center(space, space.NS);
   double xc2 = get_center(space, space.BH);
 
@@ -225,13 +225,13 @@ inline void bhns_setup_boosted_3d(
 
   if(NSconfig.set_field(PHI) == true)
     update_adapted_field(nsphi, 1, 2, old_inner_adapted1, INNER_BC);
-  
+
   // start to create the new fields
   // initialized to zero globally
   Scalar logh(space);
   logh.annule_hard();
 	logh.std_base();
-  
+
   Scalar conf(space);
   conf.annule_hard();
 
@@ -248,11 +248,11 @@ inline void bhns_setup_boosted_3d(
 
   const double ns_invw4 = set_decay(bconfig, NODES::BCO1);
   const double bh_invw4 = set_decay(bconfig, NODES::BCO2);
-  
+
   if(rank == 0)
     std::cout << "WeightNS: " << bconfig(BCO_PARAMS::DECAY, NODES::BCO1) << ", "
               << "WeightBH: " << bconfig(BCO_PARAMS::DECAY, NODES::BCO2) << std::endl;
-  
+
   int ndom = space.get_nbr_domains();
   for(int dom = 0; dom < ndom; dom++)
   {
@@ -270,7 +270,7 @@ inline void bhns_setup_boosted_3d(
 			absol1.set(1) = (x - xc1);
 			absol1.set(2) = y;
 			absol1.set(3) = z;
-      double r2 = y * y + z * z; 
+      double r2 = y * y + z * z;
       double r2_1 = (x - xc1) * (x - xc1) + r2;
       double r4_1  = r2_1 * r2_1;
       double r4_invw4_1 = r4_1 * ns_invw4;
@@ -284,19 +284,19 @@ inline void bhns_setup_boosted_3d(
       double r4_2  = r2_2 * r2_2;
       double r4_invw4_2 = r4_2 * bh_invw4;
       double decay_2 = std::exp(-r4_invw4_2);
-      
+
       if (dom < ndom - 1) {
         conf .set_domain(dom).set(new_pos) =              \
           1. + decay_1 * (nsconf.val_point(absol1) - 1.) \
              + decay_2 * (bhconf.val_point(absol2) - 1.);
-        
+
         lapse.set_domain(dom).set(new_pos) =               \
           1. + decay_1 * (nslapse.val_point(absol1) - 1.) \
              + decay_2 * (bhlapse.val_point(absol2) - 1.);
-        
+
         logh .set_domain(dom).set(new_pos) = 0. + \
           decay_1 * nslogh.val_point(absol1);
-        
+
         phi.set_domain(dom).set(new_pos) = 0;
         if(NSconfig.set_field(PHI) == true)
           phi.set_domain(dom).set(new_pos) += \
@@ -306,9 +306,9 @@ inline void bhns_setup_boosted_3d(
           shift.set(i).set_domain(dom).set(new_pos) =   \
             0. + decay_1 * nsshift(i).val_point(absol1) \
                + decay_2 * bhshift(i).val_point(absol2);
-   
+
       } else {
-        // We have to set the compactified domain manually 
+        // We have to set the compactified domain manually
         // since the outer collocation point is always
         // at inf which is undefined numerically
 				conf .set_domain(dom).set(new_pos) = 1.;
