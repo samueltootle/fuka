@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  * L. Jens Papenfort <papenfort@th.physik.uni-frankfurt.de>
  *
@@ -39,7 +39,7 @@ using config_t = kadath_config_boost<BIN_INFO>;
 inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   using namespace ::Kadath::bco_utils;
   bconfig.set(Q) = bconfig(MADM, BCO1) / bconfig(MCH, BCO2);
-  
+
   if(std::isnan(bconfig.set(OUTER_SHELLS)))
     bconfig.set(OUTER_SHELLS) = 0;
 
@@ -60,11 +60,11 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
 
   const Domain_shell_outer_adapted* old_outer_adaptedNS =
         dynamic_cast<const Domain_shell_outer_adapted*>(old_space.get_domain(old_space.ADAPTEDNS));
-  
+
   const Domain_shell_inner_adapted* old_inner_adaptedNS =
         dynamic_cast<const Domain_shell_inner_adapted*>(old_space.get_domain(old_space.ADAPTEDNS+1));
 
-  const Domain_shell_outer_homothetic* old_bh_outer = 
+  const Domain_shell_outer_homothetic* old_bh_outer =
         dynamic_cast<const Domain_shell_outer_homothetic*>(old_space.get_domain(old_space.ADAPTEDBH));
 
   std::cout << "Resolution of old space: "
@@ -82,11 +82,6 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
     std::_Exit(EXIT_FAILURE);
   }
 
-  std::cout << "Resolution of new space: "
-  	<< res << " (r), "
-    << res << " (theta), "
-    << res - 1 << " (phi)" << std::endl;
-
   int type_coloc = old_space.get_type_base();
 
   // Update config vars
@@ -103,7 +98,7 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
 
     std::cout << "Rmin/max: " << std::endl
               << rmin << " " << rmax << std::endl;
-    bconfig.set(RMID, BCO1) = rmin;
+    bconfig.set(RMID, BCO1) = rmax;
     bconfig.set(RIN , BCO1) = 0.5 * rmin;
     // end update NS radii
 
@@ -115,14 +110,17 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
     double conf_i_sq  = conf_inner * conf_inner;
     double est_r_div2 = bconfig(MCH, BCO2) / conf_i_sq;
     bconfig.set(RIN, BCO2) =  est_r_div2;
-    
+
     // this estimate is critical for calculating domain bounds
     // especially when attempting large changes in M_BH
-    bconfig.set(RMID, BCO2) = 2 * est_r_div2; 
-    
+    bconfig.set(RMID, BCO2) = 2 * est_r_div2;
+
     rmax = (rmax > bconfig(RMID, BCO2)) ? rmax : bconfig(RMID, BCO2);
-    bconfig.set(ROUT, BCO1) = (bconfig(DIST) / 2. - rmax) / 3. + rmax;
-    bconfig.set(ROUT, BCO2) = bconfig(ROUT, BCO1);
+    const double rout_sep_est = (bconfig(DIST) / 2. - rmax) / 3. + rmax;
+    const double rout_max_est = 1.5 * rmax;
+    bconfig.set(ROUT, BCO1) = (rout_sep_est > rout_max_est) ? \
+      rout_max_est : rout_sep_est;
+    bconfig.set(ROUT, BCO2) = bconfig(ROUT,BCO1);
   }// end updating config vars
 
   // create old radius scalar field
@@ -141,42 +139,72 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
 
   // setup bounds for creating new space
   std::vector<double> out_bounds(1 + bconfig(OUTER_SHELLS));
-  std::vector<double> NS_bounds(3 + bconfig(NINSHELLS, BCO1) + bconfig(NSHELLS,BCO1));
-  std::vector<double> BH_bounds(3 + bconfig(NSHELLS,BCO2));
-
   for(int e = 0; e < out_bounds.size(); ++e)
     out_bounds[e] = bconfig(REXT) * (1. + e * 0.25);
 
-  set_NS_bounds(NS_bounds, bconfig, BCO1);
-  set_BH_bounds(BH_bounds, bconfig, BCO2);
-  
+  std::vector<int> ns_interior_doms{
+    FUKA_Syst_tools::vector_of_domains(old_space.NS, old_space.ADAPTEDNS+1)
+  };
+  std::vector<int> exclusion_doms{old_space.BH, old_space.BH+1};
+  // concat domain lists together
+  std::for_each(ns_interior_doms.rbegin(), ns_interior_doms.rend(),
+    [&exclusion_doms](auto e) {
+      auto it = exclusion_doms.begin();
+      exclusion_doms.insert(it, e);
+    }
+  );
+  auto drPsi(compute_drPsi(
+    old_space,
+    old_conf,
+    Metric_flat(old_space, old_shift.get_basis()),
+    exclusion_doms, old_space.OUTER
+  ));
+  std::vector<double> NS_bounds {
+    set_arb_boundsv3(bconfig, drPsi, old_space.ADAPTEDNS+1, NODES::BCO1)
+  };
+  std::vector<double> BH_bounds{
+    set_arb_boundsv3(bconfig, drPsi, old_space.ADAPTEDBH+1, NODES::BCO2)
+  };
+
   // Set radius of the excision boundary to the current radius so that the solver
   // starts from the originial solution
   BH_bounds[1] = get_radius(old_space.get_domain(old_space.BH+1), OUTER_BC) ;
   // end setup bounds
 
   // print bounds to stdout - debugging only
-  //std::cout << "Bounds:" << std::endl;
-	//print_bounds("NS", NS_bounds);
-	//print_bounds("BH", BH_bounds);
-  //std::cout << std::endl;
+  std::cout << "Bounds:" << std::endl;
+	print_bounds("NS", NS_bounds);
+	print_bounds("BH", BH_bounds);
+  std::cout << std::endl;
 
   Space_bhns space (type_coloc, bconfig(DIST), NS_bounds, BH_bounds, out_bounds, bconfig(BIN_RES), bconfig(NINSHELLS, BCO1));
   Base_tensor basis(space, CARTESIAN_BASIS);
 
-  const Domain_shell_inner_adapted* new_ns_inner = 
+  std::cout << "Resolution of old space: ";
+  print_constant_space_resolution(old_space);
+
+  std::cout << "Resolution of new space: ";
+  print_constant_space_resolution(space);
+
+  std::cout << "\nold bounds:" << std::endl;
+  print_bounds_from_space(old_space);
+
+  std::cout << "New bounds:" << std::endl;
+  print_bounds_from_space(space);
+
+  const Domain_shell_inner_adapted* new_ns_inner =
     dynamic_cast<const Domain_shell_inner_adapted*>(space.get_domain(space.ADAPTEDNS+1));
-  const Domain_shell_outer_adapted* new_ns_outer = 
+  const Domain_shell_outer_adapted* new_ns_outer =
     dynamic_cast<const Domain_shell_outer_adapted*>(space.get_domain(space.ADAPTEDNS));
 
   // update BH fields to help with import
   update_adapted_field(old_conf , old_space.ADAPTEDBH+1, old_space.ADAPTEDBH, old_bh_outer, OUTER_BC);
   update_adapted_field(old_lapse, old_space.ADAPTEDBH+1, old_space.ADAPTEDBH, old_bh_outer, OUTER_BC);
   for(int i = 1; i < 4; ++i)
-    update_adapted_field(old_shift.set(i), old_space.ADAPTEDBH+1, old_space.ADAPTEDBH, 
+    update_adapted_field(old_shift.set(i), old_space.ADAPTEDBH+1, old_space.ADAPTEDBH,
       old_bh_outer, OUTER_BC);
 
-  update_adapted_field(old_phi, old_space.ADAPTEDNS, old_space.ADAPTEDNS+1, 
+  update_adapted_field(old_phi, old_space.ADAPTEDNS, old_space.ADAPTEDNS+1,
     old_inner_adaptedNS, INNER_BC);
 
   // Updated mapping for NS adapted fields
@@ -218,7 +246,7 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   for(int d = space.BH; d < space.get_nbr_domains(); ++d){
     logh.set_domain(d).annule_hard();
     phi.set_domain(d).annule_hard();
-    
+
     // make sure all fields are 0 inside the excision region
     if( (d >= space.BH) && (d < space.BH+2) ) {
       conf.set_domain(d).annule_hard();
@@ -236,7 +264,7 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
 
 
   bconfig.set_filename(output_fname);
-  
+
   save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
   return EXIT_SUCCESS;
 }
