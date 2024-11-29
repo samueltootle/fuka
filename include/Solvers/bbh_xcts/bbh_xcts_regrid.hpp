@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  * L. Jens Papenfort <papenfort@th.physik.uni-frankfurt.de>
  *
@@ -42,7 +42,7 @@ void update_bin_config(config_t& bconfig, const Space_bin_bh& space, const Scala
 
   if(std::isnan(bconfig.set(OUTER_SHELLS)))
     bconfig.set(OUTER_SHELLS) = 0;
-  
+
   bconfig.set(Q) = bconfig(MCH, BCO1) / bconfig(MCH, BCO2);
 
   bconfig.set(MIRR,BCO1) = bco_u::mirr_from_mch(bconfig(CHI, BCO1), bconfig(MCH, BCO1));
@@ -73,7 +73,7 @@ void update_bin_config(config_t& bconfig, const Space_bin_bh& space, const Scala
   }
 }
 
-inline 
+inline
 int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
   int exit_status = EXIT_SUCCESS;
   std::string kadath_filename = bconfig.space_filename();
@@ -102,10 +102,21 @@ int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
   for(int e = 0; e < out_bounds.size(); ++e)
     out_bounds[e] = bconfig(REXT) * (1. + e * 0.25);
 
-  std::vector<double> BH1_bounds(3+bconfig(NSHELLS,BCO1));
-  std::vector<double> BH2_bounds(3+bconfig(NSHELLS,BCO2));
-  bco_u::set_BH_bounds(BH1_bounds, bconfig, BCO1);
-  bco_u::set_BH_bounds(BH2_bounds, bconfig, BCO2);
+  std::vector<int> exclusion_doms{
+    old_space.BH1,
+    old_space.BH1+1,
+    old_space.BH2,
+    old_space.BH2+1};
+  auto drPsi(compute_drPsi(
+    old_space,
+    old_conf,
+    Metric_flat(old_space, old_shift.get_basis()),
+    exclusion_doms, old_space.OUTER
+  ));
+  std::vector<double> BH1_bounds;
+  std::vector<double> BH2_bounds;
+  BH1_bounds = bco_u::set_arb_boundsv3(bconfig, drPsi, old_space.BH1+2, NODES::BCO1);
+  BH2_bounds = bco_u::set_arb_boundsv3(bconfig, drPsi, old_space.BH2+2, NODES::BCO2);
 
   // Set radius of the excision boundary to the current radius so that the solver
   // starts from the originial solution
@@ -115,7 +126,7 @@ int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
 
   Space_bin_bh space (type_coloc, bconfig(DIST), BH1_bounds, BH2_bounds, out_bounds, bconfig(BIN_RES));
   Base_tensor basis  (space, CARTESIAN_BASIS);
-  
+
   std::cout << "Resolution of old space: ";
   bco_u::print_constant_space_resolution(old_space);
 
@@ -123,8 +134,8 @@ int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
   bco_u::print_constant_space_resolution(space);
 
   std::cout << "\nold bounds:" << std::endl;
-  bco_u::print_bounds_from_space(old_space);  
-	
+  bco_u::print_bounds_from_space(old_space);
+
   std::cout << "New bounds:" << std::endl;
   bco_u::print_bounds_from_space(space);
 
