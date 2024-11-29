@@ -51,7 +51,7 @@ constexpr double invpsisq = 1. / psisq;
 const double gold_ratio = (1 + std::sqrt(5.)) / 2.;
 
 /**
- * bco_utils::KadathPNOrbitalParams \n 
+ * bco_utils::KadathPNOrbitalParams \n
  * 3.5 PN orbital parameters for irrotational compact object
  * This is a very rough, but useful guess for any CO
  *
@@ -62,7 +62,7 @@ const double gold_ratio = (1 + std::sqrt(5.)) / 2.;
 void KadathPNOrbitalParams(kadath_config_boost<BIN_INFO>& bconfig, double Madm1, double Madm2);
 
 /**
- * bco_utils::save_to_file\n 
+ * bco_utils::save_to_file\n
  * Standard print config, space, and fields to their respective files
  * Config is saved to base_fname.info, space and fields in base_fname.dat
  * Output directory is stored in the config file. See config_utils_boost.hpp
@@ -89,11 +89,11 @@ void save_to_file(std::stringstream& base_fname, space_t& space, config_t& bconf
 
 /**
  * bco_utils::save_to_file
- * 
- * Specialization that excludes the base_filename stringstream.\n 
- * Standard print config, space, and fields to their respective files.\n 
- *  - Config is saved to its set preset filename\n 
- *  - Fields are save to the paired filename. See config_utils_boost.hpp.\n 
+ *
+ * Specialization that excludes the base_filename stringstream.\n
+ * Standard print config, space, and fields to their respective files.\n
+ *  - Config is saved to its set preset filename\n
+ *  - Fields are save to the paired filename. See config_utils_boost.hpp.\n
  *
  * @tparam config_t Configurator type
  * @tparam space_t Space type
@@ -105,7 +105,7 @@ void save_to_file(std::stringstream& base_fname, space_t& space, config_t& bconf
 template <typename space_t, typename config_t, typename... fields_t>
 void save_to_file(space_t& space, config_t& bconfig, fields_t&... fields) {
   bconfig.write_config();
-  
+
   std::string kadath_filename = bconfig.space_filename();
   FILE *ff = fopen(kadath_filename.c_str(), "w");
   space.save(ff) ;
@@ -116,7 +116,7 @@ void save_to_file(space_t& space, config_t& bconfig, fields_t&... fields) {
 
 /**
  * bco_utils::get_radius
- * 
+ *
  * When all we want is a simply radius value (inner or outer radius)
  *
  * Note: For variable domains, this is just R at a single point on the surface
@@ -155,7 +155,7 @@ double get_radius (const dom_t* dom, const int bound) {
 
 /**
  * bco_utils::get_min_max
- * 
+ *
  * For variable domains, find the min and max of a Scalar field on a boundary
  *
  * @tparam space_t type of numerical space
@@ -166,7 +166,7 @@ double get_radius (const dom_t* dom, const int bound) {
 inline std::array<double,2> get_field_min_max(const Scalar& field, const int dom, const int bound = OUTER_BC) {
   const int npts_r = field.get_domain(dom)->get_nbr_points()(0);
   const int dim = field.get_domain(dom)->get_ndim();
-  
+
   // position index to loop over
   Index pos(field.get_domain(dom)->get_nbr_points());
   // position index to update with a fixed radial boundary
@@ -182,11 +182,11 @@ inline std::array<double,2> get_field_min_max(const Scalar& field, const int dom
     default:
       std::cout << "Unknown bound sent to get_field_min_max: " << bound << std::endl;
       break;
-  } 
+  }
 
 	double fmax = field(dom)(pos);
   double fmin = field(dom)(pos);
-  
+
   // FIXME this currently loops over theta and phi multiple times, but the syntax is straightforward.
   do {
       bpos.set(0) = r_bound;
@@ -205,7 +205,7 @@ inline std::array<double,2> get_field_min_max(const Scalar& field, const int dom
 
 /**
  * bco_utils::get_rmin_rmax
- * 
+ *
  * For variable domains, find the min and max radii
  *
  * @tparam space_t type of numerical space
@@ -240,17 +240,17 @@ std::array<double,2> get_rmin_rmax(const space_t& space, const int dom) {
  * extrapolate variable fields to domains that are/should be zero based on the coefficients on the boundary, e.g:
  * 	- extrapolate space-time fields into the horizon of the BH from outside the horizon
  * 	- extrapolate matter fields from inside the star to outside of the star
- * 
- * Note 1:\n 
- * This is important before importing fields from one numerical space to another as interpolating the fields to the new\n 
- * space may have problems if the adjacent domain is zero.  After import, remember to set relevant domains back to zero\n 
- * 
- * Note 2:\n 
+ *
+ * Note 1:\n
+ * This is important before importing fields from one numerical space to another as interpolating the fields to the new\n
+ * space may have problems if the adjacent domain is zero.  After import, remember to set relevant domains back to zero\n
+ *
+ * Note 2:\n
  * could be generalized to Tensors.  Currently only done for Scalars
  *
  * @tparam dom_t type of domain.
  * @param[input]  res: reference to modifiable Scalar field that contains the current solution to the field.  This will be changed!
- * @param[input]  from_dom: index of domain to extrapolate FROM 
+ * @param[input]  from_dom: index of domain to extrapolate FROM
  * @param[input]  to_dom: index of domain to extrapolate TO
  * @param[input]  dom: pointer to domain to extrapolate TO
  * @param[input]  bound: which boundary we extrapolating from (OUTER_BC, INNER_BC)
@@ -267,7 +267,7 @@ void update_adapted_field (Scalar& res, const int from_dom, const int to_dom, co
 }
 
 /**
- * bco_utils::interp_adapted_mapping\n 
+ * bco_utils::interp_adapted_mapping\n
  * Update the mapping of an adapted domain based on an old numerical space before importing fields
  *
  * @tparam adapted_t type of adapted domain
@@ -289,7 +289,7 @@ void interp_adapted_mapping(const adapted_t* new_shell, const int old_outer_adap
   double xc_new = new_shell->get_center()(1);
   double xc_old = old_shell->get_center()(1);
   do {
-    
+
     auto interp_val = [&](auto const x, auto const y, auto const z) {
       Kadath::Point absol(old_ndim);
       switch(old_ndim) {
@@ -337,7 +337,7 @@ void interp_adapted_mapping(const adapted_t* new_shell, const int old_outer_adap
 
 /**
  * bco_utils::get_center
- * Quickly get the X coordinate of the  cartesian center of a domain\n 
+ * Quickly get the X coordinate of the  cartesian center of a domain\n
  * while using the correct Index and letting it be deleted when we're done.
  *
  * @tparam space_t type of numerical space
@@ -353,7 +353,7 @@ double get_center (const space_t& space, const int dom) {
 
 /**
  * bco_utils::get_boundary_val
- * Quickly get the value at a specified boundary of a scalar field in a given domain\n 
+ * Quickly get the value at a specified boundary of a scalar field in a given domain\n
  * and letting the setup be deleted when we're done.
  *
  * @tparam space_t type of numerical space
@@ -364,7 +364,7 @@ double get_center (const space_t& space, const int dom) {
  * @return value at the (0,0,0) collocation point
  */
 inline double get_boundary_val (const int dom, const Scalar& field, const int bound=INNER_BC) {
-  auto this_domain = field(dom).get_domain(); 
+  auto this_domain = field(dom).get_domain();
   auto npts = this_domain->get_nbr_points();
   Index pos(npts);
   auto dim = pos.get_ndim();
@@ -393,10 +393,10 @@ inline double get_boundary_val (const int dom, const Scalar& field, const int bo
 }
 
 /**
- * bco_utils::set_radius 
- * Quickly get the basic outer radius of a given domain to update the corresponding 
- * radius in the config file based on the provides indexes 
- * 
+ * bco_utils::set_radius
+ * Quickly get the basic outer radius of a given domain to update the corresponding
+ * radius in the config file based on the provides indexes
+ *
  * @tparam space_t type of numerical space
  * @param[input]  dom: index of domain of interest
  * @param[input]  space: numerical space
@@ -411,8 +411,8 @@ void set_radius (const int& dom, const space_t& space, config_t& bconfig, const 
 /**
  * bco_utils::set_NS_bounds
  *
- * Set boundaries for a NS companion based on the config file parameters 
- * 
+ * Set boundaries for a NS companion based on the config file parameters
+ *
  * @tparam space_t type of numerical space
  * @param[input]  bounds: array of bounds to update
  * @param[input]  bconfig: configuration file
@@ -440,7 +440,7 @@ void set_NS_bounds (ary_t& bounds, config_t& bconfig, idx_t... bco)  {
   for(int shell = rin+1; shell <= ninshells; ++shell){
     bounds[shell] = delta_r * shell + lower;
   }
-  
+
   delta_r = (bounds[rout] - bounds[r]) / (nshells + 1.);
   for(int i = 1, shell = r+1; i <= nshells; ++shell, ++i){
     bounds[shell] = bounds[r] + delta_r * i;
@@ -451,7 +451,7 @@ void set_NS_bounds (ary_t& bounds, config_t& bconfig, idx_t... bco)  {
  * bco_utils::set_isolated_BH_bounds
  *
  * Set boundaries for an isolated  BH based on the config file parameters
- * 
+ *
  * @tparam space_t type of numerical space
  * @param[input]  bounds: array of bounds to update
  * @param[input]  bconfig: configuration file
@@ -461,7 +461,7 @@ void set_isolated_BH_bounds (ary_t& bounds, config_t& bconfig)  {
 
   // Configurator index of companion compact object
   const int size = bounds.size();
-  
+
   //indexes
   const int rin  = 0;
   const int r    = rin + 1;
@@ -469,16 +469,16 @@ void set_isolated_BH_bounds (ary_t& bounds, config_t& bconfig)  {
 
   bounds[rin]  = bconfig(RIN);
   bounds[r]    = bconfig(RMID);
-  
+
   double delrBH = bconfig(ROUT) - bconfig(RMID);
-  
+
   const int shells = bconfig(NSHELLS);
   double delr = delrBH / (bconfig(NSHELLS) + 1);
 
   for(int i = 0, b = r+1; i < shells; ++b, ++i)
     bounds[b] = bounds[r] + delr * (i + 1);
 //    bounds[b] = bounds[r] + bconfig(ROUT) / M_PI * atan((i + 1)/bconfig(NSHELLS));
-  
+
   bounds[rout] = bconfig(ROUT);
 }
 
@@ -487,7 +487,7 @@ void set_isolated_BH_bounds (ary_t& bounds, config_t& bconfig)  {
  *
  * Set boundaries for a BH companion based on the config file parameters
  * and it's companion
- * 
+ *
  * @tparam space_t type of numerical space
  * @param[input]  bounds: array of bounds to update
  * @param[input]  bconfig: configuration file
@@ -499,7 +499,7 @@ void set_BH_bounds (ary_t& bounds, config_t& bconfig, const int bco, const bool 
   // Configurator index of companion compact object
   const int bco2 = (bco == BCO1) ? BCO2 : BCO1;
   const int size = bounds.size();
-  
+
   //indexes
   const int rin  = 0;
   const int r    = rin + 1;
@@ -508,7 +508,7 @@ void set_BH_bounds (ary_t& bounds, config_t& bconfig, const int bco, const bool 
   bounds[rin]  = bconfig(RIN, bco);
   bounds[r]    = bconfig(RMID, bco);
   bounds[rout] = bconfig(ROUT, bco);
-  
+
   const int shells = bconfig(NSHELLS, bco);
   double sum = 0.;
   ary_t new_ary;
@@ -517,19 +517,19 @@ void set_BH_bounds (ary_t& bounds, config_t& bconfig, const int bco, const bool 
 
   // fixme - need to recall how this limit was obtained
   const double limit = bconfig(ROUT, bco) * invpsisq;
-  
+
   // needed to determine proper shall spacing to not have problems in kadath import?
-  const double scale_fact = bco_utils::gold_ratio;   
-  
+  const double scale_fact = bco_utils::gold_ratio;
+
   // y_intercept of new_bound == the location of the first shell
   const double y_intercept = 2. * scale_fact * bounds[r];
-  
+
   // the intercept_fac ensures the y_intercept is just that
   const double intercept_fac = - scale_fact * std::log(y_intercept);
-  
+
   // relation that provides shell locations
   auto new_bound =[&](int n) { return std::exp((n - intercept_fac) / scale_fact); };
-  
+
   // define new shells bounds
   int N = 0;
   double next_bound = new_bound(N);
@@ -537,8 +537,8 @@ void set_BH_bounds (ary_t& bounds, config_t& bconfig, const int bco, const bool 
     new_ary.push_back(next_bound);
     N++;
     next_bound = new_bound(N);
-  }  
-  // in case NSHELLS are put in by hand - we add additional ones based on a 
+  }
+  // in case NSHELLS are put in by hand - we add additional ones based on a
   // naive even distribution
   if(new_ary.size() - 2 < bconfig(NSHELLS, bco)) {
     // determine how many shells have already been defined
@@ -567,11 +567,11 @@ void set_BH_bounds (ary_t& bounds, config_t& bconfig, const int bco, const bool 
 /**
  * bco_utils::gen_shell_bound_radius
  *
- * Recursive routine to Generate the next shell boundary radius 
- * using the input field.  
- * By default, field is intended to be \partial_r^2(Psi).  
+ * Recursive routine to Generate the next shell boundary radius
+ * using the input field.
+ * By default, field is intended to be \partial_r^2(Psi).
  * This has not been tested with other input fields.
- * 
+ *
  * @tparam T return type (double most likely)
  * @param[input]  field: e.g. \partial_r^2(Psi)
  * @param[input]  r0: fixed inner radius
@@ -579,8 +579,8 @@ void set_BH_bounds (ary_t& bounds, config_t& bconfig, const int bco, const bool 
  * @return r1: new shell radius
  */
 template<class T>
-T gen_shell_bound_radius(Scalar& field, T r0, T r1, 
-  T xc = 0., T threshold = 0.9, T fac = 1.) 
+T gen_shell_bound_radius(Scalar& field, T r0, T r1,
+  T xc = 0., T threshold = 0.9, T fac = 1.)
 {
   auto reldiff = [](auto ref, auto cmp) {
     return 1. - cmp / ref;
@@ -611,24 +611,24 @@ T gen_shell_bound_radius(Scalar& field, T r0, T r1,
   );
 
   #ifdef DEBUG
-  std::cout << "r0: " << r0 
+  std::cout << "r0: " << r0
             << "\t ddrP0: " << field.val_point(pt_r0)
             << "\t P: " << pt_r0 << '\n'
             << "r1: " << r1
-            << "\t ddrP1: " << field.val_point(pt_r1) << "\t ddrP_rel_diff: " << ddrP_rel_diff 
+            << "\t ddrP1: " << field.val_point(pt_r1) << "\t ddrP_rel_diff: " << ddrP_rel_diff
             << "\t P: " << pt_r1 << '\n'
             << "\t relth: " << relth << "\t r1 / r0: " << r1/r0 << '\n';
   std::cout << pt_r0 << "," << pt_r1 << '\n';
   #endif
 
   auto dr = r1 - r0;
-  
+
   if(ddrP_rel_diff > threshold) {
     auto new_fac = 0.5 * fac;
     r1 = r0 + dr * new_fac;
     r1 = gen_shell_bound_radius(
-      field, 
-      r0, 
+      field,
+      r0,
       r1,
       xc,
       threshold,
@@ -638,20 +638,11 @@ T gen_shell_bound_radius(Scalar& field, T r0, T r1,
     // If the radii are far enough apart we found a good radius
     if(r1 / r0 > bco_utils::gold_ratio)
       return r1;
-    else { 
-      auto new_fac = fac + fac * 0.1;
-      r1 = r0 + (1. / fac) * dr * new_fac;
-      r1 = gen_shell_bound_radius(
-        field, 
-        r0, 
-        r1,
-        xc,
-        threshold,
-        new_fac
-      );
+    else {
+      return r0 * bco_utils::gold_ratio;
     }
   }
-  return r1;  
+  return r1;
 }
 
 /**
@@ -659,7 +650,7 @@ T gen_shell_bound_radius(Scalar& field, T r0, T r1,
  *
  * Generate bounds for the local shells around compact objects using
  * \partial_r^2(Psi) for binary initial data
- * 
+ *
  * @tparam config_t Configurator type
  * @param[input]  bconfig: Configurator
  * @param[input]  bco: index of compact object data (BCO1/BCO2)
@@ -669,10 +660,10 @@ T gen_shell_bound_radius(Scalar& field, T r0, T r1,
  * @return bounds: vector of bounds
  */
 template<typename config_t>
-std::vector<double> set_arb_bounds (config_t& bconfig, const int bco, 
-  Scalar& ddrconf_sol, const int adapted_dom_sol, 
+std::vector<double> set_arb_bounds (config_t& bconfig, const int bco,
+  Scalar& ddrconf_sol, const int adapted_dom_sol,
     const double threshold = 0.95)  {
-  
+
   // Generate a new vector for bounds
   // FIXME: this ignores shells inside of NS'
   std::vector<double> bounds;
@@ -680,11 +671,11 @@ std::vector<double> set_arb_bounds (config_t& bconfig, const int bco,
   bounds.push_back(bconfig(RMID, bco));
 
   auto adapted_dom(ddrconf_sol.get_space().get_domain(adapted_dom_sol));
-  
+
   // Coordinate centered point
   Kadath::Point pt(adapted_dom->get_center());
   double xc{pt(1)};
-  
+
   // Initial radii starting at the inner adapted radius on the
   // equitorial plane since this should be the largest radius
   auto r0{get_radius(adapted_dom, INNER_EQUI)};
@@ -706,7 +697,7 @@ std::vector<double> set_arb_bounds (config_t& bconfig, const int bco,
 
     // get new shell boundary outer radius
     r1 = gen_shell_bound_radius(ddrconf_sol, r0, r1, xc, threshold);
-    
+
     // check for minimum spacing between last shell boundary
     // and Rout
     if (Rout / r1 > bco_utils::gold_ratio) {
@@ -721,7 +712,7 @@ std::vector<double> set_arb_bounds (config_t& bconfig, const int bco,
       #endif
       break;
     }
-    
+
     // update variables for finding next shell
     r0 = r1;
     r1 = Rout;
@@ -740,17 +731,110 @@ std::vector<double> set_arb_bounds (config_t& bconfig, const int bco,
 }
 
 /**
+ * bco_utils::set_arb_boundsv3
+ *
+ * Generate bounds for the local shells around compact objects using
+ * \partial_r^2(Psi) for binary initial data
+ *
+ * @tparam config_t Configurator type
+ * @param[input]  bconfig: Configurator
+ * @param[input]  ddrconf_sol: Estimate or true solution of \partial_r^2(Psi)
+ * @param[input]  adapted_dom_sol: domain index of the inner adapted boundary
+ * @param[input]  threshold: the threshold to meet when finding a shell radius
+ * @return bounds: vector of bounds
+ */
+template<typename config_t, class... idx_t>
+std::vector<double> set_arb_boundsv3 (config_t& bconfig,
+  Scalar& field, const int adapted_dom_sol, idx_t... BCOidx)  {
+  auto reldiff = [](auto ref, auto cmp) {
+    return 1. - cmp / ref;
+  };
+
+  // Generate a new vector for bounds
+  // FIXME: this ignores shells inside of NS'
+  std::vector<double> bounds;
+  bounds.push_back(bconfig(RIN, BCOidx...));
+  bounds.push_back(bconfig(RMID, BCOidx...));
+
+  auto adapted_dom(field.get_space().get_domain(adapted_dom_sol));
+
+  // Coordinate centered point
+  Kadath::Point center_pt(adapted_dom->get_center());
+  double xc{center_pt(1)};
+
+  // Initial radii starting at the inner adapted radius on the
+  // equitorial plane since this should be the largest radius
+  double r_init{get_radius(adapted_dom, INNER_EQUI)};
+  double field_init{get_boundary_val(adapted_dom_sol, field)};
+
+  // FIXME need a threashold here to ensure exp doesn't get unbounded
+  double scale_fac = 2.0 - std::exp(field_init);
+
+  static constexpr double min_spacing_fac = 1.855;
+  double r0 = r_init * scale_fac * min_spacing_fac;
+
+  // We only add shells out to ROUT
+  auto Rout{bconfig(ROUT, BCOidx...)};
+  if(Rout / r0 > min_spacing_fac) {
+    bounds.push_back(r0);
+
+    // Setup points relative to coordinate center
+    double r1{r0};
+    Kadath::Point pt_r1(center_pt);
+    pt_r1.set(1)  = xc + r1;
+    double field_r1 = field.val_point(pt_r1);
+    // end point setup
+
+    // some upper bound that should never be hit!
+    auto max_shells = std::ceil((Rout - r_init)/(2.* r_init));
+
+    for(auto i = 1; i < max_shells; ++i) {
+      r0 = r1;
+      double field_r0 = field_r1;
+
+      //r1  = r0 * pow(min_spacing_fac, i);
+      scale_fac = 2.0 - std::exp(field_r0);
+      r1 = r0 * scale_fac * min_spacing_fac;
+      pt_r1.set(1)  = xc + r1;
+
+      field_r1  = field.val_point(pt_r1);
+
+      // stop looking for shells once \partial_r^2 \Psi
+      // is roughly flat
+      // Note: this will fail at local extrema!
+      if (std::fabs(field_r1) <= 1e-5 || ( Rout / r1 < bco_utils::gold_ratio)) {
+        // cout << field_r1 << ", " << r1 << ", " << Rout / r1 << endl;
+        break;
+      }
+
+      bounds.push_back(r1);
+
+      if(i == max_shells - 1){
+        std::cerr << "Max iterations hit in setting CO bounds. Something went very wrong!\n";
+        std::cerr << "r0: "  << r0 << '\n'
+                  << "r1: "  << r1 << '\n'
+                  << "max_shells: " << max_shells << '\n';
+      }
+    }
+  }
+  // Add ROUT as the last bound
+  bounds.push_back(Rout);
+  bconfig(NSHELLS, BCOidx...) = bounds.size() - 3;
+  return bounds;
+}
+
+/**
  * bco_utils::print_bounds
  *
  * helper function for printing domain boundaries in the readers - requires foreach compatible
  * container
- * 
+ *
  * @tparam space_t type of numerical space
  * @param[input]  bounds: array of bounds
  * @param[input]  name: string with the name you want associated with the bounds (e.g. NS1)
  */
 template<typename ary_t>
-void print_bounds(std::string name, const ary_t& bary) 
+void print_bounds(std::string name, const ary_t& bary)
 {
   std::cout << name << ": ";
   for(auto& e : bary)
@@ -758,14 +842,14 @@ void print_bounds(std::string name, const ary_t& bary)
     std::cout << e << " ";
   }
   std::cout << std::endl;
- 
+
 }
 
 /**
  * bco_utils::mirr_from_mch
  *
  * helper function to compute Mirr from MCH
- * 
+ *
  * @param[input]  chi: dimensionless spin parameter
  * @param[input]  mch: Christodoulou mass of the BH
  */
@@ -777,7 +861,7 @@ inline double mirr_from_mch(const double chi, const double mch){
  * bco_utils::syst_mch
  *
  * helper function to compute MCH from a system of equations
- * 
+ *
  * @tparam space_t: space type
  * @param[input]  syst: system of equations
  * @param[input]  space: numerical space
@@ -788,7 +872,7 @@ template<typename space_t>
 double syst_mch(System_of_eqs& syst, const space_t& space, const std::string eq, const int dom){
   Val_domain integS(syst.give_val_def(eq.c_str())()(dom));
   double S = space.get_domain(dom)->integ(integS, INNER_BC);
-  
+
   Val_domain integMsq(syst.give_val_def("intMsq")()(dom));
   double Mirrsq = space.get_domain(dom)->integ(integMsq, INNER_BC);
   double Mirr = std::sqrt(Mirrsq);
@@ -799,7 +883,7 @@ double syst_mch(System_of_eqs& syst, const space_t& space, const std::string eq,
  * bco_utils::com_estimate
  *
  * helper function to compute the Newtonian COM as an initial estimate
- * 
+ *
  * @param[input]  distance: separation distance
  * @param[input]  M1: mass of bco1
  * @param[input]  M2: mass of bco2
@@ -813,8 +897,8 @@ inline double com_estimate(const double distance, const double M1, const double 
 /**
  * bco_utils::update_config_NS_radii
  *
- * helper function to update NS radii in the config file 
- * 
+ * helper function to update NS radii in the config file
+ *
  * @tparam space_t: space type
  * @tparam config_t: Configurator type
  * @tparam Idx: parameter pack for Configurator secondary index.
@@ -824,9 +908,9 @@ inline double com_estimate(const double distance, const double M1, const double 
  * @param[input]  idx: Either empty or BCO1/BCO2
  */
 template<typename space_t, typename config_t, typename ... Idx>
-void update_config_NS_radii(space_t& space, config_t& bconfig, 
+void update_config_NS_radii(space_t& space, config_t& bconfig,
   const size_t dom, Idx ... idx) {
-  
+
   auto [r_min, r_max] = bco_utils::get_rmin_rmax(space, dom);
   bconfig.set(RIN , idx...)    = 0.5 * r_min;
   bconfig.set(RMID, idx...)    = r_max;
@@ -836,8 +920,8 @@ void update_config_NS_radii(space_t& space, config_t& bconfig,
 /**
  * bco_utils::update_config_BH_radii
  *
- * helper function to update BH radii in the config file 
- * 
+ * helper function to update BH radii in the config file
+ *
  * @tparam space_t: space type
  * @tparam config_t: Configurator type
  * @tparam Idx: parameter pack for Configurator secondary index.
@@ -848,7 +932,7 @@ void update_config_NS_radii(space_t& space, config_t& bconfig,
  * @param[input]  idx: Either empty or BCO1/BCO2
  */
 template<typename space_t, typename config_t, typename ... Idx>
-void update_config_BH_radii(space_t& space, config_t& bconfig, 
+void update_config_BH_radii(space_t& space, config_t& bconfig,
   const size_t dom, const Scalar& conf, Idx ... idx) {
 
   auto [ rmin, trmax ] = bco_utils::get_rmin_rmax(space, dom);
@@ -860,7 +944,7 @@ void update_config_BH_radii(space_t& space, config_t& bconfig,
   double conf_i_sq  = conf_inner * conf_inner;
   double est_r_div2 = bconfig(MCH, idx...) / conf_i_sq;
   bconfig.set(RIN, idx...) =  est_r_div2;
-  
+
   // update config RMID based on AH Surface radius
   bco_utils::set_radius(1, space, bconfig, RMID);
 }
@@ -987,7 +1071,7 @@ void print_bounds_from_space(space_t const & space, int bound = OUTER_BC) {
 template<class space_t>
 void print_constant_space_resolution(space_t const & space){
   auto dom = space.get_domain(0);
-  auto ndim = dom->get_ndim();  
+  auto ndim = dom->get_ndim();
   std::array<std::string, 3> directions{"r", "theta", "phi"};
   for(auto i = 0; i < ndim; ++i)
   	std::cout << dom->get_nbr_points()(i) << " (" << directions[i] << ")     ";
@@ -996,7 +1080,7 @@ void print_constant_space_resolution(space_t const & space){
 
 /**
  * @brief Determine the next resolution that is reasonable to use with FFTW3
- * 
+ *
  * @param res Current resolution
  * @return int Next resolution
  */
