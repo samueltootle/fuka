@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,14 +20,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <vector>
 #include <functional>
 #include <memory>
 #include <string>
-#include "Configurator/config_binary.hpp"
+#include <vector>
 #include "Configurator/config_bco.hpp"
-#include "bco_utilities.hpp"
+#include "Configurator/config_binary.hpp"
 #include "EOS/standalone/tov.hh"
+#include "bco_utilities.hpp"
 
 /**
  * \addtogroup Solver_utils
@@ -40,7 +40,7 @@ namespace FUKA_Solvers {
 /**
  * solve_NS_from_binary
  *
- * -Solve TOV solution based on binary Configurator input  
+ * -Solve TOV solution based on binary Configurator input
  * -Update configurator based on TOV solution
  *
  * @tparam config_t: binary config type
@@ -48,13 +48,13 @@ namespace FUKA_Solvers {
  * @param[return] TOV solution filename
  */
 
-template<typename config_t>
+template <typename config_t>
 std::string solve_NS_from_binary(config_t& bconfig, const size_t bco);
 
 /**
  * solve_BH_from_binary
  *
- * -Solve BH solution based on binary Configurator input  
+ * -Solve BH solution based on binary Configurator input
  * -Update configurator based on BH solution
  *
  * @tparam config_t: binary config type
@@ -62,7 +62,7 @@ std::string solve_NS_from_binary(config_t& bconfig, const size_t bco);
  * @param[return] TOV solution filename
  */
 
-template<typename config_t>
+template <typename config_t>
 std::string solve_BH_from_binary(config_t& bconfig, const size_t bco);
 
 /**
@@ -75,8 +75,11 @@ std::string solve_BH_from_binary(config_t& bconfig, const size_t bco);
  * @param[input] M2: Gravitational Mass of object 2
  * @param[input] garbage_factor: factor used to set garbage distance
  */
-inline
-void check_dist(double dist, double M1, double M2, double garbage_factor = 2.5);
+inline void check_dist(double dist,
+                       double M1,
+                       double M2,
+                       double garbage_factor = 2.5);
 /** @}*/
-}}
+}  // namespace FUKA_Solvers
+}  // namespace Kadath
 #include "bco_solver_utils_imp.cpp"

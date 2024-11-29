@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,10 +20,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "mpi.h"
-#include "bns_xcts_solver.hpp"
 #include <array>
 #include <string>
+#include "bns_xcts_solver.hpp"
+#include "mpi.h"
 #if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
@@ -47,7 +47,7 @@ namespace FUKA_Solvers {
  *
  * @param[input] bconfig: BNS Configurator file
  */
-template<class config_t>
+template <class config_t>
 inline void bns_xcts_setup_bin_config(config_t& bconfig);
 
 /**
@@ -59,8 +59,8 @@ inline void bns_xcts_setup_bin_config(config_t& bconfig);
  *
  * @param[input] bconfig: BNS Configurator file
  */
-template<class config_t>
-void bns_xcts_setup_space (config_t& bconfig);
+template <class config_t>
+void bns_xcts_setup_space(config_t& bconfig);
 
 /**
  * bns_xcts_superimposed_import
@@ -74,20 +74,22 @@ void bns_xcts_setup_space (config_t& bconfig);
  * @param[input] bconfig: binary configurator
  * @param[input] NSfilenames: array of filenames for isolated solutions
  */
-template<class config_t>
-void bns_xcts_superimposed_import(config_t& bconfig,std::array<std::string, 2> NSfilenames);
+template <class config_t>
+void bns_xcts_superimposed_import(config_t& bconfig,
+                                  std::array<std::string, 2> NSfilenames);
 
 /**
  * @brief Generate superimposed guess from 3D isolated solutions
- * 
+ *
  * @param NS1config First NS solution
  * @param NS2config Second NS solution
  * @param bconfig Binary Config
  */
-template<typename eos_t>
-inline void bns_setup_boosted_3d(
-  kadath_config_boost<BCO_NS_INFO>& NS1config, kadath_config_boost<BCO_NS_INFO>& NS2config,
-  kadath_config_boost<BIN_INFO>& bconfig);
+template <typename eos_t>
+inline void bns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NS1config,
+                                 kadath_config_boost<BCO_NS_INFO>& NS2config,
+                                 kadath_config_boost<BIN_INFO>& bconfig);
 /** @}*/
-}}
+}  // namespace FUKA_Solvers
+}  // namespace Kadath
 #include "bns_xcts_setup.cpp"

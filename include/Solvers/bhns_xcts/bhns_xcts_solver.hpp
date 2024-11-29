@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,13 +31,13 @@
 namespace Kadath {
 namespace FUKA_Solvers {
 
-template<class eos_t, typename config_t, typename space_t = Kadath::Space_bhns>
+template <class eos_t, typename config_t, typename space_t = Kadath::Space_bhns>
 class bhns_xcts_solver : XCTS_Solver<config_t, space_t> {
-  public:
+ public:
   using typename XCTS_Solver<config_t, space_t>::base_config_t;
   using typename XCTS_Solver<config_t, space_t>::base_space_t;
 
-  private:
+ private:
   Scalar& conf;
   Scalar& lapse;
   Scalar& logh;
@@ -63,27 +63,35 @@ class bhns_xcts_solver : XCTS_Solver<config_t, space_t> {
   using XCTS_Solver<config_t, space_t>::checkpoint;
   using XCTS_Solver<config_t, space_t>::solver_stage;
 
-  public:
+ public:
   // solver is not trivially constructable since Kadath containers are not
   // trivially constructable
   bhns_xcts_solver() = delete;
 
-  bhns_xcts_solver(config_t& config_in, space_t& space_in, Base_tensor& base_in,  
-    Scalar& conf_in, Scalar& lapse_in, Vector& shift_in, Scalar& logh_in, Scalar& phi_in);
-  
+  bhns_xcts_solver(config_t& config_in,
+                   space_t& space_in,
+                   Base_tensor& base_in,
+                   Scalar& conf_in,
+                   Scalar& lapse_in,
+                   Vector& shift_in,
+                   Scalar& logh_in,
+                   Scalar& phi_in);
+
   // syst always requires the same initialization for the stages
   void syst_init(System_of_eqs& syst);
-  
+
   // diagnostics at runtime
-  void print_diagnostics(const System_of_eqs& syst, 
-    const int  ite = 0, const double conv = 0) const override;
-  
-  std::string converged_filename(const std::string stage="") const override;
-  
+  void print_diagnostics(const System_of_eqs& syst,
+                         const int ite = 0,
+                         const double conv = 0) const override;
+
+  std::string converged_filename(const std::string stage = "") const override;
+
   void save_to_file() const override {
-    ::Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
+    ::Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh,
+                                      phi);
   }
-  
+
   // solve driver
   int solve();
 
@@ -102,7 +110,8 @@ class bhns_xcts_solver : XCTS_Solver<config_t, space_t> {
    * therefore the matter scalar fields are simply rescaled
    * based on the fixed baryonic mass of the NS.
    *
-   * @param[input] stage: Some changes are made based on TOTAL_BC or ECC_RED stage.
+   * @param[input] stage: Some changes are made based on TOTAL_BC or ECC_RED
+   * stage.
    */
   int hydro_rescaling_stages(std::string stage_text);
 
@@ -110,6 +119,7 @@ class bhns_xcts_solver : XCTS_Solver<config_t, space_t> {
   void update_config_quantities(const double& loghc);
 };
 /** @}*/
-}}
+}  // namespace FUKA_Solvers
+}  // namespace Kadath
 #include "bhns_xcts_solver_imp.cpp"
 #include "bhns_xcts_stages.cpp"

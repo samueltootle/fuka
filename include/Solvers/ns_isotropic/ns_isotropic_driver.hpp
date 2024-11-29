@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,14 +20,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "norot/ns_isotropic_norot_solver.hpp"
-#include "norot/ns_isotropic_norot_driver.hpp"
-#include "uniform_rot/ns_isotropic_uniform_rot_driver.hpp"
-#include "diff_rot/ns_isotropic_diff_rot_driver.hpp"
 #include "Solvers/co_solver_utils.hpp"
+#include "Solvers/sequences/ns_sequence.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"
-#include "Solvers/sequences/ns_sequence.hpp"
+#include "diff_rot/ns_isotropic_diff_rot_driver.hpp"
+#include "norot/ns_isotropic_norot_driver.hpp"
+#include "norot/ns_isotropic_norot_solver.hpp"
+#include "uniform_rot/ns_isotropic_uniform_rot_driver.hpp"
 
 /**
  * \addtogroup NS_XCTS
@@ -36,22 +36,22 @@
 
 namespace Kadath {
 namespace FUKA_Solvers {
-  
+
 /**
  * @brief Setup complete Config file for an NS sequence
- * 
+ *
  * @tparam config_t Configurator type
  * @param seqconfig Sequence Config object
  * @param outputdir output location
- * @return config_t 
+ * @return config_t
  */
-template<class config_t>
-config_t ns_isotropic_sequence_setup (config_t & seqconfig, std::string outputdir);
-
+template <class config_t>
+config_t ns_isotropic_sequence_setup(config_t& seqconfig,
+                                     std::string outputdir);
 
 /**
  * @brief Sequence driver for an NS solution
- * 
+ *
  * @tparam Seq_t Parameter_sequence for an NS sequence
  * @tparam Res_t Parameter_sequence for resolution
  * @tparam config_t Configurator type
@@ -60,37 +60,39 @@ config_t ns_isotropic_sequence_setup (config_t & seqconfig, std::string outputdi
  * @param resolution Resolution sequence
  * @param outputdir output location
  */
-template<class Res_t, class config_t>
-config_t ns_isotropic_sequence (config_t & seqconfig, 
-                          ns_sequence const & seq,
-                          Res_t & resolution,
-                          std::string outputdir);
+template <class Res_t, class config_t>
+config_t ns_isotropic_sequence(config_t& seqconfig,
+                               ns_sequence const& seq,
+                               Res_t& resolution,
+                               std::string outputdir);
 
 /**
  * @brief Driver to compute a stationary solution for a given resolution
- * 
+ *
  * @tparam config_t Configurator type
  * @param bconfig BH config file
  * @param outputdir output location
  * @return int error code
  */
-template<typename config_t>
-int ns_isotropic_stationary_driver (config_t& bconfig, std::string outputdir, ns_sequence const * seq=nullptr);
+template <typename config_t>
+int ns_isotropic_stationary_driver(config_t& bconfig,
+                                   std::string outputdir,
+                                   ns_sequence const* seq = nullptr);
 
 /**
  * @brief Driver to compute a stationary solution for a given resolution
- * 
+ *
  * @tparam config_t Config file type
  * @param bconfig NS config file
  * @param outputdir directory to store solutions in
  * @return int error code
  */
-template<typename config_t>
-int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir);
+template <typename config_t>
+int ns_isotropic_base_solution_driver(config_t& bconfig, std::string outputdir);
 
 /**
  * @brief Driver for computing a NS solution including increasing resolution
- * 
+ *
  * @tparam config_t Configurator type
  * @tparam Res_t Parameter_sequence for resolution
  * @param bconfig NS config file
@@ -98,8 +100,12 @@ int ns_isotropic_base_solution_driver (config_t& bconfig, std::string outputdir)
  * @param outputdir output location
  * @return int error code
  */
-template<class config_t, class Res_t>
-inline int ns_isotropic_driver (config_t& bconfig, Res_t& resolution, std::string outputdir, ns_sequence const * seq=nullptr);
+template <class config_t, class Res_t>
+inline int ns_isotropic_driver(config_t& bconfig,
+                               Res_t& resolution,
+                               std::string outputdir,
+                               ns_sequence const* seq = nullptr);
 /** @}*/
-}}
+}  // namespace FUKA_Solvers
+}  // namespace Kadath
 #include "ns_isotropic_driver_imp.cpp"

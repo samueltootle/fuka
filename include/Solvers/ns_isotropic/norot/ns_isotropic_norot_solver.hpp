@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,8 +20,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "Solvers/solvers.hpp"
 #include "Solvers/sequences/ns_sequence.hpp"
+#include "Solvers/solvers.hpp"
 /**
  * \addtogroup NS_XCTS
  * \ingroup FUKA
@@ -30,13 +30,15 @@
 namespace Kadath {
 namespace FUKA_Solvers {
 
-template<class eos_t, typename config_t, typename space_t = Space_polar_adapted>
+template <class eos_t,
+          typename config_t,
+          typename space_t = Space_polar_adapted>
 class ns_isotropic_norot_solver : public Solver<config_t, space_t> {
-  public:
+ public:
   using typename Solver<config_t, space_t>::base_config_t;
   using typename Solver<config_t, space_t>::base_space_t;
 
-  private:
+ private:
   Scalar& nu;
   Scalar& lap_Aterm;
   Scalar& logh;
@@ -53,30 +55,36 @@ class ns_isotropic_norot_solver : public Solver<config_t, space_t> {
   using Solver<config_t, space_t>::checkpoint;
   using Solver<config_t, space_t>::solver_stage;
 
-  public:
+ public:
   /// solver is not trivially constructable since Kadath containers are not
   /// trivially constructable
   ns_isotropic_norot_solver() = delete;
 
-  ns_isotropic_norot_solver(config_t& config_in, space_t& space_in,  
-    Scalar& nu_in, Scalar& lap_Aterm_in, Scalar& logh_in, Scalar& lap_Bterm_in);
-  
+  ns_isotropic_norot_solver(config_t& config_in,
+                            space_t& space_in,
+                            Scalar& nu_in,
+                            Scalar& lap_Aterm_in,
+                            Scalar& logh_in,
+                            Scalar& lap_Bterm_in);
+
   /// syst always requires the same initialization for the stages
   void syst_init(System_of_eqs& syst);
-  
+
   /// diagnostics at runtime
-  void print_diagnostics(const System_of_eqs& syst, 
-    const int  ite = 0, const double conv = 0) const override;
-  
-  std::string converged_filename(const std::string stage="") const override;
-  
+  void print_diagnostics(const System_of_eqs& syst,
+                         const int ite = 0,
+                         const double conv = 0) const override;
+
+  std::string converged_filename(const std::string stage = "") const override;
+
   void save_to_file() const override {
-    Kadath::bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh, lap_Bterm);
+    Kadath::bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh,
+                                    lap_Bterm);
   }
-  
+
   /// solver driver
   int solve();
-  int solve(ns_sequence const * sequence_in);
+  int solve(ns_sequence const* sequence_in);
 
   /// solver stages
   int norot_stage(bool fixed = false);
@@ -84,6 +92,7 @@ class ns_isotropic_norot_solver : public Solver<config_t, space_t> {
   void update_config_quantities(System_of_eqs& syst);
 };
 /** @}*/
-}}
+}  // namespace FUKA_Solvers
+}  // namespace Kadath
 #include "ns_isotropic_norot_solver_imp.cpp"
 #include "ns_isotropic_norot_stages.cpp"
