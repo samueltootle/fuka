@@ -3,11 +3,15 @@
 #include "bin_bh.hpp"
 namespace Kadath::FUKA_Solvers {
 
-struct CFMS_BBH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BIN_INFO>, Space_bin_bh> {
-  using config_t = Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BIN_INFO>;
+struct CFMS_BBH_Exporter
+    : public Exporter<Kadath::FUKA_Config::kadath_config_boost<
+                          Kadath::FUKA_Config::BIN_INFO>,
+                      Space_bin_bh> {
+  using config_t =
+      Kadath::FUKA_Config::kadath_config_boost<Kadath::FUKA_Config::BIN_INFO>;
   using space_t = Space_bin_bh;
 
-  enum XCTS_VARS : size_t {  
+  enum XCTS_VARS : size_t {
     XCTS_PSI,
     XCTS_ALPHA,
     XCTS_BETA1,
@@ -19,7 +23,7 @@ struct CFMS_BBH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
     XCTS_A22,
     XCTS_A23,
     XCTS_A33,
-    NUM_XCTS_VARS 
+    NUM_XCTS_VARS
   };
 
   enum OUTPUT_VARS : size_t {
@@ -42,6 +46,7 @@ struct CFMS_BBH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
     NUM_OUTPUT_VARS
   };
 
+// clang-format off
   std::map<std::string, OUTPUT_VARS> output_var_map {
     {"lapse", OUTPUT_VARS::ALPHA},
     {"beta1", OUTPUT_VARS::BETA1},
@@ -60,10 +65,12 @@ struct CFMS_BBH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
     {"k23"  , OUTPUT_VARS::K23},
     {"k33"  , OUTPUT_VARS::K33}
   };
+// clang-format on
 
-  using interp_ary_t = std::array<double, NUM_XCTS_VARS>; 
-  using output_ary_t = std::array<double, NUM_OUTPUT_VARS>; 
-  using grid_ary_t = std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS>;
+  using interp_ary_t = std::array<double, NUM_XCTS_VARS>;
+  using output_ary_t = std::array<double, NUM_OUTPUT_VARS>;
+  using grid_ary_t =
+      std::array<std::vector<double>, OUTPUT_VARS::NUM_OUTPUT_VARS>;
 
   // Types
   using Exporter<config_t, space_t>::base_space_t;
@@ -82,7 +89,7 @@ struct CFMS_BBH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
   // Constructed objects
   ptr_data_member(Tensor, A, unique);
 
-  protected:
+ protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
   interp_ary_t quant_vals;
   output_ary_t out_pw;
@@ -95,22 +102,28 @@ struct CFMS_BBH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
 
   void populate_quants();
 
-  public:
-  std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
-  bool is_export_ready() const { return export_ready; }  
-  const int & get_ndim() const { return ndim; }
+ public:
+  std::vector<std::reference_wrapper<const Scalar>> const& get_quants() const {
+    return quants;
+  }
+  bool is_export_ready() const { return export_ready; }
+  const int& get_ndim() const { return ndim; }
 
-  CFMS_BBH_Exporter() : Exporter<config_t, space_t>(),
-    conformal_factor(nullptr), lapse(nullptr), shift(nullptr) { }
-  
-  CFMS_BBH_Exporter(std::string config_filename) :
-    Exporter<config_t, space_t>(config_filename),
-        conformal_factor(nullptr), lapse(nullptr), shift(nullptr) {
+  CFMS_BBH_Exporter()
+      : Exporter<config_t, space_t>(),
+        conformal_factor(nullptr),
+        lapse(nullptr),
+        shift(nullptr) {}
 
+  CFMS_BBH_Exporter(std::string config_filename)
+      : Exporter<config_t, space_t>(config_filename),
+        conformal_factor(nullptr),
+        lapse(nullptr),
+        shift(nullptr) {
     load_solution_from_file();
     extract_computed_grid_functions();
     populate_quants();
-    
+
     // This is to avoid a "bug" where "something" in kadath is not
     // correctly initialized prior to copying to other threads resulting
     // in undefined behavior.  By running the interpolator once, this
@@ -118,20 +131,31 @@ struct CFMS_BBH_Exporter : public Exporter<Kadath::FUKA_Config::kadath_config_bo
     this->export_pointwise(0.5, 0., 0.);
   }
 
-  CFMS_BBH_Exporter(CFMS_BBH_Exporter const & r);
+  CFMS_BBH_Exporter(CFMS_BBH_Exporter const& r);
   CFMS_BBH_Exporter(CFMS_BBH_Exporter&& b) noexcept = delete;
   CFMS_BBH_Exporter& operator=(const CFMS_BBH_Exporter& b);
 
-  public:
+ public:
+  interp_ary_t interpolate_pointwise(double const& x,
+                                     double const& y,
+                                     double const& z,
+                                     double const interpolation_offset = 0.,
+                                     int const interp_order = 8,
+                                     double const delta_r_rel = 0.3);
 
-  interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z,
-    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
-  
-  output_ary_t export_pointwise(double const & x, double const & y, double const & z,
-    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
+  output_ary_t export_pointwise(double const& x,
+                                double const& y,
+                                double const& z,
+                                double const interpolation_offset = 0.,
+                                int const interp_order = 8,
+                                double const delta_r_rel = 0.3);
 
-  grid_ary_t export_coordinate_array(
-    int const npoints, double const * xx, double const * yy, double const * zz,
-    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
+  grid_ary_t export_coordinate_array(int const npoints,
+                                     double const* xx,
+                                     double const* yy,
+                                     double const* zz,
+                                     double const interpolation_offset = 0.,
+                                     int const interp_order = 8,
+                                     double const delta_r_rel = 0.3);
 };
-}
+}  // namespace Kadath::FUKA_Solvers
