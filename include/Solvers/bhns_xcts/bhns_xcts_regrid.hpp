@@ -24,6 +24,7 @@
 #include "kadath.hpp"
 #include "Configurator/config_binary.hpp"
 #include "bco_utilities.hpp"
+#include "Solvers/fuka_syst/fuka_syst.hpp"
 #include <math.h>
 #include <sstream>
 
