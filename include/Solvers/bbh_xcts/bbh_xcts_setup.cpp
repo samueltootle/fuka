@@ -110,13 +110,13 @@ inline void bbh_xcts_setup_boosted_3d(
     bconfig(BCO_PARAMS::RMID, NODES::BCO1) : bconfig(BCO_PARAMS::RMID, NODES::BCO2);
   
   const double rout_sep_est = (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
-  const double rout_max_est = 2. * bco_u::gold_ratio * r_max_tot;
+  const double rout_max_est = bco_u::gold_ratio * r_max_tot;
   
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) = bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
 
   std::vector<double> out_bounds(1+bconfig(BIN_PARAMS::OUTER_SHELLS));
-std::vector<double> BH1_bounds;
+  std::vector<double> BH1_bounds;
   {
     auto ddrPsi(compute_ddrPsi(
       spacein1, 
