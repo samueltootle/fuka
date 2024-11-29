@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  * L. Jens Papenfort <papenfort@th.physik.uni-frankfurt.de>
  *
@@ -77,7 +77,7 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   }
   int ndim = 3;
 	int ndom = old_space.get_nbr_domains() ;
-  
+
   std::cout << "Resolution of old space: "
     << old_space.get_domain(0)->get_nbr_points()(0) << " (r), "
     << old_space.get_domain(0)->get_nbr_points()(1) << " (theta), "
@@ -92,7 +92,7 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   // start Update config vars
   std::array<double, 2> r_min;
   double r_max_tot = 0.;
-  
+
 	std::cout << "Rmin/max: " << std::endl;
   for(int i = 0; i < 2; ++i) {
     int const dom = old_adapted_doms[i];
@@ -102,12 +102,14 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
 	  std::cout << rmin << " " << rmax << std::endl;
 
     bconfig.set(BCO_PARAMS::RIN , i) = 0.5 * rmin;
-    bconfig.set(BCO_PARAMS::FIXED_R, i) = rmin;
+    bconfig.set(BCO_PARAMS::RMID, i) = rmin;
 
     r_max_tot = (rmax > r_max_tot) ? rmax : r_max_tot;
   }
-  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
-  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) = (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
+  const double rout_sep_est = (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
+  const double rout_max_est = bco_u::gold_ratio * r_max_tot;
+  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
+  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) = bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
   // end updating config vars
 
   // create old radius scalar field
@@ -122,7 +124,7 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   for(int i = 0; i < 2; ++i) {
     int const dom = old_adapted_doms[i];
     old_space_radius.set_domain(dom)   = old_outer_adapted[i]->get_outer_radius();
-    
+
   }
   old_space_radius.std_base();
   // end create old radius scalar fields
@@ -137,7 +139,7 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
 
   bco_u::set_NS_bounds(NS1_bounds, bconfig, NODES::BCO1);
   bco_u::set_NS_bounds(NS2_bounds, bconfig, NODES::BCO2);
-  
+
   std::cout << "Bounds:" << std::endl;
   bco_u::print_bounds("NS1", NS1_bounds);
   bco_u::print_bounds("NS2", NS2_bounds);
@@ -168,7 +170,7 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
     // Updated mapping for NS
     bco_u::interp_adapted_mapping(new_inner_adapted[i], dom, old_space_radius);
     bco_u::interp_adapted_mapping(new_outer_adapted[i], dom, old_space_radius);
-    
+
     // Interpolate old_phi field outside of the star for import
     bco_u::update_adapted_field(old_phi, dom, dom+1, old_inner_adapted[i], INNER_BC);
 	}
