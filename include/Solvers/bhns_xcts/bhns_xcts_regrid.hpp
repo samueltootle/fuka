@@ -72,12 +72,6 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
       dynamic_cast<const Domain_shell_outer_homothetic*>(
           old_space.get_domain(old_space.ADAPTEDBH));
 
-  std::cout << "Resolution of old space: "
-            << old_space.get_domain(0)->get_nbr_points()(0) << " (r), "
-            << old_space.get_domain(0)->get_nbr_points()(1) << " (theta), "
-            << old_space.get_domain(0)->get_nbr_points()(2) << " (phi)"
-            << std::endl;
-
   int ndim = 3;
   int ndom = old_space.get_nbr_domains();
 
@@ -94,39 +88,15 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   // Update config vars
   // This control was mainly for testing
   if (!bconfig.control(USE_CONFIG_VARS)) {
-    // Loop for ease of initialization
-    for (int i = 0; i < 2; ++i) {
-      set_radius(old_nuc_doms[i], old_space, bconfig, RIN, i);
-      set_radius(old_adapted_doms[i], old_space, bconfig, FIXED_R, i);
-    }
+    update_config_NS_radii(old_space, bconfig, old_space.ADAPTEDNS, NODES::BCO1);
 
-    // update NS radii
-    auto [rmin, rmax] = get_rmin_rmax(old_space, old_space.ADAPTEDNS);
+    update_config_BH_radii(old_space, bconfig, old_space.ADAPTEDBH, old_conf, NODES::BCO2);
 
-    std::cout << "Rmin/max: " << std::endl << rmin << " " << rmax << std::endl;
-    bconfig.set(RMID, BCO1) = rmax;
-    bconfig.set(RIN, BCO1) = 0.5 * rmin;
-    // end update NS radii
-
-    // estimate how small the inner radius should be based on relation
-    // between conformal factor and numerical radius.
-    // see https://arxiv.org/pdf/0805.4192, eq(64)
-    auto [cmin, cmax] =
-        get_field_min_max(old_conf, old_space.ADAPTEDBH + 1, INNER_BC);
-    double conf_inner = cmin;
-    double conf_i_sq = conf_inner * conf_inner;
-    double est_r_div2 = bconfig(MCH, BCO2) / conf_i_sq;
-    bconfig.set(RIN, BCO2) = est_r_div2;
-
-    // this estimate is critical for calculating domain bounds
-    // especially when attempting large changes in M_BH
-    bconfig.set(RMID, BCO2) = 2 * est_r_div2;
-
-    rmax = (rmax > bconfig(RMID, BCO2)) ? rmax : bconfig(RMID, BCO2);
+    double rmax = std::max(bconfig(RMID, BCO1), bconfig(RMID, BCO2));
     const double rout_sep_est = (bconfig(DIST) / 2. - rmax) / 3. + rmax;
-    const double rout_max_est = 1.5 * rmax;
-    bconfig.set(ROUT, BCO1) =
-        (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
+    const double rout_max_est = gold_ratio * rmax;
+    bconfig.set(ROUT, BCO1) = rout_sep_est;
+        // (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
     bconfig.set(ROUT, BCO2) = bconfig(ROUT, BCO1);
   }  // end updating config vars
 
@@ -167,16 +137,13 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
       set_arb_boundsv3(bconfig, drPsi, old_space.ADAPTEDNS + 1, NODES::BCO1)};
   std::vector<double> BH_bounds{
       set_arb_boundsv3(bconfig, drPsi, old_space.ADAPTEDBH + 1, NODES::BCO2)};
-
-  // Set radius of the excision boundary to the current radius so that the
-  // solver starts from the originial solution
-  BH_bounds[1] = get_radius(old_space.get_domain(old_space.BH + 1), OUTER_BC);
   // end setup bounds
 
   // print bounds to stdout - debugging only
-  std::cout << "Bounds:" << std::endl;
-  print_bounds("NS", NS_bounds);
-  print_bounds("BH", BH_bounds);
+  std::cout << "Local bounds:" << std::endl;
+  print_bounds("NS-bounds", NS_bounds);
+  print_bounds("BH-bounds", BH_bounds);
+  print_bounds("outer-bounds", out_bounds);
   std::cout << std::endl;
 
   Space_bhns space(type_coloc, bconfig(DIST), NS_bounds, BH_bounds, out_bounds,
@@ -189,7 +156,7 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   std::cout << "Resolution of new space: ";
   print_constant_space_resolution(space);
 
-  std::cout << "\nold bounds:" << std::endl;
+  std::cout << "\nOld bounds:" << std::endl;
   print_bounds_from_space(old_space);
 
   std::cout << "New bounds:" << std::endl;
