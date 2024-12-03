@@ -46,33 +46,23 @@ inline void update_bin_config(config_t& bconfig,
 
   bconfig.set(Q) = bconfig(MCH, BCO1) / bconfig(MCH, BCO2);
 
-  bconfig.set(MIRR, BCO1) =
-      bco_u::mirr_from_mch(bconfig(CHI, BCO1), bconfig(MCH, BCO1));
-  bconfig.set(MIRR, BCO2) =
-      bco_u::mirr_from_mch(bconfig(CHI, BCO2), bconfig(MCH, BCO2));
-
   if (!bconfig.control(USE_CONFIG_VARS)) {
-    int i = BCO1;
-
-    for (auto& d : {space.BH1 + 1, space.BH2 + 1}) {
-      // estimate how small the inner radius should be based on relation
-      // between conformal factor and numerical radius.
-      // see https://arxiv.org/pdf/0805.4192, eq(64)
-      double conf_inner = bco_u::get_boundary_val(d + 1, conf, INNER_BC);
-      double conf_i_sq = conf_inner * conf_inner;
-      double est_r_div2 = bconfig(MCH, i) / conf_i_sq;
-      bconfig.set(RIN, i) = est_r_div2;
-
-      // set this here only for shell bounds to be calculated.
-      bconfig.set(RMID, i) = 2. * est_r_div2;
-
-      auto [fmin, fmax] = bco_u::get_field_min_max(lapse, 2, INNER_BC);
-      bconfig.set(FIXED_LAPSE, i) = fmin;
-
-      i = BCO2;
-    }
 
     bconfig.set(REXT) = 2. * bconfig(DIST);
+
+    const double r_max_tot =
+      (bconfig(BCO_PARAMS::RMID, NODES::BCO1) > bconfig(RMID, NODES::BCO2))
+        ? bconfig(BCO_PARAMS::RMID, NODES::BCO1)
+        : bconfig(BCO_PARAMS::RMID, NODES::BCO2);
+
+    const double rout_sep_est =
+        (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
+    const double rout_min_est = bco_u::gold_ratio * r_max_tot;
+
+    bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
+      //  (rout_sep_est < rout_min_est) ? rout_min_est : rout_sep_est;
+    bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
+        bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
   }
 }
 
@@ -86,6 +76,14 @@ inline int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
   Scalar old_lapse(old_space, fin);
   Vector old_shift(old_space, fin);
   fclose(fin);
+
+  // Update config vars
+  // This control was mainly for testing
+  if (!bconfig.control(USE_CONFIG_VARS)) {
+    bco_u::update_config_BH_radii(old_space, bconfig, old_space.BH1 + 1, old_conf, NODES::BCO1);
+    bco_u::update_config_BH_radii(old_space, bconfig, old_space.BH2 + 1, old_conf, NODES::BCO2);
+  }  // end updating config vars
+
   update_bin_config(bconfig, old_space, old_conf, old_lapse);
 
   int ndom = old_space.get_nbr_domains();
@@ -116,13 +114,6 @@ inline int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
       bco_u::set_arb_boundsv3(bconfig, drPsi, old_space.BH1 + 2, NODES::BCO1);
   BH2_bounds =
       bco_u::set_arb_boundsv3(bconfig, drPsi, old_space.BH2 + 2, NODES::BCO2);
-
-  // Set radius of the excision boundary to the current radius so that the
-  // solver starts from the originial solution
-  BH1_bounds[1] =
-      bco_u::get_radius(old_space.get_domain(old_space.BH1 + 1), OUTER_BC);
-  BH2_bounds[1] =
-      bco_u::get_radius(old_space.get_domain(old_space.BH2 + 1), OUTER_BC);
   // end setup bounds
 
   Space_bin_bh space(type_coloc, bconfig(DIST), BH1_bounds, BH2_bounds,
