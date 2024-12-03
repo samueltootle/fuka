@@ -193,6 +193,7 @@ inline void bhns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NSconfig,
     out_bounds[e] =
         bconfig(BIN_PARAMS::REXT) + e * 0.25 * bconfig(BIN_PARAMS::REXT);
 
+  std::cout << "Local bounds:" << std::endl;
   print_bounds("NS-bounds", NS_bounds);
   print_bounds("BH-bounds", BH_bounds);
   print_bounds("outer-bounds", out_bounds);
