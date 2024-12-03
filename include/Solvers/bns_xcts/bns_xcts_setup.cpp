@@ -182,32 +182,42 @@ inline void bns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NS1config,
   const double rout_sep_est =
       (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
   const double rout_max_est = gold_ratio * r_max_tot;
-  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) =
-      (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
+  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
+      // (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
       bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
   // end updating config vars
 
   // setup domain boundaries
   std::vector<double> out_bounds(1 + bconfig(BIN_PARAMS::OUTER_SHELLS));
-  std::vector<double> NS1_bounds(3 + bconfig(BCO_PARAMS::NSHELLS, BCO1));
-  std::vector<double> NS2_bounds(3 + bconfig(BCO_PARAMS::NSHELLS, BCO2));
 
   // scale outer shells by constant steps of 1/4 for the time being
   for (int e = 0; e < out_bounds.size(); ++e)
     out_bounds[e] = bconfig(BIN_PARAMS::REXT) * (1. + e * 0.25);
 
   // set reasonable radii to each stellar domain
-  set_NS_bounds(NS1_bounds, bconfig, NODES::BCO1);
-  set_NS_bounds(NS2_bounds, bconfig, NODES::BCO2);
+  std::vector<double> NS1_bounds;
+  {
+    auto drPsi(compute_drPsi(spacein1, confin1,
+                             Metric_flat(spacein1, shiftin1.get_basis()),
+                             {0, 1}));
+    NS1_bounds = bco_u::set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO1);
+  }
+  std::vector<double> NS2_bounds;
+  {
+    auto drPsi(compute_drPsi(spacein2, confin2,
+                             Metric_flat(spacein2, shiftin2.get_basis()),
+                             {0, 1}));
+    NS2_bounds = bco_u::set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO2);
+  }
   // end setup domain boundaries
 
   // output stellar domain radii
   if (rank == 0) {
     std::cout << "Bounds:" << std::endl;
+    print_bounds("NS1-bounds", NS1_bounds);
+    print_bounds("NS2-bounds", NS2_bounds);
     print_bounds("Outer", out_bounds);
-    print_bounds("NS1", NS1_bounds);
-    print_bounds("NS2", NS2_bounds);
   }
 
   // create a binary neutron star space
