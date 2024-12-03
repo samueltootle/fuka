@@ -914,7 +914,7 @@ void update_config_NS_radii(space_t& space, config_t& bconfig,
   auto [r_min, r_max] = bco_utils::get_rmin_rmax(space, dom);
   bconfig.set(RIN , idx...)    = 0.5 * r_min;
   bconfig.set(RMID, idx...)    = r_max;
-  bconfig.set(ROUT, idx...)    = 1.5 * r_max;
+  bconfig.set(ROUT, idx...)    = gold_ratio * r_max;
 }
 
 /**
