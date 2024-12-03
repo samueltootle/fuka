@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Configurator/config_binary.hpp"
+#include "Solvers/fuka_syst/fuka_syst.hpp"
 #include "bco_utilities.hpp"
 #include "kadath_bin_ns.hpp"
 
@@ -114,22 +115,25 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   old_space_radius.std_base();
   // end create old radius scalar fields
 
+  std::vector<int> ns_interior_doms{FUKA_Syst_tools::vector_of_domains(
+      old_space.NS1, old_space.ADAPTED1)};
+  std::vector<int> exclusion_doms{old_space.NS2, old_space.ADAPTED1};
+  // concat domain lists together
+  std::for_each(ns_interior_doms.rbegin(), ns_interior_doms.rend(),
+                [&exclusion_doms](auto e) {
+                  auto it = exclusion_doms.begin();
+                  exclusion_doms.insert(it, e);
+                });
+  Scalar drPsi(compute_drPsi(old_space, old_conf,
+                           Metric_flat(old_space, old_shift.get_basis()),
+                           exclusion_doms, old_space.OUTER));
+
   std::vector<double> out_bounds(1 + bconfig(BIN_PARAMS::OUTER_SHELLS));
   // set reasonable radii to each stellar domain
-  std::vector<double> NS1_bounds;
-  {
-    auto drPsi(compute_drPsi(old_space, old_conf,
-                             Metric_flat(old_space, old_shift.get_basis()),
-                             {0, 1}));
-    NS1_bounds = bco_u::set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO1);
-  }
-  std::vector<double> NS2_bounds;
-  {
-    auto drPsi(compute_drPsi(old_space, old_conf,
-                             Metric_flat(old_space, old_shift.get_basis()),
-                             {0, 1}));
-    NS2_bounds = bco_u::set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO2);
-  }
+  std::vector<double> NS1_bounds{
+      set_arb_boundsv3(bconfig, drPsi, old_space.ADAPTED1 + 1, NODES::BCO1)};
+  std::vector<double> NS2_bounds{
+      set_arb_boundsv3(bconfig, drPsi, old_space.ADAPTED2 + 1, NODES::BCO2)};
 
   // space needs to be able fixed to add shells
   for (int e = 0; e < out_bounds.size(); ++e)
