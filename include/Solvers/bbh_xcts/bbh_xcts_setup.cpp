@@ -25,7 +25,7 @@ void bbh_xcts_setup_bin_config(config_t& bconfig) {
              bconfig(BCO_PARAMS::MCH, NODES::BCO2));
 
   // Binary Parameters
-  bconfig.set(BIN_PARAMS::REXT) = 2 * bconfig(BIN_PARAMS::DIST);
+  bconfig.set(BIN_PARAMS::REXT) = 2.0 * bconfig(BIN_PARAMS::DIST);
   bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MCH, NODES::BCO2) /
                                bconfig(BCO_PARAMS::MCH, NODES::BCO1);
 
@@ -108,46 +108,38 @@ inline void bbh_xcts_setup_boosted_3d(
   bconfig.set(BCO_PARAMS::NSHELLS, NODES::BCO2) = nshells2;
 
   const double r_max_tot =
-      (bconfig(BCO_PARAMS::RMID, NODES::BCO1) > bconfig(RMID, NODES::BCO2))
-          ? bconfig(BCO_PARAMS::RMID, NODES::BCO1)
-          : bconfig(BCO_PARAMS::RMID, NODES::BCO2);
+      std::max(bconfig(BCO_PARAMS::RMID, NODES::BCO1), bconfig(RMID, NODES::BCO2));
 
   const double rout_sep_est =
       (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
-  const double rout_max_est = bco_u::gold_ratio * r_max_tot;
+  // const double rout_min_est = bco_u::gold_ratio * r_max_tot;
 
-  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) =
-      (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
+  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
+    //  (rout_sep_est < rout_min_est) ? rout_min_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
       bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
 
   std::vector<double> out_bounds(1 + bconfig(BIN_PARAMS::OUTER_SHELLS));
   std::vector<double> BH1_bounds;
   {
-    auto ddrPsi(compute_ddrPsi(spacein1, confin1,
-                               Metric_flat(spacein1, shiftin1.get_basis()),
-                               {0, 1}));
-    BH1_bounds = bco_u::set_arb_bounds(bconfig, BCO1, ddrPsi, 2, 0.9);
+    auto drPsi(compute_drPsi(spacein1, confin1,
+                             Metric_flat(spacein1, shiftin1.get_basis()),
+                             {0, 1}));
+    BH1_bounds = bco_u::set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO1);
   }
-  std::cout << "Bound1 done\n";
-  bco_u::print_bounds("bh1", BH1_bounds);
   std::vector<double> BH2_bounds;
   {
-    auto ddrPsi(compute_ddrPsi(spacein2, confin2,
-                               Metric_flat(spacein2, shiftin2.get_basis()),
-                               {0, 1}));
-    BH2_bounds = bco_u::set_arb_bounds(bconfig, BCO2, ddrPsi, 2, 0.9);
+    auto drPsi(compute_drPsi(spacein2, confin2,
+                             Metric_flat(spacein2, shiftin2.get_basis()),
+                             {0, 1}));
+    BH2_bounds = bco_u::set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO2);
   }
-  std::cout << "Bound2 done\n";
-  bco_u::print_bounds("bh2", BH2_bounds);
 
   // for out_bounds.size > 1 - add equi-distant shells
   for (int e = 0; e < out_bounds.size(); ++e)
     out_bounds[e] =
         bconfig(BIN_PARAMS::REXT) + e * 0.25 * bconfig(BIN_PARAMS::REXT);
-
-  bco_u::set_BH_bounds(BH1_bounds, bconfig, NODES::BCO1, true);
-  bco_u::set_BH_bounds(BH2_bounds, bconfig, NODES::BCO2, false);
+  // end setup domain boundaries
 
   // create space containing the domain decomposition
   int type_coloc = CHEB_TYPE;
