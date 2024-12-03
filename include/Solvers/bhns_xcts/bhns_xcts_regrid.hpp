@@ -122,7 +122,7 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
     out_bounds[e] = bconfig(REXT) * (1. + e * 0.25);
 
   std::vector<int> ns_interior_doms{FUKA_Syst_tools::vector_of_domains(
-      old_space.NS, old_space.ADAPTEDNS + 1)};
+      old_space.NS, old_space.ADAPTEDNS)};
   std::vector<int> exclusion_doms{old_space.BH, old_space.BH + 1};
   // concat domain lists together
   std::for_each(ns_interior_doms.rbegin(), ns_interior_doms.rend(),
