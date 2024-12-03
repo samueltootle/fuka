@@ -770,7 +770,9 @@ std::vector<double> set_arb_boundsv3 (config_t& bconfig,
   // FIXME need a threashold here to ensure exp doesn't get unbounded
   double scale_fac = 2.0 - std::exp(field_init);
 
-  static constexpr double min_spacing_fac = 1.855;
+  double min_spacing_fac =
+    (std::isnan(bconfig.set(BCO_PARAMS::MIN_SHELL_DR, BCOidx...))) ?
+    1.855 :  bconfig(BCO_PARAMS::MIN_SHELL_DR, BCOidx...);
   double r0 = r_init * scale_fac * min_spacing_fac;
 
   // We only add shells out to ROUT
@@ -915,6 +917,10 @@ void update_config_NS_radii(space_t& space, config_t& bconfig,
   bconfig.set(RIN , idx...)    = 0.5 * r_min;
   bconfig.set(RMID, idx...)    = r_max;
   bconfig.set(ROUT, idx...)    = gold_ratio * r_max;
+
+  if (std::isnan(bconfig.set(BCO_PARAMS::MIN_SHELL_DR, idx...))) {
+    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, idx...) = 1.4;
+  }
 }
 
 /**
