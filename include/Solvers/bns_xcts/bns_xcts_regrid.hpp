@@ -61,7 +61,6 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
 
   const std::array<int, 2> old_adapted_doms{old_space.ADAPTED1,
                                             old_space.ADAPTED2};
-  const std::array<int, 2> old_nuc_doms{old_space.NS1, old_space.NS2};
 
   std::array<const Domain_shell_outer_adapted*, 2> old_outer_adapted;
   std::array<const Domain_shell_inner_adapted*, 2> old_inner_adapted;
@@ -83,38 +82,18 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   int ndim = 3;
   int ndom = old_space.get_nbr_domains();
 
-  std::cout << "Resolution of old space: "
-            << old_space.get_domain(0)->get_nbr_points()(0) << " (r), "
-            << old_space.get_domain(0)->get_nbr_points()(1) << " (theta), "
-            << old_space.get_domain(0)->get_nbr_points()(2) << " (phi)"
-            << std::endl;
-  std::cout << "Resolution of new space: " << res << " (r), " << res
-            << " (theta), " << res - 1 << " (phi)" << std::endl;
-
   int type_coloc = old_space.get_type_base();
 
   // start Update config vars
-  std::array<double, 2> r_min;
-  double r_max_tot = 0.;
+  bco_u::update_config_NS_radii(old_space, bconfig, old_space.ADAPTED1, NODES::BCO1);
+  bco_u::update_config_NS_radii(old_space, bconfig, old_space.ADAPTED2, NODES::BCO2);
+  double r_max_tot = std::max(bconfig(BCO_PARAMS::RMID, BCO1), bconfig(BCO_PARAMS::RMID, BCO2));
 
-  std::cout << "Rmin/max: " << std::endl;
-  for (int i = 0; i < 2; ++i) {
-    int const dom = old_adapted_doms[i];
-
-    // array of {rmin, rmax}
-    auto [rmin, rmax] = get_rmin_rmax(old_space, dom);
-    std::cout << rmin << " " << rmax << std::endl;
-
-    bconfig.set(BCO_PARAMS::RIN, i) = 0.5 * rmin;
-    bconfig.set(BCO_PARAMS::RMID, i) = rmin;
-
-    r_max_tot = (rmax > r_max_tot) ? rmax : r_max_tot;
-  }
   const double rout_sep_est =
       (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
   const double rout_max_est = gold_ratio * r_max_tot;
-  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) =
-      (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
+  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
+      // (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
       bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
   // end updating config vars
@@ -136,24 +115,46 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   // end create old radius scalar fields
 
   std::vector<double> out_bounds(1 + bconfig(BIN_PARAMS::OUTER_SHELLS));
-  std::vector<double> NS1_bounds(3 +
-                                 bconfig(BCO_PARAMS::NINSHELLS, NODES::BCO1));
-  std::vector<double> NS2_bounds(3 +
-                                 bconfig(BCO_PARAMS::NINSHELLS, NODES::BCO2));
+  // set reasonable radii to each stellar domain
+  std::vector<double> NS1_bounds;
+  {
+    auto drPsi(compute_drPsi(old_space, old_conf,
+                             Metric_flat(old_space, old_shift.get_basis()),
+                             {0, 1}));
+    NS1_bounds = bco_u::set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO1);
+  }
+  std::vector<double> NS2_bounds;
+  {
+    auto drPsi(compute_drPsi(old_space, old_conf,
+                             Metric_flat(old_space, old_shift.get_basis()),
+                             {0, 1}));
+    NS2_bounds = bco_u::set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO2);
+  }
 
   // space needs to be able fixed to add shells
   for (int e = 0; e < out_bounds.size(); ++e)
     out_bounds[e] = bconfig(BIN_PARAMS::REXT) * (1. + e * 0.25);
 
-  set_NS_bounds(NS1_bounds, bconfig, NODES::BCO1);
-  set_NS_bounds(NS2_bounds, bconfig, NODES::BCO2);
-
   std::cout << "Bounds:" << std::endl;
-  print_bounds("NS1", NS1_bounds);
-  print_bounds("NS2", NS2_bounds);
+  print_bounds("NS1-bounds", NS1_bounds);
+  print_bounds("NS2-bounds", NS2_bounds);
+  print_bounds("Outer", out_bounds);
 
   bin_space_t space(type_coloc, bconfig(BIN_PARAMS::DIST), NS1_bounds,
                     NS2_bounds, out_bounds, res);
+
+  std::cout << "Resolution of old space: ";
+  print_constant_space_resolution(old_space);
+
+  std::cout << "Resolution of new space: ";
+  print_constant_space_resolution(space);
+
+  std::cout << "\nOld bounds:" << std::endl;
+  print_bounds_from_space(old_space);
+
+  std::cout << "New bounds:" << std::endl;
+  print_bounds_from_space(space);
+
   ndom = space.get_nbr_domains();
 
   Base_tensor basis(space, CARTESIAN_BASIS);
