@@ -46,7 +46,7 @@ Space_bhns::Space_bhns (int ttype, double dist, const std::vector<double>& NS_bo
 
     ndim = 3 ;
     double rext = outer_bounds[0];
-    
+
     n_shells1 = NS_bounds.size()-3-n_inner_shellsNS;
     n_shells2 = BH_bounds.size()-3;
 
@@ -85,7 +85,7 @@ Space_bhns::Space_bhns (int ttype, double dist, const std::vector<double>& NS_bo
     double eta_c = log((1+rext/aa)/(rext/aa-1)) ;
     double eta_lim = eta_c/2. ;
     double chi_lim = chi_lim_eta (eta_lim, rext, aa, chi_c) ;
-    
+
     // NS
     auto gen_ns_domains = [&](const int nuc_i, const int adapt_i, auto& bounds, const double& eta) {
         // NS_bounds indicies
@@ -102,12 +102,12 @@ Space_bhns::Space_bhns (int ttype, double dist, const std::vector<double>& NS_bo
         }
         domains[adapt_i]   = new Domain_shell_outer_adapted (*this, adapt_i  , ttype, bounds[inner_shells] , bounds[RMID], center, res) ;
         domains[adapt_i+1] = new Domain_shell_inner_adapted (*this, adapt_i+1, ttype, bounds[RMID]   , bounds[RMID+1], center, res) ;
-        
+
         for(int i = 0; i < outer_shells; ++i)
             domains[adapt_i+2+i] = new Domain_shell(adapt_i+2+i, ttype, bounds[RMID+1+i], bounds[RMID+1+i+1], center, res);
     };
     gen_ns_domains(NS, ADAPTEDNS, NS_bounds, eta_minus);
-    
+
     // BH
     auto gen_bh_domains = [&](const int nuc_i, auto& bounds, const double& eta) {
         const int RMID   = 1;
@@ -116,11 +116,11 @@ Space_bhns::Space_bhns (int ttype, double dist, const std::vector<double>& NS_bo
         Point center (ndim) ;
         center.set(1) = aa*cosh(eta)/sinh(eta) ;
         domains[nuc_i] = new Domain_nucleus (nuc_i, ttype, bounds[RIN], center, res) ;
-        domains[nuc_i+1] = 
+        domains[nuc_i+1] =
             new Domain_shell_outer_homothetic (*this, nuc_i+1, ttype, bounds[RIN], bounds[RMID], center, res) ;
-        domains[nuc_i+2] = 
+        domains[nuc_i+2] =
             new Domain_shell_inner_homothetic (*this, nuc_i+2, ttype, bounds[RMID], bounds[RMID+1], center, res) ;
-        
+
         for(int i = 0; i < shells; ++i)
             domains[nuc_i+3+i] = new Domain_shell(nuc_i+3+i, ttype, bounds[RMID+1+i], bounds[RMID+1+i+1], center, res);
     };
@@ -139,7 +139,7 @@ Space_bhns::Space_bhns (int ttype, double dist, const std::vector<double>& NS_bo
 
 	  // Compactified
 	  domains[OUTER+5+n_shells_outer] = new Domain_compact(OUTER+5+n_shells_outer, ttype, outer_bounds[n_shells_outer], center, res) ;
-    
+
     const Domain_shell_outer_adapted* pouter_1 = dynamic_cast<const Domain_shell_outer_adapted*> (domains[ADAPTEDNS]) ;
     pouter_1->vars_to_terms() ;
     pouter_1->update() ;
@@ -185,7 +185,7 @@ Space_bhns::Space_bhns (Space_bhns const & sp) {
   assert(n_shells_outer >= 0 && n_shells_outer == sp.n_shells_outer);
 
 	domains = new Domain* [nbr_domains] ;
- 
+
   auto add_spherical_shells = [&](auto start_idx, auto nshells) {
     for(int i = 0; i < nshells; ++i) {
       const Domain_shell* d_shell = dynamic_cast<const Domain_shell*> (sp.get_domain(start_idx+i)) ;
@@ -201,7 +201,7 @@ Space_bhns::Space_bhns (Space_bhns const & sp) {
 
   const Domain_shell_outer_adapted* sp_pouter_1 = dynamic_cast<const Domain_shell_outer_adapted*> (sp.get_domain(ADAPTEDNS)) ;
   domains[ADAPTEDNS] = new Domain_shell_outer_adapted(*this, *sp_pouter_1) ;
-  
+
   const Domain_shell_inner_adapted* sp_pinner_1 = dynamic_cast<const Domain_shell_inner_adapted*> (sp.get_domain(ADAPTEDNS+1)) ;
   domains[ADAPTEDNS+1] = new Domain_shell_inner_adapted(*this, *sp_pinner_1) ;
 
@@ -213,7 +213,7 @@ Space_bhns::Space_bhns (Space_bhns const & sp) {
 
   const Domain_shell_outer_homothetic* sp_pouter_2 = dynamic_cast<const Domain_shell_outer_homothetic*> (sp.get_domain(ADAPTEDBH)) ;
   domains[ADAPTEDBH] = new Domain_shell_outer_homothetic(*this, *sp_pouter_2) ;
-  
+
   const Domain_shell_inner_homothetic* sp_pinner_2 = dynamic_cast<const Domain_shell_inner_homothetic*> (sp.get_domain(ADAPTEDBH+1)) ;
   domains[ADAPTEDBH+1] = new Domain_shell_inner_homothetic(*this, *sp_pinner_2) ;
 
@@ -260,12 +260,12 @@ Space_bhns::Space_bhns (FILE* fd, bool oldspace) {
   assert(nbr_domains >= 12);
 
   fread_be (&n_inner_shells1, sizeof(int), 1, fd) ;
-  
+
   // in the original BHNS, n_shells referred to interior shells
   // whereas it now refers to exterior shells like for the BH
   if(!oldspace)
     fread_be (&n_shells1, sizeof(int), 1, fd) ;
-   
+
   fread_be (&n_shells2, sizeof(int), 1, fd) ;
 
 	fread_be (&ndim, sizeof(int), 1, fd) ;
@@ -290,7 +290,7 @@ Space_bhns::Space_bhns (FILE* fd, bool oldspace) {
 
 	domains[ADAPTEDNS]   = new Domain_shell_outer_adapted (*this, ADAPTEDNS, fd) ;
 	domains[ADAPTEDNS+1] = new Domain_shell_inner_adapted (*this, ADAPTEDNS+1, fd) ;
-	
+
   for(int i = 0; i < n_shells1; ++i)
 	  domains[ADAPTEDNS+2+i]  = new Domain_shell(ADAPTEDNS+2+i, fd);
 
