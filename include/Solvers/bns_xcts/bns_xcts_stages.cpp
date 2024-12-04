@@ -87,7 +87,7 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydrostatic_equilibrium_stage() {
     // if outside the stellar domains, without matter sources
     // resort to the source-free constraint equations
     // and set matter (and velocity potential) to zero
-    if ((d >= space.ADAPTED2 + 1) || d == space.ADAPTED1 + 1) {
+    if ((d >= space.ADAPTED2 + 1) || ((d >= space.ADAPTED1 + 1) && (d < space.NS2))) {
       if (!bconfig.control(COROT_BIN))
         syst.add_eq_full(d, "phi= 0");
 
@@ -414,7 +414,7 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
     // if outside the stellar domains, without matter sources
     // resort to the source-free constraint equations
     // and set matter (and velocity potential) to zero
-    if ((d >= space.ADAPTED2 + 1) || d == space.ADAPTED1 + 1) {
+    if ((d >= space.ADAPTED2 + 1) || ((d >= space.ADAPTED1 + 1) && (d < space.NS2))) {
       if (!bconfig.control(COROT_BIN))
         syst.add_eq_full(d, "phi= 0");
 
