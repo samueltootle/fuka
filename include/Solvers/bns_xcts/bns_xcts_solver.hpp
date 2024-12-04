@@ -117,7 +117,7 @@ class bns_xcts_solver : XCTS_Solver<config_t, space_t> {
   int hydro_rescaling_stages(std::string stage_text);
 
   // Update bconfig(HC) and bconfig(NC)
-  void update_config_quantities(const double& loghc);
+  void update_config_quantities(System_of_eqs& syst);
 };
 
 template <typename eos_t>

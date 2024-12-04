@@ -196,8 +196,8 @@ void bns_xcts_solver<eos_t, config_t, space_t>::syst_init(System_of_eqs& syst) {
   syst.add_var("bet", shift);
 
   // quasi-local measurement of the component ADM masses
-  syst.add_var("qlMadm1", bconfig(QLMADM, BCO1));
-  syst.add_var("qlMadm2", bconfig(QLMADM, BCO2));
+  // syst.add_var("qlMadm1", bconfig(QLMADM, BCO1));
+  // syst.add_var("qlMadm2", bconfig(QLMADM, BCO2));
 
   // check if corotation is considered and adjust
   // rotational velocity components accordingly
@@ -384,9 +384,29 @@ void bns_xcts_solver<eos_t, config_t, space_t>::print_diagnostics(
 
 template <class eos_t, typename config_t, typename space_t>
 void bns_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(
-    const double& loghc) {
-  bconfig.set(HC) = std::exp(loghc);
-  bconfig.set(NC) = EOS<eos_t, DENSITY>::get(bconfig(HC));
+    System_of_eqs& syst) {
+
+  for(auto BCO : {NODES::BCO1, NODES::BCO2}) {
+    const int nuc_dom = (BCO == NODES::BCO1) ? space.NS1 : space.NS2;
+    const int dom = (BCO == NODES::BCO1) ? space.ADAPTED1 : space.ADAPTED2;
+
+    auto rs = bco_utils::get_rmin_rmax(space, dom);
+    bconfig.set(BCO_PARAMS::RMID, BCO) = rs[1];
+
+    auto loghc = bco_utils::get_boundary_val(nuc_dom, logh, INNER_BC);
+    bconfig.set(BCO_PARAMS::HC, BCO) = std::exp(loghc);
+    bconfig.set(BCO_PARAMS::NC, BCO) = EOS<eos_t, DENSITY>::get(bconfig(BCO_PARAMS::HC));
+
+    // Update Quasi-local gravitational mass
+    double ql_mass = 0.;
+    for (int d = nuc_dom; d <= dom; ++d) {
+      // baryonic_mass1 += syst.give_val_def("intMb")()(d).integ_volume();
+      ql_mass += syst.give_val_def("intM")()(d).integ_volume();
+    }
+    bconfig.set(BCO_PARAMS::QLMADM, BCO) = ql_mass;
+  }
+
+
 }
 /** @}*/
 }  // namespace FUKA_Solvers
