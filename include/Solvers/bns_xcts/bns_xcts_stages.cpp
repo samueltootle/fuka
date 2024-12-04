@@ -363,7 +363,7 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
   for (int d = 0; d < ndom; d++)
     // the enthalpy is equal to the constant part everywhere
     // outside of the stars, i.e. zero
-    if ((d >= space.ADAPTED2 + 1) || d == space.ADAPTED1 + 1)
+    if ((d >= space.ADAPTED2 + 1) || ((d >= space.ADAPTED1 + 1) && (d < space.NS2)))
       syst.add_def(d, "H  = Hconst");
 
   // inside the stars, it is the constant part

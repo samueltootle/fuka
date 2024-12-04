@@ -566,7 +566,7 @@ void Space_bin_ns::xx_to_vars_variable_domains (System_of_eqs* sys, const Array<
 Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const {
   // FIXME not entirely sure if this is correct with outer shells
 
-	if (dom == ADAPTED1+1) {
+	if (dom == ADAPTED1 + 1 + n_shells1) {
 	  // First star ;
 	  Array<int> res (2,2) ;
 	  switch (bound) {
@@ -583,7 +583,7 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 	return res ;
 	}
 
-	if (dom == ADAPTED2 + 1) {
+	if (dom == ADAPTED2 + 1 + n_shells1) {
 		// second star ;
 		Array<int> res(2, 2) ;
 		switch (bound) {
@@ -604,7 +604,7 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 	  Array<int> res(2,1) ;
 	  switch (bound) {
 	    case INNER_BC :
-	      res.set(0,0) = ADAPTED1+1; // First star
+	      res.set(0,0) = ADAPTED1+1+n_shells1; // First star
 	      res.set(1,0) = OUTER_BC ;
 	      break ;
 	    case OUTER_BC :
@@ -622,7 +622,7 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 	  Array<int> res(2, 1) ;
 	  switch (bound) {
 	    case INNER_BC :
-	      res.set(0,0) = ADAPTED1+1; // First star
+	      res.set(0,0) = ADAPTED1+1+n_shells1; // First star
 	      res.set(1,0) = OUTER_BC ;
 	      break ;
 	    case OUTER_BC :
@@ -655,7 +655,7 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 	  Array<int> res(2, 1) ;
 	  switch (bound) {
 		case INNER_BC :
-		  res.set(0, 0) = ADAPTED2+1; // Second star
+		  res.set(0, 0) = ADAPTED2+1+n_shells2; // Second star
 		  res.set(1, 0) = OUTER_BC ;
 		  break ;
 		case OUTER_BC :
@@ -673,7 +673,7 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 	  Array<int> res(2, 1) ;
 	  switch (bound) {
 	    case INNER_BC :
-	      res.set(0,0) = ADAPTED2+1; // second nucleus
+	      res.set(0,0) = ADAPTED2+1+n_shells2; // second star
 	      res.set(1,0) = OUTER_BC ;
 	      break ;
 	    case OUTER_BC :
