@@ -919,7 +919,7 @@ void update_config_NS_radii(space_t& space, config_t& bconfig,
   bconfig.set(ROUT, idx...)    = gold_ratio * r_max;
 
   if (std::isnan(bconfig.set(BCO_PARAMS::MIN_SHELL_DR, idx...))) {
-    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, idx...) = 1.4;
+    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, idx...) = 1.35;
   }
 }
 
