@@ -296,7 +296,7 @@ void reader_output(config_t bconfig) {
   syst.add_def (space.ADAPTED2+1, "intS = A_ij * mp^i * sp^j / 2. / 4piG") ;
 
   for (int d=0 ; d<ndom ; d++) {
-    if( (d >= space.ADAPTED2+1) || d == space.ADAPTED1+1){ }
+    if ((d >= space.ADAPTED2 + 1) || ((d >= space.ADAPTED1 + 1) && (d < space.NS2))) {}
     else {
       if(bconfig.control(COROT_BIN)) {
         syst.add_def(d, "U^i    = omega^i / N");
@@ -343,6 +343,7 @@ void reader_output(config_t bconfig) {
   ary_d madm;
   ary_d mbs;
   ary_d xcom;
+  ary_d mass_shedding;
 
   std::vector<ary_d> r_extrema;
   std::vector<vec_d> mb_distro;
@@ -396,6 +397,23 @@ void reader_output(config_t bconfig) {
 
     // center-of-mass shifted center
     xcom[i] = x_nuc[i] + bconfig(COM);
+
+    auto npts = space.get_domain(dom)->get_nbr_points();
+
+    Index pos_eq(npts);
+    pos_eq.set(0) = npts(0) - 1;  /// Set to outer radius
+    pos_eq.set(1) = npts(1) - 1;  /// Set theta to be on the xy plane.
+
+    Index pos_pole(npts);
+    pos_pole.set(0) = npts(0) - 1;  /// Set to outer radius
+
+    Scalar logh_dr(space);
+    logh_dr.annule_hard();
+    logh_dr.set_domain(dom) = logh(dom).der_r();
+
+    // 0 < kappa  <= 1
+    mass_shedding[i] =
+        logh_dr(dom)(pos_eq) / logh_dr(dom)(pos_pole);
   }
 
   // binary quantities
@@ -456,8 +474,9 @@ void reader_output(config_t bconfig) {
   for(int i = 0; i <= 1; ++i){
     std::cout << header+ns_str[i]+header+"\n";
     std::cout << FORMAT1 << "Center_COM = " << "(" << xcom[i] << ", 0, 0)\n"
-              << FORMAT1 << "Coord R_IN = " << bco_utils::get_radius(space.get_domain(nuc_doms[i]), EQUI) << '\n'
-              << FORMAT1 << "Coord R = " << "[" << r_extrema[i][0] << "," << r_extrema[i][1] << "] ("
+              << FORMAT1 << "Coord R_IN = " << bco_utils::get_radius(space.get_domain(nuc_doms[i]), EQUI) << '\n';
+    print_shells(nuc_doms[i]+1, adapted_doms[i]);
+    std::cout << FORMAT1 << "Coord R = " << "[" << r_extrema[i][0] << "," << r_extrema[i][1] << "] ("
                                                 << "[" << r_extrema[i][0] * M2km << "," << r_extrema[i][1] * M2km << "] km)\n";
     print_shells(adapted_doms[i]+1, bounds[i]);
     std::cout << FORMAT1 << "Coord R_OUT = " << bco_utils::get_radius(space.get_domain(adapted_doms[i]+1), EQUI) << "\n"
@@ -465,9 +484,9 @@ void reader_output(config_t bconfig) {
     // baryonic mass and fractions per stellar domain covering the star
               << FORMAT1 << "Baryonic Mass = " << mbs[i] << " (";
     print_vec(mb_distro[i]);
-    std::cout << ")\n"              
+    std::cout << ")\n"
               << FORMAT1 << "Isolated ADM Mass = " << bconfig(MADM, i) << "\n"
-              << FORMAT1 << "Quasi-local Madm = "  << ql_madm[i] 
+              << FORMAT1 << "Quasi-local Madm = "  << ql_madm[i]
               << " Diff:" << std::fabs(1. - ql_madm[i] / bconfig(MADM, i)) << std::endl
               // quasi-local spin angular momentum
               << FORMAT1 << "Quasi-local S = " << ql_spin[i] << std::endl
@@ -484,7 +503,8 @@ void reader_output(config_t bconfig) {
               // central values of the Euler constant, log enthalpy and its derivative
               << FORMAT1 << "Central Euler Constant = "<< central_euler[i] << std::endl
               // integrated log enthalpy
-              << FORMAT1 << "Integrated log(h) = "    << H_int[i] << "\n\n";
+              << FORMAT1 << "Integrated log(h) = "    << H_int[i] << std::endl
+              << FORMAT1 << "Mass-shedding = "    << mass_shedding[i] << "\n\n";
   }
 
   // boundaries of additional outer shells
@@ -493,7 +513,7 @@ void reader_output(config_t bconfig) {
     std::cout << FORMAT1 << "Outer shell bounds\n";
     print_shells(ndom-1-outer_shells,  ndom-1);
   }
-  auto M1 = bconfig(MADM, BCO1);    
+  auto M1 = bconfig(MADM, BCO1);
   auto M2 = bconfig(MADM, BCO2);
   if(M2 > M1) std::swap(M1, M2);
   // mass ratio, ratio of the ADM masses at infinity
