@@ -45,20 +45,25 @@ void Space_bin_ns::add_eq (System_of_eqs& sys, const char* eq, const char* rac, 
 	sys.add_eq_matching (NS1, OUTER_BC, rac, nused, pused) ;
 	sys.add_eq_matching (NS1, OUTER_BC, rac_der, nused, pused) ;
 
-  for(int i = 0; i < n_shells1; ++i) {
-  	sys.add_eq_inside (NS1+1+i, eq, nused, pused) ;
-  	sys.add_eq_matching (NS1+1+i, OUTER_BC, rac, nused, pused) ;
-  	sys.add_eq_matching (NS1+1+i, OUTER_BC, rac_der, nused, pused) ;
-  }
+	for(int i = 0; i < n_inner_shells1; ++i) {
+		sys.add_eq_inside (NS1+1+i, eq, nused, pused) ;
+		sys.add_eq_matching (NS1+1+i, OUTER_BC, rac, nused, pused) ;
+		sys.add_eq_matching (NS1+1+i, OUTER_BC, rac_der, nused, pused) ;
+	}
 
 	sys.add_eq_inside   (ADAPTED1  , eq, nused, pused) ;
 	sys.add_eq_matching (ADAPTED1  , OUTER_BC, rac, nused, pused) ;
 	sys.add_eq_matching (ADAPTED1  , OUTER_BC, rac_der, nused, pused) ;
 	sys.add_eq_inside   (ADAPTED1+1, eq, nused, pused) ;
 
+	for(int i = 0; i < n_shells1; ++i) {
+		sys.add_eq_matching (ADAPTED1+1+i, OUTER_BC, rac, nused, pused) ;
+		sys.add_eq_matching (ADAPTED1+1+i, OUTER_BC, rac_der, nused, pused) ;
+		sys.add_eq_inside   (ADAPTED1+2+i, eq, nused, pused) ;
+	}
 
 	// Matching with bispheric :
-	sys.add_eq_matching_import (ADAPTED1+1, OUTER_BC, rac, nused, pused) ;
+	sys.add_eq_matching_import (ADAPTED1+1+n_shells1, OUTER_BC, rac, nused, pused) ;
 	sys.add_eq_matching_import (OUTER     , INNER_BC, rac_der, nused, pused) ;
 	sys.add_eq_matching_import (OUTER+1   , INNER_BC, rac_der, nused, pused) ;
 
@@ -67,19 +72,25 @@ void Space_bin_ns::add_eq (System_of_eqs& sys, const char* eq, const char* rac, 
 	sys.add_eq_matching (NS2, OUTER_BC, rac, nused, pused) ;
 	sys.add_eq_matching (NS2, OUTER_BC, rac_der, nused, pused) ;
 
-  for(int i = 0; i < n_shells2; ++i) {
-  	sys.add_eq_inside (NS2+1+i, eq, nused, pused) ;
-  	sys.add_eq_matching (NS2+1+i, OUTER_BC, rac, nused, pused) ;
-  	sys.add_eq_matching (NS2+1+i, OUTER_BC, rac_der, nused, pused) ;
-  }
+	for(int i = 0; i < n_inner_shells2; ++i) {
+		sys.add_eq_inside (NS2+1+i, eq, nused, pused) ;
+		sys.add_eq_matching (NS2+1+i, OUTER_BC, rac, nused, pused) ;
+		sys.add_eq_matching (NS2+1+i, OUTER_BC, rac_der, nused, pused) ;
+	}
 
 	sys.add_eq_inside   (ADAPTED2  , eq, nused, pused) ;
 	sys.add_eq_matching (ADAPTED2  , OUTER_BC, rac, nused, pused) ;
 	sys.add_eq_matching (ADAPTED2  , OUTER_BC, rac_der, nused, pused) ;
 	sys.add_eq_inside   (ADAPTED2+1, eq, nused, pused) ;
 
+	for(int i = 0; i < n_shells2; ++i) {
+		sys.add_eq_matching (ADAPTED2+1+i, OUTER_BC, rac, nused, pused) ;
+		sys.add_eq_matching (ADAPTED2+1+i, OUTER_BC, rac_der, nused, pused) ;
+		sys.add_eq_inside   (ADAPTED2+2+i, eq, nused, pused) ;
+	}
+
 	// Matching with bispheric :
-	sys.add_eq_matching_import (ADAPTED2+1, OUTER_BC, rac, nused, pused) ;
+	sys.add_eq_matching_import (ADAPTED2+1+n_shells2, OUTER_BC, rac, nused, pused) ;
 	sys.add_eq_matching_import (OUTER+3   , INNER_BC, rac_der, nused, pused) ;
 	sys.add_eq_matching_import (OUTER+4   , INNER_BC, rac_der, nused, pused) ;
 
@@ -113,7 +124,7 @@ void Space_bin_ns::add_eq (System_of_eqs& sys, const char* eq, const char* rac, 
 
   //Matching for first shell or compactified domain
 	sys.add_eq_matching_import (OUTER+5, INNER_BC, rac_der, nused, pused) ;
-  
+
   // Optional spherical shells between bi-spherical and compactified domain
   for (int d=0 ; d<n_shells_outer ; d++) {
       sys.add_eq_inside (OUTER+5+d, eq, nused, pused) ;
@@ -208,43 +219,54 @@ void Space_bin_ns::add_eq_noshell (System_of_eqs& sys, const char* eq, const cha
 	sys.add_eq_matching (NS1, OUTER_BC, rac, nused, pused) ;
 	sys.add_eq_matching (NS1, OUTER_BC, rac_der, nused, pused) ;
 
-  for(int i = 0; i < n_shells1; ++i) {
-  	sys.add_eq_inside (NS1+1+i, eq, nused, pused) ;
-  	sys.add_eq_matching (NS1+1+i, OUTER_BC, rac, nused, pused) ;
-  	sys.add_eq_matching (NS1+1+i, OUTER_BC, rac_der, nused, pused) ;
-  }
+	for(int i = 0; i < n_inner_shells1; ++i) {
+		sys.add_eq_inside (NS1+1+i, eq, nused, pused) ;
+		sys.add_eq_matching (NS1+1+i, OUTER_BC, rac, nused, pused) ;
+		sys.add_eq_matching (NS1+1+i, OUTER_BC, rac_der, nused, pused) ;
+	}
 
-	sys.add_eq_inside (NS1+n_shells1+1, eq, nused, pused) ;
-	sys.add_eq_matching (NS1+n_shells1+1, OUTER_BC, rac, nused, pused) ;
-	sys.add_eq_matching (NS1+n_shells1+1, OUTER_BC, rac_der, nused, pused) ;
-	sys.add_eq_inside (NS1+n_shells1+2, eq, nused, pused) ;
+	sys.add_eq_inside   (ADAPTED1  , eq, nused, pused) ;
+	sys.add_eq_matching (ADAPTED1  , OUTER_BC, rac, nused, pused) ;
+	sys.add_eq_matching (ADAPTED1  , OUTER_BC, rac_der, nused, pused) ;
+	sys.add_eq_inside   (ADAPTED1+1, eq, nused, pused) ;
 
+	for(int i = 0; i < n_shells1; ++i) {
+		sys.add_eq_matching (ADAPTED1+1+i, OUTER_BC, rac, nused, pused) ;
+		sys.add_eq_matching (ADAPTED1+1+i, OUTER_BC, rac_der, nused, pused) ;
+		sys.add_eq_inside   (ADAPTED1+2+i, eq, nused, pused) ;
+	}
 
 	// Matching with bispheric :
-	sys.add_eq_matching_import (NS1+n_shells1+2, OUTER_BC, rac, nused, pused) ;
-	sys.add_eq_matching_import (OUTER, INNER_BC, rac_der, nused, pused) ;
-	sys.add_eq_matching_import (OUTER+1, INNER_BC, rac_der, nused, pused) ;
+	sys.add_eq_matching_import (ADAPTED1+1+n_shells1, OUTER_BC, rac, nused, pused) ;
+	sys.add_eq_matching_import (OUTER     , INNER_BC, rac_der, nused, pused) ;
+	sys.add_eq_matching_import (OUTER+1   , INNER_BC, rac_der, nused, pused) ;
 
 	// Second NS :
-	sys.add_eq_inside (NS2, eq, nused, pused) ;
+	sys.add_eq_inside   (NS2, eq, nused, pused) ;
 	sys.add_eq_matching (NS2, OUTER_BC, rac, nused, pused) ;
 	sys.add_eq_matching (NS2, OUTER_BC, rac_der, nused, pused) ;
 
-  for(int i = 0; i < n_shells2; ++i) {
-  	sys.add_eq_inside (NS2+1+i, eq, nused, pused) ;
-  	sys.add_eq_matching (NS2+1+i, OUTER_BC, rac, nused, pused) ;
-  	sys.add_eq_matching (NS2+1+i, OUTER_BC, rac_der, nused, pused) ;
-  }
+	for(int i = 0; i < n_inner_shells2; ++i) {
+		sys.add_eq_inside (NS2+1+i, eq, nused, pused) ;
+		sys.add_eq_matching (NS2+1+i, OUTER_BC, rac, nused, pused) ;
+		sys.add_eq_matching (NS2+1+i, OUTER_BC, rac_der, nused, pused) ;
+	}
 
-	sys.add_eq_inside (NS2+n_shells2+1, eq, nused, pused) ;
-	sys.add_eq_matching (NS2+n_shells2+1, OUTER_BC, rac, nused, pused) ;
-	sys.add_eq_matching (NS2+n_shells2+1, OUTER_BC, rac_der, nused, pused) ;
-	sys.add_eq_inside (NS2+n_shells2+2, eq, nused, pused) ;
+	sys.add_eq_inside   (ADAPTED2  , eq, nused, pused) ;
+	sys.add_eq_matching (ADAPTED2  , OUTER_BC, rac, nused, pused) ;
+	sys.add_eq_matching (ADAPTED2  , OUTER_BC, rac_der, nused, pused) ;
+	sys.add_eq_inside   (ADAPTED2+1, eq, nused, pused) ;
+
+	for(int i = 0; i < n_shells2; ++i) {
+		sys.add_eq_matching (ADAPTED2+1+i, OUTER_BC, rac, nused, pused) ;
+		sys.add_eq_matching (ADAPTED2+1+i, OUTER_BC, rac_der, nused, pused) ;
+		sys.add_eq_inside   (ADAPTED2+2+i, eq, nused, pused) ;
+	}
 
 	// Matching with bispheric :
-	sys.add_eq_matching_import (NS2+n_shells2+2, OUTER_BC, rac, nused, pused) ;
-	sys.add_eq_matching_import (OUTER+3, INNER_BC, rac_der, nused, pused) ;
-	sys.add_eq_matching_import (OUTER+4, INNER_BC, rac_der, nused, pused) ;
+	sys.add_eq_matching_import (ADAPTED2+1+n_shells2, OUTER_BC, rac, nused, pused) ;
+	sys.add_eq_matching_import (OUTER+3   , INNER_BC, rac_der, nused, pused) ;
+	sys.add_eq_matching_import (OUTER+4   , INNER_BC, rac_der, nused, pused) ;
 
 	// Chi first
 	sys.add_eq_inside (OUTER, eq, nused, pused) ;
