@@ -123,7 +123,7 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space,
  */
 template <typename eos_t, typename config_t>
 auto setup_ns_config_from_TOV(config_t& bconfig,
-                              size_t mass_fixing_idx = BCO_PARAMS::MADM);
+                              size_t mass_fixing_idx = ::Kadath::FUKA_Config::BCO_PARAMS::MADM);
 
 /**
  * setup_interpolator_from_TOV
