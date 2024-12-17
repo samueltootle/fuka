@@ -16,108 +16,161 @@ template<class FUKA_eos_t, FUKA_eos_t eos>
 struct FUKA_EOS_Wrapper {
   static std::unique_ptr<ghl_eos_parameters> ghl_eos_params;
 
-  static inline void rho_cold__P_cold(
-    const double rho_in,
-    const double P_in,
-    double *restrict rhoB_cold_ptr) {
-
+  static inline double rho_cold__P_cold(
+    const double P_in) {
+    double rho;
     if constexpr(eos == margherita_pwp) {
-        Cold_PWPoly::error_t error;
-        Cold_PWPoly::rho__press_cold()
+      double press;
+      Kadath::Margherita::Cold_PWPoly::error_t error;
+      rho = Kadath::Margherita::Cold_PWPoly::rho__press_cold(press, error);
     } else if constexpr(eos == margherita_1d) {
-
+      Kadath::Margherita::Cold_Table::error_t error;
+      rho = Kadath::Margherita::Cold_Table::rho__press_cold(press, error);
     }
 #ifdef WITH_GRHAYL_EOS
     else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
-      // Retrieve K and Gamma from GRHayL
-      double K, Gamma, eps, P;
-      ghl_hybrid_get_K_and_Gamma(ghl_eos_params.get(), rho_in, &K, &Gamma);
-
-      *rhoB_cold_ptr = pow(P_in / K, 1.0 / Gamma);
+      rho = ghl_hybrid_compute_rho_cold_from_P_cold(ghl_eos_params.get(), P_in)
     } else if constexpr (eos == ghl_eos_tabulated) {
-      *rhoB_cold_ptr = ghl_tabulated_compute_rho_from_P(ghl_eos_params.get(), P_in);
+      rho = ghl_tabulated_compute_rho_from_P(ghl_eos_params.get(), P_in);
     }
 #endif
+    return rho;
   }
 
-  static inline void rho_energy__rho_cold(
-    const double rhoB_in,
-    double *restrict rho_energy_ptr) {
+  static inline double rho_energy__rho_cold(
+    const double rhoB_in) {
     double eps;
-
-    if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
+    if constexpr(eos == margherita_pwp) {
+      double press;
+      double rho = rhoB_in;
+      Kadath::Margherita::Cold_PWPoly::error_t error;
+      press = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(eps, rho, error);
+    } else if constexpr(eos == margherita_1d) {
+      double press;
+      double rho = rhoB_in;
+      Kadath::Margherita::Cold_Table::error_t error;
+      press = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps, rho, error);
+    }
+#ifdef WITH_GRHAYL_EOS
+    else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
       double P;
       ghl_hybrid_compute_P_cold_and_eps_cold(ghl_eos_params.get(), rhoB_in,
                                               &P, &eps);
     } else if constexpr (eos == ghl_eos_tabulated) {
       eps = ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rhoB_in);
     }
-
-    *rho_energy_ptr = rhoB_in * (1.0 + eps);
+#endif
+    return rhoB_in * (1.0 + eps);
   }
 
-  static inline void dpress_cold_drho__rho(
-    const double rho_in,
-    double* dpress_cold_drho_ptr) {
-
-    if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
-      double K, Gamma, eps, P;
+  static inline double dpress_cold_drho__rho(const double rho_in) {
+    double dpress_cold_drho;
+    if constexpr(eos == margherita_pwp) {
+      double rho = rhoB_in;
+      Kadath::Margherita::Cold_PWPoly::error_t error;
+      dpress_cold_drho = Kadath::Margherita::Cold_PWPoly::dpress_cold_drho__rho(rho, error);
+    } else if constexpr(eos == margherita_1d) {
+      double rho = rhoB_in;
+      Kadath::Margherita::Cold_Table::error_t error;
+      dpress_cold_drho = Kadath::Margherita::Cold_Table::dpress_cold_drho__rho(rho, error);
+    }
+#ifdef WITH_GRHAYL_EOS
+    else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
+      double K, Gamma, eps, press_cold;
       ghl_hybrid_get_K_and_Gamma(ghl_eos_params.get(), rho_in, &K, &Gamma);
 
-      auto press_cold = K * pow(rho_in, Gamma);
-      *dpress_cold_drho_ptr = Gamma * press_cold / rho_in;
+      ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rho_in, &press_cold);
+      dpress_cold_drho = Gamma * press_cold / rho_in;
     } else if constexpr (eos == ghl_eos_tabulated) {
-      *dpress_cold_drho_ptr = ghl_tabulated_compute_dP_drho_from_rho(ghl_eos_params.get(), rho_in);
+      dpress_cold_drho = ghl_tabulated_compute_dP_drho_from_rho(ghl_eos_params.get(), rho_in);
     }
+#endif
+    return dpress_cold_drho;
   }
 
-  static inline void dedp__P_cold(
+  static inline double dedp__P_cold(
     const double rhoB_in,
     const double rho_energy_in,
-    const double P_in,
-    double* dedp){
+    const double P_in){
 
-    double dpdrho;
-    dpress_cold_drho__rho(rhoB_in, &dpdrho);
+    double dpdrho = dpress_cold_drho__rho(rhoB_in);
 
     auto const rhoh = rho_energy_in + P_in;
 
-    *dedp = rhoh/(dpdrho*rhoB_in);
+    return rhoh/(dpdrho*rhoB_in);
   }
 
   static inline void P_cold_from_rho(
-    const double rho_in,
-    double *restrict P_cold_ptr) {
-
-    if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
-      ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rho_in, P_cold_ptr);
-    } else if constexpr (eos == ghl_eos_tabulated) {
-      *P_cold_ptr = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rho_in);
+    const double rho_in) {
+    double P;
+    if constexpr(eos == margherita_pwp) {
+      double rho = rhoB_in;
+      Kadath::Margherita::Cold_PWPoly::error_t error;
+      P = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(eps, rho, error);
+    } else if constexpr(eos == margherita_1d) {
+      double rho = rhoB_in;
+      Kadath::Margherita::Cold_Table::error_t error;
+      P = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps, rho, error);
     }
+#ifdef WITH_GRHAYL_EOS
+    else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
+      ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rho_in, &P);
+    } else if constexpr (eos == ghl_eos_tabulated) {
+      P = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rho_in);
+    }
+#endif
+    return P;
   }
 
   // Wrapper to make API consistent without modifying Margherita
   static inline double press_cold_eps_cold__rho(double & eps_cold, double& rhoB_in) {
     double P;
-    if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
+    if constexpr(eos == margherita_pwp) {
+      Kadath::Margherita::Cold_PWPoly::error_t error;
+      P = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(eps_cold, rhoB_in, error);
+    } else if constexpr(eos == margherita_1d) {
+      Kadath::Margherita::Cold_Table::error_t error;
+      P = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps_cold, rhoB_in, error);
+    }
+#ifdef WITH_GRHAYL_EOS
+    else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
       ghl_hybrid_compute_P_cold_and_eps_cold(ghl_eos_params.get(), rhoB_in,
                                               &P, &eps_cold);
     } else if constexpr (eos == ghl_eos_tabulated) {
       P = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rhoB_in);
       eps_cold = ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rhoB_in);
     }
+#endif
     return P;
   }
 
   static inline double rho__h_cold(const double h_in) {
     double rho;
-    if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
+    if constexpr(eos == margherita_pwp) {
+      double h = h_in;
+      Kadath::Margherita::Cold_PWPoly::error_t error;
+      rho = Kadath::Margherita::Cold_PWPoly::rho__h_cold(h, error);
+    } else if constexpr(eos == margherita_1d) {
+      double h = h_in;
+      Kadath::Margherita::Cold_Table::error_t error;
+      rho = Kadath::Margherita::Cold_Table::rho__h_cold(h, error);
+    }
+#ifdef WITH_GRHAYL_EOS
+    else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
       rho = ghl_hybrid_compute_rho_cold_from_h(ghl_eos_params.get(), h_in);
     } else if constexpr (eos == ghl_eos_tabulated) {
       rho = ghl_tabulated_compute_rho_cold_from_h(ghl_eos_params.get(), h_in);
     }
+#endif
     return rho;
   }
+
+  static inline double rho_energy_dedp__P_cold(double & rhoE, double & dedp, double & P_in) {
+    double rho = rho_cold__P_cold(P_in);
+    rhoE = rho_energy__rho_cold(rho);
+    dedp = rhoh/(dpdrho*rho);
+    return rho;
+   }
 };
 
 template<class FUKA_eos_t, FUKA_eos_t eos>
