@@ -23,6 +23,8 @@
 #include <array>
 #include <cmath>
 #include <functional>
+#include <memory>
+#include "../FUKA_EOS_Wrapper.hh"
 
 namespace Kadath {
 namespace Margherita {
@@ -34,7 +36,7 @@ template <typename EOS> class MargheritaTOV {
   private:
   using ary_t = std::array<double,NUMVAR>;
   using state_t = std::vector<ary_t>;
-  
+
   static constexpr size_t max_iter = 40000;
   static constexpr double dr0 = 10. / 10000.;
   const double loop_eps = 1e-6;
@@ -64,7 +66,7 @@ template <typename EOS> class MargheritaTOV {
     tidal_love_k2 = 0;
     press_c = 0;
   }
-  
+
   /**
    * gen_initial
    *
@@ -73,9 +75,7 @@ template <typename EOS> class MargheritaTOV {
    */
   inline ary_t gen_initial() {
     using namespace Kadath::Margherita;
-    double eps;
-    typename EOS::error_t err;
-    press_c = EOS::press_cold_eps_cold__rho(eps, rhoc, err);
+    press_c = EOS::P_cold_from_rho(rhoc);
     ary_t initial_conditions {};
 
     initial_conditions[RHOB] = rhoc;
@@ -84,7 +84,7 @@ template <typename EOS> class MargheritaTOV {
     return initial_conditions;
   }
 
-  /** 
+  /**
    * evolve
    *
    * update function for dy's - returns k * h
@@ -95,7 +95,6 @@ template <typename EOS> class MargheritaTOV {
    * @param h step size
    */
   inline ary_t evolve(const ary_t& f, const double& h) const {
-    typename EOS::error_t err;
 
     ary_t res{};
     res.fill(0);
@@ -105,12 +104,12 @@ template <typename EOS> class MargheritaTOV {
     double r3 = r2* r;
     double dedp, press, rho, rhoE;
     press = f[PRESS];
-    rho = EOS::rho_energy_dedp__press_cold(rhoE, dedp, press, err);
+    rho = EOS::rho_energy_dedp__P_cold(rhoE, dedp, press);
     double sch_fac, mass_taylor;
 
     auto H = f[TIDALH];
     auto bet = f[TIDALBETA];
-    if(state.size() == 1) {  
+    if(state.size() == 1) {
       H = r2;
       bet = 2. * r;
     }
@@ -119,11 +118,11 @@ template <typename EOS> class MargheritaTOV {
 
     // dividing into two regimes based on: https://github.com/zachetienne/nrpytutorial/blob/master/Tutorial-ADM_Initial_Data-TOV.ipynb
     if(r<1e-4 || m<=0){
-    
+
       res[PHI] = (4.*M_PI/3. * rhoE * r + 4. * M_PI * r * press) / (1. - 8. * M_PI * rhoE *r2) * h;
       res[RISO] = 1./std::sqrt(1. - 8. * M_PI * rhoE * r2) * h;
       sch_fac = 1./(1. - 8. * M_PI/3. * r2 * rhoE);
-      
+
       double mass_taylor_by_r = 4. * M_PI/3. * r2 * rhoE;
       double mass_taylor_by_r2 = 4. * M_PI/3. * r * rhoE;
 
@@ -154,27 +153,26 @@ template <typename EOS> class MargheritaTOV {
     // eq (11,12) https://arxiv.org/pdf/0911.3535.pdf
     res[TIDALH] = bet * h;
     res[TIDALBETA] *= h;
-    
+
     return res;
   }
-  
+
   // RK45 with option for adaptive step sizes - enabled by default
-  inline ary_t rk45_step(const ary_t& input, double& dr) const { 
+  inline ary_t rk45_step(const ary_t& input, double& dr) const {
     using namespace Kadath::Margherita;
-    typename EOS::error_t err;
     auto eps = 5.e-8 * input[PRESS];
 
     auto k1 = evolve(input, dr);
 
     auto s = input;
-    
+
     s[RADIUS] += (2./9.) * dr ;
     for(auto i = 1; i < NUMVAR; ++i) {
       s[i] += (2./9.) * k1[i];
     }
-    
+
     auto k2 = evolve(s, dr);
-    
+
     s = input;
     s[RADIUS] += dr / 3.;
     for(auto i = 1; i < NUMVAR; ++i) {
@@ -182,37 +180,37 @@ template <typename EOS> class MargheritaTOV {
     }
 
     auto k3 = evolve(s, dr);
-    
+
     s = input;
     s[RADIUS] += 0.75 * dr ;
     for(auto i = 1; i < NUMVAR; ++i) {
       s[i] += (69./128.) * k1[i] + (-243./128.) * k2[i] + (135./64.) * k3[i];
-    } 
+    }
 
     auto k4 = evolve(s, dr);
-    
+
     s = input;
     s[RADIUS] += dr ;
     for(auto i = 1; i < NUMVAR; ++i) {
       s[i] += (-17./12.) * k1[i] + (27./4.) * k2[i] + (-27./5.) * k3[i] + (16./15.) * k4[i];
-    } 
+    }
     auto k5 = evolve(s, dr);
 
     s = input;
     s[RADIUS] += (5./6.) * dr ;
     for(auto i = 1; i < NUMVAR; ++i) {
       s[i] += (65./432.) * k1[i] + (-5./16.) * k2[i] + (13./16.) * k3[i] + (4./27.) * k4[i] + (5./144.) * k5[i];
-    } 
+    }
     auto k6 = evolve(s, dr);
-    
+
     auto res = input;
     for(int i = 1; i < NUMVAR; ++i)
       res[i] += (1./450.) * (47. * k1[i] + 216. * k3[i] + 64. * k4[i] + 15. * k5[i] + 108. * k6[i]);
-    
+
     // manual update of tracked variables
     res[RADIUS] += dr;
-    res[RHOB] = EOS::rho__press_cold(res[PRESS],err);
-    
+    res[RHOB] = EOS::rho__press_cold(res[PRESS]);
+
     ary_t error;
     for (int nn = 1; nn < NUMVAR; ++nn) {
       error[nn] = 1. / 300. *
@@ -235,48 +233,47 @@ template <typename EOS> class MargheritaTOV {
     };
     if(adaptive)
       adaptive_step();
-       
+
     return res;
   }
-  
+
   // basic RK4 - mainly for testing
-  inline ary_t rk_step(const ary_t& input, double& dr) const { 
+  inline ary_t rk_step(const ary_t& input, double& dr) const {
     using namespace Kadath::Margherita;
-    typename EOS::error_t err;
     // auto eps = 5.e-8 * input[PRESS];
 
     auto k1 = evolve(input, dr);
 
     auto s1 = input;
-    
+
     s1[RADIUS] += dr / 2.;
     for(auto i = 1; i < NUMVAR; ++i)
       s1[i] += k1[i] / 2.;
-    
+
     auto k2 = evolve(s1, dr);
-    
+
     auto s2 = input;
     s2[RADIUS] += dr / 2.;
     for(auto i = 1; i < NUMVAR; ++i)
       s2[i] += k2[i] / 2.;
 
     auto k3 = evolve(s2, dr);
-    
+
     auto s3 = input;
     s3[RADIUS] += dr;
     for(auto i = 1; i < NUMVAR; ++i)
       s3[i] += k3[i];
-    
+
     auto k4 = evolve(s3, dr);
-    
+
     auto res = input;
     for(int i = 1; i < NUMVAR; ++i)
       res[i] += 1./6. * (k1[i] + 2. * k2[i] + 2. * k3[i] + k4[i]);
-    
+
     // manual update of tracked variables
     res[RADIUS] += dr;
-    res[RHOB] = EOS::rho__press_cold(res[PRESS],err);
-   
+    res[RHOB] = EOS::rho__press_cold(res[PRESS]);
+
     return res;
   }
 
@@ -286,11 +283,11 @@ template <typename EOS> class MargheritaTOV {
     auto get_correction = [&](double m, double r, double phi) {
       return 0.5 * std::log(1. - 2 * m / r) - phi;
     };
-    
-    const double correction = 
+
+    const double correction =
       get_correction(state.back()[MASSR], state.back()[RADIUS], state.back()[PHI]);
 
-    for(auto& el : state) 
+    for(auto& el : state)
       el[PHI] += correction;
   }
 
@@ -306,7 +303,7 @@ template <typename EOS> class MargheritaTOV {
      const double RISO_Schw=state.back()[RISO];
 
      // based on the notebook of Etienne:
-    for(auto& el : state)  
+    for(auto& el : state)
       el[RISO] *= (1./2.) * (std::sqrt(R_Schw * ( R_Schw - 2.0 * M_Schw)) + R_Schw - M_Schw)/ RISO_Schw;
   }
 
@@ -353,15 +350,10 @@ template <typename EOS> class MargheritaTOV {
    */
   void fillout_enthalpy(){
     for (auto &el: state ){
-      typename EOS::error_t err;
-      double rhoE, dedp;
-      double press = el[PRESS];
-      double rho = EOS::rho_energy_dedp__press_cold(rhoE, dedp, press, err);
+      double rho = EOS::rho__press_cold(el[PRESS]);
+      double rhoE = EOS::rho_energy__rho_cold(rho);
       double eps;
-      typename EOS::error_t err2,press_c;
-      double rhoc=rho;
-      press_c = EOS::press_cold_eps_cold__rho(eps, rhoc, err);
-      el[ENTHALPY]=1+eps + press/rho ;
+      el[ENTHALPY]= (rhoE + el[PRESS]) / rho;
     }
   }
 
@@ -407,15 +399,15 @@ template <typename EOS> class MargheritaTOV {
    * @param rho_init central density input
    * @param eps precision desired for finding ADM mass
    */
-  inline void solve(const double rho_init, const bool fin = true) { 
+  inline void solve(const double rho_init, const bool fin = true) {
     using std::placeholders::_1;
     using std::placeholders::_2;
     // determines which RK function to use instead of doing the
     // logic check multiple times in the loop.
-    std::function<ary_t(ary_t&, double&)> rk_iteration = (rk45) ? 
-      std::bind(&MargheritaTOV::rk45_step, this, _1, _2) : 
+    std::function<ary_t(ary_t&, double&)> rk_iteration = (rk45) ?
+      std::bind(&MargheritaTOV::rk45_step, this, _1, _2) :
       std::bind(&MargheritaTOV::rk_step, this, _1, _2);
-    
+
     // reset all member variables to defaults
     reset(rho_init);
 
@@ -424,20 +416,18 @@ template <typename EOS> class MargheritaTOV {
 
     // add initial conditions
     state.push_back(gen_initial());
-    
+
     size_t count = 0;
     while(true && count < max_iter) {
       auto res = rk_iteration(state.back(), dr);
-      
-      typename EOS::error_t err;
-      double dedp, press, rho, rhoE;
-      press = state.back()[PRESS];
-      rho = EOS::rho_energy_dedp__press_cold(rhoE, dedp, press, err);
-      
-      // similar condition to the Etienne's TOV solver 
+      double press = state.back()[PRESS];
+
+      double rho = EOS::rho__press_cold(press);
+
+      // similar condition to the Etienne's TOV solver
       // (https://github.com/zachetienne/nrpytutorial/blob/master/Tutorial-ADM_Initial_Data-TOV.ipynb)
-      if(press < press_c*stop_at_fraction_press_c) 
-        break; 
+      if(press < press_c*stop_at_fraction_press_c)
+        break;
       state.push_back(res);
       count++;
     }
@@ -456,7 +446,7 @@ template <typename EOS> class MargheritaTOV {
       state.erase(state.begin());
     else
       return;
-   
+
     // save some computation if we just need ArealR, M, and Mb
     if(fin) {
       correct_phi();
@@ -472,7 +462,7 @@ template <typename EOS> class MargheritaTOV {
     mass = state.back()[MASSR];
     baryon_mass = state.back()[MASSB];
   }
-  
+
   /**
    * solve_for_MADM
    *
@@ -485,11 +475,11 @@ template <typename EOS> class MargheritaTOV {
    * @param rho_min0 initial minimum density to search for MADM
    * @param eps precision desired for finding ADM mass
    */
-  inline bool solve_for_MADM(double M_fin, const double rho_max0=1e-2, 
+  inline bool solve_for_MADM(double M_fin, const double rho_max0=1e-2,
     const double rho_min0=5e-4, const double eps = 1e-3) {
     // if M_fin < Mmax let the calling code know in case
     // the calling code intends to solve a rotating NS with M > Mtov
-    bool use_Mmax = false; 
+    bool use_Mmax = false;
 
     // rho to evaluate
     double rho_eval=0.;
@@ -503,8 +493,8 @@ template <typename EOS> class MargheritaTOV {
 
     double maxM = 0.;
     double maxMrho = 0.;
-  
-    // find bracketing range based on the central density to 
+
+    // find bracketing range based on the central density to
     // to make sure a root exists - i.e. Madm can be found
     auto rho_bracketing = [&]() {
       maxM = 0;
@@ -528,7 +518,7 @@ template <typename EOS> class MargheritaTOV {
       // std::cout << rho_min << ", " << rho_max << std::endl;
     };
     rho_bracketing();
-   
+
     if(rho_eval >= rho_max0) {
       std::cerr << "Maximum density (" << rho_eval << ") reached.\n"
         << "Mass mass obtained: " << maxM << ", with density: "<< maxMrho << ".\n"
@@ -549,19 +539,19 @@ template <typename EOS> class MargheritaTOV {
     size_t count = 0;
     double diff = 1;
     while( std::fabs(diff) > eps && count < max_iter) {
-      rho_eval = (rho_max + rho_min) / 2.;      
+      rho_eval = (rho_max + rho_min) / 2.;
       solve(rho_eval, false);
       diff = (mass-M_fin);
-      
+
       #ifdef margerita_check_all
       std::cout << "M: " << mass
                 << "\nMb: " << baryon_mass
                 << "\nArealR: " << arealr
                 << "\nNc: " << rho_eval
-                << "\nDiff: " << diff 
+                << "\nDiff: " << diff
                 << "\nIter: " << count << "\n\n";
       #endif
-      if( diff > 0) 
+      if( diff > 0)
         rho_max = rho_eval;
       else
         rho_min = rho_eval;
@@ -572,14 +562,14 @@ template <typename EOS> class MargheritaTOV {
         "The mass may be too high or the range of rho may not be sufficiently wide\n";
       std::_Exit(EXIT_FAILURE);
     }
-      
+
     correct_phi();
     correct_isotropic_r();
     calculate_conformal_factor();
     calculate_k2();
     fillout_enthalpy();
     radius = state.back()[RISO];
-    
+
     return use_Mmax;
   }
 

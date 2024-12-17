@@ -28,12 +28,16 @@
 #include "setup_polytrope.cc"
 //#include "/home/user/Downloads/konrad/tov.hh"
 #include "tov.hh"
+#include "../FUKA_EOS_Wrapper.hh"
 #include <memory>
 
 int main() {
   using namespace Kadath::Margherita;
-  Margherita_setup_polytrope("gam2.polytrope");
-  auto tov = std::make_unique<MargheritaTOV<Cold_PWPoly>>();
+  using namespace Kadath::FUKA_EOS;
+  // Margherita_setup_polytrope("gam2.polytrope");
+  setup_Cold_Table("togashi.lorene",1000);
+  // auto tov = std::make_unique<MargheritaTOV<Cold_PWPoly>>();
+  auto tov = std::make_unique<MargheritaTOV<FUKA_EOS_Wrapper<margherita_eos_t, margherita_1d>>>();
 //  tov->adaptive = false;
 //  tov->rk45 = false;
   //tov->solve(1.37e-3);
