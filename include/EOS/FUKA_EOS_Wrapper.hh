@@ -1,3 +1,4 @@
+#pragma once
 #include <memory>
 #include "standalone/cold_pwpoly.hh"
 #include "standalone/cold_pwpoly_implementation.hh"
@@ -14,16 +15,19 @@ typedef enum {margherita_pwp, margherita_1d} margherita_eos_t;
 
 template<class FUKA_eos_t, FUKA_eos_t eos>
 struct FUKA_EOS_Wrapper {
+#ifdef WITH_GRHAYL_EOS
   static std::unique_ptr<ghl_eos_parameters> ghl_eos_params;
+#endif
 
-  static inline double rho_cold__P_cold(
+  static inline double rho__press_cold(
     const double P_in) {
     double rho;
     if constexpr(eos == margherita_pwp) {
-      double press;
+      double press = P_in;
       Kadath::Margherita::Cold_PWPoly::error_t error;
       rho = Kadath::Margherita::Cold_PWPoly::rho__press_cold(press, error);
     } else if constexpr(eos == margherita_1d) {
+      double press = P_in;
       Kadath::Margherita::Cold_Table::error_t error;
       rho = Kadath::Margherita::Cold_Table::rho__press_cold(press, error);
     }
@@ -66,11 +70,11 @@ struct FUKA_EOS_Wrapper {
   static inline double dpress_cold_drho__rho(const double rho_in) {
     double dpress_cold_drho;
     if constexpr(eos == margherita_pwp) {
-      double rho = rhoB_in;
+      double rho = rho_in;
       Kadath::Margherita::Cold_PWPoly::error_t error;
       dpress_cold_drho = Kadath::Margherita::Cold_PWPoly::dpress_cold_drho__rho(rho, error);
     } else if constexpr(eos == margherita_1d) {
-      double rho = rhoB_in;
+      double rho = rho_in;
       Kadath::Margherita::Cold_Table::error_t error;
       dpress_cold_drho = Kadath::Margherita::Cold_Table::dpress_cold_drho__rho(rho, error);
     }
@@ -100,15 +104,17 @@ struct FUKA_EOS_Wrapper {
     return rhoh/(dpdrho*rhoB_in);
   }
 
-  static inline void P_cold_from_rho(
+  static inline double P_cold_from_rho(
     const double rho_in) {
     double P;
     if constexpr(eos == margherita_pwp) {
-      double rho = rhoB_in;
+      double rho = rho_in;
+      double eps;
       Kadath::Margherita::Cold_PWPoly::error_t error;
       P = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(eps, rho, error);
     } else if constexpr(eos == margherita_1d) {
-      double rho = rhoB_in;
+      double rho = rho_in;
+      double eps;
       Kadath::Margherita::Cold_Table::error_t error;
       P = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps, rho, error);
     }
@@ -166,14 +172,17 @@ struct FUKA_EOS_Wrapper {
   }
 
   static inline double rho_energy_dedp__P_cold(double & rhoE, double & dedp, double & P_in) {
-    double rho = rho_cold__P_cold(P_in);
+    double rho = rho__press_cold(P_in);
     rhoE = rho_energy__rho_cold(rho);
+    auto const rhoh = rhoE + P_in;
+    auto const dpdrho = dpress_cold_drho__rho(rho);
     dedp = rhoh/(dpdrho*rho);
     return rho;
    }
 };
-
+#ifdef WITH_GRHAYL_EOS
 template<class FUKA_eos_t, FUKA_eos_t eos>
 std::unique_ptr<ghl_eos_parameters> FUKA_EOS_Wrapper<FUKA_eos_t, eos>::ghl_eos_params = nullptr;
+#endif
 }
 }
