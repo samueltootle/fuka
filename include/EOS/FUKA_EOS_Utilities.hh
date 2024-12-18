@@ -41,11 +41,7 @@ namespace FUKA_EOS {
  */
 template <class eos_t>
 struct set_eos_ope_struct {
-  void operator()(System_of_eqs& syst, Param& p) {
-    syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
-    syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
-    syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
-  }
+  void operator()(System_of_eqs& syst, Param& p);
 };
 
 /**
