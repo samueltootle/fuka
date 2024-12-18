@@ -37,7 +37,7 @@
 
 using namespace Kadath;
 
-/** 
+/**
  * The various hydrodynamic quantities that can be obtained from this
  * interface for a given EOS
  */
@@ -45,8 +45,8 @@ enum eos_var_t { PRESSURE, EPSILON, DENSITY, DHDRHO };
 
 /**
  * This interface provides the user defined OPEs to provide hydrodynamic quantities as a function
- * of the specific enthalpy (\b h) to the Kadath System_of_eqs framework.\n 
- * The equation of state is managed by a modified, standalone version of Margherita: 
+ * of the specific enthalpy (\b h) to the Kadath System_of_eqs framework.\n
+ * The equation of state is managed by a modified, standalone version of Margherita:
  * https://github.com/fil-grmhd/Margherita-EOS
  *
  * @tparam eos Margherita EOS type (e.g. Cold_PWPoly)
@@ -69,7 +69,6 @@ private:
     if (so.check_if_zero()) {
       return so;
     }
-    typename eos::error_t err;
 
     // need to work in configuration space
     so.coef_i();
@@ -82,16 +81,16 @@ private:
       double h = scalar(pos);
       double dh = so(pos);
 
-      double rho = eos::rho__h_cold(h, err);
-      double dpdrho = eos::dpress_cold_drho__rho(rho, err);
+      double rho = eos::rho__h_cold(h);
+      double dpdrho = eos::dpress_cold_drho__rho(rho);
       double drho = rho * 1. / dpdrho * dh;
 
       if constexpr (var == EPSILON) {
-        double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho, err);
+        double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho);
         res.set(pos) = pressure / pow(rho, 2) * drho;
 
       } else if constexpr (var == PRESSURE) {
-        res.set(pos) = eos::dpress_cold_drho__rho(rho, err) * drho;
+        res.set(pos) = eos::dpress_cold_drho__rho(rho) * drho;
 
       } else if constexpr (var == DENSITY) {
         res.set(pos) = drho;
@@ -131,8 +130,8 @@ private:
     do {
       double eps_cold = 0.0;
       double h = so(pos);
-      double rho = eos::rho__h_cold(h, err);
-      double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho, err);
+      double rho = eos::rho__h_cold(h);
+      double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho);
 
       if constexpr (var == EPSILON)
         res.set(pos) = eps_cold;
@@ -141,7 +140,7 @@ private:
       else if constexpr (var == PRESSURE)
         res.set(pos) = pressure;
       else if constexpr (var == DHDRHO) {
-        res.set(pos) = 1. / h * eos::dpress_cold_drho__rho(rho, err);
+        res.set(pos) = 1. / h * eos::dpress_cold_drho__rho(rho);
       }
       else
         std::cerr << "Ill-defined variable in EOS class, please check."
@@ -167,7 +166,7 @@ public:
       std::string default_path{"./"};
       const std::string kadath_environment_var{"HOME_KADATH"};
       if(std::getenv(kadath_environment_var.c_str())) {
-        std::string const home_kadath{std::getenv(kadath_environment_var.c_str())}; 
+        std::string const home_kadath{std::getenv(kadath_environment_var.c_str())};
         default_path = home_kadath + "/eos/";
       }
       return default_path;
@@ -178,7 +177,7 @@ public:
     if( filename.rfind("/") == std::string::npos )
       filename = default_path + filename;
 
-    if (std::is_same<eos, Cold_PWPoly>::value) 
+    if (std::is_same<eos, Cold_PWPoly>::value)
       Margherita_setup_polytrope(filename);
     else if (std::is_same<eos, Cold_Table>::value)
       setup_Cold_Table(filename, interp_pts, h_cut);
@@ -195,7 +194,7 @@ public:
     typename eos::error_t err;
 
     double eps_cold = 0.;
-    double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho, err);
+    double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho);
     double h = 1. + eps_cold + pressure / rho;
 
     return h;
@@ -209,11 +208,9 @@ public:
    * @param [input] h: specific enthalpy
    */
   static double get(double h) {
-    typename eos::error_t err;
-
     double eps_cold = 0.0;
-    double rho = eos::rho__h_cold(h, err);
-    double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho, err);
+    double rho = eos::rho__h_cold(h);
+    double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho);
 
     if constexpr (var == EPSILON)
       return eps_cold;
