@@ -31,10 +31,11 @@
 
 namespace Kadath {
 namespace FUKA_EOS {
+
 /**
  * @brief Setup the EOS operators in System_of_eqs
  *
- * @tparam eos_t C++ Polytrope/Table type
+ * @tparam eos_t FUKA_EOS_Wrapper type
  * @param syst System of equations
  * @param p Parameter container (unused, but required by add_ope)
  */
@@ -47,19 +48,33 @@ struct set_eos_ope_struct {
     }
 };
 
-// Wrapper structure for calling a Functor
+/**
+ * @brief Wrapper struct for calling a templated functor
+ *
+ * @tparam T class type for the Functor
+ */
 template <class T>
-struct eos_func_wrapper {
+struct functor_wrapper {
+    /**
+     * @brief Functor that calls a templated Functor F with optional arguments Args...
+     *
+     * @tparam F templated Functor
+     * @tparam Args... type(s) of optional parameter pack of Functor arguments
+     * @param args optional parameter pack of Functor arguments
+     */
     template <template <typename> class F, typename... Args>
     auto operator()(Args&&... args) const {
-        return F<T>()(std::forward<Args>(args)...); // Call the functor or function
+        return F<T>()(std::forward<Args>(args)...);
     }
 };
+
 using namespace Kadath::FUKA_Config;
 
-// Dispatcher class: Encapsulates all decision-making logic for various EOS'
-// Only works for isolated objects
+/**
+ * @brief Dispatcher class: Encapsulates all decision-making logic for various EOS'
+ */
 struct EOS_Function_Dispatcher {
+
     template <template <typename> class F, class config_t, typename... Args>
     static inline auto init_dispatch(config_t& bconfig, Args&&... args) {
         using namespace ::Kadath::FUKA_Config;
@@ -76,7 +91,7 @@ struct EOS_Function_Dispatcher {
             using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_pwp>;
             EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
 
-            eos_func_wrapper<eos_t> wrapper;
+            functor_wrapper<eos_t> wrapper;
             return wrapper.template operator()<F>(std::forward<Args>(args)...);
         } else if (eos_type == "Cold_Table") {
             // using eos_t = ::Kadath::Margherita::Cold_Table;
@@ -88,30 +103,37 @@ struct EOS_Function_Dispatcher {
 
             EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
 
-            eos_func_wrapper<eos_t> wrapper;
+            functor_wrapper<eos_t> wrapper;
             return wrapper.template operator()<F>(std::forward<Args>(args)...);
         }
         throw std::invalid_argument("\nInvalid EOS type\n");
     }
 
+    /**
+     * @brief Launches a templated Functor that requires knowledge of the
+     * EOS type (module) being used to reduce code duplication.
+     *
+     * @tparam F templated Functor
+     * @tparam Args... type(s) of optional parameter pack of Functor
+     * arguments
+     * @param args optional parameter pack of Functor arguments
+     */
     template <template <typename> class F, class config_t, typename... Args>
     static inline auto dispatch(config_t& bconfig, const std::string eos_type, Args&&... args) {
         if (eos_type == "Cold_PWPoly") {
-            // using eos_t = ::Kadath::Margherita::Cold_PWPoly;
             using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_pwp>;
-            eos_func_wrapper<eos_t> wrapper;
+            functor_wrapper<eos_t> wrapper;
             return wrapper.template operator()<F>(std::forward<Args>(args)...);
         } else if (eos_type == "Cold_Table") {
-            // using eos_t = ::Kadath::Margherita::Cold_Table;
             using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_1d>;
-            eos_func_wrapper<eos_t> wrapper;
+            functor_wrapper<eos_t> wrapper;
             return wrapper.template operator()<F>(std::forward<Args>(args)...);
         }
-        std::cout << eos_type << std::endl;
         throw std::invalid_argument("\nInvalid EOS type\n");
     }
 };
 
+// Simple struct to simplify EOS initialization and remove code duplication.
 struct EOS_initialize {
     template <class config_t, class... BCO_t>
     static inline auto init(config_t& bconfig, BCO_t... bco) {
@@ -136,7 +158,6 @@ struct EOS_initialize {
 
             return EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
         }
-        std::cout << eos_type << std::endl;
         throw std::invalid_argument("\nInvalid EOS type\n");
     }
 };
