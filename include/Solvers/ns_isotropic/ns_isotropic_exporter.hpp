@@ -1,3 +1,4 @@
+#include "EOS/FUKA_EOS_Utilities.hh"
 #include "Solvers/exporter.hpp"
 namespace Kadath::FUKA_Solvers {
 
@@ -55,7 +56,7 @@ struct CFMS_NS_ISO_Exporter
     NUM_OUTPUT_VARS
   };
 
-// clang-format off
+  // clang-format off
   std::map<std::string, OUTPUT_VARS> output_var_map {
     {"lapse", OUTPUT_VARS::ALPHA},
     {"beta1", OUTPUT_VARS::BETA1},
@@ -92,7 +93,7 @@ struct CFMS_NS_ISO_Exporter
     ISO_H,
     ISO_U
   };
-// clang-format on
+  // clang-format on
 
   using interp_ary_t = std::array<double, NUM_ISO_VARS>;
   using output_ary_t = std::array<double, NUM_OUTPUT_VARS>;
@@ -340,223 +341,230 @@ struct CFMS_NS_ISO_Exporter
    * @return output_ary_t Interpolated solution at x,y,z
    */
   template <class eos_t>
-  output_ary_t export_pointwise_imp(double const& x,
-                                    double const& y,
-                                    double const& z) {
-    // Reset to NAN
-    quant_vals.fill(NAN);
-    quant_vals = interpolate_pointwise(x, y, z);
+  struct export_pointwise_imp {
+    friend CFMS_NS_ISO_Exporter;
+    output_ary_t operator()(CFMS_NS_ISO_Exporter& base,
+                            double const& x,
+                            double const& y,
+                            double const& z) {
+      // Reset to NAN
+      base.quant_vals.fill(NAN);
+      base.quant_vals = base.interpolate_pointwise(x, y, z);
 
-    /*
-     * Convert ADM variables from the spherical or Cartesian basis to the
-     * Cartesian basis Code generated from NrPyv2
-     */
-    auto ADM_Spherical_to_Cart = [&]() {
-      using REAL = double;
-      const REAL xCart[3] = {x, y, z};
-      // Perform the basis transform on ADM vectors/tensors from Spherical to
-      // Cartesian:
-
-      // Set destination xx[3] based on desired xCart[3]
-      REAL xx0, xx1, xx2;
       /*
-       *  Original SymPy expressions:
-       *  "[xx0 = sqrt(xCart[0]**2 + xCart[1]**2 + xCart[2]**2)]"
-       *  "[xx1 = acos(xCart[2]/sqrt(xCart[0]**2 + xCart[1]**2 + xCart[2]**2))]"
-       *  "[xx2 = atan2(xCart[1], xCart[0])]"
+       * Convert ADM variables from the spherical or Cartesian basis to the
+       * Cartesian basis Code generated from NrPyv2
        */
-      {
-        const REAL tmp0 =
-            sqrt(((xCart[0]) * (xCart[0])) + ((xCart[1]) * (xCart[1])) +
-                 ((xCart[2]) * (xCart[2])));
-        xx0 = tmp0;
-        if (std::fabs(xx0) < 1e-12) {
-          xx0 = 1e-12;
-          xx1 = 1e-12;
-          xx2 = 1e-12;
-        } else if (std::fabs(x) < 1e-12 && std::fabs(y) < 1e-12) {
-          xx1 = 1e-12;
-          xx2 = 1e-12;
-        } else {
-          xx1 = acos(xCart[2] / xx0);       // theta (angle from Z to xy plane)
-          xx2 = atan2(xCart[1], xCart[0]);  // phi (angle from x to y axis)
+      auto ADM_Spherical_to_Cart = [&]() {
+        using REAL = double;
+        const REAL xCart[3] = {x, y, z};
+        // Perform the basis transform on ADM vectors/tensors from Spherical to
+        // Cartesian:
+
+        // Set destination xx[3] based on desired xCart[3]
+        REAL xx0, xx1, xx2;
+        /*
+         *  Original SymPy expressions:
+         *  "[xx0 = sqrt(xCart[0]**2 + xCart[1]**2 + xCart[2]**2)]"
+         *  "[xx1 = acos(xCart[2]/sqrt(xCart[0]**2 + xCart[1]**2 +
+         * xCart[2]**2))]"
+         *  "[xx2 = atan2(xCart[1], xCart[0])]"
+         */
+        {
+          const REAL tmp0 =
+              sqrt(((xCart[0]) * (xCart[0])) + ((xCart[1]) * (xCart[1])) +
+                   ((xCart[2]) * (xCart[2])));
+          xx0 = tmp0;
+          if (std::fabs(xx0) < 1e-12) {
+            xx0 = 1e-12;
+            xx1 = 1e-12;
+            xx2 = 1e-12;
+          } else if (std::fabs(x) < 1e-12 && std::fabs(y) < 1e-12) {
+            xx1 = 1e-12;
+            xx2 = 1e-12;
+          } else {
+            xx1 = acos(xCart[2] / xx0);  // theta (angle from Z to xy plane)
+            xx2 = atan2(xCart[1], xCart[0]);  // phi (angle from x to y axis)
+          }
+          // cout << "r: " << xx0 << ", t: " << xx1 << ", phi: " << xx2 << endl;
         }
-        // cout << "r: " << xx0 << ", t: " << xx1 << ", phi: " << xx2 << endl;
+        // Unpack initial_data for ADM vectors/tensors
+        const REAL N = base.quant_vals[ISO_VARS::ISO_ALPHA];
+        const REAL U_factor = base.quant_vals[ISO_VARS::ISO_U];
+        const REAL domega_dr = base.quant_vals[ISO_VARS::ISO_DOMEGA_DR];
+        const REAL domega_dt = base.quant_vals[ISO_VARS::ISO_DOMEGA_DTHETA];
+
+        const REAL FluidVelU0 = 0.0;       // r
+        const REAL FluidVelU1 = 0.0;       // theta
+        const REAL FluidVelU2 = U_factor;  // phi
+        const REAL betaSphericalU0 = 0.0;  // r
+        const REAL betaSphericalU1 = 0.0;  // theta
+        const REAL betaSphericalU2 =
+            -base.quant_vals[ISO_VARS::ISO_METRIC_OMEGA];  // phi
+
+        const REAL A = base.quant_vals[ISO_VARS::ISO_METRIC_A];
+        const REAL B = base.quant_vals[ISO_VARS::ISO_METRIC_B];
+
+        const REAL gammaSphericalDD01 = 0.0;
+        const REAL gammaSphericalDD02 = 0.0;
+        const REAL gammaSphericalDD12 = 0.0;
+        const REAL gammaSphericalDD00 = A * A;
+        const REAL gammaSphericalDD11 = A * A * xx0 * xx0;
+        const REAL gammaSphericalDD22 = B * B * xx0 * xx0 * sin(xx1) * sin(xx1);
+        // cout << "g11: " << gammaSphericalDD00 << ", g22: " <<
+        // gammaSphericalDD11 << ", g33: " << gammaSphericalDD22 << endl;
+
+        const REAL KSphericalDD00 = 0.0;
+        const REAL KSphericalDD01 = 0.0;
+        const REAL KSphericalDD11 = 0.0;
+        const REAL KSphericalDD22 = 0.0;
+        const REAL KSphericalDD02 = -gammaSphericalDD22 / 2.0 / N * domega_dr;
+        const REAL KSphericalDD12 = -gammaSphericalDD22 / 2.0 / N * domega_dt;
+        const REAL tmp0 = cos(xx2);
+        const REAL tmp1 = sin(xx1);
+        const REAL tmp4 = cos(xx1);
+        const REAL tmp6 = sin(xx2);
+        const REAL tmp12 = ((xx0) * (xx0));
+        const REAL tmp3 = tmp0 * xx0;
+        const REAL tmp7 = tmp1 * xx0;
+        const REAL tmp9 = tmp6 * xx0;
+        const REAL tmp10 = ((tmp0) * (tmp0));
+        const REAL tmp11 = ((tmp6) * (tmp6));
+        const REAL tmp13 = ((tmp1) * (tmp1) * (tmp1));
+        const REAL tmp15 = ((tmp4) * (tmp4));
+        const REAL tmp20 = ((tmp1) * (tmp1) * (tmp1) * (tmp1)) *
+                           ((xx0) * (xx0) * (xx0) * (xx0));
+        const REAL tmp25 = ((tmp1) * (tmp1));
+        const REAL tmp17 = tmp1 * tmp12 * tmp15;
+        const REAL tmp21 = gammaSphericalDD00 * tmp20;
+        const REAL tmp23 = tmp13 * tmp4 * ((xx0) * (xx0) * (xx0));
+        const REAL tmp26 = tmp12 * tmp25;
+        const REAL tmp29 = -tmp15 * tmp9 - tmp25 * tmp9;
+        const REAL tmp34 = tmp4 * tmp7;
+        const REAL tmp41 = tmp15 * tmp3 + tmp25 * tmp3;
+        const REAL tmp52 = tmp1 * tmp12 * tmp4;
+        const REAL tmp68 = KSphericalDD00 * tmp20;
+        const REAL tmp18 = (1.0 / ((tmp10 * tmp12 * tmp13 + tmp10 * tmp17 +
+                                    tmp11 * tmp12 * tmp13 + tmp11 * tmp17) *
+                                   (tmp10 * tmp12 * tmp13 + tmp10 * tmp17 +
+                                    tmp11 * tmp12 * tmp13 + tmp11 * tmp17)));
+        const REAL tmp24 = 2 * gammaSphericalDD01 * tmp23;
+        const REAL tmp35 = gammaSphericalDD12 * tmp34;
+        const REAL tmp37 = gammaSphericalDD02 * tmp26;
+        const REAL tmp47 = -tmp10 * tmp25 * xx0 - tmp11 * tmp25 * xx0;
+        const REAL tmp53 = tmp10 * tmp52 + tmp11 * tmp52;
+        const REAL tmp70 = 2 * KSphericalDD01 * tmp23;
+        const REAL tmp73 = KSphericalDD12 * tmp34;
+        const REAL tmp75 = KSphericalDD02 * tmp26;
+        const REAL tmp19 = tmp10 * tmp18;
+        const REAL tmp28 = gammaSphericalDD11 * tmp15 * tmp26;
+        const REAL tmp31 = gammaSphericalDD22 * tmp18;
+        const REAL tmp32 = tmp18 * tmp29;
+        const REAL tmp39 = tmp0 * tmp18;
+        const REAL tmp42 = tmp18 * tmp41;
+        const REAL tmp54 = tmp18 * tmp53;
+        const REAL tmp61 = tmp11 * tmp18;
+        const REAL tmp64 = tmp18 * tmp6;
+        const REAL tmp65 = tmp18 * ((tmp47) * (tmp47));
+        const REAL tmp66 = tmp18 * ((tmp53) * (tmp53));
+        const REAL tmp71 = KSphericalDD11 * tmp15 * tmp26;
+        const REAL tmp72 = KSphericalDD22 * tmp18;
+        const REAL tmp33 = tmp0 * tmp32;
+        const REAL tmp40 = tmp39 * tmp6;
+        const REAL tmp43 = tmp0 * tmp42;
+        const REAL tmp44 = tmp32 * tmp6;
+        const REAL tmp49 = gammaSphericalDD11 * tmp34 * tmp47;
+        const REAL tmp51 = gammaSphericalDD01 * tmp26 * tmp47;
+        const REAL tmp63 = tmp42 * tmp6;
+        const REAL tmp77 = KSphericalDD11 * tmp34 * tmp47;
+        const REAL tmp78 = KSphericalDD01 * tmp26 * tmp47;
+        const REAL tmp56 = gammaSphericalDD01 * tmp34 * tmp54;
+        const REAL tmp58 = gammaSphericalDD00 * tmp26 * tmp54;
+        const REAL tmp79 = KSphericalDD01 * tmp34 * tmp54;
+        const REAL tmp80 = KSphericalDD00 * tmp26 * tmp54;
+        base.out_pw[OUTPUT_VARS::BETA1] = betaSphericalU0 * tmp0 * tmp1 +
+                                          betaSphericalU1 * tmp3 * tmp4 -
+                                          betaSphericalU2 * tmp6 * tmp7;
+        base.out_pw[OUTPUT_VARS::BETA2] = betaSphericalU0 * tmp1 * tmp6 +
+                                          betaSphericalU1 * tmp4 * tmp9 +
+                                          betaSphericalU2 * tmp0 * tmp7;
+        base.out_pw[OUTPUT_VARS::BETA3] =
+            betaSphericalU0 * tmp4 - betaSphericalU1 * tmp7;
+        base.out_pw[OUTPUT_VARS::G11] =
+            tmp19 * tmp21 + tmp19 * tmp24 + tmp19 * tmp28 +
+            ((tmp29) * (tmp29)) * tmp31 + 2 * tmp33 * tmp35 + 2 * tmp33 * tmp37;
+        base.out_pw[OUTPUT_VARS::G12] = tmp21 * tmp40 + tmp24 * tmp40 +
+                                        tmp28 * tmp40 + tmp29 * tmp31 * tmp41 +
+                                        tmp35 * tmp43 + tmp35 * tmp44 +
+                                        tmp37 * tmp43 + tmp37 * tmp44;
+        base.out_pw[OUTPUT_VARS::G13] = gammaSphericalDD02 * tmp32 * tmp53 +
+                                        gammaSphericalDD12 * tmp32 * tmp47 +
+                                        tmp0 * tmp56 + tmp0 * tmp58 +
+                                        tmp39 * tmp49 + tmp39 * tmp51;
+        base.out_pw[OUTPUT_VARS::G22] =
+            tmp21 * tmp61 + tmp24 * tmp61 + tmp28 * tmp61 +
+            tmp31 * ((tmp41) * (tmp41)) + 2 * tmp35 * tmp63 + 2 * tmp37 * tmp63;
+        base.out_pw[OUTPUT_VARS::G23] = gammaSphericalDD02 * tmp42 * tmp53 +
+                                        gammaSphericalDD12 * tmp42 * tmp47 +
+                                        tmp49 * tmp64 + tmp51 * tmp64 +
+                                        tmp56 * tmp6 + tmp58 * tmp6;
+        base.out_pw[OUTPUT_VARS::G33] = gammaSphericalDD00 * tmp66 +
+                                        2 * gammaSphericalDD01 * tmp47 * tmp54 +
+                                        gammaSphericalDD11 * tmp65;
+        base.out_pw[OUTPUT_VARS::K11] =
+            tmp19 * tmp68 + tmp19 * tmp70 + tmp19 * tmp71 +
+            ((tmp29) * (tmp29)) * tmp72 + 2 * tmp33 * tmp73 + 2 * tmp33 * tmp75;
+        base.out_pw[OUTPUT_VARS::K12] = tmp29 * tmp41 * tmp72 + tmp40 * tmp68 +
+                                        tmp40 * tmp70 + tmp40 * tmp71 +
+                                        tmp43 * tmp73 + tmp43 * tmp75 +
+                                        tmp44 * tmp73 + tmp44 * tmp75;
+        base.out_pw[OUTPUT_VARS::K13] =
+            KSphericalDD02 * tmp32 * tmp53 + KSphericalDD12 * tmp32 * tmp47 +
+            tmp0 * tmp79 + tmp0 * tmp80 + tmp39 * tmp77 + tmp39 * tmp78;
+        base.out_pw[OUTPUT_VARS::K22] =
+            ((tmp41) * (tmp41)) * tmp72 + tmp61 * tmp68 + tmp61 * tmp70 +
+            tmp61 * tmp71 + 2 * tmp63 * tmp73 + 2 * tmp63 * tmp75;
+        base.out_pw[OUTPUT_VARS::K23] =
+            KSphericalDD02 * tmp42 * tmp53 + KSphericalDD12 * tmp42 * tmp47 +
+            tmp6 * tmp79 + tmp6 * tmp80 + tmp64 * tmp77 + tmp64 * tmp78;
+        base.out_pw[OUTPUT_VARS::K33] = KSphericalDD00 * tmp66 +
+                                        2 * KSphericalDD01 * tmp47 * tmp54 +
+                                        KSphericalDD11 * tmp65;
+        base.out_pw[OUTPUT_VARS::VEL1] = FluidVelU0 * tmp0 * tmp1 +
+                                         FluidVelU1 * tmp3 * tmp4 -
+                                         FluidVelU2 * tmp6 * tmp7;
+        base.out_pw[OUTPUT_VARS::VEL2] = FluidVelU0 * tmp1 * tmp6 +
+                                         FluidVelU1 * tmp4 * tmp9 +
+                                         FluidVelU2 * tmp0 * tmp7;
+        base.out_pw[OUTPUT_VARS::VEL3] = FluidVelU0 * tmp4 - FluidVelU1 * tmp7;
+      };
+      ADM_Spherical_to_Cart();
+
+      double const H = base.quant_vals[ISO_VARS::ISO_H];
+      double h = std::exp(H);
+      double rho, eps, press;
+
+      // get quantities point-wise, since h is smoothest, and cut data at H=0
+      if (std::fabs(H) <= 1e-14) {
+        rho = 0.;
+        eps = 0.;
+        press = 0.;
+        base.out_pw[OUTPUT_VARS::VEL1] = 0.;
+        base.out_pw[OUTPUT_VARS::VEL2] = 0.;
+        base.out_pw[OUTPUT_VARS::VEL3] = 0.;
+      } else {
+        rho = EOS<eos_t, DENSITY>::get(h);
+        eps = EOS<eos_t, EPSILON>::get(h);
+        press = EOS<eos_t, PRESSURE>::get(h);
       }
-      // Unpack initial_data for ADM vectors/tensors
-      const REAL N = quant_vals[ISO_VARS::ISO_ALPHA];
-      const REAL U_factor = quant_vals[ISO_VARS::ISO_U];
-      const REAL domega_dr = quant_vals[ISO_VARS::ISO_DOMEGA_DR];
-      const REAL domega_dt = quant_vals[ISO_VARS::ISO_DOMEGA_DTHETA];
-
-      const REAL FluidVelU0 = 0.0;       // r
-      const REAL FluidVelU1 = 0.0;       // theta
-      const REAL FluidVelU2 = U_factor;  // phi
-      const REAL betaSphericalU0 = 0.0;  // r
-      const REAL betaSphericalU1 = 0.0;  // theta
-      const REAL betaSphericalU2 =
-          -quant_vals[ISO_VARS::ISO_METRIC_OMEGA];  // phi
-
-      const REAL A = quant_vals[ISO_VARS::ISO_METRIC_A];
-      const REAL B = quant_vals[ISO_VARS::ISO_METRIC_B];
-
-      const REAL gammaSphericalDD01 = 0.0;
-      const REAL gammaSphericalDD02 = 0.0;
-      const REAL gammaSphericalDD12 = 0.0;
-      const REAL gammaSphericalDD00 = A * A;
-      const REAL gammaSphericalDD11 = A * A * xx0 * xx0;
-      const REAL gammaSphericalDD22 = B * B * xx0 * xx0 * sin(xx1) * sin(xx1);
-      // cout << "g11: " << gammaSphericalDD00 << ", g22: " <<
-      // gammaSphericalDD11 << ", g33: " << gammaSphericalDD22 << endl;
-
-      const REAL KSphericalDD00 = 0.0;
-      const REAL KSphericalDD01 = 0.0;
-      const REAL KSphericalDD11 = 0.0;
-      const REAL KSphericalDD22 = 0.0;
-      const REAL KSphericalDD02 = -gammaSphericalDD22 / 2.0 / N * domega_dr;
-      const REAL KSphericalDD12 = -gammaSphericalDD22 / 2.0 / N * domega_dt;
-      const REAL tmp0 = cos(xx2);
-      const REAL tmp1 = sin(xx1);
-      const REAL tmp4 = cos(xx1);
-      const REAL tmp6 = sin(xx2);
-      const REAL tmp12 = ((xx0) * (xx0));
-      const REAL tmp3 = tmp0 * xx0;
-      const REAL tmp7 = tmp1 * xx0;
-      const REAL tmp9 = tmp6 * xx0;
-      const REAL tmp10 = ((tmp0) * (tmp0));
-      const REAL tmp11 = ((tmp6) * (tmp6));
-      const REAL tmp13 = ((tmp1) * (tmp1) * (tmp1));
-      const REAL tmp15 = ((tmp4) * (tmp4));
-      const REAL tmp20 =
-          ((tmp1) * (tmp1) * (tmp1) * (tmp1)) * ((xx0) * (xx0) * (xx0) * (xx0));
-      const REAL tmp25 = ((tmp1) * (tmp1));
-      const REAL tmp17 = tmp1 * tmp12 * tmp15;
-      const REAL tmp21 = gammaSphericalDD00 * tmp20;
-      const REAL tmp23 = tmp13 * tmp4 * ((xx0) * (xx0) * (xx0));
-      const REAL tmp26 = tmp12 * tmp25;
-      const REAL tmp29 = -tmp15 * tmp9 - tmp25 * tmp9;
-      const REAL tmp34 = tmp4 * tmp7;
-      const REAL tmp41 = tmp15 * tmp3 + tmp25 * tmp3;
-      const REAL tmp52 = tmp1 * tmp12 * tmp4;
-      const REAL tmp68 = KSphericalDD00 * tmp20;
-      const REAL tmp18 = (1.0 / ((tmp10 * tmp12 * tmp13 + tmp10 * tmp17 +
-                                  tmp11 * tmp12 * tmp13 + tmp11 * tmp17) *
-                                 (tmp10 * tmp12 * tmp13 + tmp10 * tmp17 +
-                                  tmp11 * tmp12 * tmp13 + tmp11 * tmp17)));
-      const REAL tmp24 = 2 * gammaSphericalDD01 * tmp23;
-      const REAL tmp35 = gammaSphericalDD12 * tmp34;
-      const REAL tmp37 = gammaSphericalDD02 * tmp26;
-      const REAL tmp47 = -tmp10 * tmp25 * xx0 - tmp11 * tmp25 * xx0;
-      const REAL tmp53 = tmp10 * tmp52 + tmp11 * tmp52;
-      const REAL tmp70 = 2 * KSphericalDD01 * tmp23;
-      const REAL tmp73 = KSphericalDD12 * tmp34;
-      const REAL tmp75 = KSphericalDD02 * tmp26;
-      const REAL tmp19 = tmp10 * tmp18;
-      const REAL tmp28 = gammaSphericalDD11 * tmp15 * tmp26;
-      const REAL tmp31 = gammaSphericalDD22 * tmp18;
-      const REAL tmp32 = tmp18 * tmp29;
-      const REAL tmp39 = tmp0 * tmp18;
-      const REAL tmp42 = tmp18 * tmp41;
-      const REAL tmp54 = tmp18 * tmp53;
-      const REAL tmp61 = tmp11 * tmp18;
-      const REAL tmp64 = tmp18 * tmp6;
-      const REAL tmp65 = tmp18 * ((tmp47) * (tmp47));
-      const REAL tmp66 = tmp18 * ((tmp53) * (tmp53));
-      const REAL tmp71 = KSphericalDD11 * tmp15 * tmp26;
-      const REAL tmp72 = KSphericalDD22 * tmp18;
-      const REAL tmp33 = tmp0 * tmp32;
-      const REAL tmp40 = tmp39 * tmp6;
-      const REAL tmp43 = tmp0 * tmp42;
-      const REAL tmp44 = tmp32 * tmp6;
-      const REAL tmp49 = gammaSphericalDD11 * tmp34 * tmp47;
-      const REAL tmp51 = gammaSphericalDD01 * tmp26 * tmp47;
-      const REAL tmp63 = tmp42 * tmp6;
-      const REAL tmp77 = KSphericalDD11 * tmp34 * tmp47;
-      const REAL tmp78 = KSphericalDD01 * tmp26 * tmp47;
-      const REAL tmp56 = gammaSphericalDD01 * tmp34 * tmp54;
-      const REAL tmp58 = gammaSphericalDD00 * tmp26 * tmp54;
-      const REAL tmp79 = KSphericalDD01 * tmp34 * tmp54;
-      const REAL tmp80 = KSphericalDD00 * tmp26 * tmp54;
-      out_pw[OUTPUT_VARS::BETA1] = betaSphericalU0 * tmp0 * tmp1 +
-                                   betaSphericalU1 * tmp3 * tmp4 -
-                                   betaSphericalU2 * tmp6 * tmp7;
-      out_pw[OUTPUT_VARS::BETA2] = betaSphericalU0 * tmp1 * tmp6 +
-                                   betaSphericalU1 * tmp4 * tmp9 +
-                                   betaSphericalU2 * tmp0 * tmp7;
-      out_pw[OUTPUT_VARS::BETA3] =
-          betaSphericalU0 * tmp4 - betaSphericalU1 * tmp7;
-      out_pw[OUTPUT_VARS::G11] = tmp19 * tmp21 + tmp19 * tmp24 + tmp19 * tmp28 +
-                                 ((tmp29) * (tmp29)) * tmp31 +
-                                 2 * tmp33 * tmp35 + 2 * tmp33 * tmp37;
-      out_pw[OUTPUT_VARS::G12] = tmp21 * tmp40 + tmp24 * tmp40 + tmp28 * tmp40 +
-                                 tmp29 * tmp31 * tmp41 + tmp35 * tmp43 +
-                                 tmp35 * tmp44 + tmp37 * tmp43 + tmp37 * tmp44;
-      out_pw[OUTPUT_VARS::G13] = gammaSphericalDD02 * tmp32 * tmp53 +
-                                 gammaSphericalDD12 * tmp32 * tmp47 +
-                                 tmp0 * tmp56 + tmp0 * tmp58 + tmp39 * tmp49 +
-                                 tmp39 * tmp51;
-      out_pw[OUTPUT_VARS::G22] = tmp21 * tmp61 + tmp24 * tmp61 + tmp28 * tmp61 +
-                                 tmp31 * ((tmp41) * (tmp41)) +
-                                 2 * tmp35 * tmp63 + 2 * tmp37 * tmp63;
-      out_pw[OUTPUT_VARS::G23] = gammaSphericalDD02 * tmp42 * tmp53 +
-                                 gammaSphericalDD12 * tmp42 * tmp47 +
-                                 tmp49 * tmp64 + tmp51 * tmp64 + tmp56 * tmp6 +
-                                 tmp58 * tmp6;
-      out_pw[OUTPUT_VARS::G33] = gammaSphericalDD00 * tmp66 +
-                                 2 * gammaSphericalDD01 * tmp47 * tmp54 +
-                                 gammaSphericalDD11 * tmp65;
-      out_pw[OUTPUT_VARS::K11] = tmp19 * tmp68 + tmp19 * tmp70 + tmp19 * tmp71 +
-                                 ((tmp29) * (tmp29)) * tmp72 +
-                                 2 * tmp33 * tmp73 + 2 * tmp33 * tmp75;
-      out_pw[OUTPUT_VARS::K12] = tmp29 * tmp41 * tmp72 + tmp40 * tmp68 +
-                                 tmp40 * tmp70 + tmp40 * tmp71 + tmp43 * tmp73 +
-                                 tmp43 * tmp75 + tmp44 * tmp73 + tmp44 * tmp75;
-      out_pw[OUTPUT_VARS::K13] = KSphericalDD02 * tmp32 * tmp53 +
-                                 KSphericalDD12 * tmp32 * tmp47 + tmp0 * tmp79 +
-                                 tmp0 * tmp80 + tmp39 * tmp77 + tmp39 * tmp78;
-      out_pw[OUTPUT_VARS::K22] = ((tmp41) * (tmp41)) * tmp72 + tmp61 * tmp68 +
-                                 tmp61 * tmp70 + tmp61 * tmp71 +
-                                 2 * tmp63 * tmp73 + 2 * tmp63 * tmp75;
-      out_pw[OUTPUT_VARS::K23] = KSphericalDD02 * tmp42 * tmp53 +
-                                 KSphericalDD12 * tmp42 * tmp47 + tmp6 * tmp79 +
-                                 tmp6 * tmp80 + tmp64 * tmp77 + tmp64 * tmp78;
-      out_pw[OUTPUT_VARS::K33] = KSphericalDD00 * tmp66 +
-                                 2 * KSphericalDD01 * tmp47 * tmp54 +
-                                 KSphericalDD11 * tmp65;
-      out_pw[OUTPUT_VARS::VEL1] = FluidVelU0 * tmp0 * tmp1 +
-                                  FluidVelU1 * tmp3 * tmp4 -
-                                  FluidVelU2 * tmp6 * tmp7;
-      out_pw[OUTPUT_VARS::VEL2] = FluidVelU0 * tmp1 * tmp6 +
-                                  FluidVelU1 * tmp4 * tmp9 +
-                                  FluidVelU2 * tmp0 * tmp7;
-      out_pw[OUTPUT_VARS::VEL3] = FluidVelU0 * tmp4 - FluidVelU1 * tmp7;
-    };
-    ADM_Spherical_to_Cart();
-
-    double const H = quant_vals[ISO_VARS::ISO_H];
-    double h = std::exp(H);
-    double rho, eps, press;
-
-    // get quantities point-wise, since h is smoothest, and cut data at H=0
-    if (std::fabs(H) <= 1e-14) {
-      rho = 0.;
-      eps = 0.;
-      press = 0.;
-      out_pw[OUTPUT_VARS::VEL1] = 0.;
-      out_pw[OUTPUT_VARS::VEL2] = 0.;
-      out_pw[OUTPUT_VARS::VEL3] = 0.;
-    } else {
-      rho = EOS<eos_t, DENSITY>::get(h);
-      eps = EOS<eos_t, EPSILON>::get(h);
-      press = EOS<eos_t, PRESSURE>::get(h);
+      base.out_pw[OUTPUT_VARS::ALPHA] = base.quant_vals[ISO_VARS::ISO_ALPHA];
+      base.out_pw[OUTPUT_VARS::RHO] = rho;
+      base.out_pw[OUTPUT_VARS::EPS] = eps;
+      base.out_pw[OUTPUT_VARS::PRESS] = press;
+      base.output_base = OUTPUT_BASIS::CARTESIAN;
+      return base.out_pw;
     }
-    out_pw[OUTPUT_VARS::ALPHA] = quant_vals[ISO_VARS::ISO_ALPHA];
-    out_pw[OUTPUT_VARS::RHO] = rho;
-    out_pw[OUTPUT_VARS::EPS] = eps;
-    out_pw[OUTPUT_VARS::PRESS] = press;
-    output_base = OUTPUT_BASIS::CARTESIAN;
-    return out_pw;
-  }
+  };
 
   /**
    * @brief Interface to export an array of OUTPUT_VARS for a given point.  The
@@ -599,79 +607,86 @@ struct CFMS_NS_ISO_Exporter
    * @return output_ary_t Interpolated solution at x,y,z
    */
   template <class eos_t>
-  output_ary_t export_pointwise__spherical_imp(double const& x,
-                                               double const& y,
-                                               double const& z) {
-    // Reset to NAN
-    quant_vals.fill(NAN);
-    quant_vals = interpolate_pointwise(x, y, z);
+  struct export_pointwise__spherical_imp {
+    friend CFMS_NS_ISO_Exporter;
+    output_ary_t operator()(CFMS_NS_ISO_Exporter& base,
+                            double const& x,
+                            double const& y,
+                            double const& z) {
+      // Reset to NAN
+      base.quant_vals.fill(NAN);
+      base.quant_vals = base.interpolate_pointwise(x, y, z);
 
-    const double r2 = x * x + y * y + z * z;
-    const double r = std::sqrt(r2);
+      const double r2 = x * x + y * y + z * z;
+      const double r = std::sqrt(r2);
 
-    auto get_theta = [&]() {
-      double theta;
-      if (r2 < 1e-12) {
-        theta = acos(z / 1e-10);  // theta (angle from Z to xy plane)
+      auto get_theta = [&]() {
+        double theta;
+        if (r2 < 1e-12) {
+          theta = acos(z / 1e-10);  // theta (angle from Z to xy plane)
+        } else {
+          theta = acos(z / r);  // theta (angle from Z to xy plane)
+        }
+        return theta;
+      };
+      const double theta = get_theta();
+      const double sint = std::sin(theta);
+
+      const double domega_dr = base.quant_vals[ISO_VARS::ISO_DOMEGA_DR];
+      const double domega_dt = base.quant_vals[ISO_VARS::ISO_DOMEGA_DTHETA];
+
+      const double N = base.quant_vals[ISO_VARS::ISO_ALPHA];
+      const double A = base.quant_vals[ISO_VARS::ISO_METRIC_A];
+      const double B = base.quant_vals[ISO_VARS::ISO_METRIC_B];
+
+      base.out_pw[OUTPUT_VARS::ALPHA] = N;
+
+      base.out_pw[OUTPUT_VARS::BETA1] = 0.0;
+      base.out_pw[OUTPUT_VARS::BETA2] = 0.0;
+      base.out_pw[OUTPUT_VARS::BETA3] =
+          -base.quant_vals[ISO_VARS::ISO_METRIC_OMEGA];
+
+      base.out_pw[OUTPUT_VARS::G11] = A * A;
+      base.out_pw[OUTPUT_VARS::G12] = 0.0;
+      base.out_pw[OUTPUT_VARS::G13] = 0.0;
+      base.out_pw[OUTPUT_VARS::G22] = A * A * r2;
+      base.out_pw[OUTPUT_VARS::G23] = 0.0;
+      base.out_pw[OUTPUT_VARS::G33] = B * B * r2 * sint * sint;
+      base.out_pw[OUTPUT_VARS::K11] = 0.0;
+      base.out_pw[OUTPUT_VARS::K12] = 0.0;
+      base.out_pw[OUTPUT_VARS::K13] =
+          -base.out_pw[OUTPUT_VARS::G33] / 2.0 / N * domega_dr;
+      base.out_pw[OUTPUT_VARS::K22] = 0.0;
+      base.out_pw[OUTPUT_VARS::K23] =
+          -base.out_pw[OUTPUT_VARS::G33] / 2.0 / N * domega_dt;
+      base.out_pw[OUTPUT_VARS::K33] = 0.0;
+
+      double const H = base.quant_vals[ISO_VARS::ISO_H];
+      double h = std::exp(H);
+      double rho, eps, press, vphiU;
+
+      // get quantities point-wise, since h is smoothest, and cut data at H=0
+      if (std::fabs(H) <= 1e-14) {
+        rho = 0.;
+        eps = 0.;
+        press = 0.;
+        vphiU = 0.;
       } else {
-        theta = acos(z / r);  // theta (angle from Z to xy plane)
+        rho = EOS<eos_t, DENSITY>::get(h);
+        eps = EOS<eos_t, EPSILON>::get(h);
+        press = EOS<eos_t, PRESSURE>::get(h);
+        vphiU = base.quant_vals[ISO_VARS::ISO_U];
       }
-      return theta;
-    };
-    const double theta = get_theta();
-    const double sint = std::sin(theta);
-
-    const double domega_dr = quant_vals[ISO_VARS::ISO_DOMEGA_DR];
-    const double domega_dt = quant_vals[ISO_VARS::ISO_DOMEGA_DTHETA];
-
-    const double N = quant_vals[ISO_VARS::ISO_ALPHA];
-    const double A = quant_vals[ISO_VARS::ISO_METRIC_A];
-    const double B = quant_vals[ISO_VARS::ISO_METRIC_B];
-
-    out_pw[OUTPUT_VARS::ALPHA] = N;
-
-    out_pw[OUTPUT_VARS::BETA1] = 0.0;
-    out_pw[OUTPUT_VARS::BETA2] = 0.0;
-    out_pw[OUTPUT_VARS::BETA3] = -quant_vals[ISO_VARS::ISO_METRIC_OMEGA];
-
-    out_pw[OUTPUT_VARS::G11] = A * A;
-    out_pw[OUTPUT_VARS::G12] = 0.0;
-    out_pw[OUTPUT_VARS::G13] = 0.0;
-    out_pw[OUTPUT_VARS::G22] = A * A * r2;
-    out_pw[OUTPUT_VARS::G23] = 0.0;
-    out_pw[OUTPUT_VARS::G33] = B * B * r2 * sint * sint;
-    out_pw[OUTPUT_VARS::K11] = 0.0;
-    out_pw[OUTPUT_VARS::K12] = 0.0;
-    out_pw[OUTPUT_VARS::K13] = -out_pw[OUTPUT_VARS::G33] / 2.0 / N * domega_dr;
-    out_pw[OUTPUT_VARS::K22] = 0.0;
-    out_pw[OUTPUT_VARS::K23] = -out_pw[OUTPUT_VARS::G33] / 2.0 / N * domega_dt;
-    out_pw[OUTPUT_VARS::K33] = 0.0;
-
-    double const H = quant_vals[ISO_VARS::ISO_H];
-    double h = std::exp(H);
-    double rho, eps, press, vphiU;
-
-    // get quantities point-wise, since h is smoothest, and cut data at H=0
-    if (std::fabs(H) <= 1e-14) {
-      rho = 0.;
-      eps = 0.;
-      press = 0.;
-      vphiU = 0.;
-    } else {
-      rho = EOS<eos_t, DENSITY>::get(h);
-      eps = EOS<eos_t, EPSILON>::get(h);
-      press = EOS<eos_t, PRESSURE>::get(h);
-      vphiU = quant_vals[ISO_VARS::ISO_U];
+      base.out_pw[OUTPUT_VARS::RHO] = rho;
+      base.out_pw[OUTPUT_VARS::EPS] = eps;
+      base.out_pw[OUTPUT_VARS::PRESS] = press;
+      base.out_pw[OUTPUT_VARS::VEL1] = 0.0;
+      base.out_pw[OUTPUT_VARS::VEL2] = 0.0;
+      base.out_pw[OUTPUT_VARS::VEL3] = vphiU;
+      base.output_base = OUTPUT_BASIS::SPHERICAL;
+      return base.out_pw;
     }
-    out_pw[OUTPUT_VARS::RHO] = rho;
-    out_pw[OUTPUT_VARS::EPS] = eps;
-    out_pw[OUTPUT_VARS::PRESS] = press;
-    out_pw[OUTPUT_VARS::VEL1] = 0.0;
-    out_pw[OUTPUT_VARS::VEL2] = 0.0;
-    out_pw[OUTPUT_VARS::VEL3] = vphiU;
-    output_base = OUTPUT_BASIS::SPHERICAL;
-    return out_pw;
-  }
+  };
   /**
    * @brief Interface to export an array of OUTPUT_VARS for a given point in a
    * spherical basis.  The logic for determining the EOS type is here and adds a
