@@ -125,14 +125,14 @@ void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx) {
       bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
 
   if (eos_type == "Cold_PWPoly") {
-    using eos_t = ::Kadath::Margherita::Cold_PWPoly;
+    using eos_t = ::Kadath::FUKA_EOS::FUKA_EOS_Wrapper<margherita_eos_t, margherita_pwp>;
     EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
 
     std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov =
         setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
     gen_NS(std::move(tov));
   } else if (eos_type == "Cold_Table") {
-    using eos_t = ::Kadath::Margherita::Cold_Table;
+    using eos_t = ::Kadath::FUKA_EOS::FUKA_EOS_Wrapper<margherita_eos_t, margherita_1d>;
 
     const int interp_pts =
         (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0)

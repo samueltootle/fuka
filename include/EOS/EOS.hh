@@ -26,6 +26,7 @@
 #include "standalone/cold_table_implementation.hh"
 #include "standalone/setup_polytrope.cc"
 #include "standalone/setup_cold_table.cc"
+#include "FUKA_EOS_Wrapper.hh"
 #include "name_tools.hpp"
 #include <string>
 #include <array>
