@@ -1,5 +1,5 @@
-#include<EOS/FUKA_EOS_Utilities.hh>
-#include<kadath.hpp>
+#include <EOS/FUKA_EOS_Utilities.hh>
+#include <kadath.hpp>
 using namespace Kadath::FUKA_EOS;
 /**
  * @brief Setup the EOS operators in System_of_eqs
@@ -10,7 +10,7 @@ using namespace Kadath::FUKA_EOS;
  */
 template <class eos_t>
 void set_eos_ope_struct<eos_t>::operator()(System_of_eqs& syst, Param& p) {
-    syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
-    syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
-    syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
+  syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
+  syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
+  syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
 }
