@@ -1,3 +1,21 @@
+/*
+ * This file is part of the KADATH library.
+ * Copyright (C) 2024, Samuel Tootle
+ *                     <tootle@th.physik.uni-frankfurt.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 #pragma once
 #include <memory>
 #include "standalone/cold_pwpoly.hh"
@@ -67,15 +85,15 @@ struct FUKA_EOS_Wrapper {
     return rhoB_in * (1.0 + eps);
   }
 
-  static inline double dpress_cold_drho__rho(const double rho_in) {
+  static inline double dpress_cold_drho__rho(const double rhoB_in) {
     double dpress_cold_drho;
     if constexpr (eos == margherita_pwp) {
-      double rho = rho_in;
+      double rho = rhoB_in;
       Kadath::Margherita::Cold_PWPoly::error_t error;
       dpress_cold_drho =
           Kadath::Margherita::Cold_PWPoly::dpress_cold_drho__rho(rho, error);
     } else if constexpr (eos == margherita_1d) {
-      double rho = rho_in;
+      double rho = rhoB_in;
       Kadath::Margherita::Cold_Table::error_t error;
       dpress_cold_drho =
           Kadath::Margherita::Cold_Table::dpress_cold_drho__rho(rho, error);
@@ -83,13 +101,13 @@ struct FUKA_EOS_Wrapper {
 #ifdef WITH_GRHAYL_EOS
     else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
       double K, Gamma, eps, press_cold;
-      ghl_hybrid_get_K_and_Gamma(ghl_eos_params.get(), rho_in, &K, &Gamma);
+      ghl_hybrid_get_K_and_Gamma(ghl_eos_params.get(), rhoB_in, &K, &Gamma);
 
-      ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rho_in, &press_cold);
-      dpress_cold_drho = Gamma * press_cold / rho_in;
+      ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rhoB_in, &press_cold);
+      dpress_cold_drho = Gamma * press_cold / rhoB_in;
     } else if constexpr (eos == ghl_eos_tabulated) {
       dpress_cold_drho =
-          ghl_tabulated_compute_dP_drho_from_rho(ghl_eos_params.get(), rho_in);
+          ghl_tabulated_compute_dP_drho_from_rho(ghl_eos_params.get(), rhoB_in);
     }
 #endif
     return dpress_cold_drho;
@@ -105,16 +123,16 @@ struct FUKA_EOS_Wrapper {
     return rhoh / (dpdrho * rhoB_in);
   }
 
-  static inline double P_cold_from_rho(const double rho_in) {
+  static inline double P_cold_from_rho(const double rhoB_in) {
     double P;
     if constexpr (eos == margherita_pwp) {
-      double rho = rho_in;
+      double rho = rhoB_in;
       double eps;
       Kadath::Margherita::Cold_PWPoly::error_t error;
       P = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(eps, rho,
                                                                     error);
     } else if constexpr (eos == margherita_1d) {
-      double rho = rho_in;
+      double rho = rhoB_in;
       double eps;
       Kadath::Margherita::Cold_Table::error_t error;
       P = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps, rho,
@@ -122,9 +140,9 @@ struct FUKA_EOS_Wrapper {
     }
 #ifdef WITH_GRHAYL_EOS
     else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
-      ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rho_in, &P);
+      ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rhoB_in, &P);
     } else if constexpr (eos == ghl_eos_tabulated) {
-      P = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rho_in);
+      P = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rhoB_in);
     }
 #endif
     return P;
