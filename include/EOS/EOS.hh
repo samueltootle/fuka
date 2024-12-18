@@ -120,7 +120,6 @@ private:
     if (so.check_if_zero()) {
       return so;
     }
-    typename eos::error_t err;
 
     // need to work in configuration space
     so.coef_i();
@@ -192,7 +191,6 @@ public:
    * @param [input] rho: density
    */
   static double h_cold__rho(double rho) {
-    typename eos::error_t err;
 
     double eps_cold = 0.;
     double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho);
