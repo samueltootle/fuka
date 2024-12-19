@@ -25,6 +25,8 @@
 #include "standalone/cold_pwpoly_implementation.hh"
 #include "standalone/cold_table.hh"
 #include "standalone/cold_table_implementation.hh"
+#include "standalone/setup_polytrope.cc"
+#include "standalone/setup_cold_table.cc"
 
 #ifdef WITH_GRHAYL_EOS
 #include <grhayl/ghl.h>
@@ -109,16 +111,33 @@ struct EOS_initialize {
   static inline auto init(config_t& bconfig, BCO_t... bco) {
     using namespace ::Kadath::FUKA_Config;
     using namespace ::Kadath::FUKA_EOS;
+    using namespace ::Kadath::Margherita;
 
     const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT, bco...);
-    const std::string eos_file =
+    std::string filename =
         bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE, bco...);
     const std::string eos_type =
         bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE, bco...);
 
+    auto get_default_path = [&]() {
+      std::string default_path{"./"};
+      const std::string kadath_environment_var{"HOME_KADATH"};
+      if(std::getenv(kadath_environment_var.c_str())) {
+        std::string const home_kadath{std::getenv(kadath_environment_var.c_str())};
+        default_path = home_kadath + "/eos/";
+      }
+      return default_path;
+    };
+    std::string const default_path{get_default_path()};
+
+    //if no path is given, we set the default EOS diretory to look for the relevant table/polytrope
+    if( filename.rfind("/") == std::string::npos ) {
+      filename = default_path + filename;
+    }
+
     if (eos_type == "Cold_PWPoly") {
       using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_pwp>;
-      return EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
+      return Margherita_setup_polytrope(filename);
     } else if (eos_type == "Cold_Table") {
       using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_1d>;
       const int interp_pts =
@@ -126,7 +145,7 @@ struct EOS_initialize {
               ? 2000
               : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...);
 
-      return EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
+      return setup_Cold_Table(filename, interp_pts, h_cut);
     }
     throw std::invalid_argument("\nInvalid EOS type\n");
   }
