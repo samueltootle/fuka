@@ -18,15 +18,15 @@
  */
 #pragma once
 #include <memory>
-#include "system_of_eqs.hpp"
 #include "Configurator/config_enums.hpp"
 #include "EOS/EOS.hh"
 #include "standalone/cold_pwpoly.hh"
 #include "standalone/cold_pwpoly_implementation.hh"
 #include "standalone/cold_table.hh"
 #include "standalone/cold_table_implementation.hh"
-#include "standalone/setup_polytrope.cc"
 #include "standalone/setup_cold_table.cc"
+#include "standalone/setup_polytrope.cc"
+#include "system_of_eqs.hpp"
 
 #ifdef WITH_GRHAYL_EOS
 #include <grhayl/ghl.h>
@@ -122,16 +122,18 @@ struct EOS_initialize {
     auto get_default_path = [&]() {
       std::string default_path{"./"};
       const std::string kadath_environment_var{"HOME_KADATH"};
-      if(std::getenv(kadath_environment_var.c_str())) {
-        std::string const home_kadath{std::getenv(kadath_environment_var.c_str())};
+      if (std::getenv(kadath_environment_var.c_str())) {
+        std::string const home_kadath{
+            std::getenv(kadath_environment_var.c_str())};
         default_path = home_kadath + "/eos/";
       }
       return default_path;
     };
     std::string const default_path{get_default_path()};
 
-    //if no path is given, we set the default EOS diretory to look for the relevant table/polytrope
-    if( filename.rfind("/") == std::string::npos ) {
+    // if no path is given, we set the default EOS diretory to look for the
+    // relevant table/polytrope
+    if (filename.rfind("/") == std::string::npos) {
       filename = default_path + filename;
     }
 

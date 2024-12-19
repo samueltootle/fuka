@@ -17,24 +17,24 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 #pragma once
+#include <array>
+#include <cstdlib>
+#include <string>
+#include "FUKA_EOS_Wrapper.hh"
+#include "name_tools.hpp"
 #include "standalone/cold_pwpoly.hh"
 #include "standalone/cold_pwpoly_implementation.hh"
 #include "standalone/cold_table.hh"
 #include "standalone/cold_table_implementation.hh"
-#include "standalone/setup_polytrope.cc"
 #include "standalone/setup_cold_table.cc"
-#include "FUKA_EOS_Wrapper.hh"
-#include "name_tools.hpp"
-#include <string>
-#include <array>
-#include <cstdlib>
+#include "standalone/setup_polytrope.cc"
 
-#include <val_domain.hpp>
-#include <term_eq.hpp>
 #include <scalar.hpp>
+#include <term_eq.hpp>
+#include <val_domain.hpp>
 
 using namespace Kadath;
 
@@ -45,27 +45,29 @@ using namespace Kadath;
 enum eos_var_t { PRESSURE, EPSILON, DENSITY, DHDRHO };
 
 /**
- * This interface provides the user defined OPEs to provide hydrodynamic quantities as a function
- * of the specific enthalpy (\b h) to the Kadath System_of_eqs framework.\n
- * The equation of state is managed by a modified, standalone version of Margherita:
- * https://github.com/fil-grmhd/Margherita-EOS
+ * This interface provides the user defined OPEs to provide hydrodynamic
+ * quantities as a function of the specific enthalpy (\b h) to the Kadath
+ * System_of_eqs framework.\n The equation of state is managed by a modified,
+ * standalone version of Margherita: https://github.com/fil-grmhd/Margherita-EOS
  *
  * @tparam eos Margherita EOS type (e.g. Cold_PWPoly)
  * @tparam var EOS variable to update when action() is executed. see eos_var_t
  */
-template <typename eos, eos_var_t var> class EOS {
-private:
+template <typename eos, eos_var_t var>
+class EOS {
+ private:
   /**
    * EOS::term_by_term_variation
    *
-   * calculate the numerical variation of the dependent quantity (var), term by term,
-   * as a function of a scalar quantity (currently h).
+   * calculate the numerical variation of the dependent quantity (var), term by
+   * term, as a function of a scalar quantity (currently h).
    *
    * @param [input] dom: domain to update
    * @param [input] so: previous numerical variatioon of the variable field (h)
    * @param [input] scalar: current value of the variable field (h)
    */
-  static inline Val_domain term_by_term_variation(int dom, const Val_domain so,
+  static inline Val_domain term_by_term_variation(int dom,
+                                                  const Val_domain so,
                                                   const Val_domain scalar) {
     if (so.check_if_zero()) {
       return so;
@@ -141,8 +143,7 @@ private:
         res.set(pos) = pressure;
       else if constexpr (var == DHDRHO) {
         res.set(pos) = 1. / h * eos::dpress_cold_drho__rho(rho);
-      }
-      else
+      } else
         std::cerr << "Ill-defined variable in EOS class, please check."
                   << std::endl;
     } while (pos.inc());
@@ -151,17 +152,16 @@ private:
     return res;
   }
 
-public:
-
+ public:
   /**
    * EOS::h_cold__rho
    *
-   * compute specific enthalpy from a given density.  Used primarily in analysis codes.
+   * compute specific enthalpy from a given density.  Used primarily in analysis
+   * codes.
    *
    * @param [input] rho: density
    */
   static double h_cold__rho(double rho) {
-
     double eps_cold = 0.;
     double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho);
     double h = 1. + eps_cold + pressure / rho;
@@ -192,13 +192,15 @@ public:
   /**
    * EOS::action
    *
-   * This is called by the System of equations in order to generate the corresponding
-   * Scalar field and its variation based on a definition using a user defined OPE.
+   * This is called by the System of equations in order to generate the
+   * corresponding Scalar field and its variation based on a definition using a
+   * user defined OPE.
    *
    * @param [input] term: term to get information from (i.e. specific enthalpy).
-   * @param [input] p: Kadath parameter.  Not used, but required for user defined OPEs
+   * @param [input] p: Kadath parameter.  Not used, but required for user
+   * defined OPEs
    */
-  static Term_eq action(const Term_eq &term, Param *p) {
+  static Term_eq action(const Term_eq& term, Param* p) {
     Term_eq target(term);
 
     int dom = term.get_dom();
