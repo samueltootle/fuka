@@ -3,9 +3,9 @@
 # Author: Kehan Xue, kehan.xue (at) gmail.com
 
 Language: Cpp
-BasedOnStyle: Google
+BasedOnStyle: Chromium
 AccessModifierOffset: -1
-AlignAfterOpenBracket: BlockIndent
+AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: None
 AlignOperands: Align
 AllowAllArgumentsOnNextLine: true
@@ -27,7 +27,7 @@ BraceWrapping:
   AfterStruct: false
   AfterControlStatement: Never
   AfterEnum: false
-  AfterFunction: false
+#  AfterFunction: false
   AfterNamespace: false
   AfterUnion: false
   AfterExternBlock: false
@@ -84,6 +84,6 @@ UseTab: Never
 
 StatementMacros:
   - internal_variable
-AllowAllParametersOfDeclarationOnNextLine: true
+#AllowAllParametersOfDeclarationOnNextLine: true
 PenaltyBreakBeforeFirstCallParameter: 100
-PenaltyBreakOpenParenthesis: 100
+#PenaltyBreakOpenParenthesis: 100
