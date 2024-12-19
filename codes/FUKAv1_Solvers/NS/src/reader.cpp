@@ -164,12 +164,15 @@ struct reader_3d {
           break;
       }
     }
-    double Px = space.get_domain(ndom - 1)->integ(
-        syst.give_val_def("intPx")()(ndom - 1), OUTER_BC);
-    double Py = space.get_domain(ndom - 1)->integ(
-        syst.give_val_def("intPy")()(ndom - 1), OUTER_BC);
-    double Pz = space.get_domain(ndom - 1)->integ(
-        syst.give_val_def("intPz")()(ndom - 1), OUTER_BC);
+    double Px = space.get_domain(ndom - 1)->integ(syst.give_val_def("intPx")()(
+                                                      ndom - 1),
+                                                  OUTER_BC);
+    double Py = space.get_domain(ndom - 1)->integ(syst.give_val_def("intPy")()(
+                                                      ndom - 1),
+                                                  OUTER_BC);
+    double Pz = space.get_domain(ndom - 1)->integ(syst.give_val_def("intPz")()(
+                                                      ndom - 1),
+                                                  OUTER_BC);
 
     // ADM angular momentum at infinity
     Val_domain integJ(syst.give_val_def("intJ")()(ndom - 1));

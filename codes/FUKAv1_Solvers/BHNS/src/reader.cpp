@@ -216,8 +216,9 @@ struct reader_output {
 
     auto dHdx = syst.give_val_def("dH")();
     double dHdx1 = bco_utils::get_boundary_val(space.NS, dHdx, INNER_BC);
-    double euler1 = bco_utils::get_boundary_val(
-        space.NS, syst.give_val_def("firstint")(), INNER_BC);
+    double euler1 =
+        bco_utils::get_boundary_val(space.NS, syst.give_val_def("firstint")(),
+                                    INNER_BC);
     double NS_x_com = xc1 + bconfig(COM);
     double NS_py =
         space.get_domain(space.ADAPTEDNS + 1)
@@ -264,19 +265,25 @@ struct reader_output {
     // END BH Quantities
 
     // binary quantities
-    double adm_inf = space.get_domain(ndom - 1)->integ(
-        syst.give_val_def("Madm")()(ndom - 1), OUTER_BC);
-    double komar = space.get_domain(ndom - 1)->integ(
-        syst.give_val_def("Mk")()(ndom - 1), OUTER_BC);
+    double adm_inf =
+        space.get_domain(ndom - 1)->integ(syst.give_val_def("Madm")()(ndom - 1),
+                                          OUTER_BC);
+    double komar =
+        space.get_domain(ndom - 1)->integ(syst.give_val_def("Mk")()(ndom - 1),
+                                          OUTER_BC);
     double e_diff = fabs(2 * (adm_inf - komar) / (adm_inf + komar));
-    double Jinf = space.get_domain(ndom - 1)->integ(
-        syst.give_val_def("intJ")()(ndom - 1), OUTER_BC);
-    double Px = space.get_domain(ndom - 1)->integ(
-        syst.give_val_def("intPx")()(ndom - 1), OUTER_BC);
-    double Py = space.get_domain(ndom - 1)->integ(
-        syst.give_val_def("intPy")()(ndom - 1), OUTER_BC);
-    double Pz = space.get_domain(ndom - 1)->integ(
-        syst.give_val_def("intPz")()(ndom - 1), OUTER_BC);
+    double Jinf =
+        space.get_domain(ndom - 1)->integ(syst.give_val_def("intJ")()(ndom - 1),
+                                          OUTER_BC);
+    double Px = space.get_domain(ndom - 1)->integ(syst.give_val_def("intPx")()(
+                                                      ndom - 1),
+                                                  OUTER_BC);
+    double Py = space.get_domain(ndom - 1)->integ(syst.give_val_def("intPy")()(
+                                                      ndom - 1),
+                                                  OUTER_BC);
+    double Pz = space.get_domain(ndom - 1)->integ(syst.give_val_def("intPz")()(
+                                                      ndom - 1),
+                                                  OUTER_BC);
 
     double& Madm1 = bconfig(MADM, BCO1);
 
@@ -284,15 +291,18 @@ struct reader_output {
     double e_bind = adm_inf - Minf;
 
     // center of mass defined like in https://arxiv.org/abs/1506.01689
-    double COMx = space.get_domain(ndom - 1)->integ(
-                      syst.give_val_def("COMx")()(ndom - 1), OUTER_BC) /
-                  adm_inf;
-    double COMy = space.get_domain(ndom - 1)->integ(
-                      syst.give_val_def("COMy")()(ndom - 1), OUTER_BC) /
-                  adm_inf;
-    double COMz = space.get_domain(ndom - 1)->integ(
-                      syst.give_val_def("COMz")()(ndom - 1), OUTER_BC) /
-                  adm_inf;
+    double COMx =
+        space.get_domain(ndom - 1)->integ(syst.give_val_def("COMx")()(ndom - 1),
+                                          OUTER_BC) /
+        adm_inf;
+    double COMy =
+        space.get_domain(ndom - 1)->integ(syst.give_val_def("COMy")()(ndom - 1),
+                                          OUTER_BC) /
+        adm_inf;
+    double COMz =
+        space.get_domain(ndom - 1)->integ(syst.give_val_def("COMz")()(ndom - 1),
+                                          OUTER_BC) /
+        adm_inf;
     // END binary quantities
 
 #ifdef FORMAT
