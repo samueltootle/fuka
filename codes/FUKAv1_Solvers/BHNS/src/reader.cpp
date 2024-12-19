@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@
 */
 #include "kadath.hpp"
 #include "EOS/EOS.hh"
+#include "EOS/FUKA_EOS_Utilities.hh"
 
 //config_file includes
 #include "Configurator/config_binary.hpp"
@@ -32,22 +33,18 @@
 #include <numeric>
 #include "mpi.h"
 using namespace Kadath;
-using namespace Kadath::Margherita;
 using namespace Kadath::FUKA_Config;
+using namespace Kadath::FUKA_EOS;
 
 double M2km = 1.4769994423016508;
-int output = 0;
 
-template<class eos_t, typename config_t>
-void reader_output(config_t bconfig, const int output) {
-  if(std::isnan(bconfig.set(MADM, BCO1)) ){
-    std::cerr << "Missing \"fixed_madm\" in config file\n"
-                 "Setting to \"madm\"! \n";
-    bconfig.set(MADM, BCO1) = bconfig(QLMADM, BCO1);
-  }
+template<class eos_t>
+struct reader_output {
+  template<class config_t>
+  void operator()(config_t bconfig) {
 
   std::string in_spacefile = bconfig.space_filename();
-  
+
   FILE* fich = fopen(in_spacefile.c_str(), "r");
   Space_bhns space (fich);
   Scalar     conf  (space, fich);
@@ -74,10 +71,9 @@ void reader_output(config_t bconfig, const int output) {
   System_of_eqs syst(space);
 	fmet.set_system(syst, "f") ;
 
+  // setup operators for the EOS
   Param p;
-  syst.add_ope ("eps"   , &EOS<eos_t,EPSILON>::action, &p);
-  syst.add_ope ("press" , &EOS<eos_t,PRESSURE>::action, &p);
-  syst.add_ope ("rho"   , &EOS<eos_t,DENSITY>::action, &p);
+  set_eos_ope_struct<eos_t>()(syst, p);
 
 	syst.add_cst ("4piG"  , bconfig(QPIG)) ;
 	syst.add_cst ("PI"    , M_PI)  ;
@@ -184,7 +180,7 @@ void reader_output(config_t bconfig, const int output) {
   double loghc1 = bco_utils::get_boundary_val(space.NS, logh, INNER_BC);
   double pressc1 = EOS<eos_t,PRESSURE>::get(std::exp(loghc1));
   double rhoc1 = EOS<eos_t,DENSITY>::get(std::exp(loghc1));
-  
+
   std::vector<double> baryonic_mass1{};
   std::vector<double> int_H1{};
   std::vector<double> adm_mass1{};
@@ -201,10 +197,10 @@ void reader_output(config_t bconfig, const int output) {
   auto [ rmin, rmax ] = bco_utils::get_rmin_rmax(space, space.ADAPTEDNS);
   double A = space.get_domain(space.ADAPTEDNS+1)->integ(syst.give_val_def("intAsq")()(space.ADAPTEDNS+1), INNER_BC);
   double areal_rns =  sqrt(A);
-  
+
   double rin_ns  = bco_utils::get_radius(space.get_domain(space.NS), EQUI);
   double rout_ns = bco_utils::get_radius(space.get_domain(space.ADAPTEDNS+1+bconfig(NSHELLS,BCO1)), EQUI);
-  
+
   auto   dHdx     = syst.give_val_def("dH")();
   double dHdx1    = bco_utils::get_boundary_val(space.NS, dHdx, INNER_BC);
   double euler1   = bco_utils::get_boundary_val(space.NS, syst.give_val_def("firstint")(), INNER_BC);
@@ -212,7 +208,7 @@ void reader_output(config_t bconfig, const int output) {
   double NS_py = space.get_domain(space.ADAPTEDNS+1)->integ(syst.give_val_def("intPy")()(space.ADAPTEDNS+1), OUTER_BC);
   double NS_px = space.get_domain(space.ADAPTEDNS+1)->integ(syst.give_val_def("intPx")()(space.ADAPTEDNS+1), OUTER_BC);
   //END NS Quantities
-  
+
   // BH Quantities
   double ql_spinbh = space.get_domain(space.ADAPTEDBH+1)->integ(syst.give_val_def("intS2")()(space.ADAPTEDBH+1) , OUTER_BC);
 
@@ -244,7 +240,7 @@ void reader_output(config_t bconfig, const int output) {
 
   double Minf     = Madm1 + mch;
   double e_bind   = adm_inf - Minf;
-  
+
   // center of mass defined like in https://arxiv.org/abs/1506.01689
   double COMx     = space.get_domain(ndom-1)->integ(syst.give_val_def("COMx")()(ndom-1) , OUTER_BC) / adm_inf;
   double COMy     = space.get_domain(ndom-1)->integ(syst.give_val_def("COMy")()(ndom-1) , OUTER_BC) / adm_inf;
@@ -287,7 +283,7 @@ void reader_output(config_t bconfig, const int output) {
   std::cout   << FORMAT1<< "Coord R = "        << "[" << rmin << "," << rmax << "] ("
                                                << "[" << rmin * M2km << "," << rmax * M2km << "] km)" << std::endl;
   // Print outer shells
-  print_shells(space.ADAPTEDNS+1, space.BH-1);  
+  print_shells(space.ADAPTEDNS+1, space.BH-1);
   std::cout   << FORMAT1<< "Coord R_OUT = "    << rout_ns << std::endl
               << FORMAT1<< "Areal R = "        << areal_rns << " [" << areal_rns * M2km << "km]\n"
               << FORMAT1 << "NS Mb = "         << MB1 << " (";
@@ -298,7 +294,7 @@ void reader_output(config_t bconfig, const int output) {
               << " Diff:" << std::fabs(1. - ql_madm1 / bconfig(MADM, BCO1)) << std::endl
               // quasi-local spin angular momentum
               << FORMAT1 << "Quasi-local S = " << ql_spinns << std::endl
-              // dimensionless spin (constant, given by the imported single star!)              
+              // dimensionless spin (constant, given by the imported single star!)
               << FORMAT1 << "Chi = " << ql_spinns / Madm1 / Madm1 << " [" << bconfig(CHI, BCO1) << "]\n"
               // angular frequency paramter of the star, describing the magnitude of the spin component of the velocity field
               << FORMAT1 << "Omega = " << bconfig(OMEGA, BCO1) << std::endl
@@ -309,8 +305,8 @@ void reader_output(config_t bconfig, const int output) {
               << FORMAT << "Central Pressure = "     << pressc1 << std::endl
               << FORMAT << "Central dlog(h)/dx = "   << dHdx1 << std::endl
               << FORMAT << "Central Euler Constant = " << euler1 << std::endl
-              << FORMAT1 << "Integrated log(h) = "   << intH1 << "\n\n";                           
-              
+              << FORMAT1 << "Integrated log(h) = "   << intH1 << "\n\n";
+
   std::cout << header+" Black Hole "+header+"\n"
               << FORMAT1 << "Center_COM = " << "(" << BH_x_com << ", 0, 0)\n"
               << FORMAT1 << "Coord R_IN = " << rin_bh << std::endl
@@ -327,7 +323,7 @@ void reader_output(config_t bconfig, const int output) {
               //<< FORMAT1 << "qlPy = " << BH_py << std::endl
               //<< FORMAT1 << "qlPx = " << BH_px << std::endl
               << FORMAT1 << "Omega = " << bconfig(OMEGA,BCO2) << "\n\n";
-              
+
 
   std::cout << header+" Binary "+header+"\n"
             << FORMAT1 << std::fixed << "RES = "  << "[" << res_r << "," << res_t << "," << res_p << "]\n";
@@ -344,7 +340,7 @@ void reader_output(config_t bconfig, const int output) {
               << FORMAT1 << std::setprecision(2)<< "Separation = " << bconfig(DIST) << " [" << bconfig(DIST) / Mtot << "] (" << bconfig(DIST) * M2km << "km)" << std::endl
               << FORMAT1 << "Orbital Omega = "  << bconfig(GOMEGA) << std::endl
               << FORMAT1 << "Komar mass = "     << komar << std::endl
-              << FORMAT1 << "Adm mass = "       << adm_inf 
+              << FORMAT1 << "Adm mass = "       << adm_inf
               << ", Diff: " << e_diff           << std::endl
               << FORMAT1 << "Total Mass = "     << Minf << " [" << Madm1 + bconfig(MCH, BCO2) << "]\n"
               << FORMAT1 << "Adm moment. = "    << Jinf << std::endl
@@ -357,7 +353,8 @@ void reader_output(config_t bconfig, const int output) {
               << FORMAT1 << "COMx = "           << bconfig(COM)  << ", A-COMx = " << COMx << std::endl
               << FORMAT1 << "COMy = "           << bconfig(COMY) << ", A-COMy = " << COMy << std::endl
               << FORMAT1 << "A-COMz = "         << COMz << std::endl;
-}
+  }
+};
 
 int main(int argc, char **argv) {
   int rc = MPI_Init(&argc, &argv);
@@ -371,38 +368,15 @@ int main(int argc, char **argv) {
     std::cerr << "Ex: ./reader converged.TOTAL_BC.9.info" << std::endl;
     std::_Exit(EXIT_FAILURE);
   }
-  int output = 0;
-  if( argv[2] != 0x0 ) output = std::stoi(argv[2]);
 
   //Name of config.info file
   std::string in_filename = argv[1];
   kadath_config_boost<BIN_INFO> bconfig(in_filename);
+  // setup the EOS
+  EOS_initialize::init(bconfig, NODES::BCO1);
+  const std::string eos_type = bconfig.eos<std::string>(EOS_PARAMS::EOSTYPE, NODES::BCO1);
+  EOS_Function_Dispatcher::dispatch<reader_output>(bconfig, eos_type, bconfig);
 
-  // setup eos
-  const double h_cut = bconfig.eos<double>(HCUT, BCO1);
-  const std::string eos_file = bconfig.eos<std::string>(EOSFILE, BCO1);
-  const std::string eos_type = bconfig.eos<std::string>(EOSTYPE, BCO1);
-
-  if(eos_type == "Cold_PWPoly") {
-    using eos_t = Kadath::Margherita::Cold_PWPoly;
-
-    EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
-    reader_output<eos_t>(bconfig, output);
-  } else if(eos_type == "Cold_Table") {
-    using eos_t = Kadath::Margherita::Cold_Table;
-
-    const int interp_pts = (bconfig.eos<int>(INTERP_PTS, BCO1) == 0) ? \
-                            2000 : bconfig.eos<int>(INTERP_PTS, BCO1);
-
-    EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
-    reader_output<eos_t>(bconfig, output);
-  }
-  else { 
-    std::cerr << eos_type << " is not recognized.\n";
-    std::_Exit(EXIT_FAILURE);
-  }
-  // end eos setup
   MPI_Finalize();
-
   return EXIT_SUCCESS;
 }
