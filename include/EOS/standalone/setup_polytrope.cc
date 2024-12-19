@@ -26,14 +26,14 @@
  * Revised in May 2021 by Samuel D. Tootle
  * <tootle@itp.uni-frankfurt.de>
  *
- * -revision <28.May.21> 
+ * -revision <28.May.21>
  *  Updated to be purely standalone
  *
  * We do things here as in Whisky_Exp
  * (See Takami et al. https://arxiv.org/pdf/1412.3240v2.pdf)
  * (also see Read et al. https://arxiv.org/pdf/0812.2163v1.pdf)
  ********************************/
-
+#pragma once
 #define PWPOLY_SETUP
 
 #include "cold_pwpoly.hh"
@@ -55,11 +55,11 @@ inline std::string read_polytrope(std::string fname) {
     std::cerr << "File: " << fname << " cannot be opened\n";
     std::_Exit(EXIT_FAILURE);
   }
-  
-  //string descriptor to ignore  
+
+  //string descriptor to ignore
   std::string descr;
 
-  //lambda to ignore leading comments and blank lines 
+  //lambda to ignore leading comments and blank lines
   //up to the next value to extract
   auto skip_comments = [&]() {
     auto peek_c = f.peek();
@@ -68,15 +68,15 @@ inline std::string read_polytrope(std::string fname) {
       peek_c = f.peek();
     }
   };
-  
+
   auto skip_and_grab =  [&](auto& val) {
-    skip_comments();  
+    skip_comments();
     f >> descr >> val;
-  };    
-  
+  };
+
   skip_and_grab(Cold_PWPoly::num_pieces);
   assert(Cold_PWPoly::num_pieces <= Cold_PWPoly::max_num_pieces);
-  
+
   skip_and_grab(Cold_PWPoly::rhomin);
   skip_and_grab(Cold_PWPoly::rhomax);
   skip_and_grab(Cold_PWPoly::k_tab[0]);
@@ -88,7 +88,7 @@ inline std::string read_polytrope(std::string fname) {
     //Can't use foreach since array is static length
     for(int i = 0; i < Cold_PWPoly::num_pieces; ++i){
       if(!(f >> ary[i])) {
-        std::cerr << "Not enough vars in " << descr 
+        std::cerr << "Not enough vars in " << descr
                   << " for " << Cold_PWPoly::num_pieces << "pieces.\n";
         std::_Exit(EXIT_FAILURE);
       }
@@ -97,7 +97,7 @@ inline std::string read_polytrope(std::string fname) {
 
   read_tab(Cold_PWPoly::gamma_tab);
   read_tab(Cold_PWPoly::rho_tab);
-	
+
 	std::string units;
   skip_and_grab(units);
 	return units;
@@ -159,9 +159,9 @@ inline void Margherita_setup_polytrope(std::string polytrope_file) {
         Cold_PWPoly::k_tab[i] *
         pow(Cold_PWPoly::rho_tab[i], Cold_PWPoly::gamma_tab[i]);
 
-    double eps = Cold_PWPoly::eps_tab[i] + 
+    double eps = Cold_PWPoly::eps_tab[i] +
         Cold_PWPoly::P_tab[i] / Cold_PWPoly::rho_tab[i] / gam_im1;
-    
+
     Cold_PWPoly::h_tab[i] = 1. + eps + Cold_PWPoly::P_tab[i] / Cold_PWPoly::rho_tab[i];
   }
   #ifdef DEBUG
