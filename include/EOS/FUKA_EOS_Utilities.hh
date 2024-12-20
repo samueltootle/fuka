@@ -26,6 +26,7 @@
 #include "standalone/cold_table_implementation.hh"
 #include "standalone/setup_cold_table.cc"
 #include "standalone/setup_polytrope.cc"
+#include "ghl_eos_helpers/ghl_hybrid_helpers.hpp"
 #include "system_of_eqs.hpp"
 
 #ifdef WITH_GRHAYL_EOS
@@ -160,11 +161,14 @@ struct EOS_initialize {
     //   using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_tabulated>;
     //   functor_wrapper<eos_t> wrapper;
     //   return wrapper.template operator()<F>(std::forward<Args>(args)...);
-    // } else if (eos_type == "grhayl_eos_hybrid") {
-    //   using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_hybrid>;
-    //   functor_wrapper<eos_t> wrapper;
-    //   return wrapper.template operator()<F>(std::forward<Args>(args)...);
     // }
+    else if (eos_type == "grhayl_eos_hybrid") {
+      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_hybrid>;
+      using namespace ::Kadath::GHL_EOS;
+      auto eos_params = populate_ghl_polytrope(filename);
+      eos_t::ghl_eos_params = std::move(eos_params);
+      return;
+    }
     throw std::invalid_argument("\nInvalid EOS type\n");
   }
 };
