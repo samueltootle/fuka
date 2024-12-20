@@ -265,7 +265,7 @@ std::array<std::vector<double>,NUM_OUT> KadathExportBHNS(int const npoints,
     }
     else {
       if(eos_type == "Cold_Table") {
-        using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_1d>;
+        using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
 
         out[RHO][i]   = EOS<eos_t, DENSITY>::get(h);
         out[EPS][i]   = EOS<eos_t, EPSILON>::get(h);
@@ -273,7 +273,7 @@ std::array<std::vector<double>,NUM_OUT> KadathExportBHNS(int const npoints,
       }
 
       if(eos_type == "Cold_PWPoly") {
-        using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_pwp>;
+        using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>;
 
         out[RHO][i] = EOS<eos_t, DENSITY>::get(h);
         out[EPS][i] = EOS<eos_t, EPSILON>::get(h);
