@@ -18,6 +18,7 @@
  */
 #pragma once
 #include <memory>
+#include "standalone/Margherita_EOS.h"
 #include "standalone/cold_pwpoly.hh"
 #include "standalone/cold_pwpoly_implementation.hh"
 #include "standalone/cold_table.hh"
