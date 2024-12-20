@@ -30,6 +30,8 @@ inline auto populate_ghl_polytrope(std::string polytrope_file) {
     gamma_th,
     &eos
   );
+  eos.press_atm = rho_atm;
+  eos.press_min = rho_atm;
   eos_params = std::make_unique<ghl_eos_parameters>(eos);
   return eos_params;
 }
