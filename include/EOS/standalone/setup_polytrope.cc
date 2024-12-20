@@ -38,6 +38,7 @@
 
 #include "cold_pwpoly.hh"
 #include "cold_pwpoly_implementation.hh"
+#include "polytrope_file_parser.hpp"
 
 #include "Margherita_EOS.h"
 #include "margherita.hh"
@@ -48,91 +49,30 @@
 namespace Kadath {
 namespace Margherita {
 
-inline std::string read_polytrope(std::string fname) {
-  std::ifstream f(fname);
-
-  if(!f.is_open()){
-    std::cerr << "File: " << fname << " cannot be opened\n";
-    std::_Exit(EXIT_FAILURE);
+// From a parsed polytrope file, populate the Margherita
+// piecewise polytrope implementation
+inline void populate_Margherita_polytrope(std::string polytrope_file) {
+  using namespace Kadath::FUKA_EOS;
+  parse_polytrope_file parser;
+  parser(polytrope_file);
+  Cold_PWPoly::num_pieces = parser.num_pieces;
+  Cold_PWPoly::rhomin = parser.rhomin;
+  Cold_PWPoly::rhomax = parser.rhomax;
+  Cold_PWPoly::k_tab[0] = parser.K0;
+  Cold_PWPoly::P_tab[0] = parser.Pmin;
+  for (int i = 0; i < Cold_PWPoly::num_pieces; ++i) {
+    Cold_PWPoly::gamma_tab[i] = parser.gamma_tab[i];
+    Cold_PWPoly::rho_tab[i] = parser.rho_tab[i];
   }
-
-  //string descriptor to ignore
-  std::string descr;
-
-  //lambda to ignore leading comments and blank lines
-  //up to the next value to extract
-  auto skip_comments = [&]() {
-    auto peek_c = f.peek();
-    while(peek_c == '#' || peek_c == '\n') {
-      std::getline(f, descr, '\n');
-      peek_c = f.peek();
-    }
-  };
-
-  auto skip_and_grab =  [&](auto& val) {
-    skip_comments();
-    f >> descr >> val;
-  };
-
-  skip_and_grab(Cold_PWPoly::num_pieces);
-  assert(Cold_PWPoly::num_pieces <= Cold_PWPoly::max_num_pieces);
-
-  skip_and_grab(Cold_PWPoly::rhomin);
-  skip_and_grab(Cold_PWPoly::rhomax);
-  skip_and_grab(Cold_PWPoly::k_tab[0]);
-  skip_and_grab(Cold_PWPoly::P_tab[0]);
-
-  auto read_tab = [&](auto& ary) {
-    skip_comments();
-    f >> descr;
-    //Can't use foreach since array is static length
-    for(int i = 0; i < Cold_PWPoly::num_pieces; ++i){
-      if(!(f >> ary[i])) {
-        std::cerr << "Not enough vars in " << descr
-                  << " for " << Cold_PWPoly::num_pieces << "pieces.\n";
-        std::_Exit(EXIT_FAILURE);
-      }
-    }
-  };
-
-  read_tab(Cold_PWPoly::gamma_tab);
-  read_tab(Cold_PWPoly::rho_tab);
-
-	std::string units;
-  skip_and_grab(units);
-	return units;
 }
 
 inline void Margherita_setup_polytrope(std::string polytrope_file) {
   using namespace Margherita_constants;
-  auto Units = read_polytrope(polytrope_file);
-	const double gam0m1 = Cold_PWPoly::gamma_tab[0] - 1.0;
-	double rho_unit = 1.;
-	double K_unit = 1.;
-
-	if (Units != "geometrised") {
-    if (Units == "cgs") {
-      rho_unit = 1.0 * RHOGF ;
-      K_unit = pow(INVRHOGF, gam0m1) / c2_cgs;
-    } else {
-      if (Units == "cgs_cgs_over_c2") {
-        rho_unit = 1.0 * RHOGF;
-        K_unit = pow(INVRHOGF, gam0m1);
-      } else {
-        std::cerr << "Unit system, " << Units << ", not recognised!\n";
-			  std::_Exit(EXIT_FAILURE);
-      }
-    }
-  }
+  populate_Margherita_polytrope(polytrope_file);
 
   //eps_tab == continuity coefficients on the bounds between
   //pieces.  The first is always 0.
   Cold_PWPoly::eps_tab[0] = 0.0;
-
-  //Unit conversion
-  Cold_PWPoly::k_tab[0] *= K_unit;
-  for (int i = 0; i < Cold_PWPoly::num_pieces; ++i)
-    Cold_PWPoly::rho_tab[i] = rho_unit * Cold_PWPoly::rho_tab[i];
 
   // Setup piecewise polytrope
   for (int i = 1; i < Cold_PWPoly::num_pieces; ++i) {
