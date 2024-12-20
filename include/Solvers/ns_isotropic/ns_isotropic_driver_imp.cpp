@@ -84,8 +84,7 @@ config_t ns_isotropic_sequence(config_t& seqconfig,
     // sensitive.
     bconfig.set(BCO_PARAMS::NSHELLS) = 0.;
     if (rank == 0) {
-      // setup_2dns_isotropic(bconfig, mass_fixing);
-      EOS_Function_Dispatcher::dispatch<setup_2dns_isotropic_struct>(
+      EOS_Function_Dispatcher::dispatch<setup_2dns_isotropic_functor>(
           bconfig, eos_type, bconfig, mass_fixing);
     }
     MPI_Barrier(MPI_COMM_WORLD);

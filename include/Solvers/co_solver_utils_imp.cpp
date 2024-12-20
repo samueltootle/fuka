@@ -2,6 +2,7 @@
 #include "bco_utilities.hpp"
 #include "coord_fields.hpp"
 #include "ns_3d_xcts/ns_3d_xcts_solver.hpp"
+#include "EOS/FUKA_EOS_Utilities.hh"
 
 /**
  * \addtogroup Solver_utils
@@ -11,164 +12,170 @@
 namespace Kadath {
 namespace FUKA_Solvers {
 
-template <std::size_t s_type, typename config_t>
-void setup_co(config_t& bconfig) {
-  auto& fields = bconfig.return_fields();
+// template <std::size_t s_type, typename config_t>
+// void setup_co(config_t& bconfig) {
+//   auto& fields = bconfig.return_fields();
 
-  int type_coloc = CHEB_TYPE;
-  Dim_array res(bconfig(BCO_PARAMS::DIM));
-  res.set(0) = bconfig(BCO_PARAMS::BCO_RES);
-  res.set(1) = bconfig(BCO_PARAMS::BCO_RES);
-  res.set(2) = bconfig(BCO_PARAMS::BCO_RES) - 1;
+//   int type_coloc = CHEB_TYPE;
+//   Dim_array res(bconfig(BCO_PARAMS::DIM));
+//   res.set(0) = bconfig(BCO_PARAMS::BCO_RES);
+//   res.set(1) = bconfig(BCO_PARAMS::BCO_RES);
+//   res.set(2) = bconfig(BCO_PARAMS::BCO_RES) - 1;
 
-  Point center(bconfig(BCO_PARAMS::DIM));
-  for (int i = 1; i <= bconfig(BCO_PARAMS::DIM); i++)
-    center.set(i) = 0;
+//   Point center(bconfig(BCO_PARAMS::DIM));
+//   for (int i = 1; i <= bconfig(BCO_PARAMS::DIM); i++)
+//     center.set(i) = 0;
 
-  const int shells = (int)bconfig(BCO_PARAMS::NSHELLS);
-  int ndom = 4 + shells;
-  std::vector<double> bounds(ndom - 1);
-  if constexpr (s_type == NODES::BH) {
-    // Estimate Radius of BH based on Schwarzschild radius and an
-    // estimate for Psi on the horizon based on prev. BH solutions
-    if (!bconfig.control(CONTROLS::USE_CONFIG_VARS)) {
-      bconfig.set(BCO_PARAMS::RIN) =
-          bconfig(BCO_PARAMS::MCH) * Kadath::bco_utils::invpsisq;
-      bconfig.set(BCO_PARAMS::RMID) =
-          2 * bconfig(BCO_PARAMS::MCH) * Kadath::bco_utils::invpsisq;
-      bconfig.set(BCO_PARAMS::ROUT) = 4 * bconfig(BCO_PARAMS::RMID);
-    }
-    Kadath::bco_utils::set_isolated_BH_bounds(bounds, bconfig);
-#ifdef DEBUG
-    Kadath::bco_utils::print_bounds("BH", bounds);
-#endif
-    Space_adapted_bh space(type_coloc, center, res, bounds);
+//   const int shells = (int)bconfig(BCO_PARAMS::NSHELLS);
+//   int ndom = 4 + shells;
+//   std::vector<double> bounds(ndom - 1);
+//   if constexpr (s_type == NODES::BH) {
+//     // Estimate Radius of BH based on Schwarzschild radius and an
+//     // estimate for Psi on the horizon based on prev. BH solutions
+//     if (!bconfig.control(CONTROLS::USE_CONFIG_VARS)) {
+//       bconfig.set(BCO_PARAMS::RIN) =
+//           bconfig(BCO_PARAMS::MCH) * Kadath::bco_utils::invpsisq;
+//       bconfig.set(BCO_PARAMS::RMID) =
+//           2 * bconfig(BCO_PARAMS::MCH) * Kadath::bco_utils::invpsisq;
+//       bconfig.set(BCO_PARAMS::ROUT) = 4 * bconfig(BCO_PARAMS::RMID);
+//     }
+//     Kadath::bco_utils::set_isolated_BH_bounds(bounds, bconfig);
+// #ifdef DEBUG
+//     Kadath::bco_utils::print_bounds("BH", bounds);
+// #endif
+//     Space_adapted_bh space(type_coloc, center, res, bounds);
 
-    write_bh_init_setup_tofile_XCTS(space, bconfig);
-  } else if constexpr (s_type == NS) {
-    const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
-    const std::string eos_file =
-        bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
-    const std::string eos_type =
-        bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
+//     write_bh_init_setup_tofile_XCTS(space, bconfig);
+//   } else if constexpr (s_type == NS) {
+//     const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
+//     const std::string eos_file =
+//         bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
+//     const std::string eos_type =
+//         bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
 
-    // Lambda to reduce code based on EOSTYPE
-    auto gen_NS = [&](auto tov) {
-      Kadath::bco_utils::set_NS_bounds(bounds, bconfig);
+//     // Lambda to reduce code based on EOSTYPE
+//     auto gen_NS = [&](auto tov) {
+//       Kadath::bco_utils::set_NS_bounds(bounds, bconfig);
 
-      // generate a full single star space including compactification to
-      // infinity
-      Space_spheric_adapted space(type_coloc, center, res, bounds);
+//       // generate a full single star space including compactification to
+//       // infinity
+//       Space_spheric_adapted space(type_coloc, center, res, bounds);
 
-      write_ns_init_setup_tofile_XCTS(space, bconfig, *tov);
-    };
+//       write_ns_init_setup_tofile_XCTS(space, bconfig, *tov);
+//     };
 
-    if (!bconfig.control(CONTROLS::USE_CONFIG_VARS)) {
-      if (eos_type == "Cold_PWPoly") {
-        using eos_t = ::Kadath::Margherita::Cold_PWPoly;
-        EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
-        auto tov = setup_ns_config_from_TOV<eos_t>(bconfig);
-        gen_NS(std::move(tov));
-      } else if (eos_type == "Cold_Table") {
-        using eos_t = ::Kadath::Margherita::Cold_Table;
+//     if (!bconfig.control(CONTROLS::USE_CONFIG_VARS)) {
+//       if (eos_type == "Cold_PWPoly") {
+//         using eos_t = ::Kadath::Margherita::Cold_PWPoly;
+//         EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
+//         auto tov = setup_ns_config_from_TOV<eos_t>(bconfig);
+//         gen_NS(std::move(tov));
+//       } else if (eos_type == "Cold_Table") {
+//         using eos_t = ::Kadath::Margherita::Cold_Table;
 
-        const int interp_pts =
-            (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
-                ? 2000
-                : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
+//         const int interp_pts =
+//             (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
+//                 ? 2000
+//                 : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
 
-        EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
-        auto tov = setup_ns_config_from_TOV<eos_t>(bconfig);
-        gen_NS(std::move(tov));
-      } else {
-        std::cerr << eos_type << " is not recognized.\n";
-        std::_Exit(EXIT_FAILURE);
-      }
-    }
-  } else
-    std::cerr << "BCO type not implemented. \n";
-}
+//         EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
+//         auto tov = setup_ns_config_from_TOV<eos_t>(bconfig);
+//         gen_NS(std::move(tov));
+//       } else {
+//         std::cerr << eos_type << " is not recognized.\n";
+//         std::_Exit(EXIT_FAILURE);
+//       }
+//     }
+//   } else
+//     std::cerr << "BCO type not implemented. \n";
+// }
 
-template <typename config_t>
-void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx) {
-  auto& fields = bconfig.return_fields();
+// template <typename config_t>
+// void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx) {
+//   auto& fields = bconfig.return_fields();
 
-  int type_coloc = CHEB_TYPE;
-  auto const dim = bconfig(BCO_PARAMS::DIM);
-  Dim_array res(dim);
-  res.set(0) = bconfig(BCO_PARAMS::BCO_RES);
-  res.set(1) = bconfig(BCO_PARAMS::BCO_RES);
-  res.set(2) = bconfig(BCO_PARAMS::BCO_RES) - 1;
+//   int type_coloc = CHEB_TYPE;
+//   auto const dim = bconfig(BCO_PARAMS::DIM);
+//   Dim_array res(dim);
+//   res.set(0) = bconfig(BCO_PARAMS::BCO_RES);
+//   res.set(1) = bconfig(BCO_PARAMS::BCO_RES);
+//   res.set(2) = bconfig(BCO_PARAMS::BCO_RES) - 1;
 
-  Point center(dim);
-  for (int i = 1; i <= dim; i++)
-    center.set(i) = 0;
+//   Point center(dim);
+//   for (int i = 1; i <= dim; i++)
+//     center.set(i) = 0;
 
-  const int shells = (int)bconfig(BCO_PARAMS::NSHELLS);
-  int ndom = 4 + shells;
-  std::vector<double> bounds(ndom - 1);
+//   const int shells = (int)bconfig(BCO_PARAMS::NSHELLS);
+//   int ndom = 4 + shells;
+//   std::vector<double> bounds(ndom - 1);
 
-  // Lambda to reduce code based on EOSTYPE
-  auto gen_NS = [&](auto tov) {
-    Kadath::bco_utils::set_NS_bounds(bounds, bconfig);
+//   // Lambda to reduce code based on EOSTYPE
+//   auto gen_NS = [&](auto tov) {
+//     Kadath::bco_utils::set_NS_bounds(bounds, bconfig);
 
-    // generate a full single star space including compactification to infinity
-    Space_spheric_adapted space(type_coloc, center, res, bounds);
+//     // generate a full single star space including compactification to infinity
+//     Space_spheric_adapted space(type_coloc, center, res, bounds);
 
-    write_ns_init_setup_tofile_XCTS(space, bconfig, *tov);
-  };
+//     write_ns_init_setup_tofile_XCTS(space, bconfig, *tov);
+//   };
 
-  const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
-  const std::string eos_file =
-      bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
-  const std::string eos_type =
-      bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
+//   const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
+//   const std::string eos_file =
+//       bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
+//   const std::string eos_type =
+//       bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
 
-  if (eos_type == "Cold_PWPoly") {
-    using eos_t = ::Kadath::FUKA_EOS::FUKA_EOS_Wrapper<margherita_eos_t, margherita_pwp>;
-    EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
+//   if (eos_type == "Cold_PWPoly") {
+//     using eos_t = ::Kadath::FUKA_EOS::FUKA_EOS_Wrapper<margherita_eos_t, margherita_pwp>;
+//     EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
+
+//     std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov =
+//         setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
+//     gen_NS(std::move(tov));
+//   } else if (eos_type == "Cold_Table") {
+//     using eos_t = ::Kadath::FUKA_EOS::FUKA_EOS_Wrapper<margherita_eos_t, margherita_1d>;
+
+//     const int interp_pts =
+//         (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
+//             ? 2000
+//             : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
+
+//     EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
+
+//     std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov =
+//         setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
+//     gen_NS(std::move(tov));
+//   } else {
+//     std::cerr << eos_type << " is not recognized.\n";
+//     std::_Exit(EXIT_FAILURE);
+//   }
+// }
+
+template <class eos_t>
+struct setup_2dns_isotropic_functor {
+
+  template <typename config_t>
+  void operator()(config_t& bconfig, size_t mass_fixing_idx) {
+    using namespace Kadath::FUKA_EOS;
+
+    int type_coloc = CHEB_TYPE;
+    auto const& dim = bconfig(BCO_PARAMS::DIM);
+    Dim_array res(dim);
+    res.set(0) = bconfig(BCO_PARAMS::BCO_RES);
+    res.set(1) = bconfig(BCO_PARAMS::BCO_RES);
+
+    Point center(dim);
+    for (int i = 1; i <= dim; i++)
+      center.set(i) = 0;
+
+    const int shells = (int)bconfig(BCO_PARAMS::NSHELLS);
+    int ndom = 4 + shells;
 
     std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov =
-        setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
-    gen_NS(std::move(tov));
-  } else if (eos_type == "Cold_Table") {
-    using eos_t = ::Kadath::FUKA_EOS::FUKA_EOS_Wrapper<margherita_eos_t, margherita_1d>;
+      setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
 
-    const int interp_pts =
-        (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
-            ? 2000
-            : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
+    Array<double> bounds(ndom - 1);
 
-    EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
-
-    std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov =
-        setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
-    gen_NS(std::move(tov));
-  } else {
-    std::cerr << eos_type << " is not recognized.\n";
-    std::_Exit(EXIT_FAILURE);
-  }
-}
-
-template <typename config_t>
-void setup_2dns_isotropic(config_t& bconfig, size_t mass_fixing_idx) {
-  int type_coloc = CHEB_TYPE;
-  auto const& dim = bconfig(BCO_PARAMS::DIM);
-  Dim_array res(dim);
-  res.set(0) = bconfig(BCO_PARAMS::BCO_RES);
-  res.set(1) = bconfig(BCO_PARAMS::BCO_RES);
-
-  Point center(dim);
-  for (int i = 1; i <= dim; i++)
-    center.set(i) = 0;
-
-  const int shells = (int)bconfig(BCO_PARAMS::NSHELLS);
-  int ndom = 4 + shells;
-
-  Array<double> bounds(ndom - 1);
-
-  // Lambda to reduce code based on EOSTYPE
-  auto gen_NS = [&](auto tov) {
     bounds.set(0) = bconfig(RIN);
     bounds.set(1) = bconfig(RMID);
     bounds.set(2) = bconfig(ROUT);
@@ -181,39 +188,8 @@ void setup_2dns_isotropic(config_t& bconfig, size_t mass_fixing_idx) {
     Space_polar_adapted space(type_coloc, center, res, bounds);
 
     write_ns2d_isotropic_init_setup_tofile(space, bconfig, *tov);
-  };
-
-  const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
-  const std::string eos_file =
-      bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
-  const std::string eos_type =
-      bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
-
-  if (eos_type == "Cold_PWPoly") {
-    using eos_t = ::Kadath::Margherita::Cold_PWPoly;
-    EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
-
-    std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov =
-        setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
-    gen_NS(std::move(tov));
-  } else if (eos_type == "Cold_Table") {
-    using eos_t = ::Kadath::Margherita::Cold_Table;
-
-    const int interp_pts =
-        (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
-            ? 2000
-            : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
-
-    EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
-
-    std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov =
-        setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
-    gen_NS(std::move(tov));
-  } else {
-    std::cerr << eos_type << " is not recognized.\n";
-    std::_Exit(EXIT_FAILURE);
   }
-}
+};
 
 template <typename config_t>
 void write_bh_init_setup_tofile_XCTS(Space_adapted_bh& space,

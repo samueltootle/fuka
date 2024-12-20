@@ -55,11 +55,10 @@ void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx);
  * isotropic coordinates based on
  * arxiv.org:1003.5015
  *
- * @tparam config_t Config object type
- * @param bconfig Config object
+ * @tparam eos_t EOS wrapper type
  */
-template <typename config_t>
-void setup_2dns_isotropic(config_t& bconfig, size_t mass_fixing_idx);
+template <class eos_t>
+struct setup_2dns_isotropic_functor;
 
 /**
  * write_bh_init_setup_tofile_XCTS
