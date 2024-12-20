@@ -30,7 +30,7 @@
 namespace Kadath {
 namespace FUKA_EOS {
 
-typedef enum { margherita_pwp, margherita_1d } margherita_eos_t;
+typedef enum { margherita_pwp, margherita_1d, ghl_eos_simple, ghl_eos_hybrid, ghl_eos_tabulated } fuka_eos_t;
 
 template <class FUKA_eos_t, FUKA_eos_t eos>
 struct FUKA_EOS_Wrapper {
