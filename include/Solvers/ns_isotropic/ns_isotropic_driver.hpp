@@ -24,9 +24,9 @@
 #include "Solvers/sequences/ns_sequence.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"
-#include "diff_rot/ns_isotropic_diff_rot_driver.hpp"
+// #include "diff_rot/ns_isotropic_diff_rot_driver.hpp"
 #include "norot/ns_isotropic_norot_driver.hpp"
-#include "norot/ns_isotropic_norot_solver.hpp"
+// #include "norot/ns_isotropic_norot_solver.hpp"
 #include "uniform_rot/ns_isotropic_uniform_rot_driver.hpp"
 
 /**
@@ -108,4 +108,5 @@ inline int ns_isotropic_driver(config_t& bconfig,
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "ns_isotropic_driver_imp.cpp"

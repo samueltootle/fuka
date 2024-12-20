@@ -1,5 +1,7 @@
 #include <functional>
+#include "EOS/FUKA_EOS_Utilities.hh"
 #include "Solvers/sequences/ns_sequence.hpp"
+
 /**
  * \addtogroup NS_XCTS
  * \ingroup FUKA
@@ -30,6 +32,8 @@ config_t ns_isotropic_sequence(config_t& seqconfig,
                                std::string outputdir) {
   int rank = 0, exit_status = EXIT_SUCCESS;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  using namespace Kadath::FUKA_EOS;
 
   // Ensure fixed values are initialized
   seqconfig.set(seq.mass_idx()) = seq.mass_val();
@@ -67,6 +71,8 @@ config_t ns_isotropic_sequence(config_t& seqconfig,
   base_config.control(CONTROLS::ITERATIVE_M) = false;
   config_t bconfig{base_config};
 
+  const std::string eos_type =
+      bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
   // Not tested...
   if (bconfig.control(CONTROLS::SEQUENCES) ||
       bconfig.control(CONTROLS::RESOLVE)) {
@@ -78,7 +84,9 @@ config_t ns_isotropic_sequence(config_t& seqconfig,
     // sensitive.
     bconfig.set(BCO_PARAMS::NSHELLS) = 0.;
     if (rank == 0) {
-      setup_2dns_isotropic(bconfig, mass_fixing);
+      // setup_2dns_isotropic(bconfig, mass_fixing);
+      EOS_Function_Dispatcher::dispatch<setup_2dns_isotropic_struct>(
+          bconfig, eos_type, bconfig, mass_fixing);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     // make sure all ranks have the same config
@@ -109,7 +117,6 @@ config_t ns_isotropic_sequence(config_t& seqconfig,
     Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);
     tmp_res.set(res_init, res_init, res_init);
 
-    // exit_status = ns_3d_xcts_driver(bconfig, tmp_res, outputdir);
     exit_status = ns_isotropic_base_solution_driver(bconfig, outputdir, &seq);
 
     // Update config such that the next solving round uses
@@ -228,7 +235,6 @@ int ns_isotropic_base_solution_driver(config_t& bconfig,
   auto [last_stage, last_stage_idx] = get_last_enabled(MSTAGE, stage_enabled);
   while (exit_status == RELOAD_FILE) {
     exit_status = EXIT_FAILURE;
-    // exit_status = ns_isotropic_stationary_driver(bconfig, outputdir);
     if (stage_enabled[STAGES::NOROT_BC]) {
       double const omega = bconfig.set(BCO_PARAMS::OMEGA);
       double const chi = bconfig.set(BCO_PARAMS::CHI);
@@ -254,16 +260,16 @@ int ns_isotropic_base_solution_driver(config_t& bconfig,
         exit_status = RELOAD_FILE;
       }
       bconfig.return_stages() = stage_enabled;
-    } else if (stage_enabled[STAGES::DIFF_ROT]) {
-      exit_status =
-          ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
-      // exit_status = EXIT_FAILURE;
-      if (last_stage_idx != STAGES::DIFF_ROT) {
-        stage_enabled[STAGES::DIFF_ROT] = false;
-        exit_status = RELOAD_FILE;
-      }
-      bconfig.return_stages() = stage_enabled;
-    }
+    }  //else if (stage_enabled[STAGES::DIFF_ROT]) {
+       //       exit_status =
+    //           ns_isotropic_diff_rot_stationary_driver(bconfig, outputdir, seq);
+    //       // exit_status = EXIT_FAILURE;
+    //       if (last_stage_idx != STAGES::DIFF_ROT) {
+    //         stage_enabled[STAGES::DIFF_ROT] = false;
+    //         exit_status = RELOAD_FILE;
+    //       }
+    //       bconfig.return_stages() = stage_enabled;
+    //     }
     MPI_Barrier(MPI_COMM_WORLD);
   }
   return exit_status;
@@ -306,8 +312,8 @@ inline int ns_isotropic_driver(config_t& bconfig,
     case STAGES::UNIFORM_ROT:
       final_stage_driver = &ns_isotropic_uniform_rot_driver<config_t, Res_t>;
       break;
-    case STAGES::DIFF_ROT:
-      final_stage_driver = &ns_isotropic_diff_rot_driver<config_t, Res_t>;
+      // case STAGES::DIFF_ROT:
+      //   final_stage_driver = &ns_isotropic_diff_rot_driver<config_t, Res_t>;
       break;
   }
 
@@ -315,6 +321,7 @@ inline int ns_isotropic_driver(config_t& bconfig,
 
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
