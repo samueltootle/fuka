@@ -93,11 +93,19 @@ struct EOS_Function_Dispatcher {
                               const std::string eos_type,
                               Args&&... args) {
     if (eos_type == "Cold_PWPoly") {
-      using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_pwp>;
+      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>;
       functor_wrapper<eos_t> wrapper;
       return wrapper.template operator()<F>(std::forward<Args>(args)...);
     } else if (eos_type == "Cold_Table") {
-      using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_1d>;
+      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
+      functor_wrapper<eos_t> wrapper;
+      return wrapper.template operator()<F>(std::forward<Args>(args)...);
+    } else if (eos_type == "grhayl_eos_tabulated") {
+      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_tabulated>;
+      functor_wrapper<eos_t> wrapper;
+      return wrapper.template operator()<F>(std::forward<Args>(args)...);
+    } else if (eos_type == "grhayl_eos_hybrid") {
+      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_hybrid>;
       functor_wrapper<eos_t> wrapper;
       return wrapper.template operator()<F>(std::forward<Args>(args)...);
     }
@@ -138,17 +146,25 @@ struct EOS_initialize {
     }
 
     if (eos_type == "Cold_PWPoly") {
-      using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_pwp>;
+      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>;
       return Margherita_setup_polytrope(filename);
     } else if (eos_type == "Cold_Table") {
-      using eos_t = FUKA_EOS_Wrapper<margherita_eos_t, margherita_1d>;
+      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
       const int interp_pts =
           (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...) == 0)
               ? 2000
               : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...);
 
       return setup_Cold_Table(filename, interp_pts, h_cut);
-    }
+    } //else if (eos_type == "grhayl_eos_tabulated") {
+    //   using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_tabulated>;
+    //   functor_wrapper<eos_t> wrapper;
+    //   return wrapper.template operator()<F>(std::forward<Args>(args)...);
+    // } else if (eos_type == "grhayl_eos_hybrid") {
+    //   using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_hybrid>;
+    //   functor_wrapper<eos_t> wrapper;
+    //   return wrapper.template operator()<F>(std::forward<Args>(args)...);
+    // }
     throw std::invalid_argument("\nInvalid EOS type\n");
   }
 };
