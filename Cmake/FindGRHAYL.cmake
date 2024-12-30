@@ -19,6 +19,8 @@
 #If environment variable GRHAYLDIR is specified, it has same effect as GRHAYL_ROOT
 if( NOT GRHAYL_ROOT AND DEFINED ENV{GRHAYLDIR} )
   set( GRHAYL_ROOT $ENV{GRHAYLDIR} )
+elseif( NOT GRHAYL_ROOT AND DEFINED ENV{GRHAYL_ROOT} )
+  set( GRHAYL_ROOT $ENV{GRHAYL_ROOT} )
 endif()
 
 # Check if we can use PkgConfig
