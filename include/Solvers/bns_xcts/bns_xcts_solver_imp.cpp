@@ -265,6 +265,10 @@ void bns_xcts_solver<eos_t, config_t, space_t>::syst_init(System_of_eqs& syst) {
   // definition to rescale the equations
   // delta = p / rho
   syst.add_def("delta = h - eps - 1.");
+}
+
+template <class eos_t, typename config_t, typename space_t>
+void bns_xcts_solver<eos_t, config_t, space_t>::syst_init_Aterms(System_of_eqs& syst) {
 
   // the conformal extrinsic curvature
   syst.add_def(

@@ -81,6 +81,7 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydrostatic_equilibrium_stage() {
 
   // full shift vector field, incoporating the orbital part
   syst.add_def("B^i= bet^i + ome * Morb^i");
+  syst_init_Aterms(syst);
 
   // the actual equations, defined differently in the different domains
   for (int d = 0; d < ndom; d++) {
@@ -93,9 +94,9 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydrostatic_equilibrium_stage() {
 
       syst.add_eq_full(d, "H  = 0");
 
-      syst.add_def(d, "eqP     = D^i D_i P + A_ij * A^ij / P^7 / 8");
+      syst.add_def(d, "eqP = D^i D_i P + A_ij * A^ij / P^7 / 8");
       syst.add_def(d,
-                   "eqNP    = D^i D_i NP - 7. / 8. * NP / P^8 * A_ij * A^ij");
+                   "eqNP = D^i D_i NP - 7. / 8. * NP / P^8 * A_ij * A^ij");
       syst.add_def(d,
                    "eqbet^i = D_j D^j bet^i + D^i D_j bet^j / 3. - 2. * A^ij * "
                    "D_j Ntilde");
@@ -228,10 +229,10 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydrostatic_equilibrium_stage() {
                           "integvolume(intMb) = Mb2");
 
   // compute a quasi-local approximation of the ADM component masses
-  space.add_eq_int_volume(syst, space.NS1, space.ADAPTED1,
-                          "integvolume(intM) = qlMadm1");
-  space.add_eq_int_volume(syst, space.NS2, space.ADAPTED2,
-                          "integvolume(intM) = qlMadm2");
+  // space.add_eq_int_volume(syst, space.NS1, space.ADAPTED1,
+  //                         "integvolume(intM) = qlMadm1");
+  // space.add_eq_int_volume(syst, space.NS2, space.ADAPTED2,
+  //                         "integvolume(intM) = qlMadm2");
 
   // print initial diagnostics
   if (rank == 0)
@@ -251,6 +252,8 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydrostatic_equilibrium_stage() {
     // to make sure that they are updated correctly along
     // with the changing adapted domains
     update_fields(cfields, coord_vectors, {}, xo, xc1, xc2, &syst);
+
+    update_config_quantities(syst);
 
     // generate output filename for this iteration
     std::stringstream ss;
@@ -408,6 +411,7 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
 
   // full shift vector including inertial + orbital contributions
   syst.add_def(bigB.c_str());
+  syst_init_Aterms(syst);
 
   // the actual equations, defined differently in the different domains
   for (int d = 0; d < ndom; d++) {
@@ -418,9 +422,9 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
       if (!bconfig.control(COROT_BIN))
         syst.add_eq_full(d, "phi= 0");
 
-      syst.add_def(d, "eqP     = D^i D_i P + A_ij * A^ij / P^7 / 8");
+      syst.add_def(d, "eqP = D^i D_i P + A_ij * A^ij / P^7 / 8");
       syst.add_def(d,
-                   "eqNP    = D^i D_i NP - 7. / 8. * NP / P^8 * A_ij * A^ij");
+                   "eqNP = D^i D_i NP - 7. / 8. * NP / P^8 * A_ij * A^ij");
       syst.add_def(d,
                    "eqbet^i = D_j D^j bet^i + D^i D_j bet^j / 3. - 2. * A^ij * "
                    "D_j Ntilde");
@@ -544,10 +548,10 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
                           "integvolume(intMb) = Mb2");
 
   // compute a quasi-local approximation of the ADM component masses
-  space.add_eq_int_volume(syst, space.NS1, space.ADAPTED1,
-                          "integvolume(intM) = qlMadm1");
-  space.add_eq_int_volume(syst, space.NS2, space.ADAPTED2,
-                          "integvolume(intM) = qlMadm2");
+  // space.add_eq_int_volume(syst, space.NS1, space.ADAPTED1,
+  //                         "integvolume(intM) = qlMadm1");
+  // space.add_eq_int_volume(syst, space.NS2, space.ADAPTED2,
+  //                         "integvolume(intM) = qlMadm2");
 
   // print initial diagnostics
   if (rank == 0)
@@ -567,6 +571,8 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
     // to make sure that they are updated correctly along
     // with the changing adapted domains
     update_fields(cfields, coord_vectors, {}, xo, xc1, xc2, &syst);
+
+    update_config_quantities(syst);
 
     // overwrite logh with scaled version for later use and output
     logh = syst.give_val_def("H");

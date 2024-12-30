@@ -80,6 +80,7 @@ class bns_xcts_solver : XCTS_Solver<config_t, space_t> {
 
   // syst always requires the same initialization for the stages
   void syst_init(System_of_eqs& syst);
+  void syst_init_Aterms(System_of_eqs& syst);
 
   // diagnostics at runtime
   void print_diagnostics(const System_of_eqs& syst,
