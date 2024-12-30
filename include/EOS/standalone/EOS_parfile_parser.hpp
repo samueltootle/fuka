@@ -1,12 +1,13 @@
 #pragma once
+#include <array>
 #include <cmath>
 #include <string>
-#include <array>
-#include "margherita.hh"
 #include "cold_pwpoly.hh"
+#include "margherita.hh"
 #ifdef WITH_GRHAYL_EOS
 #include <grhayl/ghl.h>
-#define FUKA_MAX_EOS_PARAMS MAX(MAX_EOS_PARAMS, Kadath::Margherita::Cold_PWPoly::max_num_pieces)
+#define FUKA_MAX_EOS_PARAMS \
+  MAX(MAX_EOS_PARAMS, Kadath::Margherita::Cold_PWPoly::max_num_pieces)
 #else
 #define FUKA_MAX_EOS_PARAMS Kadath::Margherita::Cold_PWPoly::max_num_pieces
 #endif
@@ -14,16 +15,17 @@
 namespace Kadath {
 namespace FUKA_EOS {
 class parse_polytrope_file {
-public:
+ public:
   double rhomin;
   double rhomax;
   double Pmin;
   double K0;
   int num_pieces;
-  std::array<double,FUKA_MAX_EOS_PARAMS> gamma_tab;
-  std::array<double,FUKA_MAX_EOS_PARAMS> rho_tab;
+  std::array<double, FUKA_MAX_EOS_PARAMS> gamma_tab;
+  std::array<double, FUKA_MAX_EOS_PARAMS> rho_tab;
   std::string Units;
-private:
+
+ private:
   inline void rescale_input() {
     using namespace Margherita_constants;
     const double gam0m1 = gamma_tab[0] - 1.0;
@@ -46,7 +48,7 @@ private:
 
     K0 *= K_unit;
     for (int i = 0; i < num_pieces; ++i)
-        rho_tab[i] = rho_unit * rho_tab[i];
+      rho_tab[i] = rho_unit * rho_tab[i];
   }
 
   inline void parse_file(std::string fname) {
@@ -109,7 +111,7 @@ private:
 };
 
 class parse_3d_EOS_par_file {
-public:
+ public:
   double rho_atm;
   double rho_min;
   double rho_max;
@@ -122,8 +124,8 @@ public:
   double T_beta;
   std::string table_abspath;
   std::string table_format;
-private:
 
+ private:
   inline void parse_file(std::string fname) {
     std::ifstream f(fname);
 
@@ -169,8 +171,7 @@ private:
   }
 
  public:
-  void operator()(std::string table_par_file) {
-    parse_file(table_par_file);
-  }
+  void operator()(std::string table_par_file) { parse_file(table_par_file); }
 };
-}}  // namespace Kadath::FUKA_EOS
+}  // namespace FUKA_EOS
+}  // namespace Kadath

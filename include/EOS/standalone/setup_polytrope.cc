@@ -38,7 +38,7 @@
 
 #include "cold_pwpoly.hh"
 #include "cold_pwpoly_implementation.hh"
-#include "polytrope_file_parser.hpp"
+#include "EOS_parfile_parser.hpp"
 
 #include "Margherita_EOS.h"
 #include "margherita.hh"
