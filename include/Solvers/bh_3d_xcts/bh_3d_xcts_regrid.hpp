@@ -84,7 +84,7 @@ int bh_3d_xcts_regrid(config_t& bconfig, std::string outputfile) {
   bconfig.control(USE_CONFIG_VARS) = true;
 
   // Generate new space and fields
-  setup_co<BH>(bconfig);
+  setup_3d_BH_xcts(bconfig);
 
   // Unset to prevent possible issues on ID reuse
   bconfig.control(USE_CONFIG_VARS) = false;
