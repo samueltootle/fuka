@@ -25,6 +25,7 @@
 #include <sstream>
 #include "Configurator/config_binary.hpp"
 #include "bco_utilities.hpp"
+#include "Solvers/bco_solver_utils.hpp"
 #include "kadath.hpp"
 
 /**

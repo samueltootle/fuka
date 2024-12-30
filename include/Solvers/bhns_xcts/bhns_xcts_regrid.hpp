@@ -26,6 +26,7 @@
 #include "Configurator/config_binary.hpp"
 #include "Solvers/fuka_syst/fuka_syst.hpp"
 #include "bco_utilities.hpp"
+#include "Solvers/bco_solver_utils.hpp"
 #include "kadath.hpp"
 
 /**
