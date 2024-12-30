@@ -73,6 +73,7 @@ inline void Margherita_setup_polytrope(std::string polytrope_file) {
   //eps_tab == continuity coefficients on the bounds between
   //pieces.  The first is always 0.
   Cold_PWPoly::eps_tab[0] = 0.0;
+  Cold_PWPoly::h_tab[0] = 1.;
 
   // Setup piecewise polytrope
   for (int i = 1; i < Cold_PWPoly::num_pieces; ++i) {
