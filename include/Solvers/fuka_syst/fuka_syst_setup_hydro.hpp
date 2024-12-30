@@ -2,6 +2,7 @@
 #include "Configurator/config_bco.hpp"
 #include "Configurator/config_binary.hpp"
 #include "coord_fields.hpp"
+#include "EOS/EOS.hh"
 
 /**
  * \addtogroup Syst_tools
