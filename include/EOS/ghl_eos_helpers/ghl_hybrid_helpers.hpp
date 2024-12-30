@@ -17,10 +17,9 @@ inline auto populate_ghl_polytrope(std::string polytrope_file) {
 
   parse_polytrope_file parser;
   parser(polytrope_file);
-  const double rho_atm = 1e-15;
   const double gamma_th = 0.0;
   ghl_initialize_hybrid_eos_functions_and_params(
-    rho_atm,
+    parser.rhomin,
     parser.rhomin,
     parser.rhomax,
     parser.num_pieces,
@@ -30,8 +29,9 @@ inline auto populate_ghl_polytrope(std::string polytrope_file) {
     gamma_th,
     &eos
   );
-  eos.press_atm = rho_atm;
-  eos.press_min = rho_atm;
+  eos.press_atm = parser.Pmin;
+  eos.press_min = parser.Pmin;
+  eos.p_ppoly[0] = parser.Pmin;
   eos_params = std::make_unique<ghl_eos_parameters>(eos);
   return eos_params;
 }
