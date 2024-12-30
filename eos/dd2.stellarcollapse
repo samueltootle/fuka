@@ -1,0 +1,26 @@
+# This is a table holding the information for ingesting a 3D stellar collapse table
+# which can only be use when compiled with GRHayL EOS support.
+# The format of the file is not static, however, the order of variables is
+# Therefore, comments can be added so long as they are on their own lines.
+
+eos_path: /home/tootle/lib/EOSs/Hempel_DD2EOS_rho234_temp180_ye60_version_1.1_20120817.h5
+
+# Currently only EOS tables in the stellar collapse format are supported
+eos_format: stellarcollapse
+
+# GRHayL requires atmosphere quantities to be specified
+rho_atm: 1e-15
+Ye_atm: 1.1e-2
+T_atm: 1.1e-2
+
+# Here we can utilize -1 to specify using the table bounds rather than manually
+# specifying min/max
+rho_min: 1e-19
+rho_max: -1
+Ye_min: -1
+Ye_max: -1
+T_min: -1
+T_max: -1
+
+# Compute the beta equilibrium slice for a constant, specified temperature
+T_beta: 0.01
