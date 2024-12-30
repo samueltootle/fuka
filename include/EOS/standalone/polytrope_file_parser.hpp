@@ -107,4 +107,70 @@ private:
     rescale_input();
   }
 };
+
+class parse_3d_EOS_par_file {
+public:
+  double rho_atm;
+  double rho_min;
+  double rho_max;
+  double Ye_atm;
+  double Ye_min;
+  double Ye_max;
+  double T_atm;
+  double T_min;
+  double T_max;
+  double T_beta;
+  std::string table_abspath;
+  std::string table_format;
+private:
+
+  inline void parse_file(std::string fname) {
+    std::ifstream f(fname);
+
+    if (!f.is_open()) {
+      std::string msg = "failed to open " + fname;
+      throw std::runtime_error(msg.c_str());
+    }
+
+    //string descriptor to ignore
+    std::string descr;
+
+    //lambda to ignore leading comments and blank lines
+    //up to the next value to extract
+    auto skip_comments = [&]() {
+      auto peek_c = f.peek();
+      while (peek_c == '#' || peek_c == '\n') {
+        std::getline(f, descr, '\n');
+        peek_c = f.peek();
+      }
+    };
+
+    auto skip_and_grab = [&](auto& val) {
+      skip_comments();
+      f >> descr >> val;
+    };
+
+    skip_and_grab(table_abspath);
+    skip_and_grab(table_format);
+
+    // Grab atmospheric values
+    skip_and_grab(rho_atm);
+    skip_and_grab(Ye_atm);
+    skip_and_grab(T_atm);
+
+    // Grab min and max values
+    skip_and_grab(rho_min);
+    skip_and_grab(rho_max);
+    skip_and_grab(Ye_min);
+    skip_and_grab(Ye_max);
+    skip_and_grab(T_min);
+    skip_and_grab(T_max);
+    skip_and_grab(T_beta);
+  }
+
+ public:
+  void operator()(std::string table_par_file) {
+    parse_file(table_par_file);
+  }
+};
 }}  // namespace Kadath::FUKA_EOS
