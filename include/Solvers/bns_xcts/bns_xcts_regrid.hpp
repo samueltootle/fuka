@@ -25,6 +25,7 @@
 #include "Configurator/config_binary.hpp"
 #include "Solvers/fuka_syst/fuka_syst.hpp"
 #include "bco_utilities.hpp"
+#include "Solvers/bco_solver_utils.hpp"
 #include "kadath_bin_ns.hpp"
 
 /**
@@ -86,8 +87,8 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   int type_coloc = old_space.get_type_base();
 
   // start Update config vars
-  bco_u::update_config_NS_radii(old_space, bconfig, old_space.ADAPTED1, NODES::BCO1);
-  bco_u::update_config_NS_radii(old_space, bconfig, old_space.ADAPTED2, NODES::BCO2);
+  update_config_NS_radii(old_space, bconfig, old_space.ADAPTED1, NODES::BCO1);
+  update_config_NS_radii(old_space, bconfig, old_space.ADAPTED2, NODES::BCO2);
   double r_max_tot = std::max(bconfig(BCO_PARAMS::RMID, BCO1), bconfig(BCO_PARAMS::RMID, BCO2));
 
   const double rout_sep_est =
