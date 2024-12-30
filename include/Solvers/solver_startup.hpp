@@ -20,8 +20,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <cstdio>
 #include <string>
 #include "Solvers/solvers.hpp"
+
 namespace Kadath {
 namespace FUKA_Solvers {
 /**
@@ -72,6 +74,7 @@ config_t Initialize_Solver<config_t>::bconfig;
 
 template <class config_t>
 int Initialize_Solver<config_t>::rank = 0;
+
 // end static member initialization
 
 template <class config_t>
@@ -140,7 +143,17 @@ void Initialize_Solver<config_t>::init_solver(int argc, char** argv) {
     Initialize_Solver::outputdir = std::string{argv[2]};
 
   Initialize_Solver::bconfig.set_filename(Initialize_Solver::input_configname);
+
+  // Redirect rank > 0 stdout and stderr to /dev/null
+  if (Initialize_Solver::rank > 0) {
+    fflush(stderr);
+    freopen("/dev/null", "w", stderr);
+
+    fflush(stdout);
+    freopen("/dev/null", "w", stdout);
+  }
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
