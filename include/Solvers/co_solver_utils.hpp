@@ -38,14 +38,13 @@ namespace Kadath {
 namespace FUKA_Solvers {
 
 /**
- * @brief Set the initial guess for a compact object
+ * @brief Set the initial guess for a BH
  *
- * @tparam s_type NODES::NS or NODES::BH
  * @tparam config_t Config object type
  * @param bconfig Config object
  */
-template <std::size_t s_type, typename config_t>
-void setup_co(config_t& bconfig);
+template <typename config_t>
+void setup_3d_BH_xcts(config_t& bconfig);
 
 template <typename config_t>
 void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx);
