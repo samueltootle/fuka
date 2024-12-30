@@ -17,59 +17,61 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
+ */
 
 #pragma once
+#include <array>
+#include <cstdlib>
+#include <string>
+#include "FUKA_EOS_Wrapper.hh"
+#include "name_tools.hpp"
 #include "standalone/cold_pwpoly.hh"
 #include "standalone/cold_pwpoly_implementation.hh"
 #include "standalone/cold_table.hh"
 #include "standalone/cold_table_implementation.hh"
-#include "standalone/setup_polytrope.cc"
 #include "standalone/setup_cold_table.cc"
-#include "name_tools.hpp"
-#include <string>
-#include <array>
-#include <cstdlib>
+#include "standalone/setup_polytrope.cc"
 
-#include <val_domain.hpp>
-#include <term_eq.hpp>
 #include <scalar.hpp>
+#include <term_eq.hpp>
+#include <val_domain.hpp>
 
 using namespace Kadath;
 
-/** 
+/**
  * The various hydrodynamic quantities that can be obtained from this
  * interface for a given EOS
  */
 enum eos_var_t { PRESSURE, EPSILON, DENSITY, DHDRHO };
 
 /**
- * This interface provides the user defined OPEs to provide hydrodynamic quantities as a function
- * of the specific enthalpy (\b h) to the Kadath System_of_eqs framework.\n 
- * The equation of state is managed by a modified, standalone version of Margherita: 
- * https://github.com/fil-grmhd/Margherita-EOS
+ * This interface provides the user defined OPEs to provide hydrodynamic
+ * quantities as a function of the specific enthalpy (\b h) to the Kadath
+ * System_of_eqs framework.\n The equation of state is managed by a modified,
+ * standalone version of Margherita: https://github.com/fil-grmhd/Margherita-EOS
  *
  * @tparam eos Margherita EOS type (e.g. Cold_PWPoly)
  * @tparam var EOS variable to update when action() is executed. see eos_var_t
  */
-template <typename eos, eos_var_t var> class EOS {
-private:
+template <typename eos, eos_var_t var>
+class EOS {
+ private:
   /**
    * EOS::term_by_term_variation
    *
-   * calculate the numerical variation of the dependent quantity (var), term by term,
-   * as a function of a scalar quantity (currently h).
+   * calculate the numerical variation of the dependent quantity (var), term by
+   * term, as a function of a scalar quantity (currently h).
    *
    * @param [input] dom: domain to update
    * @param [input] so: previous numerical variatioon of the variable field (h)
    * @param [input] scalar: current value of the variable field (h)
    */
-  static inline Val_domain term_by_term_variation(int dom, const Val_domain so,
+  static inline Val_domain term_by_term_variation(int dom,
+                                                  const Val_domain so,
                                                   const Val_domain scalar) {
     if (so.check_if_zero()) {
       return so;
     }
-    typename eos::error_t err;
 
     // need to work in configuration space
     so.coef_i();
@@ -82,16 +84,16 @@ private:
       double h = scalar(pos);
       double dh = so(pos);
 
-      double rho = eos::rho__h_cold(h, err);
-      double dpdrho = eos::dpress_cold_drho__rho(rho, err);
+      double rho = eos::rho__h_cold(h);
+      double dpdrho = eos::dpress_cold_drho__rho(rho);
       double drho = rho * 1. / dpdrho * dh;
 
       if constexpr (var == EPSILON) {
-        double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho, err);
+        double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho);
         res.set(pos) = pressure / pow(rho, 2) * drho;
 
       } else if constexpr (var == PRESSURE) {
-        res.set(pos) = eos::dpress_cold_drho__rho(rho, err) * drho;
+        res.set(pos) = eos::dpress_cold_drho__rho(rho) * drho;
 
       } else if constexpr (var == DENSITY) {
         res.set(pos) = drho;
@@ -120,7 +122,6 @@ private:
     if (so.check_if_zero()) {
       return so;
     }
-    typename eos::error_t err;
 
     // need to work in configuration space
     so.coef_i();
@@ -131,8 +132,8 @@ private:
     do {
       double eps_cold = 0.0;
       double h = so(pos);
-      double rho = eos::rho__h_cold(h, err);
-      double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho, err);
+      double rho = eos::rho__h_cold(h);
+      double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho);
 
       if constexpr (var == EPSILON)
         res.set(pos) = eps_cold;
@@ -141,9 +142,8 @@ private:
       else if constexpr (var == PRESSURE)
         res.set(pos) = pressure;
       else if constexpr (var == DHDRHO) {
-        res.set(pos) = 1. / h * eos::dpress_cold_drho__rho(rho, err);
-      }
-      else
+        res.set(pos) = 1. / h * eos::dpress_cold_drho__rho(rho);
+      } else
         std::cerr << "Ill-defined variable in EOS class, please check."
                   << std::endl;
     } while (pos.inc());
@@ -152,50 +152,18 @@ private:
     return res;
   }
 
-public:
-  /**
-   * EOS::init
-   *
-   * initialize the EOS setup before attempting to query the EOS or define OPEs.
-   * @param [input] filename: filename of the EOS Table for file describing the polytrope.
-   * @param [input] h_cut: specific enthalpy to cut the table with
-   * @param [input] interp_pts: number of points to use when interpolating an EOS Table
-   */
-  static void init(std::string filename = "", const double h_cut = 0.0, const int interp_pts = 2000) {
-    using namespace Kadath::Margherita;
-    auto get_default_path = [&]() {
-      std::string default_path{"./"};
-      const std::string kadath_environment_var{"HOME_KADATH"};
-      if(std::getenv(kadath_environment_var.c_str())) {
-        std::string const home_kadath{std::getenv(kadath_environment_var.c_str())}; 
-        default_path = home_kadath + "/eos/";
-      }
-      return default_path;
-    };
-    std::string const default_path{get_default_path()};
-
-    //if no path is given, we set the default EOS diretory to look for the relevant table/polytrope
-    if( filename.rfind("/") == std::string::npos )
-      filename = default_path + filename;
-
-    if (std::is_same<eos, Cold_PWPoly>::value) 
-      Margherita_setup_polytrope(filename);
-    else if (std::is_same<eos, Cold_Table>::value)
-      setup_Cold_Table(filename, interp_pts, h_cut);
-  }
-
+ public:
   /**
    * EOS::h_cold__rho
    *
-   * compute specific enthalpy from a given density.  Used primarily in analysis codes.
+   * compute specific enthalpy from a given density.  Used primarily in analysis
+   * codes.
    *
    * @param [input] rho: density
    */
   static double h_cold__rho(double rho) {
-    typename eos::error_t err;
-
     double eps_cold = 0.;
-    double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho, err);
+    double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho);
     double h = 1. + eps_cold + pressure / rho;
 
     return h;
@@ -209,11 +177,9 @@ public:
    * @param [input] h: specific enthalpy
    */
   static double get(double h) {
-    typename eos::error_t err;
-
     double eps_cold = 0.0;
-    double rho = eos::rho__h_cold(h, err);
-    double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho, err);
+    double rho = eos::rho__h_cold(h);
+    double pressure = eos::press_cold_eps_cold__rho(eps_cold, rho);
 
     if constexpr (var == EPSILON)
       return eps_cold;
@@ -226,13 +192,15 @@ public:
   /**
    * EOS::action
    *
-   * This is called by the System of equations in order to generate the corresponding
-   * Scalar field and its variation based on a definition using a user defined OPE.
+   * This is called by the System of equations in order to generate the
+   * corresponding Scalar field and its variation based on a definition using a
+   * user defined OPE.
    *
    * @param [input] term: term to get information from (i.e. specific enthalpy).
-   * @param [input] p: Kadath parameter.  Not used, but required for user defined OPEs
+   * @param [input] p: Kadath parameter.  Not used, but required for user
+   * defined OPEs
    */
-  static Term_eq action(const Term_eq &term, Param *p) {
+  static Term_eq action(const Term_eq& term, Param* p) {
     Term_eq target(term);
 
     int dom = term.get_dom();

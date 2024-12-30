@@ -1,9 +1,113 @@
+#include "EOS/FUKA_EOS_Utilities.hh"
 /**
  * \addtogroup NS_XCTS
  * \ingroup FUKA
  * @{*/
 namespace Kadath {
 namespace FUKA_Solvers {
+
+template <class eos_t>
+struct launch_ns_solver {
+  template <class config_t>
+  int operator()(const int rank,
+                 config_t& bconfig,
+                 std::string outputdir,
+                 ns_sequence const* seq) {
+
+    std::string spacein = bconfig.space_filename();
+
+    if (!fs::exists(spacein)) {
+      // mainly for debugging MPI bugs
+      if (rank == 0) {
+        std::cerr << "File: " << spacein << " not found.\n\n";
+      } else {
+        std::cerr << "File: " << spacein << " not found for another rank.\n\n";
+      }
+      std::_Exit(EXIT_FAILURE);
+    }
+
+    // just so you really know
+    if (rank == 0) {
+      std::cout << "Config File: " << bconfig.config_filename_abs() << std::endl
+                << "Fields File: " << spacein << std::endl
+                << bconfig << std::endl;
+    }
+    FILE* ff1 = fopen(spacein.c_str(), "r");
+    if (ff1 == NULL) {
+      // mainly for debugging MPI bugs
+      std::cerr << spacein.c_str() << " failed to open for rank " << rank
+                << "\n";
+      std::_Exit(EXIT_FAILURE);
+    }
+    Space_spheric_adapted space(ff1);
+    Scalar conf(space, ff1);
+    Scalar lapse(space, ff1);
+    Vector shift(space, ff1);
+    Scalar logh(space, ff1);
+    fclose(ff1);
+    Base_tensor basis(space, CARTESIAN_BASIS);
+
+    if (outputdir != "") {
+      bconfig.set_outputdir(outputdir);
+    }
+
+    ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> ns_solver(
+        bconfig, space, basis, conf, lapse, logh, shift);
+    return ns_solver.solve(seq);
+  };
+};
+
+template <class eos_t>
+struct launch_ns_boost_solver {
+  template <class config_t>
+  int operator()(const int rank,
+                 config_t& bconfig,
+                 std::string outputdir,
+                 kadath_config_boost<BIN_INFO> binconfig,
+                 const size_t bco) {
+
+    std::string spacein = bconfig.space_filename();
+
+    if (!fs::exists(spacein)) {
+      // mainly for debugging MPI bugs
+      if (rank == 0) {
+        std::cerr << "File: " << spacein << " not found.\n\n";
+      } else {
+        std::cerr << "File: " << spacein << " not found for another rank.\n\n";
+      }
+      std::_Exit(EXIT_FAILURE);
+    }
+
+    // just so you really know
+    if (rank == 0) {
+      std::cout << "Config File: " << bconfig.config_filename_abs() << std::endl
+                << "Fields File: " << spacein << std::endl
+                << bconfig << std::endl;
+    }
+    FILE* ff1 = fopen(spacein.c_str(), "r");
+    if (ff1 == NULL) {
+      // mainly for debugging MPI bugs
+      std::cerr << spacein.c_str() << " failed to open for rank " << rank
+                << "\n";
+      std::_Exit(EXIT_FAILURE);
+    }
+    Space_spheric_adapted space(ff1);
+    Scalar conf(space, ff1);
+    Scalar lapse(space, ff1);
+    Vector shift(space, ff1);
+    Scalar logh(space, ff1);
+    fclose(ff1);
+    Base_tensor basis(space, CARTESIAN_BASIS);
+
+    if (outputdir != "") {
+      bconfig.set_outputdir(outputdir);
+    }
+
+    ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> ns_solver(
+          bconfig, space, basis, conf, lapse, logh, shift);
+    return ns_solver.binary_boost_stage(binconfig, bco);
+  };
+};
 
 template <class config_t>
 config_t ns_3d_xcts_sequence_setup(config_t& seqconfig, std::string outputdir) {
@@ -27,6 +131,8 @@ config_t ns_3d_xcts_sequence(config_t& seqconfig,
                              std::string outputdir) {
   int rank = 0, exit_status = EXIT_SUCCESS;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  using namespace Kadath::FUKA_EOS;
 
   // Ensure fixed values are initialized
   seqconfig.set(seq.mass_idx()) = seq.mass_val();
@@ -57,11 +163,14 @@ config_t ns_3d_xcts_sequence(config_t& seqconfig,
   base_config.control(CONTROLS::ITERATIVE_M) = false;
   config_t bconfig{base_config};
 
+  const std::string eos_type =
+      bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
+
   if (bconfig.control(CONTROLS::SEQUENCES) ||
       bconfig.control(CONTROLS::RESOLVE)) {
     if (rank == 0) {
-      // setup_co<NODES::NS>(bconfig);
-      setup_ns_3d_xcts(bconfig, mass_fixing);
+      EOS_Function_Dispatcher::dispatch<setup_3dns_xcts_functor>(
+          bconfig, eos_type, bconfig, mass_fixing);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     // make sure all ranks have the same config
@@ -158,81 +267,19 @@ int ns_3d_xcts_stationary_driver(config_t& bconfig,
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  using namespace Kadath::FUKA_EOS;
+
+  const std::string eos_type =
+      bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
+
   // make sure NS directory exists for outputs
   if (outputdir == "./") {
     fs::path cwd = fs::current_path();
     outputdir = cwd.string();
   }
 
-  std::string spacein = bconfig.space_filename();
-  if (!fs::exists(spacein)) {
-    // mainly for debugging MPI bugs
-    if (rank == 0) {
-      std::cerr << "File: " << spacein << " not found.\n\n";
-    } else {
-      std::cerr << "File: " << spacein << " not found for another rank.\n\n";
-    }
-    std::_Exit(EXIT_FAILURE);
-  }
-
-  spacein = bconfig.space_filename();
-  // just so you really know
-  if (rank == 0) {
-    std::cout << "Config File: " << bconfig.config_filename_abs() << std::endl
-              << "Fields File: " << spacein << std::endl
-              << bconfig << std::endl;
-  }
-  FILE* ff1 = fopen(spacein.c_str(), "r");
-  if (ff1 == NULL) {
-    // mainly for debugging MPI bugs
-    std::cerr << spacein.c_str() << " failed to open for rank " << rank << "\n";
-    std::_Exit(EXIT_FAILURE);
-  }
-  Space_spheric_adapted space(ff1);
-  Scalar conf(space, ff1);
-  Scalar lapse(space, ff1);
-  Vector shift(space, ff1);
-  Scalar logh(space, ff1);
-  fclose(ff1);
-  Base_tensor basis(space, CARTESIAN_BASIS);
-
-  if (outputdir != "")
-    bconfig.set_outputdir(outputdir);
-
-  // load and setup the EOS
-  const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
-  const std::string eos_file =
-      bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
-  const std::string eos_type =
-      bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
-
-  if (eos_type == "Cold_PWPoly") {
-    using eos_t = Kadath::Margherita::Cold_PWPoly;
-
-    EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
-    ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> ns_solver(
-        bconfig, space, basis, conf, lapse, logh, shift);
-    exit_status = ns_solver.solve(seq);
-
-  } else if (eos_type == "Cold_Table") {
-    using eos_t = Kadath::Margherita::Cold_Table;
-
-    const int interp_pts =
-        (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
-            ? 2000
-            : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
-
-    EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
-    ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> ns_solver(
-        bconfig, space, basis, conf, lapse, logh, shift);
-
-    exit_status = ns_solver.solve(seq);
-  } else {
-    std::cerr << "Unknown EOSTYPE." << endl;
-    std::_Exit(EXIT_FAILURE);
-  }
-
-  MPI_Barrier(MPI_COMM_WORLD);
+  exit_status = EOS_Function_Dispatcher::dispatch<launch_ns_solver>(
+        bconfig, eos_type, rank, bconfig, outputdir, seq);
 
   return exit_status;
 }
@@ -290,17 +337,6 @@ int ns_3d_xcts_base_solution_driver(config_t& bconfig,
   //   std::_Exit(EXIT_FAILURE);
   // }
 
-  std::string spacein = bconfig.space_filename();
-  if (!fs::exists(spacein)) {
-    // mainly for debugging MPI bugs
-    if (rank == 0) {
-      std::cerr << "File: " << spacein << " not found.\n\n";
-    } else {
-      std::cerr << "File: " << spacein << " not found for another rank.\n\n";
-    }
-    std::_Exit(EXIT_FAILURE);
-  }
-
   while (exit_status == RELOAD_FILE) {
     exit_status = ns_3d_xcts_stationary_driver(bconfig, outputdir, seq);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -316,17 +352,6 @@ inline int ns_3d_xcts_driver(config_t& bconfig,
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  std::string spacein = bconfig.space_filename();
-  if (!fs::exists(spacein)) {
-    // mainly for debugging MPI bugs
-    if (rank == 0) {
-      std::cerr << "File: " << spacein << " not found.\n\n";
-    } else {
-      std::cerr << "File: " << spacein << " not found for another rank.\n\n";
-    }
-    std::_Exit(EXIT_FAILURE);
-  }
 
   double const xboost = bconfig.set(BCO_PARAMS::BVELX);
   double const yboost = bconfig.set(BCO_PARAMS::BVELY);
@@ -406,6 +431,10 @@ inline int ns_3d_xcts_binary_boost_driver(
   int exit_status = RUN_BOOST;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  using namespace Kadath::FUKA_EOS;
+
+  const std::string eos_type =
+        bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
 
   const int final_res = bconfig(BCO_PARAMS::BCO_RES);
   bool res_inc = (bconfig.seq_setting(SEQ_SETTINGS::INIT_RES) < final_res);
@@ -417,64 +446,9 @@ inline int ns_3d_xcts_binary_boost_driver(
   bconfig = ns_3d_xcts_sequence(bconfig, tmp_seq, resolution, outputdir);
   // FIXME make sure only last stage is active?
   // Used to manually disable norot here.
-  //
   while (exit_status == RUN_BOOST) {
-    auto spacein = bconfig.space_filename();
-    // just so you really know
-    if (rank == 0) {
-      std::cout << "Config File: " << bconfig.config_filename_abs() << std::endl
-                << "Fields File: " << spacein << std::endl
-                << bconfig << std::endl;
-    }
-    FILE* ff1 = fopen(spacein.c_str(), "r");
-    if (ff1 == NULL) {
-      // mainly for debugging MPI bugs
-      std::cerr << spacein.c_str() << " failed to open for rank " << rank
-                << "\n";
-      std::_Exit(EXIT_FAILURE);
-    }
-    Space_spheric_adapted space(ff1);
-    Scalar conf(space, ff1);
-    Scalar lapse(space, ff1);
-    Vector shift(space, ff1);
-    Scalar logh(space, ff1);
-    fclose(ff1);
-    Base_tensor basis(space, CARTESIAN_BASIS);
-
-    if (outputdir != "")
-      bconfig.set_outputdir(outputdir);
-    // load and setup the EOS
-    const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
-    const std::string eos_file =
-        bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
-    const std::string eos_type =
-        bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
-
-    if (eos_type == "Cold_PWPoly") {
-      using eos_t = Kadath::Margherita::Cold_PWPoly;
-
-      EOS<eos_t, PRESSURE>::init(eos_file, h_cut);
-      ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> ns_solver(
-          bconfig, space, basis, conf, lapse, logh, shift);
-
-      exit_status = ns_solver.binary_boost_stage(binconfig, bco);
-    } else if (eos_type == "Cold_Table") {
-      using eos_t = Kadath::Margherita::Cold_Table;
-
-      const int interp_pts =
-          (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
-              ? 2000
-              : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
-
-      EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
-      ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> ns_solver(
-          bconfig, space, basis, conf, lapse, logh, shift);
-
-      exit_status = ns_solver.binary_boost_stage(binconfig, bco);
-    } else {
-      std::cerr << "Unknown EOSTYPE." << endl;
-      std::_Exit(EXIT_FAILURE);
-    }
+    exit_status = EOS_Function_Dispatcher::dispatch<launch_ns_boost_solver>(
+        bconfig, eos_type, rank, bconfig, outputdir, binconfig, bco);
     MPI_Barrier(MPI_COMM_WORLD);
   }
   return exit_status;

@@ -6,6 +6,7 @@
 #include <bco_utilities.hpp>
 
 #include <cmath>
+#include "EOS/FUKA_EOS_Utilities.hh"
 
 using namespace Kadath;
 using namespace export_utils;
@@ -16,9 +17,9 @@ std::array<std::vector<double>,NUM_OUT> KadathExportNS(int const npoints,
                                                         char const * fn) {
   kadath_config_boost<BCO_NS_INFO> bconfig(std::string{fn});
 
-  // get const EOS information - used for initializing EOS later
-  const double h_cut = bconfig.eos<double>(HCUT);
-  const std::string eos_file = bconfig.eos<std::string>(EOSFILE);
+  using namespace Kadath::FUKA_EOS;
+  EOS_initialize::init(bconfig);
+  // get const EOS information
   const std::string eos_type = bconfig.eos<std::string>(EOSTYPE);
 
   /* file containing KADATH fields must have same name as config file
@@ -59,29 +60,7 @@ std::array<std::vector<double>,NUM_OUT> KadathExportNS(int const npoints,
   fmet.set_system(syst, "f");
 
   Param p;
-  // add EOS user defined OPEs based on EOS type
-  if(eos_type == "Cold_Table") {
-    using namespace Kadath::Margherita;
-    using eos_t = Kadath::Margherita::Cold_Table;
-
-    const int interp_pts = (bconfig.eos<int>(INTERP_PTS) == 0) ? \
-                            2000 : bconfig.eos<int>(INTERP_PTS);
-
-    EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
-    syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
-    syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
-    syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
-  }
-
-  if(eos_type == "Cold_PWPoly") {
-    using namespace Kadath::Margherita;
-    using eos_t = Kadath::Margherita::Cold_PWPoly;
-
-    EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
-    syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
-    syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
-    syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
-  } // end adding EOS OPEs
+  EOS_Function_Dispatcher::dispatch<set_eos_ope_struct>(bconfig, eos_type, syst, p);
 
   // constants
   syst.add_cst("4piG", bconfig(BCO_QPIG));
@@ -118,7 +97,7 @@ std::array<std::vector<double>,NUM_OUT> KadathExportNS(int const npoints,
 
   // the extrinsic curvature
   syst.add_def("A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
-  
+
   syst.add_def("h = exp(H)");
 
   // definitions for the fluid 3-velocity
@@ -214,25 +193,25 @@ std::array<std::vector<double>,NUM_OUT> KadathExportNS(int const npoints,
 
     // get quantities point-wise, since h is smoothest, and cut data at h=1
     if(h == 1.) {
-      rho = 0.;
-      eps = 0.;
-      press = 0.;
+      out[RHO][i] = 0.;
+      out[EPS][i] = 0.;
+      out[PRESS][i] = 0.;
     }
     else {
       if(eos_type == "Cold_Table") {
-        using namespace Kadath::Margherita;
+        using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
 
-        out[RHO][i] = EOS<Cold_Table, DENSITY>::get(h);
-        out[EPS][i] = EOS<Cold_Table, EPSILON>::get(h);
-        out[PRESS][i] = EOS<Cold_Table, PRESSURE>::get(h);
+        out[RHO][i]   = EOS<eos_t, DENSITY>::get(h);
+        out[EPS][i]   = EOS<eos_t, EPSILON>::get(h);
+        out[PRESS][i] = EOS<eos_t, PRESSURE>::get(h);
       }
 
       if(eos_type == "Cold_PWPoly") {
-        using namespace Kadath::Margherita;
+        using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>;
 
-        out[RHO][i] = EOS<Cold_PWPoly, DENSITY>::get(h);
-        out[EPS][i] = EOS<Cold_PWPoly, EPSILON>::get(h);
-        out[PRESS][i] = EOS<Cold_PWPoly, PRESSURE>::get(h);
+        out[RHO][i]   = EOS<eos_t, DENSITY>::get(h);
+        out[EPS][i]   = EOS<eos_t, EPSILON>::get(h);
+        out[PRESS][i] = EOS<eos_t, PRESSURE>::get(h);
       }
     }
 

@@ -46,7 +46,7 @@ struct CFMS_BBH_Exporter
     NUM_OUTPUT_VARS
   };
 
-// clang-format off
+  // clang-format off
   std::map<std::string, OUTPUT_VARS> output_var_map {
     {"lapse", OUTPUT_VARS::ALPHA},
     {"beta1", OUTPUT_VARS::BETA1},
@@ -65,7 +65,7 @@ struct CFMS_BBH_Exporter
     {"k23"  , OUTPUT_VARS::K23},
     {"k33"  , OUTPUT_VARS::K33}
   };
-// clang-format on
+  // clang-format on
 
   using interp_ary_t = std::array<double, NUM_XCTS_VARS>;
   using output_ary_t = std::array<double, NUM_OUTPUT_VARS>;

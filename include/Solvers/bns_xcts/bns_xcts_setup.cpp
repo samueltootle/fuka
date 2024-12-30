@@ -2,7 +2,7 @@
  * \addtogroup BNS_XCTS
  * \ingroup FUKA
  * @{*/
-
+#include "EOS/FUKA_EOS_Utilities.hh"
 namespace Kadath {
 namespace FUKA_Solvers {
 template <class config_t>
@@ -53,40 +53,9 @@ void bns_xcts_setup_space(config_t& bconfig) {
   bconfig.open_config();
 }
 
-template <class config_t>
-void bns_xcts_superimposed_import(config_t& bconfig,
-                                  std::array<std::string, 2> NSfilenames) {
-  // load single NS configuration
-  std::string ns1filename{NSfilenames[0]};
-  kadath_config_boost<BCO_NS_INFO> NS1config(ns1filename);
-
-  std::string ns2filename{NSfilenames[1]};
-  kadath_config_boost<BCO_NS_INFO> NS2config(ns2filename);
-
-  // setup eos and update central density
-  const double h_cut = NS1config.eos<double>(EOS_PARAMS::HCUT);
-  const std::string eos_file = NS1config.eos<std::string>(EOS_PARAMS::EOSFILE);
-  const std::string eos_type = NS1config.eos<std::string>(EOS_PARAMS::EOSTYPE);
-
-  if (eos_type == "Cold_PWPoly") {
-    using eos_t = ::Kadath::Margherita::Cold_PWPoly;
-
-    EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
-    bns_setup_boosted_3d<eos_t>(NS1config, NS2config, bconfig);
-  } else if (eos_type == "Cold_Table") {
-    using eos_t = ::Kadath::Margherita::Cold_Table;
-
-    const int interp_pts = (NS1config.eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
-                               ? 2000
-                               : NS1config.eos<int>(EOS_PARAMS::INTERP_PTS);
-
-    EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut, interp_pts);
-    bns_setup_boosted_3d<eos_t>(NS1config, NS2config, bconfig);
-  }
-}
-
 template <typename eos_t>
-inline void bns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NS1config,
+struct bns_setup_boosted_3d {
+inline void operator()(kadath_config_boost<BCO_NS_INFO>& NS1config,
                                  kadath_config_boost<BCO_NS_INFO>& NS2config,
                                  kadath_config_boost<BIN_INFO>& bconfig) {
   using namespace ::Kadath::bco_utils;
@@ -372,6 +341,25 @@ inline void bns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NS1config,
 
   // save everything to a binary file
   save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
+}
+};
+
+template <class config_t>
+void bns_xcts_superimposed_import(config_t& bconfig,
+                                  std::array<std::string, 2> NSfilenames) {
+  using namespace Kadath::FUKA_EOS;
+
+  // load single NS configuration
+  std::string ns1filename{NSfilenames[0]};
+  kadath_config_boost<BCO_NS_INFO> NS1config(ns1filename);
+
+  std::string ns2filename{NSfilenames[1]};
+  kadath_config_boost<BCO_NS_INFO> NS2config(ns2filename);
+
+  // setup eos and update central density
+  const std::string eos_type = NS1config.eos<std::string>(EOS_PARAMS::EOSTYPE);
+  EOS_Function_Dispatcher::dispatch<bns_setup_boosted_3d>(bconfig, eos_type, NS1config, NS2config,
+                                                          bconfig);
 }
 /** @}*/
 }  // namespace FUKA_Solvers

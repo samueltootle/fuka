@@ -182,8 +182,11 @@ class Solver {
       for (auto idx = 0; idx < SEQ_SETTINGS::NUM_SEQ_SETTINGS; ++idx)
         old_solution.seq_setting(idx) = bconfig.seq_setting(idx);
 
-      // Deactivate current stage since we found solution
-      old_solution.set_stage(solver_stage) = false;
+      auto& stages = bconfig.return_stages();
+      auto [last_stage_name, last_stage_idx] = get_last_enabled(MSTAGE, stages);
+      if(solver_stage != last_stage_idx)
+        // Deactivate current stage since we found solution
+        old_solution.set_stage(solver_stage) = false;
       bconfig = old_solution;
       return exists;
     };

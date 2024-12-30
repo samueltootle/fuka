@@ -38,14 +38,13 @@ namespace Kadath {
 namespace FUKA_Solvers {
 
 /**
- * @brief Set the initial guess for a compact object
+ * @brief Set the initial guess for a BH
  *
- * @tparam s_type NODES::NS or NODES::BH
  * @tparam config_t Config object type
  * @param bconfig Config object
  */
-template <std::size_t s_type, typename config_t>
-void setup_co(config_t& bconfig);
+template <typename config_t>
+void setup_3d_BH_xcts(config_t& bconfig);
 
 template <typename config_t>
 void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx);
@@ -55,11 +54,10 @@ void setup_ns_3d_xcts(config_t& bconfig, size_t mass_fixing_idx);
  * isotropic coordinates based on
  * arxiv.org:1003.5015
  *
- * @tparam config_t Config object type
- * @param bconfig Config object
+ * @tparam eos_t EOS wrapper type
  */
-template <typename config_t>
-void setup_2dns_isotropic(config_t& bconfig, size_t mass_fixing_idx);
+template <class eos_t>
+struct setup_2dns_isotropic_functor;
 
 /**
  * write_bh_init_setup_tofile_XCTS
@@ -123,7 +121,7 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space,
  */
 template <typename eos_t, typename config_t>
 auto setup_ns_config_from_TOV(config_t& bconfig,
-                              size_t mass_fixing_idx = BCO_PARAMS::MADM);
+                              size_t mass_fixing_idx = ::Kadath::FUKA_Config::BCO_PARAMS::MADM);
 
 /**
  * setup_interpolator_from_TOV

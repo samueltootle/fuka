@@ -45,55 +45,26 @@ void initialize_fields(config_t& bconfig) {
   MPI_Barrier(MPI_COMM_WORLD);
 }
 
-/**
- * @brief Driver to compute a stationary solution for a given resolution
- *
- * @tparam config_t Config file type
- * @param bconfig NS config file
- * @param outputdir directory to store solutions in
- * @return int error code
- */
-template <typename config_t>
-int ns_isotropic_uniform_rot_stationary_driver(config_t& bconfig,
-                                               std::string outputdir,
-                                               ns_sequence const* seq) {
-  int exit_status = RELOAD_FILE;
-  int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+template <class eos_t>
+struct launch_uniformrot_solver {
+  template <class config_t>
+  int operator()(const int rank,
+                 config_t& bconfig,
+                 std::string outputdir,
+                 ns_sequence const* seq) {
 
-  // make sure NS directory exists for outputs
-  if (outputdir == "./") {
-    fs::path cwd = fs::current_path();
-    outputdir = cwd.string();
-  }
+    std::string spacein = bconfig.space_filename();
 
-  // Make sure fields needed for rotating solution are initialized before
-  // opening files
-  if (!bconfig.field(BCO_FIELDS::LAP_BTERM) ||
-      !bconfig.field(BCO_FIELDS::LAP_WTERM))
-    initialize_fields(bconfig);
-
-  // Not important atm
-  // if(std::isnan(bconfig.set(BCO_PARAMS::MADM)) &&
-  // std::isnan(bconfig.set(BCO_PARAMS::MB))){
-  //   if(rank == 0)
-  //     std::cout << "Config error.  No madm nor mb found. \n\n";
-  //   std::_Exit(EXIT_FAILURE);
-  // }
-
-  std::string spacein = bconfig.space_filename();
-  if (!fs::exists(spacein)) {
-    // mainly for debugging MPI bugs
-    if (rank == 0) {
-      std::cerr << "File: " << spacein << " not found.\n\n";
-    } else {
-      std::cerr << "File: " << spacein << " not found for another rank.\n\n";
+    if (!fs::exists(spacein)) {
+      // mainly for debugging MPI bugs
+      if (rank == 0) {
+        std::cerr << "File: " << spacein << " not found.\n\n";
+      } else {
+        std::cerr << "File: " << spacein << " not found for another rank.\n\n";
+      }
+      std::_Exit(EXIT_FAILURE);
     }
-    std::_Exit(EXIT_FAILURE);
-  }
 
-  while (exit_status == RELOAD_FILE) {
-    spacein = bconfig.space_filename();
     // just so you really know
     if (rank == 0) {
       std::cout << "Config File: " << bconfig.config_filename_abs() << std::endl
@@ -117,42 +88,59 @@ int ns_isotropic_uniform_rot_stationary_driver(config_t& bconfig,
     Scalar lap_wterm(space, ff1);
     fclose(ff1);
 
-    if (outputdir != "")
+    if (outputdir != "") {
       bconfig.set_outputdir(outputdir);
-
-    // load and setup the EOS
-    const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT);
-    const std::string eos_file =
-        bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE);
-    const std::string eos_type =
-        bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
-
-    if (eos_type == "Cold_PWPoly") {
-      using eos_t = Kadath::Margherita::Cold_PWPoly;
-
-      EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
-      ns_isotropic_uniform_rot_solver<eos_t, decltype(bconfig), decltype(space)>
-          ns_solver(bconfig, space, nu, lap_Aterm, logh, lap_Bterm, lap_wterm);
-      exit_status = ns_solver.solve(seq);
-
-    } else if (eos_type == "Cold_Table") {
-      using eos_t = Kadath::Margherita::Cold_Table;
-
-      const int interp_pts =
-          (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
-              ? 2000
-              : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS);
-
-      EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
-      ns_isotropic_uniform_rot_solver<eos_t, decltype(bconfig), decltype(space)>
-          ns_solver(bconfig, space, nu, lap_Aterm, logh, lap_Bterm, lap_wterm);
-
-      exit_status = ns_solver.solve(seq);
-    } else {
-      std::cerr << "Unknown EOSTYPE." << endl;
-      std::_Exit(EXIT_FAILURE);
     }
 
+    ns_isotropic_uniform_rot_solver<eos_t, decltype(bconfig), decltype(space)>
+        ns_solver(bconfig, space, nu, lap_Aterm, logh, lap_Bterm, lap_wterm);
+    return ns_solver.solve(seq);
+  };
+};
+
+/**
+ * @brief Driver to compute a stationary solution for a given resolution
+ *
+ * @tparam config_t Config file type
+ * @param bconfig NS config file
+ * @param outputdir directory to store solutions in
+ * @return int error code
+ */
+template <typename config_t>
+int ns_isotropic_uniform_rot_stationary_driver(config_t& bconfig,
+                                               std::string outputdir,
+                                               ns_sequence const* seq) {
+  int exit_status = RELOAD_FILE;
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  using namespace Kadath::FUKA_EOS;
+
+  // make sure NS directory exists for outputs
+  if (outputdir == "./") {
+    fs::path cwd = fs::current_path();
+    outputdir = cwd.string();
+  }
+
+  // Make sure fields needed for rotating solution are initialized before
+  // opening files
+  if (!bconfig.field(BCO_FIELDS::LAP_BTERM) ||
+      !bconfig.field(BCO_FIELDS::LAP_WTERM))
+    initialize_fields(bconfig);
+
+  // Not important atm
+  // if(std::isnan(bconfig.set(BCO_PARAMS::MADM)) &&
+  // std::isnan(bconfig.set(BCO_PARAMS::MB))){
+  //   if(rank == 0)
+  //     std::cout << "Config error.  No madm nor mb found. \n\n";
+  //   std::_Exit(EXIT_FAILURE);
+  // }
+
+  const std::string eos_type =
+      bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
+
+  while (exit_status == RELOAD_FILE) {
+    exit_status = EOS_Function_Dispatcher::dispatch<launch_uniformrot_solver>(
+        bconfig, eos_type, rank, bconfig, outputdir, seq);
     MPI_Barrier(MPI_COMM_WORLD);
   }
   return exit_status;
@@ -166,17 +154,6 @@ inline int ns_isotropic_uniform_rot_driver(config_t& bconfig,
   int exit_status = RELOAD_FILE;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  std::string spacein = bconfig.space_filename();
-  if (!fs::exists(spacein)) {
-    // mainly for debugging MPI bugs
-    if (rank == 0) {
-      std::cerr << "File: " << spacein << " not found.\n\n";
-    } else {
-      std::cerr << "File: " << spacein << " not found for another rank.\n\n";
-    }
-    std::_Exit(EXIT_FAILURE);
-  }
 
   bool res_inc = (resolution.final() > resolution.init());
   auto resolution_indices = resolution.get_indices();
@@ -226,6 +203,7 @@ inline int ns_isotropic_uniform_rot_driver(config_t& bconfig,
   }
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

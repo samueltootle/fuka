@@ -1,3 +1,4 @@
+#include "EOS/FUKA_EOS_Utilities.hh"
 #include "Solvers/exporter.hpp"
 #include "bhns.hpp"
 namespace Kadath::FUKA_Solvers {
@@ -57,7 +58,7 @@ struct CFMS_BHNS_Exporter
     NUM_OUTPUT_VARS
   };
 
-// clang-format off
+  // clang-format off
   std::map<std::string, OUTPUT_VARS> output_var_map {
     {"lapse", OUTPUT_VARS::ALPHA},
     {"beta1", OUTPUT_VARS::BETA1},
@@ -82,7 +83,7 @@ struct CFMS_BHNS_Exporter
     {"vel2" , OUTPUT_VARS::VEL2},
     {"vel3" , OUTPUT_VARS::VEL3},
   };
-// clang-format on
+  // clang-format on
 
   using interp_ary_t = std::array<double, NUM_XCTS_VARS>;
   using output_ary_t = std::array<double, NUM_OUTPUT_VARS>;
@@ -234,73 +235,83 @@ struct CFMS_BHNS_Exporter
    * @return output_ary_t Interpolated solution at x,y,z
    */
   template <class eos_t>
-  output_ary_t export_pointwise_imp(double const& x,
-                                    double const& y,
-                                    double const& z,
-                                    double const interpolation_offset = 0.,
-                                    int const interp_order = 8,
-                                    double const delta_r_rel = 0.3) {
-    quant_vals = interpolate_pointwise(x, y, z, interpolation_offset,
-                                       interp_order, delta_r_rel);
+  struct export_pointwise_imp {
+    friend CFMS_BHNS_Exporter;
+    output_ary_t operator()(CFMS_BHNS_Exporter& base,
+                            double const& x,
+                            double const& y,
+                            double const& z,
+                            double const interpolation_offset = 0.,
+                            int const interp_order = 8,
+                            double const delta_r_rel = 0.3) {
+      base.quant_vals = base.interpolate_pointwise(
+          x, y, z, interpolation_offset, interp_order, delta_r_rel);
 
-    // Fill output vector by storing non-conformal quantities
-    auto const psi = quant_vals[XCTS_VARS::XCTS_PSI];
-    auto const psi2 = psi * psi;
-    auto const psi4 = psi2 * psi2;
+      // Fill output vector by storing non-conformal quantities
+      auto const psi = base.quant_vals[XCTS_VARS::XCTS_PSI];
+      auto const psi2 = psi * psi;
+      auto const psi4 = psi2 * psi2;
 
-    out_pw[OUTPUT_VARS::ALPHA] = quant_vals[XCTS_VARS::XCTS_ALPHA];
+      base.out_pw[OUTPUT_VARS::ALPHA] = base.quant_vals[XCTS_VARS::XCTS_ALPHA];
 
-    out_pw[OUTPUT_VARS::BETA1] = quant_vals[XCTS_VARS::XCTS_BETA1];
-    out_pw[OUTPUT_VARS::BETA2] = quant_vals[XCTS_VARS::XCTS_BETA2];
-    out_pw[OUTPUT_VARS::BETA3] = quant_vals[XCTS_VARS::XCTS_BETA3];
+      base.out_pw[OUTPUT_VARS::BETA1] = base.quant_vals[XCTS_VARS::XCTS_BETA1];
+      base.out_pw[OUTPUT_VARS::BETA2] = base.quant_vals[XCTS_VARS::XCTS_BETA2];
+      base.out_pw[OUTPUT_VARS::BETA3] = base.quant_vals[XCTS_VARS::XCTS_BETA3];
 
-    double g[3][3];
-    g[0][0] = psi4;
-    g[0][1] = 0.0;
-    g[0][2] = 0.0;
-    g[1][1] = psi4;
-    g[1][2] = 0.0;
-    g[2][2] = psi4;
-    g[1][0] = g[0][1];
-    g[2][0] = g[0][2];
-    g[2][1] = g[1][2];
+      double g[3][3];
+      g[0][0] = psi4;
+      g[0][1] = 0.0;
+      g[0][2] = 0.0;
+      g[1][1] = psi4;
+      g[1][2] = 0.0;
+      g[2][2] = psi4;
+      g[1][0] = g[0][1];
+      g[2][0] = g[0][2];
+      g[2][1] = g[1][2];
 
-    out_pw[OUTPUT_VARS::G11] = g[0][0];
-    out_pw[OUTPUT_VARS::G12] = g[0][1];
-    out_pw[OUTPUT_VARS::G13] = g[0][2];
-    out_pw[OUTPUT_VARS::G22] = g[1][1];
-    out_pw[OUTPUT_VARS::G23] = g[1][2];
-    out_pw[OUTPUT_VARS::G33] = g[2][2];
+      base.out_pw[OUTPUT_VARS::G11] = g[0][0];
+      base.out_pw[OUTPUT_VARS::G12] = g[0][1];
+      base.out_pw[OUTPUT_VARS::G13] = g[0][2];
+      base.out_pw[OUTPUT_VARS::G22] = g[1][1];
+      base.out_pw[OUTPUT_VARS::G23] = g[1][2];
+      base.out_pw[OUTPUT_VARS::G33] = g[2][2];
 
-    out_pw[OUTPUT_VARS::K11] = quant_vals[XCTS_VARS::XCTS_A11] * psi4;
-    out_pw[OUTPUT_VARS::K12] = quant_vals[XCTS_VARS::XCTS_A12] * psi4;
-    out_pw[OUTPUT_VARS::K13] = quant_vals[XCTS_VARS::XCTS_A13] * psi4;
-    out_pw[OUTPUT_VARS::K22] = quant_vals[XCTS_VARS::XCTS_A22] * psi4;
-    out_pw[OUTPUT_VARS::K23] = quant_vals[XCTS_VARS::XCTS_A23] * psi4;
-    out_pw[OUTPUT_VARS::K33] = quant_vals[XCTS_VARS::XCTS_A33] * psi4;
+      base.out_pw[OUTPUT_VARS::K11] =
+          base.quant_vals[XCTS_VARS::XCTS_A11] * psi4;
+      base.out_pw[OUTPUT_VARS::K12] =
+          base.quant_vals[XCTS_VARS::XCTS_A12] * psi4;
+      base.out_pw[OUTPUT_VARS::K13] =
+          base.quant_vals[XCTS_VARS::XCTS_A13] * psi4;
+      base.out_pw[OUTPUT_VARS::K22] =
+          base.quant_vals[XCTS_VARS::XCTS_A22] * psi4;
+      base.out_pw[OUTPUT_VARS::K23] =
+          base.quant_vals[XCTS_VARS::XCTS_A23] * psi4;
+      base.out_pw[OUTPUT_VARS::K33] =
+          base.quant_vals[XCTS_VARS::XCTS_A33] * psi4;
 
-    double const H = quant_vals[XCTS_VARS::XCTS_H];
-    double h = std::exp(H);
-    double rho, eps, press;
+      double const H = base.quant_vals[XCTS_VARS::XCTS_H];
+      double h = std::exp(H);
+      double rho, eps, press;
 
-    // get quantities point-wise, since h is smoothest, and cut data at H=0
-    if (std::fabs(H) <= 1e-12) {
-      rho = 0.;
-      eps = 0.;
-      press = 0.;
-    } else {
-      rho = EOS<eos_t, eos_var_t::DENSITY>::get(h);
-      eps = EOS<eos_t, eos_var_t::EPSILON>::get(h);
-      press = EOS<eos_t, eos_var_t::PRESSURE>::get(h);
+      // get quantities point-wise, since h is smoothest, and cut data at H=0
+      if (std::fabs(H) <= 1e-12) {
+        rho = 0.;
+        eps = 0.;
+        press = 0.;
+      } else {
+        rho = EOS<eos_t, eos_var_t::DENSITY>::get(h);
+        eps = EOS<eos_t, eos_var_t::EPSILON>::get(h);
+        press = EOS<eos_t, eos_var_t::PRESSURE>::get(h);
+      }
+      base.out_pw[OUTPUT_VARS::RHO] = rho;
+      base.out_pw[OUTPUT_VARS::EPS] = eps;
+      base.out_pw[OUTPUT_VARS::PRESS] = press;
+      base.out_pw[OUTPUT_VARS::VEL1] = base.quant_vals[XCTS_VARS::XCTS_UX];
+      base.out_pw[OUTPUT_VARS::VEL2] = base.quant_vals[XCTS_VARS::XCTS_UY];
+      base.out_pw[OUTPUT_VARS::VEL3] = base.quant_vals[XCTS_VARS::XCTS_UZ];
+      return base.out_pw;
     }
-    out_pw[OUTPUT_VARS::RHO] = rho;
-    out_pw[OUTPUT_VARS::EPS] = eps;
-    out_pw[OUTPUT_VARS::PRESS] = press;
-    out_pw[OUTPUT_VARS::VEL1] = quant_vals[XCTS_VARS::XCTS_UX];
-    out_pw[OUTPUT_VARS::VEL2] = quant_vals[XCTS_VARS::XCTS_UY];
-    out_pw[OUTPUT_VARS::VEL3] = quant_vals[XCTS_VARS::XCTS_UZ];
-    return out_pw;
-  }
+  };
 
   /**
    * @brief Interface to export an array of OUTPUT_VARS for a given point.  The

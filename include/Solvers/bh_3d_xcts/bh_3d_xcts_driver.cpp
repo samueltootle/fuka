@@ -52,7 +52,7 @@ config_t bh_3d_xcts_sequence(config_t& seqconfig,
 
     if (bconfig.control(CONTROLS::SEQUENCES)) {
       if (rank == 0) {
-        setup_co<NODES::BH>(bconfig);
+        setup_3d_BH_xcts(bconfig);
       }
       MPI_Barrier(MPI_COMM_WORLD);
       // make sure all ranks have the same config

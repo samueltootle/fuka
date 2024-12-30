@@ -119,11 +119,6 @@ class bns_xcts_solver : XCTS_Solver<config_t, space_t> {
   // Update bconfig(HC) and bconfig(NC)
   void update_config_quantities(System_of_eqs& syst);
 };
-
-template <typename eos_t>
-inline void bns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NS1config,
-                                 kadath_config_boost<BCO_NS_INFO>& NS2config,
-                                 kadath_config_boost<BIN_INFO>& bconfig);
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
