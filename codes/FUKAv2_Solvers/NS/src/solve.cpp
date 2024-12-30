@@ -28,6 +28,7 @@
 
 using namespace Kadath::FUKA_Config;
 using namespace Kadath::FUKA_Solvers;
+using namespace Kadath::FUKA_EOS;
 
 int main(int argc, char** argv) {
   int rc = MPI_Init(&argc, &argv);
@@ -84,8 +85,8 @@ int main(int argc, char** argv) {
     ns_sequence seq = find_ns_sequence(tree);
     verify_ns_fixing_values(bconfig, seq);
 
+    initialize_config_from_fixing_values(bconfig, seq);
     if (!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES)) {
-      initialize_config_from_fixing_values(bconfig, seq);
       int err = ns_3d_xcts_driver(bconfig, resolution, InitSolver::outputdir);
     } else {
 
