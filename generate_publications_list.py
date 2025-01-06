@@ -3,13 +3,13 @@ import urllib, urllib.request, urllib.parse, json
 citation_stats = {'max': 0, 'mean': 0, 'total': 0, 'N': 0}
 
 # Use inspirehep API to get publication information
-def get_record(recid: str):                                                                                                              
-    inspire_result = dict()                                                                                                              
-    inspire_query = 'https://inspirehep.net/api/literature'                                                                              
-    inspire_query += '/' + recid                                                                                                         
-    with urllib.request.urlopen(inspire_query) as req:                                                                                   
-            inspire_result = json.load(req)                                                                                              
-    return inspire_result  
+def get_record(recid: str):
+    inspire_result = dict()
+    inspire_query = 'https://inspirehep.net/api/literature'
+    inspire_query += '/' + recid
+    with urllib.request.urlopen(inspire_query) as req:
+            inspire_result = json.load(req)
+    return inspire_result
 
 # generate a list of publication strings
 def generate_publication_lists(publication_id_list: list) -> list:
@@ -36,10 +36,10 @@ def generate_publication_lists(publication_id_list: list) -> list:
         else:
             print(f"error: {pub_id}")
             continue
-        
+
         output_str = f"-# ***{title}***; {author_Str}; {refurl}; Cites: {citations}  \n"
         pub_str_list.append(output_str)
-        
+
         # Update statistics dictionary
         citation_stats['max'] = max(citation_stats['max'], citations)
         citation_stats['total'] += citations
@@ -51,6 +51,12 @@ This list is defined manually so as to ensure only publications where FUKA was u
 Therefore, it must be updated periodically.
 """
 publication_id_list = [
+    2857361,
+    2856251,
+    2854129,
+    2854249,
+    2852178,
+    2838582,
     2831105,
     2828866,
     2827207,
@@ -99,12 +105,12 @@ with open(output_file, 'w') as f:
     f.write('## Known scientific works enabled by the FUKA suite of initial data solvers\n\n')
     for pub_str in pub_str_list:
         f.write(pub_str)
-    
+
     f.write('\n\n### Citation Statistics\n\n')
     f.write(f"\nAverage citations of FUKA enabled publications: {citation_stats['mean']:1.0f}  ")
     f.write(f"\nMaximum citations of FUKA enabled publications: {citation_stats['max']}  ")
-    
+
     f.write('\n\nThis page has been generated using the [Inspire REST API](https://github.com/inspirehep/rest-api-doc)  \n')
-    
+
     from datetime import datetime
     f.write(f"Last updated: {datetime.today().strftime('%Y-%m-%d')}")
