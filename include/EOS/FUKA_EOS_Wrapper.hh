@@ -184,21 +184,29 @@ struct FUKA_EOS_Wrapper {
     return P;
   }
 
-  static inline double rho__h_cold(const double h_in) {
+  static inline double rho__h_cold(double& h_in) {
     double rho;
     if constexpr (eos == margherita_pwp) {
-      double h = h_in;
       Kadath::Margherita::Cold_PWPoly::error_t error;
-      rho = Kadath::Margherita::Cold_PWPoly::rho__h_cold(h, error);
+      rho = Kadath::Margherita::Cold_PWPoly::rho__h_cold(h_in, error);
     } else if constexpr (eos == margherita_1d) {
-      double h = h_in;
       Kadath::Margherita::Cold_Table::error_t error;
-      rho = Kadath::Margherita::Cold_Table::rho__h_cold(h, error);
+      rho = Kadath::Margherita::Cold_Table::rho__h_cold(h_in, error);
     }
 #ifdef WITH_GRHAYL_EOS
     else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
       rho = ghl_hybrid_compute_rho_cold_from_h(ghl_eos_params.get(), h_in);
     } else if constexpr (eos == ghl_eos_tabulated) {
+      // GRHayL will throw an error rather than enforce table bounds
+      // so we enforce them here instead.
+      size_t const N = ghl_eos_params->N_rho;
+      const double h_min = std::exp(ghl_eos_params->lh_of_lr[0]);
+      const double h_max = std::exp(ghl_eos_params->lh_of_lr[N-1]);
+      if(h_in < h_min) {
+        h_in = h_min;
+      } else if(h_in > h_max) {
+        h_in = h_max;
+      }
       rho = ghl_tabulated_compute_rho_cold_from_h(ghl_eos_params.get(), h_in);
     }
 #endif
