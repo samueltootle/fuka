@@ -204,10 +204,28 @@ struct FUKA_EOS_Wrapper {
       const double h_max = std::exp(ghl_eos_params->lh_of_lr[N-1]);
       if(h_in < h_min) {
         h_in = h_min;
+      std::cout << ghl_eos_params->table_logrho[0] << std::endl;
+        return std::exp(ghl_eos_params->table_logrho[0]);
       } else if(h_in > h_max) {
         h_in = h_max;
+        std::cout << ghl_eos_params->table_logrho[N-1] << std::endl;
+        return std::exp(ghl_eos_params->table_logrho[N-1]);
       }
-      rho = ghl_tabulated_compute_rho_cold_from_h(ghl_eos_params.get(), h_in);
+      // rho = ghl_tabulated_compute_rho_cold_from_h(ghl_eos_params.get(), h_in);
+
+      double const eps = ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rho);
+      double const press = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rho);
+
+      const auto func = [&](const double &lrho) {
+        double const rho = std::exp(lrho);
+        double const eps = ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rho);
+        double const press = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rho);
+
+        return h_in - ( 1. + eps + press/rho);
+      };
+
+      auto lrho = zero_brent<>(log(ghl_eos_params->rho_min), 0.999*log(ghl_eos_params->rho_max), 1.0e-13, func);
+      return std::exp(lrho);
     }
 #endif
     return rho;
