@@ -160,13 +160,6 @@ struct EOS_initialize {
               : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...);
 
       setup_Cold_Table(filename, interp_pts, h_cut);
-      // std::cout << Kadath::Margherita::Cold_Table::rhomin << std::endl;
-      // std::cout << Kadath::Margherita::Cold_Table::rhomax << std::endl;
-      // std::cout << Kadath::Margherita::Cold_Table::press_min << std::endl;
-      // std::cout << Kadath::Margherita::Cold_Table::press_max << std::endl;
-      // std::cout << Kadath::Margherita::Cold_Table::hmin << std::endl;
-      // std::cout << Kadath::Margherita::Cold_Table::hmax << std::endl;
-
       return;
     }
 #ifdef WITH_GRHAYL_EOS
@@ -176,7 +169,6 @@ struct EOS_initialize {
       using namespace ::Kadath::GHL_EOS;
       auto eos_params = ghl_setup_table(filename);
       eos_t::ghl_eos_params = std::move(eos_params);
-
       return;
     } else if (eos_type == "grhayl_eos_hybrid") {
       using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_hybrid>;
