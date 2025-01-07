@@ -156,7 +156,7 @@ inline void check_dist(double dist,
   auto const recommended_dist = 8. * M;
   if (dist <= garbage_dist) {
     std::cerr << "Distance is set to (" << dist
-              << ") which will not give results. \nSet to (" << recommended_dist
+              << ") which may not give results. \nSet to (" << recommended_dist
               << ") for something reasonable.\n";
     std::_Exit(EXIT_FAILURE);
   }
