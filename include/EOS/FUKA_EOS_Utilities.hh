@@ -20,7 +20,6 @@
 #include <memory>
 #include "Configurator/config_enums.hpp"
 #include "EOS/EOS.hh"
-#include "ghl_eos_helpers/ghl_hybrid_helpers.hpp"
 #include "standalone/cold_pwpoly.hh"
 #include "standalone/cold_pwpoly_implementation.hh"
 #include "standalone/cold_table.hh"
@@ -31,6 +30,7 @@
 
 #ifdef WITH_GRHAYL_EOS
 #include <grhayl/ghl.h>
+#include "ghl_eos_helpers/ghl_hybrid_helpers.hpp"
 #endif
 
 namespace Kadath {
@@ -101,7 +101,9 @@ struct EOS_Function_Dispatcher {
       using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
       functor_wrapper<eos_t> wrapper;
       return wrapper.template operator()<F>(std::forward<Args>(args)...);
-    } else if (eos_type == "grhayl_eos_tabulated") {
+    }
+#ifdef WITH_GRHAYL_EOS
+    else if (eos_type == "grhayl_eos_tabulated") {
       using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_tabulated>;
       functor_wrapper<eos_t> wrapper;
       return wrapper.template operator()<F>(std::forward<Args>(args)...);
@@ -110,6 +112,7 @@ struct EOS_Function_Dispatcher {
       functor_wrapper<eos_t> wrapper;
       return wrapper.template operator()<F>(std::forward<Args>(args)...);
     }
+#endif
     throw std::invalid_argument("\nInvalid EOS type\n");
   }
 };
@@ -156,13 +159,24 @@ struct EOS_initialize {
               ? 2000
               : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...);
 
-      return setup_Cold_Table(filename, interp_pts, h_cut);
-    } else if (eos_type == "grhayl_eos_tabulated") {
+      setup_Cold_Table(filename, interp_pts, h_cut);
+      // std::cout << Kadath::Margherita::Cold_Table::rhomin << std::endl;
+      // std::cout << Kadath::Margherita::Cold_Table::rhomax << std::endl;
+      // std::cout << Kadath::Margherita::Cold_Table::press_min << std::endl;
+      // std::cout << Kadath::Margherita::Cold_Table::press_max << std::endl;
+      // std::cout << Kadath::Margherita::Cold_Table::hmin << std::endl;
+      // std::cout << Kadath::Margherita::Cold_Table::hmax << std::endl;
+
+      return;
+    }
+#ifdef WITH_GRHAYL_EOS
+    else if (eos_type == "grhayl_eos_tabulated") {
       using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_tabulated>;
 
       using namespace ::Kadath::GHL_EOS;
       auto eos_params = ghl_setup_table(filename);
       eos_t::ghl_eos_params = std::move(eos_params);
+
       return;
     } else if (eos_type == "grhayl_eos_hybrid") {
       using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_hybrid>;
@@ -171,6 +185,7 @@ struct EOS_initialize {
       eos_t::ghl_eos_params = std::move(eos_params);
       return;
     }
+#endif
     throw std::invalid_argument("\nInvalid EOS type\n");
   }
 };
