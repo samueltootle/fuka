@@ -6,8 +6,9 @@ from matplotlib.gridspec import GridSpec
 
 pyFUKA_libspath = os.getenv('HOME_KADATH')+'/codes/PythonTools/lib/'
 sys.path.append(pyFUKA_libspath)
-from fuka_plot_tools.setup_argparse import *
-from fuka_plot_tools.setup_utils import *
+from fuka_plot_tools.setup_argparse import get_args
+from fuka_plot_tools.setup_utils import LabelSize, TickSize, CbarLabelSize, gen_cbarlabel, check_ID_filename, \
+  get_quiver_vars, parse_var, var_name, extract_data, extract_data_isotropic, extract_path_filename, get_reader_args
 
 def plot_2d(
   x_coords, 
@@ -87,8 +88,7 @@ if __name__ == "__main__":
     'image.cmap' : args.cmap
   })
   nrows = 1
-  cbarbottom = args.cbar_bottom
-  cbarpad = 20
+  cbar_location = args.cbar_location
   plt.rcParams['figure.constrained_layout.use'] = True
   fig = plt.figure()
   norm = colors.Normalize(vmin=args.vmin, vmax = args.vmax, clip=False)
@@ -141,7 +141,7 @@ if __name__ == "__main__":
       #print("Plot index: {}".format(1+i))
       ax = fig.add_subplot(nrows, len(pltvars), 1+i)
       
-      if len(pltvars) != 1:
+      if len(pltvars) != 1 or args.annotate:
         ax.text(
           0.05,
           0.95,
@@ -176,15 +176,33 @@ if __name__ == "__main__":
       data = pickle.load(handle)
     # store in a list to work in loops later
     axs = [fig.add_subplot(nrows, len(pltvars), 1)]
+    if args.annotate:
+        axs[0].text(
+          0.05,
+          0.95,
+          cbarlabel,
+          verticalalignment='top', 
+          horizontalalignment='left',
+          transform=axs[0].transAxes,
+          fontsize=15,
+          color='w')
+        cbarlabel = None
     cs = plotf(data,axs=axs[0],plotz=plotz)
   
   # Plot colorbar
+  if "top" in cbar_location or "bottom" in cbar_location:
+    orientation = 'horizontal'
+    cbarpad = 10
+    # TickSize /= 4
+  else:
+    orientation = 'vertical'
+    cbarpad = 20
+    
   if args.cbar:
     font_color = 'w' if args.clean else 'k'
     if len(pltvars) > 1:
       # generate axes across all plots
-      loc = 'bottom' if cbarbottom else 'top'
-      cbarax,kw = mpl.colorbar.make_axes(axs, location=loc, orientation='horizontal', aspect=70, shrink=1, fraction=0.15,extend='both')
+      cbarax,kw = mpl.colorbar.make_axes(axs, location=cbar_location, orientation=orientation, aspect=70, shrink=1, fraction=0.15,extend='both')
 
       # https://github.com/matplotlib/matplotlib/issues/22052
       # for horizontal colorbars, we need to invert the axis
@@ -193,19 +211,22 @@ if __name__ == "__main__":
       extend = 'both' if mpl.__version__ > '3.5.1' else None
       cbar = fig.colorbar(
         cs,
-        cax=cbarax, ticklocation=loc,
-        orientation='horizontal', extend='both',
+        cax=cbarax, ticklocation=cbar_location,
+        orientation=orientation, extend='both',
         ticks=np.linspace(norm.vmin, norm.vmax, num=5)
       )
     else:
-      cbarax,kw = mpl.colorbar.make_axes(axs, location='right', orientation='vertical', aspect=30)
+      cbarax,kw = mpl.colorbar.make_axes(axs, location=cbar_location, orientation=orientation, aspect=30)
       cbar = fig.colorbar(
         cs,
-        cax=cbarax, ticklocation='right',
-        orientation='vertical', extend='both',
+        cax=cbarax, ticklocation=cbar_location,
+        orientation=orientation, extend='both',
         ticks=np.linspace(norm.vmin, norm.vmax, num=5)
       )
+    if orientation == 'vertical':  
       cbar.set_label(cbarlabel, labelpad=cbarpad, rotation=270, color=font_color, size=CbarLabelSize)
+    else:
+      cbar.set_label(cbarlabel, labelpad=cbarpad, color=font_color, size=CbarLabelSize)
 
   # Plot Quiver
   if not pltqvars is None:
@@ -245,7 +266,6 @@ if __name__ == "__main__":
       ax.set_axis_off()
     if args.cbar:
       ticks=cbar.get_ticks()
-      cbar.set_label(cbarlabel, labelpad=cbarpad, rotation=270, color=font_color, size=CbarLabelSize)
 
       # set colorbar tick color
       cbar.ax.xaxis.set_tick_params(color=font_color)

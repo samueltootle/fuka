@@ -282,35 +282,52 @@ void interp_adapted_mapping(const adapted_t* new_shell, const int old_outer_adap
 
   //Need to normalize by the constant radius at the INNER_BC of the outer_adapted shell in the old space
   auto old_shell = old_radius_field.get_space().get_domain(old_outer_adapted_dom);
+  int const old_ndim = old_shell->get_ndim();
   double rinner = get_radius(old_shell, INNER_BC);
 
   Index new_pos(new_shell->get_nbr_points());
   double xc_new = new_shell->get_center()(1);
   double xc_old = old_shell->get_center()(1);
   do {
-    double x = new_shell->get_cart(1)(new_pos) - xc_new;
-    double y = new_shell->get_cart(2)(new_pos);
-    double rsq = x*x + y*y;
-    double z{};
-    if(ndim == 3) {
-      z = new_shell->get_cart(3)(new_pos);
-      rsq += z*z;
-    }
+    
+    auto interp_val = [&](auto const x, auto const y, auto const z) {
+      Kadath::Point absol(old_ndim);
+      switch(old_ndim) {
+        case 2:
+        {
+          auto rsq_xy = x * x + y * y;
+          auto r_xy = std::sqrt(rsq_xy);
+          absol.set(1) = r_xy + xc_old;
+          absol.set(2) = z;
+          break;
+        }
+        case 3:
+          absol.set(1) = x + xc_old;
+          absol.set(2) = y;
+          absol.set(3) = z;
+          break;
+      }
+      return old_radius_field.val_point(absol);
+    };
+    double x, y, z;
 
+    if(ndim == 3) {
+      x = new_shell->get_cart(1)(new_pos) - xc_new;
+      y = new_shell->get_cart(2)(new_pos);
+      z = new_shell->get_cart(3)(new_pos);
+    } else {
+      x = new_shell->get_cart(1)(new_pos) - xc_new;
+      y = 0; // phi symmetry
+      z = new_shell->get_cart(2)(new_pos);
+    }
+    double rsq = x*x + y*y + z*z;
     double r = std::sqrt(rsq);
 
     x /= r / rinner;
     y /= r / rinner;
-    
-    Kadath::Point absol(ndim);
-    absol.set(1) = x + xc_old;
-    absol.set(2) = y;
+    z /= r / rinner;
 
-    if(ndim == 3) {
-      z /= r / rinner;
-      absol.set(3) = z;
-    }
-    new_mapping.set(new_pos) = old_radius_field.val_point(absol);
+    new_mapping.set(new_pos) = interp_val(x, y, z);
 
   } while(new_pos.inc());
 

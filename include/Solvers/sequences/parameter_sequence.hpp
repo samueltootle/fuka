@@ -61,6 +61,9 @@ struct Parameter_sequence_base {
   bool is_set() const {
       return !std::isnan(seqinit) && !std::isnan(seqfinal);
   }
+  bool is_varying() const {
+      return !std::isnan(seqinit) && !std::isnan(seqfinal) && seqinit != seqfinal;
+  }
   /// Determine if a default value is initialized
   bool is_default_set() const {
       return !std::isnan(parameter_val);
@@ -125,6 +128,7 @@ struct Parameter_sequence : public Parameter_sequence_base {
     /// Determine the conditional based on whether the
     /// sequence needs to increase or decrease
     if(is_set()) {
+      parameter_val = seqinit;
       if (seqinit < seqfinal) 
         conditional = std::less_equal<double>{};
       else

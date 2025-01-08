@@ -71,7 +71,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
     output_str = ::Kadath::FUKA_Syst_tools::get_ns_mass_fixing_output(bconfig, seq);
   } else {
     syst.add_var("hc", bconfig(BCO_PARAMS::HC));
-    syst.add_var("Mb"  , bconfig(BCO_PARAMS::MB));
     syst.add_cst("Madm", bconfig(BCO_PARAMS::MADM));
     std::stringstream output;
     output << "Mass fixed using ADM Mass = " << bconfig(BCO_PARAMS::HC);
@@ -114,7 +113,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::norot_stage(bool fixed) {
     auto idx{seq->mass_idx()};
     switch(idx) {
       case BCO_PARAMS::MADM:
-        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
         break;
       case BCO_PARAMS::MB:
@@ -284,13 +282,10 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
     bool add_Madm_int = true;
     switch(idx) {
       case BCO_PARAMS::MADM:
-        space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
         add_Madm_int = false;
         break;
       case BCO_PARAMS::MB:
-        syst.add_var("hc", bconfig(BCO_PARAMS::HC));
-        syst.add_cst("Mb"  , bconfig(BCO_PARAMS::MB));
         space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
         break;
       default:
@@ -318,8 +313,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::uniform_rot_stage() {
         break;
     }
   } else {
-    space.add_eq_int_volume(syst, 2, "integvolume(intMb) = Mb");
-
     space.add_eq_int_inf(syst, spin_fixing_definition.c_str());
     space.add_eq_int_inf(syst, "integ(intMadm) = Madm");
   }
@@ -639,8 +632,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_def("Wsquare = 1. / (1. - Usquare)");
   syst.add_def("W = sqrt(Wsquare)");
 
-  // This converges, but isn't correct
-  // syst.add_def("j = Wsq / N * U");
   syst.add_def("j = P^4 * Wsquare * f_ij * U^i * mg^j / N");
   syst.add_def("omelaw = omec - j / diffA^2");
 
@@ -652,7 +643,6 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::keh_stage() {
   syst.add_def(2,"intS = A_ij * mg^i * sm^j / 2. / 4piG") ;
 
   for (int d = 0; d < ndom; d++) {
-    // syst.add_eq_full(d, "Omega - omelaw = 0");
     switch (d) {
     case 0:
     case 1:
