@@ -69,16 +69,15 @@ struct FUKA_EOS_Wrapper {
 
   static inline double rho_energy__rho_cold(const double rhoB_in) {
     double eps;
+    double rho = rhoB_in;
     if constexpr (eos == margherita_pwp) {
       double press;
-      double rho = rhoB_in;
       Kadath::Margherita::Cold_PWPoly::error_t error;
       press =
           Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(eps, rho,
                                                                     error);
     } else if constexpr (eos == margherita_1d) {
       double press;
-      double rho = rhoB_in;
       Kadath::Margherita::Cold_Table::error_t error;
       press = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps, rho,
                                                                        error);
@@ -89,21 +88,21 @@ struct FUKA_EOS_Wrapper {
       ghl_hybrid_compute_P_cold_and_eps_cold(ghl_eos_params.get(), rhoB_in, &P,
                                              &eps);
     } else if constexpr (eos == ghl_eos_tabulated) {
-      eps = ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rhoB_in);
+      rho = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params, rhoB_in);
+      eps = ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rho);
     }
 #endif
-    return rhoB_in * (1.0 + eps);
+    return rho * (1.0 + eps);
   }
 
   static inline double dpress_cold_drho__rho(const double rhoB_in) {
     double dpress_cold_drho;
+    double rho = rhoB_in;
     if constexpr (eos == margherita_pwp) {
-      double rho = rhoB_in;
       Kadath::Margherita::Cold_PWPoly::error_t error;
       dpress_cold_drho =
           Kadath::Margherita::Cold_PWPoly::dpress_cold_drho__rho(rho, error);
     } else if constexpr (eos == margherita_1d) {
-      double rho = rhoB_in;
       Kadath::Margherita::Cold_Table::error_t error;
       dpress_cold_drho =
           Kadath::Margherita::Cold_Table::dpress_cold_drho__rho(rho, error);
@@ -116,8 +115,9 @@ struct FUKA_EOS_Wrapper {
       ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rhoB_in, &press_cold);
       dpress_cold_drho = Gamma * press_cold / rhoB_in;
     } else if constexpr (eos == ghl_eos_tabulated) {
+      rho = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params, rhoB_in);
       dpress_cold_drho =
-          ghl_tabulated_compute_dP_drho_from_rho(ghl_eos_params.get(), rhoB_in);
+          ghl_tabulated_compute_dP_drho_from_rho(ghl_eos_params.get(), rho);
     }
 #endif
     return dpress_cold_drho;
@@ -135,14 +135,13 @@ struct FUKA_EOS_Wrapper {
 
   static inline double P_cold_from_rho(const double rhoB_in) {
     double P;
+    double rho = rhoB_in;
     if constexpr (eos == margherita_pwp) {
-      double rho = rhoB_in;
       double eps;
       Kadath::Margherita::Cold_PWPoly::error_t error;
       P = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(eps, rho,
                                                                     error);
     } else if constexpr (eos == margherita_1d) {
-      double rho = rhoB_in;
       double eps;
       Kadath::Margherita::Cold_Table::error_t error;
       P = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps, rho,
@@ -152,7 +151,8 @@ struct FUKA_EOS_Wrapper {
     else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
       ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rhoB_in, &P);
     } else if constexpr (eos == ghl_eos_tabulated) {
-      P = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rhoB_in);
+      rho = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params, rhoB_in);
+      P = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rho);
     }
 #endif
     return P;
@@ -178,6 +178,7 @@ struct FUKA_EOS_Wrapper {
       ghl_hybrid_compute_P_cold_and_eps_cold(ghl_eos_params.get(), rhoB_in, &P,
                                              &eps_cold);
     } else if constexpr (eos == ghl_eos_tabulated) {
+      rhoB_in = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params, rhoB_in);
       P = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rhoB_in);
       eps_cold =
           ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rhoB_in);

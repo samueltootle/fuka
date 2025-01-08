@@ -117,6 +117,23 @@ inline double ghl_tabulated_rho__h_cold(
     auto lrho = zero_brent<>(log(ghl_eos_params->rho_min * 1.001), log(ghl_eos_params->rho_max), 1.0e-13, func);
     return std::exp(lrho);
 }
+
+// GRHaYL will error out rather than enforce table bounds.
+// Therefore we check them here to avoid errors.
+inline double ghl_tabulated_check_rho(
+  std::unique_ptr<ghl_eos_parameters>& ghl_eos_params,
+  const double rho_in) {
+
+  // Enforce lower bound
+  double lrho = std::max(std::log(rho_in), ghl_eos_params->table_logrho[0]) ;
+
+  const auto N = ghl_eos_params->N_rho;
+  // Enforce upper bound
+  lrho = std::min(lrho, ghl_eos_params->table_logrho[N-1]);
+
+  return std::exp(lrho);
+}
+
 }  // namespace GHL_EOS
 }  // namespace Kadath
 #endif
