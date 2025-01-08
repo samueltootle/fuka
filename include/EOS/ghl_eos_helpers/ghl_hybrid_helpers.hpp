@@ -63,9 +63,9 @@ inline double ghl_hybrid_rho__h_cold(
   }
 
   const auto func = [&](const double &lrho) {
-   double eps_cold;
+   double eps_cold, press_cold;
    double rho = std::exp(lrho);
-   const double press_cold = press_cold_eps_cold__rho(eps_cold, rho, error);
+   ghl_hybrid_compute_P_cold_and_eps_cold(ghl_eos_params.get(), rho, &press_cold, &eps_cold);
    return h_cold - ( 1. + eps_cold + press_cold / exp(lrho) );
   };
   auto lrho = zero_brent<>(log(rhomin/10.), 0.999*log(rhomax), 1.0e-13, func);

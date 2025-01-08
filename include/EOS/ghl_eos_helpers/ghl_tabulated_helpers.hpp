@@ -95,7 +95,7 @@ inline auto ghl_setup_table(std::string table_par_file) {
 
 inline double ghl_tabulated_rho__h_cold(
     std::unique_ptr<ghl_eos_parameters>& ghl_eos_params,
-    double & h_cold) {
+    double & h_in) {
     // GRHayL will throw an error rather than enforce table bounds
     // so we enforce them here instead.
     size_t const N = ghl_eos_params->N_rho;
