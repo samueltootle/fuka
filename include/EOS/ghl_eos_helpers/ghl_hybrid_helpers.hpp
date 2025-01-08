@@ -18,11 +18,14 @@ inline auto populate_ghl_polytrope(std::string polytrope_file) {
 
   parse_polytrope_file parser;
   parser(polytrope_file);
+
   const double gamma_th = 0.0;
+
+  // Note: the first element of the rho_tab array is not used by GRHAYLEOS
   ghl_initialize_hybrid_eos_functions_and_params(parser.rhomin, parser.rhomin,
                                                  parser.rhomax,
                                                  parser.num_pieces,
-                                                 parser.rho_tab.data(),
+                                                 parser.rho_tab.data()+1,
                                                  parser.gamma_tab.data(),
                                                  parser.K0, gamma_th, &eos);
   eos.press_atm = parser.Pmin;
