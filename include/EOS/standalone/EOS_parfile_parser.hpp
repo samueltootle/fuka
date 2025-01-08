@@ -2,6 +2,7 @@
 #include <array>
 #include <cmath>
 #include <string>
+#include <fstream>
 #include "cold_pwpoly.hh"
 #include "margherita.hh"
 #ifdef WITH_GRHAYL_EOS
