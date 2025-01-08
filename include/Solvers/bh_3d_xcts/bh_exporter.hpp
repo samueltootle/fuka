@@ -1,6 +1,7 @@
 #pragma once
 #include "Solvers/exporter.hpp"
 #include "adapted_bh.hpp"
+#include <algorithm>
 namespace Kadath::FUKA_Solvers {
 
 struct CFMS_BH_Exporter
@@ -65,6 +66,28 @@ struct CFMS_BH_Exporter
     {"k23"  , OUTPUT_VARS::K23},
     {"k33"  , OUTPUT_VARS::K33}
   };
+
+  std::vector<CFMS_BH_Exporter::XCTS_VARS> xcts_solution_indicies{
+    XCTS_PSI,
+    XCTS_ALPHA,
+    XCTS_BETA1,
+    XCTS_BETA2,
+    XCTS_BETA3
+  };
+
+  std::vector<CFMS_BH_Exporter::XCTS_VARS> xcts_all_indicies{
+    XCTS_PSI,
+    XCTS_ALPHA,
+    XCTS_BETA1,
+    XCTS_BETA2,
+    XCTS_BETA3,
+    XCTS_A11,
+    XCTS_A12,
+    XCTS_A13,
+    XCTS_A22,
+    XCTS_A23,
+    XCTS_A33
+  };
   // clang-format on
 
   using interp_ary_t = std::array<double, NUM_XCTS_VARS>;
@@ -92,6 +115,7 @@ struct CFMS_BH_Exporter
  protected:
   std::vector<std::reference_wrapper<const Scalar>> quants;
   interp_ary_t quant_vals;
+  interp_ary_t quant_vals_origin;
   output_ary_t out_pw;
   bool export_ready{false};
   int const ndim{3};
@@ -102,12 +126,12 @@ struct CFMS_BH_Exporter
 
   void populate_quants();
 
- public:
-  std::vector<std::reference_wrapper<const Scalar>> const& get_quants() const {
-    return quants;
-  }
+  public:
+  interp_ary_t const & get__quant_vals() const { return quant_vals; }
+  std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
   bool is_export_ready() const { return export_ready; }
-  const int& get_ndim() const { return ndim; }
+  void set__export_ready(bool v) { export_ready = v; }
+  const int & get_ndim() const { return ndim; }
 
   CFMS_BH_Exporter()
       : Exporter<config_t, space_t>(),
@@ -121,14 +145,17 @@ struct CFMS_BH_Exporter
         lapse(nullptr),
         shift(nullptr) {
     load_solution_from_file();
+    populate_quants();
+    // Fill outer adapted domain with smooth junk
+    export_utils::partial_fill_excision(*this, 1, 2);
+
     extract_computed_grid_functions();
     populate_quants();
 
-    // This is to avoid a "bug" where "something" in kadath is not
-    // correctly initialized prior to copying to other threads resulting
-    // in undefined behavior.  By running the interpolator once, this
-    // bug seems to be avoided.
-    this->export_pointwise(0.5, 0., 0.);
+    // Store origin value for use by excision filling of nucleus dom
+    this->export_pointwise(0., 0., 0.);
+    std::copy(quant_vals.begin(), quant_vals.end(), quant_vals_origin.begin());
+    export_ready = true;
   }
 
   CFMS_BH_Exporter(CFMS_BH_Exporter const& r);
@@ -143,12 +170,15 @@ struct CFMS_BH_Exporter
                                      int const interp_order = 8,
                                      double const delta_r_rel = 0.3);
 
-  output_ary_t export_pointwise(double const& x,
-                                double const& y,
-                                double const& z,
-                                double const interpolation_offset = 0.,
-                                int const interp_order = 8,
-                                double const delta_r_rel = 0.3);
+  interp_ary_t interpolate_pointwise_subset(double const & x, double const & y, double const & z,
+    std::vector<XCTS_VARS> slice, double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
+  interp_ary_t interpolate_pointwise__solution_gfs(double const & x, double const & y, double const & z,
+    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
+  interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z,
+    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
+
+  output_ary_t export_pointwise(double const & x, double const & y, double const & z,
+    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
 
   grid_ary_t export_coordinate_array(int const npoints,
                                      double const* xx,
