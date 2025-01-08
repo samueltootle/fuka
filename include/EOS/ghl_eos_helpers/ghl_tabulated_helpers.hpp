@@ -14,6 +14,9 @@ namespace GHL_EOS {
  * Update GRHaYL beta equilibrium table to be more useful for elliptic solvers.
  */
 inline void ghl_modify_beta_equ_table(std::unique_ptr<ghl_eos_parameters>& eos) {
+  // This needs more testing regarding its utility
+  return;
+
   // Find the bounded slice of interest
   std::vector<double> lp_of_lr_v;
   std::vector<double> le_of_lr_v;
@@ -22,9 +25,10 @@ inline void ghl_modify_beta_equ_table(std::unique_ptr<ghl_eos_parameters>& eos) 
   for(int ir = 0; ir < eos->N_rho; ir++) {
     const double rho = exp(eos->table_logrho[ir]);
     const double h = exp(eos->lh_of_lr[ir]);
-    // if(rho < eos->rho_min || rho > eos->rho_max || h < 1) {
-    //   continue;
-    // }
+
+    if(rho < eos->rho_min || rho > eos->rho_max || h < 1) {
+      continue;
+    }
     lp_of_lr_v.push_back(eos->lp_of_lr[ir]);
     le_of_lr_v.push_back(eos->le_of_lr[ir]);
     lh_of_lr_v.push_back(eos->lh_of_lr[ir]);
@@ -71,19 +75,6 @@ inline auto populate_ghl_tabulated(std::string table_par_file) {
 
   ghl_modify_beta_equ_table(eos_params);
 
-  // for(int ir = 0; ir < eos_params->N_rho; ir++) {
-  //   std::cout << std::exp(eos_params->table_logrho[ir]) << " "
-  //             << std::exp(eos_params->lh_of_lr[ir]) << " "
-  //             << std::exp(eos_params->lp_of_lr[ir]) << " "
-  //             << std::exp(eos_params->le_of_lr[ir]) << std::endl;
-  // }
-  // std::cout << "##################################################################################\n";
-  // for(int ir = 0; ir < eos_params->N_rho; ir++) {
-  //   std::cout << eos_params->table_logrho[ir] << " "
-  //             << eos_params->lh_of_lr[ir] << " "
-  //             << eos_params->lp_of_lr[ir] << " "
-  //             << eos_params->le_of_lr[ir] << std::endl;
-  // }
   return eos_params;
 }
 
