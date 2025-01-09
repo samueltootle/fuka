@@ -163,13 +163,6 @@ struct CFMS_BH_Exporter
   CFMS_BH_Exporter& operator=(const CFMS_BH_Exporter& b);
 
  public:
-  interp_ary_t interpolate_pointwise(double const& x,
-                                     double const& y,
-                                     double const& z,
-                                     double const interpolation_offset = 0.,
-                                     int const interp_order = 8,
-                                     double const delta_r_rel = 0.3);
-
   interp_ary_t interpolate_pointwise_subset(double const & x, double const & y, double const & z,
     std::vector<XCTS_VARS> slice, double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
   interp_ary_t interpolate_pointwise__solution_gfs(double const & x, double const & y, double const & z,
