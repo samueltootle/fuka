@@ -22,16 +22,15 @@
  */
 #include "EOS/EOS.hh"
 #include "EOS/FUKA_EOS_Utilities.hh"
+#include "bco_utilities.hpp"
 #include "kadath.hpp"
 
 // config_file includes
 #include "Configurator/config_binary.hpp"
-#include "bco_utilities.hpp"
 #include "coord_fields.hpp"
 
 #include <iostream>
 #include <numeric>
-#include "mpi.h"
 using namespace Kadath;
 using namespace Kadath::FUKA_Config;
 using namespace Kadath::FUKA_EOS;
@@ -369,8 +368,8 @@ struct reader_output {
         // the spin component of the velocity field
         << FORMAT1 << "Omega = " << bconfig(OMEGA, BCO1)
         << std::endl
-        //<< FORMAT1 << "qlPy = " << NS_py << std::endl
-        //<< FORMAT1 << "qlPx = " << NS_px << std::endl
+        << FORMAT1 << "Local P_y = " << NS_py << std::endl
+        << FORMAT1 << "Local P_x = " << NS_px << std::endl
         << FORMAT << "Central Density = " << rhoc1 << std::endl
         << FORMAT << "Central log(h) = " << loghc1 << std::endl
         << FORMAT << "Central Pressure = " << pressc1 << std::endl
@@ -397,42 +396,56 @@ struct reader_output {
               << bconfig(CHI, BCO2) << "]\n"
               << FORMAT1 << "S = " << ql_spinbh
               << std::endl
-              //<< FORMAT1 << "qlPy = " << BH_py << std::endl
-              //<< FORMAT1 << "qlPx = " << BH_px << std::endl
+              << FORMAT1 << "Local P_y = " << BH_py << std::endl
+              << FORMAT1 << "Local P_x = " << BH_px << std::endl
               << FORMAT1 << "Omega = " << bconfig(OMEGA, BCO2) << "\n\n";
 
-    std::cout << header + " Binary " + header + "\n"
-              << FORMAT1 << std::fixed << "RES = " << "[" << res_r << ","
-              << res_t << "," << res_p << "]\n";
+    // boundaries of additional outer shells
     auto outer_shells = space.get_n_shells_outer();
+    if (outer_shells > 0) {
+      std::cout << FORMAT1 << "Outer shell bounds\n";
+      print_shells(ndom - 1 - outer_shells, ndom - 1);
+    }
+
     auto M1 = bconfig(MADM, BCO1);
     auto M2 = bconfig(MCH, BCO2);
     if (M2 > M1)
       std::swap(M1, M2);
     auto Mtot = M1 + M2;
-    if (outer_shells > 0) {
-      std::cout << FORMAT1 << "Outer shell bounds\n";
-      print_shells(ndom - 1 - outer_shells, ndom - 1);
-    }
-    std::cout << FORMAT1 << "Q = " << M2 / M1 << std::endl
+    std::cout << header + " Binary " + header + "\n"
+              << FORMAT1 << std::fixed << "RES = " << "[" << res_r << ","
+              << res_t << "," << res_p << "]\n"
+              // mass ratio, ratio of the ADM masses at infinity
+              << FORMAT1 << "Q = " << M2 / M1 << std::endl
               << FORMAT1 << std::setprecision(2)
+              // Separation distance in geometrized units
               << "Separation = " << bconfig(DIST) << " ["
+              // [Proper separation], (coordinate separation [km])
               << bconfig(DIST) / Mtot << "] (" << bconfig(DIST) * M2km << "km)"
               << std::endl
+              // orbital angular frequency parameter
               << FORMAT1 << "Orbital Omega = " << bconfig(GOMEGA) << std::endl
+              // Komar and ADM mass of the binary
               << FORMAT1 << "Komar mass = " << komar << std::endl
               << FORMAT1 << "Adm mass = " << adm_inf << ", Diff: " << e_diff
               << std::endl
               << FORMAT1 << "Total Mass = " << Minf << " ["
-              << Madm1 + bconfig(MCH, BCO2) << "]\n"
+              << Mtot << "]\n"
+              // ADM angular momentum of the binary
               << FORMAT1 << "Adm moment. = " << Jinf << std::endl
+              // binding energy, defined by the gravitational mass difference at finite separation
               << FORMAT1 << "Binding energy = " << e_bind << std::endl
+              // dimensionless orbital frequency
               << FORMAT1 << "Minf * Ome = " << Minf * bconfig(GOMEGA)
               << std::endl
+              // dimensionless binding energy
               << FORMAT1 << "E_b / Minf = " << e_bind / Minf << std::endl
-              << FORMAT << "Px = " << Px << std::endl
-              << FORMAT << "Py = " << Py << std::endl
-              << FORMAT << "Pz = " << Pz << std::endl
+              // ADM linear momentum
+              << FORMAT << "ADM P_x = " << Px << std::endl
+              << FORMAT << "ADM P_y = " << Py << std::endl
+              << FORMAT << "ADM P_z = " << Pz << std::endl
+              // "center of mass" defined by a vanishing ADM momentum at infinity
+              // With an analytical estimate of the center of mass estimate from Osokine+
               << FORMAT1 << "COMx = " << bconfig(COM) << ", A-COMx = " << COMx
               << std::endl
               << FORMAT1 << "COMy = " << bconfig(COMY) << ", A-COMy = " << COMy
@@ -442,11 +455,6 @@ struct reader_output {
 };
 
 int main(int argc, char** argv) {
-  int rc = MPI_Init(&argc, &argv);
-  if (rc != MPI_SUCCESS) {
-    cerr << "Error starting MPI" << endl;
-    MPI_Abort(MPI_COMM_WORLD, rc);
-  }
 
   if (argc < 2) {
     std::cerr << "Usage: ./reader /<path>/<str: BHNS ID basename>.info "
@@ -458,12 +466,12 @@ int main(int argc, char** argv) {
   // Name of config.info file
   std::string in_filename = argv[1];
   kadath_config_boost<BIN_INFO> bconfig(in_filename);
+
   // setup the EOS
   EOS_initialize::init(bconfig, NODES::BCO1);
   const std::string eos_type =
       bconfig.eos<std::string>(EOS_PARAMS::EOSTYPE, NODES::BCO1);
   EOS_Function_Dispatcher::dispatch<reader_output>(bconfig, eos_type, bconfig);
 
-  MPI_Finalize();
   return EXIT_SUCCESS;
 }

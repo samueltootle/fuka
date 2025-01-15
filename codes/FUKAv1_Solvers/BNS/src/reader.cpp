@@ -532,9 +532,9 @@ struct bns_reader {
         << FORMAT << "E_b / Minf = " << e_bind / Minf
         << std::endl
         // ADM linear momentum
-        << FORMAT << "Px = " << Px << std::endl
-        << FORMAT << "Py = " << Py << std::endl
-        << FORMAT << "Pz = " << Pz
+        << FORMAT << "ADM P_x = " << Px << std::endl
+        << FORMAT << "ADM P_y = " << Py << std::endl
+        << FORMAT << "ADM P_z = " << Pz
         << std::endl
         // "center of mass" defined by a vanishing ADM momentum at infinity
         // With an analytical estimate of the center of mass estimate from Osokine+
