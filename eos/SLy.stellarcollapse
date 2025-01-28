@@ -3,7 +3,7 @@
 # The format of the file is not static, however, the order of variables is
 # Therefore, comments can be added so long as they are on their own lines.
 
-eos_path: Hempel_DD2EOS_rho234_temp180_ye60_version_1.1_20120817.h5
+eos_path: SLy4_3335_rho391_temp163_ye66_adjusted.h5
 
 # Currently only EOS tables in the stellar collapse format are supported
 eos_format: stellarcollapse
