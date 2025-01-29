@@ -19,26 +19,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "mpi.h"
 #include "Solvers/bh_3d_xcts/bh_3d_xcts_driver.hpp"
-#include "Solvers/solver_startup.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
+#include "Solvers/solver_startup.hpp"
+#include "mpi.h"
 
 using namespace Kadath::FUKA_Config;
 using namespace Kadath::FUKA_Solvers;
 
 int main(int argc, char** argv) {
-  int rc = MPI_Init(&argc, &argv) ;
-  if (rc!=MPI_SUCCESS) {
-    cerr << "Error starting MPI" << endl ;
-    MPI_Abort(MPI_COMM_WORLD, rc) ;
+  int rc = MPI_Init(&argc, &argv);
+  if (rc != MPI_SUCCESS) {
+    cerr << "Error starting MPI" << endl;
+    MPI_Abort(MPI_COMM_WORLD, rc);
   }
-  int rank = 0 ;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   using config_t = kadath_config_boost<BCO_BH_INFO>;
   using InitSolver = Initialize_Solver<config_t>;
-  
+
   // Initialize static member variables
   InitSolver::input_configname = "initial_bh.info";
   InitSolver::bconfig;
@@ -48,10 +48,10 @@ int main(int argc, char** argv) {
   InitSolver::init_solver(argc, argv);
   config_t bconfig = InitSolver::bconfig;
 
-  if(InitSolver::example_setup) {
-    if(rank == 0) {
-      // Generate <example name>.info and terminate      
-      if(InitSolver::minimal_config) {
+  if (InitSolver::example_setup) {
+    if (rank == 0) {
+      // Generate <example name>.info and terminate
+      if (InitSolver::minimal_config) {
         bconfig.set_minimal_defaults();
         bconfig.write_minimal_config();
       } else {
@@ -65,31 +65,31 @@ int main(int argc, char** argv) {
     // that contains sequences _init/_final
     bconfig.open_config();
     bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
-    
+
     auto tree = bconfig.get_config_tree();
     auto N = number_of_sequences(tree, MBCO_PARAMS, "bh");
-    if(N > 1) {
-      if(rank == 0) {
+    if (N > 1) {
+      if (rank == 0) {
         std::cerr << "Only sequences along one component is allowed.\n";
         std::_Exit(EXIT_FAILURE);
       }
     }
-    
+
     auto resolution = parse_seq_tree(tree, "bh", "res", BCO_PARAMS::BCO_RES);
     verify_resolution_sequence(bconfig, resolution);
     auto seq = find_sequence(tree, MBCO_PARAMS, "bh");
-    
-    if(!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES))
+
+    if (!seq.is_set() && !bconfig.control(CONTROLS::SEQUENCES))
       int err = bh_3d_xcts_driver(bconfig, resolution, InitSolver::outputdir);
     else {
-      
-      
-      auto [ branch_name, key, val ] = find_leaf(tree, "N");
-      if(!key.empty()) seq.set_N(std::stoi(val));
+
+      auto [branch_name, key, val] = find_leaf(tree, "N");
+      if (!key.empty())
+        seq.set_N(std::stoi(val));
       bh_3d_xcts_sequence(bconfig, seq, resolution, InitSolver::outputdir);
     }
   }
-  
+
   MPI_Finalize();
   return EXIT_SUCCESS;
 }
