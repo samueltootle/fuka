@@ -1,19 +1,19 @@
 #include "Configurator/config_bco.hpp"
+#include "EOS/EOS.hh"
 #include "Solvers/ns_isotropic/ns_isotropic_exporter.hpp"
 #include "bco_utilities.hpp"
-#include "EOS/EOS.hh"
 // #include "EOS/standalone/tov.hh"
 
 // Kadath includes
 #include "kadath.hpp"
-#include "kadath_adapted_polar.hpp"
 #include "kadath_adapted.hpp"
+#include "kadath_adapted_polar.hpp"
 
 #include "./reader_test_tools.hpp"
 #ifdef _OPENMP
-  #include <omp.h>
+#include <omp.h>
 #endif
-#include<thread>
+#include <thread>
 
 using namespace Kadath;
 using namespace Kadath::FUKA_Config;
@@ -39,7 +39,7 @@ constexpr double dx = range / Npts;
 //
 //    auto nbrpts(space.get_domain(1)->get_nbr_points());
 //    Index i(nbrpts);
-//    
+//
 //    auto x_v = space.get_domain(1)->get_cart(1);
 //    auto z_v = space.get_domain(1)->get_cart(2);
 //    Scalar x_s(space);
@@ -59,9 +59,9 @@ constexpr double dx = range / Npts;
 //
 //}
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   // expecting a configuration file on execution
-  if(argc < 2) {
+  if (argc < 2) {
     std::cerr << "Usage: ./reader /<path>/<ID base name>.info" << std::endl;
     std::cerr << "e.g. ./reader converged.NS.9.info" << endl;
     std::_Exit(EXIT_FAILURE);
@@ -74,12 +74,12 @@ int main(int argc, char **argv) {
   std::vector<double> xx(Npts);
   std::vector<double> yy(Npts);
   std::vector<double> zz(Npts);
-  
-  #pragma omp parallel for
-  for(auto i = 0; i < Npts; ++i) {
-    xx[i]+= i * dx;
-    yy[i]+= i * dx;
-    zz[i]+= i * dx;
+
+#pragma omp parallel for
+  for (auto i = 0; i < Npts; ++i) {
+    xx[i] += i * dx;
+    yy[i] += i * dx;
+    zz[i] += i * dx;
   }
   // END ID Coords
 
@@ -87,34 +87,34 @@ int main(int argc, char **argv) {
   reader_t input_reader(ifilename);
   interp_data(input_reader, xx, yy, zz);
 
-//  kadath_config_boost<BCO_NS_INFO> bconfig(ifilename);
-//
-//  // setup the EOS
-//  const double h_cut = bconfig.eos<double>(HCUT);
-//  const std::string eos_file = bconfig.eos<std::string>(EOSFILE);
-//  const std::string eos_type = bconfig.eos<std::string>(EOSTYPE);
-//
-//  if(eos_type == "Cold_PWPoly") {
-//    using eos_t = Kadath::Margherita::Cold_PWPoly;
-//
-//    EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
-//
-//    // call reader to output diagnostics
-//    reader_test<eos_t>(bconfig);
-//  } else if(eos_type == "Cold_Table") {
-//    using eos_t = Kadath::Margherita::Cold_Table;
-//
-//    const int interp_pts = (bconfig.eos<int>(INTERP_PTS) == 0) ? \
+  //  kadath_config_boost<BCO_NS_INFO> bconfig(ifilename);
+  //
+  //  // setup the EOS
+  //  const double h_cut = bconfig.eos<double>(HCUT);
+  //  const std::string eos_file = bconfig.eos<std::string>(EOSFILE);
+  //  const std::string eos_type = bconfig.eos<std::string>(EOSTYPE);
+  //
+  //  if(eos_type == "Cold_PWPoly") {
+  //    using eos_t = Kadath::Margherita::Cold_PWPoly;
+  //
+  //    EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
+  //
+  //    // call reader to output diagnostics
+  //    reader_test<eos_t>(bconfig);
+  //  } else if(eos_type == "Cold_Table") {
+  //    using eos_t = Kadath::Margherita::Cold_Table;
+  //
+  //    const int interp_pts = (bconfig.eos<int>(INTERP_PTS) == 0) ? \
 //                            2000 : bconfig.eos<int>(INTERP_PTS);
-//
-//    EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
-//
-//    // call reader to output diagnostics
-//    reader_test<eos_t>(bconfig);
-//  } else {
-//    std::cerr << "Unknown EOSTYPE." << endl;
-//    std::_Exit(EXIT_FAILURE);
-//  }
+  //
+  //    EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
+  //
+  //    // call reader to output diagnostics
+  //    reader_test<eos_t>(bconfig);
+  //  } else {
+  //    std::cerr << "Unknown EOSTYPE." << endl;
+  //    std::_Exit(EXIT_FAILURE);
+  //  }
 
   return EXIT_SUCCESS;
 }

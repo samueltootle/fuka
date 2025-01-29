@@ -26,24 +26,24 @@
 
 #include "./reader_test_tools.hpp"
 #ifdef _OPENMP
-  #include <omp.h>
+#include <omp.h>
 #endif
-#include<thread>
+#include <thread>
 
 using namespace Kadath;
 using namespace Kadath::FUKA_Config;
-  
-  using config_t = kadath_config_boost<BCO_NS_INFO>;
-  using reader_t = Kadath::FUKA_Solvers::CFMS_NS_Exporter;
+
+using config_t = kadath_config_boost<BCO_NS_INFO>;
+using reader_t = Kadath::FUKA_Solvers::CFMS_NS_Exporter;
 
 constexpr unsigned int Npts = 1e4;
 constexpr double range = 10;
 constexpr double dx = range / Npts;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
   // expecting a configuration file on execution
-  if(argc < 2) {
+  if (argc < 2) {
     std::cerr << "Usage: ./reader /<path>/<ID base name>.info" << std::endl;
     std::cerr << "e.g. ./reader converged.NS.9.info" << endl;
     std::_Exit(EXIT_FAILURE);
@@ -55,12 +55,12 @@ int main(int argc, char **argv) {
   std::vector<double> xx(Npts);
   std::vector<double> yy(Npts);
   std::vector<double> zz(Npts);
-  
-  #pragma omp parallel for
-  for(auto i = 0; i < Npts; ++i) {
-    xx[i]+= i * dx;
-    yy[i]+= i * dx;
-    zz[i]+= i * dx;
+
+#pragma omp parallel for
+  for (auto i = 0; i < Npts; ++i) {
+    xx[i] += i * dx;
+    yy[i] += i * dx;
+    zz[i] += i * dx;
   }
   // END ID Coords
 
