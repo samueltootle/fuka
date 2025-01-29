@@ -87,9 +87,7 @@ void bhns_xcts_superimposed_import(config_t& bconfig,
  * @param bconfig Binary Config
  */
 template <typename eos_t>
-inline void bhns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NSconfig,
-                                  kadath_config_boost<BCO_BH_INFO>& BHconfig,
-                                  kadath_config_boost<BIN_INFO>& bconfig);
+struct bhns_setup_boosted_3d;
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

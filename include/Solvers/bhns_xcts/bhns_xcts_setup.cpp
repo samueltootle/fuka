@@ -2,14 +2,13 @@
  * \addtogroup BHNS_XCTS
  * \ingroup FUKA
  * @{*/
-
+#include "EOS/FUKA_EOS_Utilities.hh"
 using namespace ::Kadath::FUKA_Config;
 
 namespace Kadath {
 namespace FUKA_Solvers {
-
 template <class config_t>
-inline void bhns_xcts_setup_bin_config(config_t& bconfig) {
+inline void bhns_xcts_setup_headon_config(config_t& bconfig) {
   using namespace ::Kadath::bco_utils;
   check_dist(bconfig(BIN_PARAMS::DIST), bconfig(BCO_PARAMS::MADM, NODES::BCO1),
              bconfig(BCO_PARAMS::MCH, NODES::BCO2));
@@ -17,13 +16,19 @@ inline void bhns_xcts_setup_bin_config(config_t& bconfig) {
   // Binary Parameters
   bconfig.set(BIN_PARAMS::REXT) = 2 * bconfig(BIN_PARAMS::DIST);
 
-  bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MADM, NODES::BCO1) /
-                               bconfig(BCO_PARAMS::MCH, NODES::BCO2);
+  bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MADM, NODES::BCO2) /
+                               bconfig(BCO_PARAMS::MCH, NODES::BCO1);
 
   // classical Newtonian estimate
   bconfig.set(BIN_PARAMS::COM) = com_estimate(
       bconfig(BIN_PARAMS::DIST), bconfig(BCO_PARAMS::MADM, NODES::BCO1),
       bconfig(BCO_PARAMS::MCH, NODES::BCO2));
+}
+
+template <class config_t>
+inline void bhns_xcts_setup_bin_config(config_t& bconfig) {
+  using namespace ::Kadath::bco_utils;
+  bhns_xcts_setup_headon_config(bconfig);
 
   // obtain 3PN estimate for the global, orbital omega
   KadathPNOrbitalParams(bconfig, bconfig(BCO_PARAMS::MADM, NODES::BCO1),
@@ -55,49 +60,18 @@ void bhns_xcts_setup_space(config_t& bconfig) {
   bconfig.open_config();
 }
 
-template <class config_t>
-void bhns_xcts_superimposed_import(config_t& bconfig,
-                                   std::array<std::string, 2> co_filenames) {
-  // load single NS configuration
-  std::string nsfilename{co_filenames[0]};
-  kadath_config_boost<BCO_NS_INFO> NSconfig(nsfilename);
-
-  // load single BH configuration
-  std::string bhfilename{co_filenames[1]};
-  kadath_config_boost<BCO_BH_INFO> BHconfig(bhfilename);
-
-  // setup eos and update central density
-  const double h_cut = NSconfig.eos<double>(EOS_PARAMS::HCUT);
-  const std::string eos_file = NSconfig.eos<std::string>(EOS_PARAMS::EOSFILE);
-  const std::string eos_type = NSconfig.eos<std::string>(EOS_PARAMS::EOSTYPE);
-
-  if (eos_type == "Cold_PWPoly") {
-    using eos_t = ::Kadath::Margherita::Cold_PWPoly;
-
-    EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut);
-    bhns_setup_boosted_3d<eos_t>(NSconfig, BHconfig, bconfig);
-  } else if (eos_type == "Cold_Table") {
-    using eos_t = ::Kadath::Margherita::Cold_Table;
-
-    const int interp_pts = (NSconfig.eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
-                               ? 2000
-                               : NSconfig.eos<int>(EOS_PARAMS::INTERP_PTS);
-
-    EOS<eos_t, eos_var_t::PRESSURE>::init(eos_file, h_cut, interp_pts);
-    bhns_setup_boosted_3d<eos_t>(NSconfig, BHconfig, bconfig);
-  }
-}
-
 template <typename eos_t>
-inline void bhns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NSconfig,
+struct bhns_setup_boosted_3d {
+inline void operator()(kadath_config_boost<BCO_NS_INFO>& NSconfig,
                                   kadath_config_boost<BCO_BH_INFO>& BHconfig,
                                   kadath_config_boost<BIN_INFO>& bconfig) {
+  using namespace ::Kadath::bco_utils;
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  using namespace ::Kadath::bco_utils;
 
   // open previous ns solution
   std::string nsspaceinf = NSconfig.space_filename();
+
   FILE* ff1 = fopen(nsspaceinf.c_str(), "r");
   Space_spheric_adapted nsspacein(ff1);
   Scalar nsconf(nsspacein, ff1);
@@ -109,7 +83,7 @@ inline void bhns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NSconfig,
   // end opening bns solution
 
   // update NSconfig quantities before updating binary configuration file
-  NSconfig.set(BCO_PARAMS::HC) = std::exp(get_boundary_val(0, nslogh));
+  NSconfig.set(BCO_PARAMS::HC) = std::exp(get_boundary_val(0, nslogh, INNER_BC));
   NSconfig.set(BCO_PARAMS::NC) =
       EOS<eos_t, eos_var_t::DENSITY>::get(NSconfig(BCO_PARAMS::HC));
   update_config_NS_radii(nsspacein, NSconfig, 1);
@@ -163,16 +137,18 @@ inline void bhns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NSconfig,
                               bconfig(BCO_PARAMS::RMID, NODES::BCO2));
   const double rout_sep_est =
       (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
-  const double rout_max_est = gold_ratio * r_max_tot;
-  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) =
-      (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
+  bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
       bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
   // end updating config vars
 
   // setup domain boundaries
-  std::vector<double> out_bounds(1 + bconfig(OUTER_SHELLS));
+  std::vector<double> out_bounds(1 + bconfig(BIN_PARAMS::OUTER_SHELLS));
 
+  // scale outer shells by constant steps of 1/4 for the time being
+  for (int e = 0; e < out_bounds.size(); ++e)
+    out_bounds[e] = bconfig(BIN_PARAMS::REXT) * (1. + e * 0.25);
+  // Determine optimal grid struction based on isolated solutions
   std::vector<double> NS_bounds;
   {
     auto drPsi(compute_drPsi(nsspacein, nsconf,
@@ -187,16 +163,14 @@ inline void bhns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NSconfig,
                              {0, 1}));
     BH_bounds = set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO2);
   }
+  // end setup domain boundaries
 
-  // for out_bounds.size > 1 - add equi-distance shells
-  for (int e = 0; e < out_bounds.size(); ++e)
-    out_bounds[e] =
-        bconfig(BIN_PARAMS::REXT) + e * 0.25 * bconfig(BIN_PARAMS::REXT);
-
-  std::cout << "Local bounds:" << std::endl;
-  print_bounds("NS-bounds", NS_bounds);
-  print_bounds("BH-bounds", BH_bounds);
-  print_bounds("outer-bounds", out_bounds);
+  if (rank == 0) {
+    std::cout << "Local bounds:" << std::endl;
+    print_bounds("NS-bounds", NS_bounds);
+    print_bounds("BH-bounds", BH_bounds);
+    print_bounds("outer-bounds", out_bounds);
+  }
 
   // Setup actual space
   int typer = CHEB_TYPE;
@@ -346,6 +320,26 @@ inline void bhns_setup_boosted_3d(kadath_config_boost<BCO_NS_INFO>& NSconfig,
   // save everything to a binary file
   save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
 }
+};
+
+template <class config_t>
+void bhns_xcts_superimposed_import(config_t& bconfig,
+                                   std::array<std::string, 2> co_filenames) {
+  using namespace Kadath::FUKA_EOS;
+
+  // load single NS configuration
+  std::string nsfilename{co_filenames[0]};
+  kadath_config_boost<BCO_NS_INFO> NSconfig(nsfilename);
+
+  // load single BH configuration
+  std::string bhfilename{co_filenames[1]};
+  kadath_config_boost<BCO_BH_INFO> BHconfig(bhfilename);
+
+  // setup eos and update central density
+  const std::string eos_type = NSconfig.eos<std::string>(EOS_PARAMS::EOSTYPE);
+  EOS_Function_Dispatcher::dispatch<bhns_setup_boosted_3d>(bconfig, eos_type, NSconfig, BHconfig,
+                                                          bconfig);
+};
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
