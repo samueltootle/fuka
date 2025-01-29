@@ -16,8 +16,8 @@ inline void bhns_xcts_setup_headon_config(config_t& bconfig) {
   // Binary Parameters
   bconfig.set(BIN_PARAMS::REXT) = 2 * bconfig(BIN_PARAMS::DIST);
 
-  bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MADM, NODES::BCO2) /
-                               bconfig(BCO_PARAMS::MCH, NODES::BCO1);
+  bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MADM, NODES::BCO1) /
+                               bconfig(BCO_PARAMS::MCH, NODES::BCO2);
 
   // classical Newtonian estimate
   bconfig.set(BIN_PARAMS::COM) = com_estimate(
