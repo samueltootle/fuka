@@ -20,88 +20,88 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "kadath_adapted_polar.hpp"
 #include "Configurator/config_bco.hpp"
-#include "bco_utilities.hpp"
 #include "EOS/EOS.hh"
-#include "python_reader.hpp"
-#include "include/fuka_py.hpp"
 #include "Solvers/ns_isotropic/ns_isotropic_exporter.hpp"
-using namespace Kadath::Margherita ;
-
+#include "bco_utilities.hpp"
+#include "include/fuka_py.hpp"
+#include "kadath_adapted_polar.hpp"
+#include "python_reader.hpp"
+using namespace Kadath::Margherita;
 
 // the space type
 typedef Kadath::Space_polar_adapted space_t;
 
 // specialized quantities for a BNS system
 struct ns_isotropic_vars_t : public Kadath::vars_base_t<ns_isotropic_vars_t> {};
+
 // define the actual quantities and their order in the file!
-template<> Kadath::var_vector Kadath::vars_base_t<ns_isotropic_vars_t>::vars = {
-  {"lap_Aterm", SCALAR},
-  {"nu", SCALAR},
-  {"logh", SCALAR},
-  {"lap_Bterm", SCALAR},
-  {"lap_wterm", SCALAR},
-  {"Omega", SCALAR},
+template <>
+Kadath::var_vector Kadath::vars_base_t<ns_isotropic_vars_t>::vars = {
+    {"lap_Aterm", SCALAR}, {"nu", SCALAR},        {"logh", SCALAR},
+    {"lap_Bterm", SCALAR}, {"lap_wterm", SCALAR}, {"Omega", SCALAR},
 };
 
-class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotropic_vars_t> {
+class ns_isotropic_reader_t
+    : public Kadath::python_reader_t<space_t, ns_isotropic_vars_t> {
   std::string config_filename;
   kadath_config_boost<BCO_ISO_NS_INFO> bconfig;
   using exporter_t = Kadath::FUKA_Solvers::CFMS_NS_ISO_Exporter;
   exporter_t exporter;
 
-  public:
-  ns_isotropic_reader_t(std::string const filename) : Kadath::python_reader_t<space_t, ns_isotropic_vars_t>(filename),
-                                             config_filename(filename.substr(0,filename.size()-3)+"info"),
-                                             bconfig(config_filename), exporter(config_filename) {
+ public:
+  ns_isotropic_reader_t(std::string const filename)
+      : Kadath::python_reader_t<space_t, ns_isotropic_vars_t>(filename),
+        config_filename(filename.substr(0, filename.size() - 3) + "info"),
+        bconfig(config_filename),
+        exporter(config_filename) {
     // setup eos to before calling solver
     const double h_cut = bconfig.eos<double>(EOS_PARAMS::HCUT);
     const std::string eos_file = bconfig.eos<std::string>(EOS_PARAMS::EOSFILE);
     const std::string eos_type = bconfig.eos<std::string>(EOS_PARAMS::EOSTYPE);
 
-    if(eos_type == "Cold_PWPoly") {
+    if (eos_type == "Cold_PWPoly") {
       using eos_t = Kadath::Margherita::Cold_PWPoly;
 
-      EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
+      EOS<eos_t, PRESSURE>::init(eos_file, h_cut);
       this->compute_defs<eos_t>();
-    } else if(eos_type == "Cold_Table") {
+    } else if (eos_type == "Cold_Table") {
       using eos_t = Kadath::Margherita::Cold_Table;
 
-      const int interp_pts = (bconfig.eos<int>(EOS_PARAMS::INTERP_PTS) == 0) ? \
-                              2000 : bconfig.eos<int>(EOS_PARAMS::INTERP_PTS);
+      const int interp_pts = (bconfig.eos<int>(EOS_PARAMS::INTERP_PTS) == 0)
+                                 ? 2000
+                                 : bconfig.eos<int>(EOS_PARAMS::INTERP_PTS);
 
-      EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
+      EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
       this->compute_defs<eos_t>();
-    }
-    else { 
+    } else {
       std::cerr << eos_type << " is not recognized.\n";
       std::_Exit(EXIT_FAILURE);
     }
     ns_Configurator_reader_t pybconfig(config_filename);
     config = pybconfig.config;
     // end eos setup and solver
-   
   }
 
   template <typename eos_t>
   void compute_defs() {
-    Kadath::Scalar const & lap_Aterm = extractField<Kadath::Scalar>("lap_Aterm");
-    Kadath::Scalar const & nu = extractField<Kadath::Scalar>("nu");
-    Kadath::Scalar const & lap_Bterm = extractField<Kadath::Scalar>("lap_Bterm");
-    Kadath::Scalar const & lap_wterm_in = extractField<Kadath::Scalar>("lap_wterm");
-    Kadath::Scalar const & Omega = extractField<Kadath::Scalar>("Omega");
-    Kadath::Scalar const & logh = extractField<Kadath::Scalar>("logh");
+    Kadath::Scalar const& lap_Aterm = extractField<Kadath::Scalar>("lap_Aterm");
+    Kadath::Scalar const& nu = extractField<Kadath::Scalar>("nu");
+    Kadath::Scalar const& lap_Bterm = extractField<Kadath::Scalar>("lap_Bterm");
+    Kadath::Scalar const& lap_wterm_in =
+        extractField<Kadath::Scalar>("lap_wterm");
+    Kadath::Scalar const& Omega = extractField<Kadath::Scalar>("Omega");
+    Kadath::Scalar const& logh = extractField<Kadath::Scalar>("logh");
 
     Kadath::Scalar lap_wterm(lap_wterm_in, true);
     lap_wterm.affect_parameters();
-    lap_wterm.set_parameters()->set_m_quant() = 1 ;
+    lap_wterm.set_parameters()->set_m_quant() = 1;
     lap_wterm.std_base();
-    
-    int ndom = space.get_nbr_domains() ;
 
-  	// Setup system of equations and definitions
-    System_of_eqs syst (space, 0, ndom-1) ;
+    int ndom = space.get_nbr_domains();
+
+    // Setup system of equations and definitions
+    System_of_eqs syst(space, 0, ndom - 1);
     // define numerical constants
     syst.add_cst("4piG", bconfig(BCO_PARAMS::BCO_QPIG));
 
@@ -130,16 +130,16 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     syst.add_def(ndom - 1, "intMadm = -dr(B) / 4piG ");
     syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
     syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
-    
+
     // enthalpy from the logarithmic enthalpy, the latter is the actual variable in this system
     syst.add_def("h = exp(H)");
-  
+
     // define the EOS operators
     Param p;
-    syst.add_ope("eps", &EOS<eos_t,EPSILON>::action, &p);
-    syst.add_ope("press", &EOS<eos_t,PRESSURE>::action, &p);
-    syst.add_ope("rho", &EOS<eos_t,DENSITY>::action, &p);
-  
+    syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
+    syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
+    syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
+
     // define rest-mass density, internal energy and pressure through the enthalpy
     syst.add_def("rho = rho(h)");
     syst.add_def("eps = eps(h)");
@@ -161,54 +161,70 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     syst.add_def("UphiL = multrsint(multrsint(B^2 * UphiU * W))");
 
     for (int d = 0; d < ndom; d++) {
-      
-      switch (d) {
-      // in the star the constraint equations are sourced by the matter
-      case 0:
-      case 1:
 
-        // sources
-        syst.add_def(d, "E = Wsq * press * h - press * delta");
-        syst.add_def(d, "Srrtt = press * delta");
-        syst.add_def(d, "pphi = (E + Srrtt) * U");
-        syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
-        syst.add_def(d, "S = 2 * Srrtt + Spp");
-  
-        // constraint equations
-        syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
-                              "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
-                              "- 4piG * A^2 * (E + S)");
-        syst.add_def(d, "eqwrsint = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                            "+ 4 * 4piG * N * A^2 / B * pphi");
-        syst.add_def(d, "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
-        syst.add_def(d, "eqAterm = delta * lap2(lapAterm) + delta * scal(grad(nu), grad(nu))"
-                        "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
-                        "- 2 * 4piG * A^2 * Spp");
-  
-        // definition for the baryonic mass integral
-        syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
-        syst.add_def(d, "intH  = W * H * A^2 * B * 4piG / 2") ;
-              break;
+      switch (d) {
+        // in the star the constraint equations are sourced by the matter
+        case 0:
+        case 1:
+
+          // sources
+          syst.add_def(d, "E = Wsq * press * h - press * delta");
+          syst.add_def(d, "Srrtt = press * delta");
+          syst.add_def(d, "pphi = (E + Srrtt) * U");
+          syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
+          syst.add_def(d, "S = 2 * Srrtt + Spp");
+
+          // constraint equations
+          syst.add_def(d,
+                       "eqnu  = delta * lap(nu) + delta * scal(grad(nu), "
+                       "grad(nu + log(B))) "
+                       "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * "
+                       "scal(grad(w), grad(w)) "
+                       "- 4piG * A^2 * (E + S)");
+          syst.add_def(d,
+                       "eqwrsint = delta * lap(wrsint) - delta * "
+                       "multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
+                       "+ 4 * 4piG * N * A^2 / B * pphi");
+          syst.add_def(d,
+                       "eqBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 "
+                       "* multrsint(B) * (2 * Srrtt)");
+          syst.add_def(d,
+                       "eqAterm = delta * lap2(lapAterm) + delta * "
+                       "scal(grad(nu), grad(nu))"
+                       "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * "
+                       "scal(grad(w), grad(w))"
+                       "- 2 * 4piG * A^2 * Spp");
+
+          // definition for the baryonic mass integral
+          syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
+          syst.add_def(d, "intH  = W * H * A^2 * B * 4piG / 2");
+          break;
         // outside the matter is absent and the sources are zero
         default:
 
-          syst.add_def(d, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                          "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
-          syst.add_def(d, "eqAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
-                    "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))");
+          syst.add_def(
+              d,
+              "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
+              "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
+          syst.add_def(d,
+                       "eqAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
+                       "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * "
+                       "scal(grad(w), grad(w))");
           syst.add_def(d, "eqBterm = lap2(lapBterm)");
-          syst.add_def(d, "eqwrsint = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
+          syst.add_def(d,
+                       "eqwrsint = lap(wrsint) - multrsint(scal(grad(w), "
+                       "grad(nu - 3 * log(B))))");
           break;
       }
     }
     auto add_surf_integ = [&](auto varstr, auto defstr, auto dom, auto bc) {
-      vars[varstr]  = syst.get_space().get_domain(dom)->integ(
-        syst.give_val_def(defstr)()(dom), bc
-      );
+      vars[varstr] = syst.get_space().get_domain(dom)->integ(syst.give_val_def(
+                                                                 defstr)()(dom),
+                                                             bc);
     };
-    add_surf_integ("Jadm", "intJ"   , ndom-1, OUTER_BC);
-    add_surf_integ("Madm", "intMadm"   , ndom-1, OUTER_BC);
-    add_surf_integ("Mk", "intMk"   , ndom-1, OUTER_BC);
+    add_surf_integ("Jadm", "intJ", ndom - 1, OUTER_BC);
+    add_surf_integ("Madm", "intMadm", ndom - 1, OUTER_BC);
+    add_surf_integ("Mk", "intMk", ndom - 1, OUTER_BC);
 
     // Populate vars dictionary
     // FUKA_Syst_tools::syst_vars(vars, syst);
@@ -221,11 +237,12 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     // double Madm = boost::python::extract<double>(vars["Madm"]);
     FUKA_Syst_tools::syst_vars_NS_isotropic(vars, syst, 2);
     FUKA_Syst_tools::syst_add_resolution_list(space, vars);
-    vars["nc"] = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+    vars["nc"] = EOS<eos_t, DENSITY>::get(bconfig(BCO_PARAMS::HC));
     vars["hc"] = bconfig(BCO_PARAMS::HC);
-    
-    auto add_from_def = [&](std::string in_str, std::string out_str="") {
-      if(out_str == "") out_str = in_str;
+
+    auto add_from_def = [&](std::string in_str, std::string out_str = "") {
+      if (out_str == "")
+        out_str = in_str;
       Scalar tmp(syst.give_val_def(in_str.c_str()));
       tmp.coef_i();
       tmp.std_base();
@@ -245,13 +262,11 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     add_from_def("dtw", "domega_dt");
     add_from_def("divrdtw", "divr(domega_dt)");
     add_from_def("dtdivrw", "d(divromega)_dt");
-    
-    
 
     auto npts = space.get_domain(1)->get_nbr_points();
-    Index pos_eq (npts);
-    pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
-    pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+    Index pos_eq(npts);
+    pos_eq.set(0) = npts(0) - 1;  /// Set to outer radius
+    pos_eq.set(1) = npts(1) - 1;  /// Set theta to be on the xy plane.
     auto B(syst.give_val_def("B")()(1));
     auto r(space.get_domain(1)->get_radius());
     double CR = B(pos_eq) * r(pos_eq);
@@ -262,127 +277,138 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     Scalar dom_colors(space);
     dom_colors.annule_hard();
     int c = 1;
-    for(int d = 0; d < ndom; ++d){
-        //set BH interiors to the same color
-        if( d == 0){
-          dom_colors.set_domain(d) = 0;
-        }
-        //set inner_adapted domains to the same color
-        else if( d == space.ADAPTED_OUTER){
-          dom_colors.set_domain(d) = 1;
-        }
-        else if( d == space.ADAPTED_INNER){
-          dom_colors.set_domain(d) = 2;
-        }
-        //set chi_first domains to the same color
-        else if( d > space.ADAPTED_INNER && d < ndom-1) {
-          dom_colors.set_domain(d) = 3;
-        }
-        //eta + shells + compactified domains
-        else {
-          dom_colors.set_domain(d) = 3 + c;
-          c++;
-        }
+    for (int d = 0; d < ndom; ++d) {
+      //set BH interiors to the same color
+      if (d == 0) {
+        dom_colors.set_domain(d) = 0;
+      }
+      //set inner_adapted domains to the same color
+      else if (d == space.ADAPTED_OUTER) {
+        dom_colors.set_domain(d) = 1;
+      } else if (d == space.ADAPTED_INNER) {
+        dom_colors.set_domain(d) = 2;
+      }
+      //set chi_first domains to the same color
+      else if (d > space.ADAPTED_INNER && d < ndom - 1) {
+        dom_colors.set_domain(d) = 3;
+      }
+      //eta + shells + compactified domains
+      else {
+        dom_colors.set_domain(d) = 3 + c;
+        c++;
+      }
     }
     dom_colors.std_base();
     vars["dom_color_chart"] = dom_colors;
   }
 
-  boost::python::list getExporterFieldValues__cartesian(std::string const & fieldname, boost::python::list const & coord_list) {
+  boost::python::list getExporterFieldValues__cartesian(
+      std::string const& fieldname,
+      boost::python::list const& coord_list) {
     // list of values to return
     boost::python::list values;
 
-    
     // From CPPReference
     auto str_tolower = [](std::string s) {
-        std::transform(s.begin(), s.end(), s.begin(), 
-                      [](unsigned char c){ return std::tolower(c); } // correct
-                      );
-        return s;
+      std::transform(s.begin(), s.end(), s.begin(),
+                     [](unsigned char c) {
+                       return std::tolower(c);
+                     }  // correct
+      );
+      return s;
     };
     auto key{str_tolower(fieldname)};
     size_t idx;
-    if (auto search = exporter.output_var_map.find(key); search == exporter.output_var_map.end()) {
-      std::string msg{"Invalid output fieldname pass: "+fieldname};
+    if (auto search = exporter.output_var_map.find(key);
+        search == exporter.output_var_map.end()) {
+      std::string msg{"Invalid output fieldname pass: " + fieldname};
       throw std::invalid_argument(msg.c_str());
     } else {
       idx = exporter.output_var_map[key];
       cout << key << ": " << idx << endl;
     }
-    
+
     // loop through all given coords
-    for(int i = 0; i < boost::python::len(coord_list); ++i) {
+    for (int i = 0; i < boost::python::len(coord_list); ++i) {
       // extract coords
-      boost::python::list coords = boost::python::extract<boost::python::list>(coord_list[i]);
-      auto output_vars = exporter.export_pointwise(
-        boost::python::extract<double>(coords[0]), 
-        boost::python::extract<double>(coords[1]), 
-        boost::python::extract<double>(coords[2])
-      );
+      boost::python::list coords =
+          boost::python::extract<boost::python::list>(coord_list[i]);
+      auto output_vars =
+          exporter.export_pointwise(boost::python::extract<double>(coords[0]),
+                                    boost::python::extract<double>(coords[1]),
+                                    boost::python::extract<double>(coords[2]));
       values.append(output_vars[idx]);
     }
     return values;
   }
-  
-  boost::python::list getExporterFieldValues__spherical(std::string const & fieldname, boost::python::list const & coord_list) {
+
+  boost::python::list getExporterFieldValues__spherical(
+      std::string const& fieldname,
+      boost::python::list const& coord_list) {
     // list of values to return
     boost::python::list values;
 
-    
     // From CPPReference
     auto str_tolower = [](std::string s) {
-        std::transform(s.begin(), s.end(), s.begin(), 
-                      [](unsigned char c){ return std::tolower(c); } // correct
-                      );
-        return s;
+      std::transform(s.begin(), s.end(), s.begin(),
+                     [](unsigned char c) {
+                       return std::tolower(c);
+                     }  // correct
+      );
+      return s;
     };
     auto key{str_tolower(fieldname)};
     size_t idx;
-    if (auto search = exporter.output_var_map.find(key); search == exporter.output_var_map.end()) {
-      std::string msg{"Invalid output fieldname pass: "+fieldname};
+    if (auto search = exporter.output_var_map.find(key);
+        search == exporter.output_var_map.end()) {
+      std::string msg{"Invalid output fieldname pass: " + fieldname};
       throw std::invalid_argument(msg.c_str());
     } else {
       idx = exporter.output_var_map[key];
       cout << key << ": " << idx << endl;
     }
-    
+
     // loop through all given coords
-    for(int i = 0; i < boost::python::len(coord_list); ++i) {
+    for (int i = 0; i < boost::python::len(coord_list); ++i) {
       // extract coords
-      boost::python::list coords = boost::python::extract<boost::python::list>(coord_list[i]);
+      boost::python::list coords =
+          boost::python::extract<boost::python::list>(coord_list[i]);
       auto output_vars = exporter.export_pointwise__spherical(
-        boost::python::extract<double>(coords[0]), 
-        boost::python::extract<double>(coords[1]), 
-        boost::python::extract<double>(coords[2])
-      );
+          boost::python::extract<double>(coords[0]),
+          boost::python::extract<double>(coords[1]),
+          boost::python::extract<double>(coords[2]));
       values.append(output_vars[idx]);
     }
     return values;
   }
+
   boost::python::list getExporterKeys() {
     boost::python::list values;
-    for(auto t : exporter.output_var_map) {
+    for (auto t : exporter.output_var_map) {
       values.append(t.first);
     }
     return values;
   }
-  boost::python::dict getallExporterFieldValues__spherical_pointwise(boost::python::list const & coord) {
+
+  boost::python::dict getallExporterFieldValues__spherical_pointwise(
+      boost::python::list const& coord) {
     // list of values to return
     boost::python::dict values;
 
     if (boost::python::len(coord) > 3) {
-      std::string msg{"getallExporterFieldValues_pointwise accepts a single coordinate only!"};
+      std::string msg{
+          "getallExporterFieldValues_pointwise accepts a single coordinate "
+          "only!"};
       throw std::invalid_argument(msg.c_str());
     }
 
     auto output_vars = exporter.export_pointwise__spherical(
-      boost::python::extract<double>(coord[0]), 
-      boost::python::extract<double>(coord[1]), 
-      boost::python::extract<double>(coord[2])
-    );
-    
+        boost::python::extract<double>(coord[0]),
+        boost::python::extract<double>(coord[1]),
+        boost::python::extract<double>(coord[2]));
+
     // loop through all given coords
-    for(auto& kvp : exporter.output_var_map) {
+    for (auto& kvp : exporter.output_var_map) {
       auto k = kvp.first;
       auto idx = kvp.second;
 
@@ -391,23 +417,26 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
     }
     return values;
   }
-  boost::python::dict getallExporterFieldValues__cartesian_pointwise(boost::python::list const & coord) {
+
+  boost::python::dict getallExporterFieldValues__cartesian_pointwise(
+      boost::python::list const& coord) {
     // list of values to return
     boost::python::dict values;
 
     if (boost::python::len(coord) > 3) {
-      std::string msg{"getallExporterFieldValues_pointwise accepts a single coordinate only!"};
+      std::string msg{
+          "getallExporterFieldValues_pointwise accepts a single coordinate "
+          "only!"};
       throw std::invalid_argument(msg.c_str());
     }
 
-    auto output_vars = exporter.export_pointwise(
-      boost::python::extract<double>(coord[0]), 
-      boost::python::extract<double>(coord[1]), 
-      boost::python::extract<double>(coord[2])
-    );
-    
+    auto output_vars =
+        exporter.export_pointwise(boost::python::extract<double>(coord[0]),
+                                  boost::python::extract<double>(coord[1]),
+                                  boost::python::extract<double>(coord[2]));
+
     // loop through all given coords
-    for(auto& kvp : exporter.output_var_map) {
+    for (auto& kvp : exporter.output_var_map) {
       auto k = kvp.first;
       auto idx = kvp.second;
 
@@ -419,25 +448,29 @@ class ns_isotropic_reader_t : public Kadath::python_reader_t<space_t, ns_isotrop
 };
 
 // dummy constructor function, defining readers through boost python
-template<typename reader_t>
+template <typename reader_t>
 void constructPythonReader_here(std::string reader_name) {
   using namespace boost::python;
 
   auto reader = class_<reader_t>(reader_name.c_str(), init<std::string>());
   reader.def("getFieldValues", &reader_t::getFieldValues);
   reader.def("getEOSValues", &reader_t::getEOSValues);
-  reader.def("getExporterFieldValues__cartesian", &reader_t::getExporterFieldValues__cartesian);
-  reader.def("getExporterFieldValues__spherical", &reader_t::getExporterFieldValues__spherical);
+  reader.def("getExporterFieldValues__cartesian",
+             &reader_t::getExporterFieldValues__cartesian);
+  reader.def("getExporterFieldValues__spherical",
+             &reader_t::getExporterFieldValues__spherical);
   reader.def("getExporterKeys", &reader_t::getExporterKeys);
-  reader.def("getallExporterFieldValues__cartesian_pointwise", &reader_t::getallExporterFieldValues__cartesian_pointwise);
-  reader.def("getallExporterFieldValues__spherical_pointwise", &reader_t::getallExporterFieldValues__spherical_pointwise);
+  reader.def("getallExporterFieldValues__cartesian_pointwise",
+             &reader_t::getallExporterFieldValues__cartesian_pointwise);
+  reader.def("getallExporterFieldValues__spherical_pointwise",
+             &reader_t::getallExporterFieldValues__spherical_pointwise);
   reader.def_readonly("vars", &reader_t::vars);
-  reader.def_readonly("config", &reader_t::config);  
+  reader.def_readonly("config", &reader_t::config);
 }
 
-BOOST_PYTHON_MODULE(_ns_isotropic_diffrot_reader)
-{
-    // initialize python types
-    Kadath::initPythonBinding<space_t>();
-    constructPythonReader_here<ns_isotropic_reader_t>("ns_isotropic_diffrot_reader");
+BOOST_PYTHON_MODULE(_ns_isotropic_diffrot_reader) {
+  // initialize python types
+  Kadath::initPythonBinding<space_t>();
+  constructPythonReader_here<ns_isotropic_reader_t>(
+      "ns_isotropic_diffrot_reader");
 }
