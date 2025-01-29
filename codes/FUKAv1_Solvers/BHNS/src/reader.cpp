@@ -366,8 +366,7 @@ struct reader_output {
         << "]\n"
         // angular frequency paramter of the star, describing the magnitude of
         // the spin component of the velocity field
-        << FORMAT1 << "Omega = " << bconfig(OMEGA, BCO1)
-        << std::endl
+        << FORMAT1 << "Omega = " << bconfig(OMEGA, BCO1) << std::endl
         << FORMAT1 << "Local P_y = " << NS_py << std::endl
         << FORMAT1 << "Local P_x = " << NS_px << std::endl
         << FORMAT << "Central Density = " << rhoc1 << std::endl
@@ -394,8 +393,7 @@ struct reader_output {
               << "]\n"
               << FORMAT1 << "Chi = " << ql_spinbh / (mch * mch) << " ["
               << bconfig(CHI, BCO2) << "]\n"
-              << FORMAT1 << "S = " << ql_spinbh
-              << std::endl
+              << FORMAT1 << "S = " << ql_spinbh << std::endl
               << FORMAT1 << "Local P_y = " << BH_py << std::endl
               << FORMAT1 << "Local P_x = " << BH_px << std::endl
               << FORMAT1 << "Omega = " << bconfig(OMEGA, BCO2) << "\n\n";
@@ -412,45 +410,54 @@ struct reader_output {
     if (M2 > M1)
       std::swap(M1, M2);
     auto Mtot = M1 + M2;
-    std::cout << header + " Binary " + header + "\n"
-              << FORMAT1 << std::fixed << "RES = " << "[" << res_r << ","
-              << res_t << "," << res_p << "]\n"
-              // mass ratio, ratio of the ADM masses at infinity
-              << FORMAT1 << "Q = " << M2 / M1 << std::endl
-              << FORMAT1 << std::setprecision(2)
-              // Separation distance in geometrized units
-              << "Separation = " << bconfig(DIST) << " ["
-              // [Proper separation], (coordinate separation [km])
-              << bconfig(DIST) / Mtot << "] (" << bconfig(DIST) * M2km << "km)"
-              << std::endl
-              // orbital angular frequency parameter
-              << FORMAT1 << "Orbital Omega = " << bconfig(GOMEGA) << std::endl
-              // Komar and ADM mass of the binary
-              << FORMAT1 << "Komar mass = " << komar << std::endl
-              << FORMAT1 << "Adm mass = " << adm_inf << ", Diff: " << e_diff
-              << std::endl
-              << FORMAT1 << "Total Mass = " << Minf << " ["
-              << Mtot << "]\n"
-              // ADM angular momentum of the binary
-              << FORMAT1 << "Adm moment. = " << Jinf << std::endl
-              // binding energy, defined by the gravitational mass difference at finite separation
-              << FORMAT1 << "Binding energy = " << e_bind << std::endl
-              // dimensionless orbital frequency
-              << FORMAT1 << "Minf * Ome = " << Minf * bconfig(GOMEGA)
-              << std::endl
-              // dimensionless binding energy
-              << FORMAT1 << "E_b / Minf = " << e_bind / Minf << std::endl
-              // ADM linear momentum
-              << FORMAT << "ADM P_x = " << Px << std::endl
-              << FORMAT << "ADM P_y = " << Py << std::endl
-              << FORMAT << "ADM P_z = " << Pz << std::endl
-              // "center of mass" defined by a vanishing ADM momentum at infinity
-              // With an analytical estimate of the center of mass estimate from Osokine+
-              << FORMAT1 << "COMx = " << bconfig(COM) << ", A-COMx = " << COMx
-              << std::endl
-              << FORMAT1 << "COMy = " << bconfig(COMY) << ", A-COMy = " << COMy
-              << std::endl
-              << FORMAT1 << "A-COMz = " << COMz << std::endl;
+    std::cout
+        << header + " Binary " + header + "\n"
+        << FORMAT1 << std::fixed << "RES = " << "[" << res_r << "," << res_t
+        << "," << res_p
+        << "]\n"
+        // mass ratio, ratio of the ADM masses at infinity
+        << FORMAT1 << "Q = " << M2 / M1 << std::endl
+        << FORMAT1
+        << std::setprecision(2)
+        // Separation distance in geometrized units
+        << "Separation = " << bconfig(DIST)
+        << " ["
+        // [Proper separation], (coordinate separation [km])
+        << bconfig(DIST) / Mtot << "] (" << bconfig(DIST) * M2km << "km)"
+        << std::endl
+        // orbital angular frequency parameter
+        << FORMAT1 << "Orbital Omega = " << bconfig(GOMEGA)
+        << std::endl
+        // Komar and ADM mass of the binary
+        << FORMAT1 << "Komar mass = " << komar << std::endl
+        << FORMAT1 << "Adm mass = " << adm_inf << ", Diff: " << e_diff
+        << std::endl
+        << FORMAT1 << "Total Mass = " << Minf << " [" << Mtot
+        << "]\n"
+        // ADM angular momentum of the binary
+        << FORMAT1 << "Adm moment. = " << Jinf
+        << std::endl
+        // binding energy, defined by the gravitational mass difference at finite separation
+        << FORMAT1 << "Binding energy = " << e_bind
+        << std::endl
+        // dimensionless orbital frequency
+        << FORMAT1 << "Minf * Ome = " << Minf * bconfig(GOMEGA)
+        << std::endl
+        // dimensionless binding energy
+        << FORMAT1 << "E_b / Minf = " << e_bind / Minf
+        << std::endl
+        // ADM linear momentum
+        << FORMAT << "ADM P_x = " << Px << std::endl
+        << FORMAT << "ADM P_y = " << Py << std::endl
+        << FORMAT << "ADM P_z = " << Pz
+        << std::endl
+        // "center of mass" defined by a vanishing ADM momentum at infinity
+        // With an analytical estimate of the center of mass estimate from Osokine+
+        << FORMAT1 << "COMx = " << bconfig(COM) << ", A-COMx = " << COMx
+        << std::endl
+        << FORMAT1 << "COMy = " << bconfig(COMY) << ", A-COMy = " << COMy
+        << std::endl
+        << FORMAT1 << "A-COMz = " << COMz << std::endl;
   }
 };
 

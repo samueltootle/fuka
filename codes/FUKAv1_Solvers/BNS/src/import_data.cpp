@@ -1,5 +1,5 @@
-#include "kadath.hpp"
 #include "Configurator/config_binary.hpp"
+#include "kadath.hpp"
 
 #include <sstream>
 #if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
@@ -13,15 +13,16 @@ using namespace Kadath::FUKA_Config;
 
 int main(int argc, char** argv) {
 
-	// read the input NS'
-  if(argc < 4) {
-    std::cerr << "Missing input config files \n i.e. ./import_data binary.info ns1.info ns2.info";
+  // read the input NS'
+  if (argc < 4) {
+    std::cerr << "Missing input config files \n i.e. ./import_data binary.info "
+                 "ns1.info ns2.info";
     std::_Exit(EXIT_FAILURE);
   }
 
-	std::stringstream ss;
+  std::stringstream ss;
 
-  if(argc < 5)
+  if (argc < 5)
     ss << "import";
   else
     ss << argv[4];
@@ -60,13 +61,13 @@ int main(int argc, char** argv) {
   bconfig.set(MADM, BCO2) = ns2_config(MADM);
 
   // output configuration file
-  bconfig.write_config(ss.str()+".info");
+  bconfig.write_config(ss.str() + ".info");
 
   // print final configuration
   std::cout << "Imported binary config:" << std::endl;
   std::cout << bconfig << std::endl;
 
   // create copy of data file, none of the fields are actually changed yet
-  std::string data_fn = bin_fn.substr(0, bin_fn.size()-5)+".dat";
-  fs::copy(data_fn, bconfig.config_outputdir()+ss.str()+".dat");
+  std::string data_fn = bin_fn.substr(0, bin_fn.size() - 5) + ".dat";
+  fs::copy(data_fn, bconfig.config_outputdir() + ss.str() + ".dat");
 }

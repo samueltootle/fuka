@@ -253,7 +253,8 @@ struct bns_reader {
     syst.add_def(space.ADAPTED2 + 1, "intS = A_ij * mp^i * sp^j / 2. / 4piG");
 
     for (int d = 0; d < ndom; d++) {
-      if ((d >= space.ADAPTED2 + 1) || ((d >= space.ADAPTED1 + 1) && (d < space.NS2))) {
+      if ((d >= space.ADAPTED2 + 1) ||
+          ((d >= space.ADAPTED1 + 1) && (d < space.NS2))) {
       } else {
         if (bconfig.control(COROT_BIN)) {
           syst.add_def(d, "U^i    = omega^i / N");

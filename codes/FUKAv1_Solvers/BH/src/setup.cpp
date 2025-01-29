@@ -19,15 +19,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "kadath_adapted_bh.hpp"
-#include "coord_fields.hpp"
 #include <sstream>
+#include "coord_fields.hpp"
+#include "kadath_adapted_bh.hpp"
 
 #include "Configurator/config_bco.hpp"
 #include "bco_utilities.hpp"
 
-#include <string>
 #include <iostream>
+#include <string>
 #include <utility>
 #include <vector>
 using namespace Kadath;
@@ -38,8 +38,7 @@ int main(int argc, char** argv) {
   if (argc < 2) {
     std::cout << "Using default setup.\n";
     bconfig.set_defaults();
-  }
-  else {
+  } else {
     std::string input_filename = std::string{argv[1]};
     std::cout << "Creating setup from: " << input_filename << "\n";
     bconfig.set_filename(input_filename);
@@ -51,7 +50,7 @@ int main(int argc, char** argv) {
 
   bconfig.set(BVELX) = 0.;
   bconfig.set(BVELY) = 0.;
-   
+
   // set new base filename for new setup
   std::string base_filename = "./initbh.info";
   bconfig.set_filename(base_filename);
@@ -62,7 +61,7 @@ int main(int argc, char** argv) {
   Dim_array res(dim);
   res.set(0) = bconfig(BCO_RES);
   res.set(1) = bconfig(BCO_RES);
-  res.set(2) = bconfig(BCO_RES)-1;
+  res.set(2) = bconfig(BCO_RES) - 1;
 
   Point center(dim);
   for (int i = 1; i <= dim; i++)
@@ -70,7 +69,7 @@ int main(int argc, char** argv) {
 
   int ndom = 4 + bconfig(NSHELLS);
   std::cout << "Number of Domains: " << ndom << std::endl;
-  
+
   // setup bounds
   std::vector<double> bounds(ndom - 1);
   bco_utils::set_isolated_BH_bounds(bounds, bconfig);
@@ -85,7 +84,7 @@ int main(int argc, char** argv) {
   conf.set_domain(1).annule_hard();
 
   Scalar lapse(conf);
-  
+
   // set a better estimate for PSI on the horizon
   conf.set_domain(2) = bco_utils::psi;
   conf.std_base();
@@ -96,7 +95,7 @@ int main(int argc, char** argv) {
     shift.set(i).annule_hard();
   shift.std_base();
   // end setup fields
-  
+
   std::cout << bconfig << std::endl;
   bco_utils::save_to_file(space, bconfig, conf, lapse, shift);
   return EXIT_SUCCESS;

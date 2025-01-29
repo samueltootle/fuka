@@ -21,53 +21,58 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 // FUKA includes
-#include "Solvers/solver_startup.hpp"
 #include "Configurator/config_bco.hpp"
-#include "bco_utilities.hpp"
 #include "EOS/EOS.hh"
+#include "Solvers/solver_startup.hpp"
+#include "bco_utilities.hpp"
 
 #include "kadath_adapted.hpp"
 #include "kadath_adapted_polar.hpp"
 
-#include "mpi.h"
 #include <sstream>
+#include "mpi.h"
 #define O(X) std::cout << "var " #X ": " << X << std::endl;
 using namespace Kadath;
 using namespace Kadath::Margherita;
 using namespace Kadath::FUKA_Solvers;
 
 // // forward declarations
-template<typename space_t, typename syst_t, typename config_t>
-void print_diagnostics_norot(space_t const & space, syst_t const & syst, const config_t & bconfig, int iter, double err);
-template<class eos_t, class config_t>
-void update_config(config_t& bconfig, System_of_eqs& syst) ;
+template <typename space_t, typename syst_t, typename config_t>
+void print_diagnostics_norot(space_t const& space,
+                             syst_t const& syst,
+                             const config_t& bconfig,
+                             int iter,
+                             double err);
+template <class eos_t, class config_t>
+void update_config(config_t& bconfig, System_of_eqs& syst);
 // template<typename space_t, typename syst_t, typename config_t>
 // void print_diagnostics_rot(space_t const & space, syst_t const & syst, const config_t & bconfig, int const ite, double const conv);
 
-template<typename config_t>
-std::string converged_filename(const std::string&  stage, config_t bconfig);
+template <typename config_t>
+std::string converged_filename(const std::string& stage, config_t bconfig);
 
-template<class eos_t, typename config_t>
+template <class eos_t, typename config_t>
 int driver(config_t& bconfig, std::string outputdir);
 
-template<class eos_t, typename config_t>
-int NS_solver_2d_norot (config_t& bconfig, bool fixed = false);
+template <class eos_t, typename config_t>
+int NS_solver_2d_norot(config_t& bconfig, bool fixed = false);
 
-template<class eos_t, typename config_t>
-int NS_solver_2d_uniform_rot (config_t& bconfig);
+template <class eos_t, typename config_t>
+int NS_solver_2d_uniform_rot(config_t& bconfig);
 
-template<class eos_t, typename config_t>
-int NS_solver_2d_differential_rot (config_t& bconfig);
+template <class eos_t, typename config_t>
+int NS_solver_2d_differential_rot(config_t& bconfig);
+
 // end forward declarations
 
-int main(int argc, char **argv) {
-  int rc = MPI_Init(&argc, &argv) ;
-  if (rc!=MPI_SUCCESS) {
-    cerr << "Error starting MPI" << endl ;
-    MPI_Abort(MPI_COMM_WORLD, rc) ;
+int main(int argc, char** argv) {
+  int rc = MPI_Init(&argc, &argv);
+  if (rc != MPI_SUCCESS) {
+    cerr << "Error starting MPI" << endl;
+    MPI_Abort(MPI_COMM_WORLD, rc);
   }
-  int rank = 0 ;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   using config_t = kadath_config_boost<BCO_ISO_NS_INFO>;
   using InitSolver = Initialize_Solver<config_t>;
@@ -84,7 +89,7 @@ int main(int argc, char **argv) {
   // specify output directory
   std::string outputdir = InitSolver::outputdir;
 
-  if(!InitSolver::example_setup) {
+  if (!InitSolver::example_setup) {
     // We now have to assume bconfig is a minimal config
     // that contains sequences _init/_final
     bconfig.open_config();
@@ -94,18 +99,19 @@ int main(int argc, char **argv) {
     const std::string eos_file = bconfig.eos<std::string>(EOSFILE);
     const std::string eos_type = bconfig.eos<std::string>(EOSTYPE);
 
-    if(eos_type == "Cold_PWPoly") {
+    if (eos_type == "Cold_PWPoly") {
       using eos_t = Kadath::Margherita::Cold_PWPoly;
 
-      EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
+      EOS<eos_t, PRESSURE>::init(eos_file, h_cut);
       driver<eos_t>(bconfig, outputdir);
-    } else if(eos_type == "Cold_Table") {
+    } else if (eos_type == "Cold_Table") {
       using eos_t = Kadath::Margherita::Cold_Table;
 
-      const int interp_pts = (bconfig.eos<int>(INTERP_PTS) == 0) ? \
-                              2000 : bconfig.eos<int>(INTERP_PTS);
+      const int interp_pts = (bconfig.eos<int>(INTERP_PTS) == 0)
+                                 ? 2000
+                                 : bconfig.eos<int>(INTERP_PTS);
 
-      EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
+      EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
       driver<eos_t>(bconfig, outputdir);
     } else {
       std::cerr << "Unknown EOSTYPE." << endl;
@@ -115,12 +121,12 @@ int main(int argc, char **argv) {
   MPI_Finalize();
 
   return EXIT_SUCCESS;
-} // end main()
+}  // end main()
 
-template<class eos_t, typename config_t>
+template <class eos_t, typename config_t>
 int driver(config_t& bconfig, std::string outputdir) {
-  int rank = 0 ;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   int exit_status = EXIT_SUCCESS;
 
   bconfig.set_outputdir(outputdir);
@@ -129,34 +135,33 @@ int driver(config_t& bconfig, std::string outputdir) {
   std::array<bool, NUM_STAGES> stage_enabled = bconfig.return_stages();
 
   // last stage of the enabled stages
-  auto [ last_stage, last_stage_idx ]
-    = get_last_enabled(MSTAGE, stage_enabled);
+  auto [last_stage, last_stage_idx] = get_last_enabled(MSTAGE, stage_enabled);
 
-  if(rank == 0){
-      std::cout << "Last Stage Enabled: " << last_stage << std::endl;
+  if (rank == 0) {
+    std::cout << "Last Stage Enabled: " << last_stage << std::endl;
   }
 
-  if(stage_enabled[STAGES::NOROT_BC]) {
-    if(bconfig.control(CONTROLS::SEQUENCES))
+  if (stage_enabled[STAGES::NOROT_BC]) {
+    if (bconfig.control(CONTROLS::SEQUENCES))
       exit_status = NS_solver_2d_norot<eos_t>(bconfig, true);
     exit_status = NS_solver_2d_norot<eos_t>(bconfig);
   }
-  if(stage_enabled[STAGES::UNIFORM_ROT])
+  if (stage_enabled[STAGES::UNIFORM_ROT])
     exit_status = NS_solver_2d_uniform_rot<eos_t>(bconfig);
-  if(stage_enabled[STAGES::DIFF_ROT])
+  if (stage_enabled[STAGES::DIFF_ROT])
     exit_status = NS_solver_2d_differential_rot<eos_t>(bconfig);
   return exit_status;
 }
 
-template<class eos_t, typename config_t>
-int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
+template <class eos_t, typename config_t>
+int NS_solver_2d_norot(config_t& bconfig, bool fixed) {
   // initialize MPI
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if (rank == 0)
     std::cout << "###################################" << std::endl
-              << "Non-rotating TOV Solver"      << std::endl
+              << "Non-rotating TOV Solver" << std::endl
               << "###################################" << "\n\n";
 
   // convergence threshold
@@ -164,28 +169,30 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
   // logarithm of the central enthalpy
   double loghc = std::log(bconfig(HC));
   std::string stage_name{"NOROT"};
-  if(fixed) stage_name += "_FIXED";
+  if (fixed)
+    stage_name += "_FIXED";
 
   // (re)construct the numerical space
   std::string spacein = bconfig.space_filename();
 
   // load the space (and thus the domain setup)
-	FILE* ff1 = fopen (spacein.c_str(), "r") ;
-	Space_polar_adapted space (ff1) ;
+  FILE* ff1 = fopen(spacein.c_str(), "r");
+  Space_polar_adapted space(ff1);
 
   // load the fields defined on the space
-	Scalar lapAterm   (space, ff1) ;
-	Scalar nu  (space, ff1) ;
-  Scalar logh   (space, ff1) ;
-	fclose(ff1) ;
+  Scalar lapAterm(space, ff1);
+  Scalar nu(space, ff1);
+  Scalar logh(space, ff1);
+  fclose(ff1);
 
   // number of domains defining the space
   int ndom = space.get_nbr_domains();
 
   Scalar level(space);
   for (int d = 0; d < ndom - 1; d++)
-    level.set_domain(d) = space.get_domain(d)->get_radius() * space.get_domain(d)->get_radius()
-                         -bconfig(RMID) * bconfig(RMID);
+    level.set_domain(d) =
+        space.get_domain(d)->get_radius() * space.get_domain(d)->get_radius() -
+        bconfig(RMID) * bconfig(RMID);
   level.set_domain(ndom - 1) = 1;
   level.std_base();
 
@@ -227,9 +234,9 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
 
   // define the EOS operators
   Param p;
-  syst.add_ope ("eps", &EOS<eos_t,EPSILON>::action, &p);
-  syst.add_ope ("press", &EOS<eos_t,PRESSURE>::action, &p);
-  syst.add_ope ("rho", &EOS<eos_t,DENSITY>::action, &p);
+  syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
+  syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
+  syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
 
   // define rest-mass density, internal energy and
   // pressure through the enthalpy
@@ -244,43 +251,48 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
 
   for (int d = 0; d < ndom; d++) {
     switch (d) {
-    // in the star the constraint equations are sourced by the matter
-    case 0:
-    case 1:
-      // source terms 3.36, 3.38, arxiv.org/abs/1003.5015v2
-      // after rescaling by P/ rho
-      syst.add_def(d, "E = press * h - press * delta");
-      syst.add_def(d, "S = delta * 3 * press");
-      syst.add_def(d, "Spp = press * delta");
+      // in the star the constraint equations are sourced by the matter
+      case 0:
+      case 1:
+        // source terms 3.36, 3.38, arxiv.org/abs/1003.5015v2
+        // after rescaling by P/ rho
+        syst.add_def(d, "E = press * h - press * delta");
+        syst.add_def(d, "S = delta * 3 * press");
+        syst.add_def(d, "Spp = press * delta");
 
-      // constraint equations - the full system is rescaled by P/ rho
-      // Here the source terms are not rescaled since they have already
-      // been rescaled in their definition above
-      // eq. 3.50 arxiv.org/abs/1003.5015v2
-      syst.add_def(d, "eqnu = delta * ( lap(nu) + scal(grad(nu), grad(lapAterm)) ) - 4piG * A^2 * (E + S)") ;
-      // eq. 3.52
-      syst.add_def(d, "eqlapAterm = delta * ( lap2(lapAterm) + scal(grad(nu), grad(nu)) ) - 2 * 4piG * A^2 * Spp") ;
+        // constraint equations - the full system is rescaled by P/ rho
+        // Here the source terms are not rescaled since they have already
+        // been rescaled in their definition above
+        // eq. 3.50 arxiv.org/abs/1003.5015v2
+        syst.add_def(d,
+                     "eqnu = delta * ( lap(nu) + scal(grad(nu), "
+                     "grad(lapAterm)) ) - 4piG * A^2 * (E + S)");
+        // eq. 3.52
+        syst.add_def(d,
+                     "eqlapAterm = delta * ( lap2(lapAterm) + scal(grad(nu), "
+                     "grad(nu)) ) - 2 * 4piG * A^2 * Spp");
 
-      // eq.3.51 this overdetermines the system, but it comes from the
-      // constraint on B - see 3.16 for the full equation.
-      // syst.add_def(d, "eqNA = dr(drNA) + 3 * divr(drNA) - 4 * 4piG * NA * A^2 * press") ;
+        // eq.3.51 this overdetermines the system, but it comes from the
+        // constraint on B - see 3.16 for the full equation.
+        // syst.add_def(d, "eqNA = dr(drNA) + 3 * divr(drNA) - 4 * 4piG * NA * A^2 * press") ;
 
-      // definition for the baryonic mass integral
-      // eq. 4.5 arxiv.org/abs/1003.5015v2, where we set mb = 1.
-      syst.add_def(d, "intMb = A^3 * rho");
+        // definition for the baryonic mass integral
+        // eq. 4.5 arxiv.org/abs/1003.5015v2, where we set mb = 1.
+        syst.add_def(d, "intMb = A^3 * rho");
 
-      // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
-      // eq. 3.98 arxiv.org/abs/1003.5015v2, lorentz factor W (Gamma in the paper) = 1
-      syst.add_def(d, "firstint = H + log(N)");
+        // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
+        // eq. 3.98 arxiv.org/abs/1003.5015v2, lorentz factor W (Gamma in the paper) = 1
+        syst.add_def(d, "firstint = H + log(N)");
 
-      break;
-    // outside the matter is absent and the sources are zero
-    default:
-      syst.add_eq_full(d, "H = 0");
+        break;
+      // outside the matter is absent and the sources are zero
+      default:
+        syst.add_eq_full(d, "H = 0");
 
-      syst.add_def(d, "eqnu = lap(nu) + scal(grad(nu), grad(lapAterm))") ;
-      syst.add_def(d, "eqlapAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))") ;
-      break;
+        syst.add_def(d, "eqnu = lap(nu) + scal(grad(nu), grad(lapAterm))");
+        syst.add_def(d,
+                     "eqlapAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))");
+        break;
     }
   }
   // Add constraint equation so the System of equation ensuring
@@ -288,11 +300,10 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
   space.add_eq(syst, "eqnu=0", "nu", "dn(nu)");
   space.add_eq(syst, "eqlapAterm=0", "lapAterm", "dn(lapAterm)");
 
-  if(fixed) {
+  if (fixed) {
     //Surface is set to a fixed radius
     syst.add_eq_bc(1, OUTER_BC, "lev=0");
-  }
-  else {
+  } else {
     // Surface is defined as vanishing log specific enthalpy
     syst.add_eq_bc(1, OUTER_BC, "H=0");
   }
@@ -318,7 +329,7 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
 
     // output the data and diagnostics at this particular step
     std::stringstream ss;
-    ss << "rot_3d_testing" << ite - 1 ;
+    ss << "rot_3d_testing" << ite - 1;
     bconfig.set_filename(ss.str());
 
     if (rank == 0) {
@@ -328,8 +339,8 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
     ite++;
   }
   // Update the gravitational mass in the Config file
-  bconfig.set(BCO_PARAMS::MADM) =
-    space.get_domain(ndom-1)->integ(syst.give_val_def("intMadm")()(ndom-1), OUTER_BC);
+  bconfig.set(BCO_PARAMS::MADM) = space.get_domain(ndom - 1)->integ(
+      syst.give_val_def("intMadm")()(ndom - 1), OUTER_BC);
   // Update fluid quantities in the Config file
   update_config<eos_t>(bconfig, syst);
   // Give the config file a new filename
@@ -344,7 +355,7 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
   stage_enabled[STAGES::UNIFORM_ROT] = true;
   bconfig.set_filename(converged_filename(stage_name, bconfig));
 
-  if(rank == 0)
+  if (rank == 0)
     bco_utils::save_to_file(space, bconfig, lapAterm, nu, logh);
 
   // reset stages
@@ -356,16 +367,16 @@ int NS_solver_2d_norot (config_t& bconfig, bool fixed) {
   return EXIT_SUCCESS;
 }
 
-template<class eos_t, typename config_t>
-int NS_solver_2d_uniform_rot (config_t& bconfig) {
+template <class eos_t, typename config_t>
+int NS_solver_2d_uniform_rot(config_t& bconfig) {
   // initialize MPI
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if (rank == 0)
     std::cout << "###################################" << std::endl
-              << "Uniformly Rotating models"      << std::endl
-              << "Omega: " << bconfig(BCO_PARAMS::OMEGA) <<std::endl
+              << "Uniformly Rotating models" << std::endl
+              << "Omega: " << bconfig(BCO_PARAMS::OMEGA) << std::endl
               << "###################################" << "\n\n";
 
   // convergence threshold
@@ -378,8 +389,8 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   std::string spacein = bconfig.space_filename();
 
   // load the space (and thus the domain setup)
-	FILE* ff1 = fopen (spacein.c_str(), "r") ;
-	Space_polar_adapted space (ff1) ;
+  FILE* ff1 = fopen(spacein.c_str(), "r");
+  Space_polar_adapted space(ff1);
 
   // number of domains defining the space
   int ndom = space.get_nbr_domains();
@@ -392,19 +403,20 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   // load the fields defined on the space
   // These are the same regardless of which 2D solution
   // you start from
-	Scalar lapAterm(space, ff1) ;
-	Scalar nu(space, ff1) ;
-  Scalar logh(space, ff1) ;
+  Scalar lapAterm(space, ff1);
+  Scalar nu(space, ff1);
+  Scalar logh(space, ff1);
 
   // Check if additional fields are present for the Bterm and omega term
   // to determine if we read them in from file.
-  if(bconfig.set_field(BCO_FIELDS::LAP_BTERM) && bconfig.set_field(BCO_FIELDS::LAP_WTERM)) {
-    if(rank == 0)
-    std::cout << "Starting from shift and omega fields from file\n";
+  if (bconfig.set_field(BCO_FIELDS::LAP_BTERM) &&
+      bconfig.set_field(BCO_FIELDS::LAP_WTERM)) {
+    if (rank == 0)
+      std::cout << "Starting from shift and omega fields from file\n";
     lapBterm = Scalar(space, ff1);
     wrsint = Scalar(space, ff1);
   } else {
-    if(rank == 0)
+    if (rank == 0)
       std::cout << "Generating new shift and omega fields\n";
     Scalar w(space);
     w.annule_hard();
@@ -416,12 +428,12 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
     Scalar tmp(N * B - 1);
     lapBterm = Scalar(tmp.mult_sin_theta().mult_r());
   }
-  fclose(ff1) ;
+  fclose(ff1);
   // Need to ensure this parameter is set such that
   // lap(wrsint) in the system of equations will
   // use \tilde{lap_3} as defined in eq. 3.21
   wrsint.affect_parameters();
-  wrsint.set_parameters()->set_m_quant() = 1 ;
+  wrsint.set_parameters()->set_m_quant() = 1;
   wrsint.std_base();
 
   // setup a system of equations
@@ -459,7 +471,8 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   // Note: this equation does not give very good results.  For Madm = Mk,
   // intMad = -dr(B) / 4piG is much more accurate.
   // FIXME - there must be a reason
-  syst.add_def(ndom - 1, "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
+  syst.add_def(ndom - 1,
+               "intMadm = - (dr(A^2 + B^2) + divr(B^2 - A^2))  / 4 / 4piG ");
   // eq. 4.15 arxiv.org/abs/1003.5015v2
   syst.add_def(ndom - 1, "intMk = dr(N)  / 4piG");
 
@@ -468,9 +481,9 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
 
   // define the EOS operators
   Param p;
-  syst.add_ope ("eps", &EOS<eos_t,EPSILON>::action, &p);
-  syst.add_ope ("press", &EOS<eos_t,PRESSURE>::action, &p);
-  syst.add_ope ("rho", &EOS<eos_t,DENSITY>::action, &p);
+  syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
+  syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
+  syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
 
   // define rest-mass density, internal energy and
   // pressure through the enthalpy
@@ -485,64 +498,80 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
 
   for (int d = 0; d < ndom; d++) {
     switch (d) {
-    // in the star the constraint equations are sourced by the matter
-    case 0:
-    case 1:
+      // in the star the constraint equations are sourced by the matter
+      case 0:
+      case 1:
 
-      // Velocity terms 3.32, arxiv.org/abs/1003.5015v2
-      syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
-      syst.add_def(d, "Usq = U*U");
-      // Lorentz factor 3.35, arxiv.org/abs/1003.5015v2
-      syst.add_def(d, "Wsq = 1 / (1 - Usq)");
-      syst.add_def(d, "W = sqrt(Wsq)");
+        // Velocity terms 3.32, arxiv.org/abs/1003.5015v2
+        syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
+        syst.add_def(d, "Usq = U*U");
+        // Lorentz factor 3.35, arxiv.org/abs/1003.5015v2
+        syst.add_def(d, "Wsq = 1 / (1 - Usq)");
+        syst.add_def(d, "W = sqrt(Wsq)");
 
-      // source terms 3.36 - 3.38, arxiv.org/abs/1003.5015v2
-      // after rescaling by P/ rho
-      syst.add_def(d, "E = Wsq * press * h - press * delta");
-      syst.add_def(d, "Srrtt = press * delta");
-      // Note: in the definition of the phi component of the pressure,
-      // eq. 3.37, we ignore Brsin(theta) since it cancels analytically
-      // with 1/Brsin(theta) that appears in eqw below
-      syst.add_def(d, "pressp = (E + Srrtt) * U");
-      syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
-      syst.add_def(d, "S = 2 * Srrtt + Spp");
+        // source terms 3.36 - 3.38, arxiv.org/abs/1003.5015v2
+        // after rescaling by P/ rho
+        syst.add_def(d, "E = Wsq * press * h - press * delta");
+        syst.add_def(d, "Srrtt = press * delta");
+        // Note: in the definition of the phi component of the pressure,
+        // eq. 3.37, we ignore Brsin(theta) since it cancels analytically
+        // with 1/Brsin(theta) that appears in eqw below
+        syst.add_def(d, "pressp = (E + Srrtt) * U");
+        syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
+        syst.add_def(d, "S = 2 * Srrtt + Spp");
 
-      // eq. 3.14, arxiv.org/abs/1003.5015v2
-      syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
-                            "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
-                            "- 4piG * A^2 * (E + S)");
+        // eq. 3.14, arxiv.org/abs/1003.5015v2
+        syst.add_def(d,
+                     "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu "
+                     "+ log(B))) "
+                     "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * "
+                     "scal(grad(w), grad(w)) "
+                     "- 4piG * A^2 * (E + S)");
 
-      // Note: the source term is different from eq 3.15, arxiv.org/abs/1003.5015v2
-      // by a factor of 1/Brsin(theta) as discussed above
-      syst.add_def(d, "eqw = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                          "+ 4 * 4piG * N * A^2 / B * pressp");
+        // Note: the source term is different from eq 3.15, arxiv.org/abs/1003.5015v2
+        // by a factor of 1/Brsin(theta) as discussed above
+        syst.add_def(d,
+                     "eqw = delta * lap(wrsint) - delta * "
+                     "multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
+                     "+ 4 * 4piG * N * A^2 / B * pressp");
 
-      // eq. 3.16, arxiv.org/abs/1003.5015v2
-      syst.add_def(d, "eqlapBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
+        // eq. 3.16, arxiv.org/abs/1003.5015v2
+        syst.add_def(d,
+                     "eqlapBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 "
+                     "* multrsint(B) * (2 * Srrtt)");
 
-      // eq. 3.17, arxiv.org/abs/1003.5015v2
-      syst.add_def(d, "eqlapAterm = delta * lap2(lapAterm) + delta * scal(grad(nu), grad(nu))"
-                      "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
-                      "- 2 * 4piG * A^2 * Spp");
+        // eq. 3.17, arxiv.org/abs/1003.5015v2
+        syst.add_def(d,
+                     "eqlapAterm = delta * lap2(lapAterm) + delta * "
+                     "scal(grad(nu), grad(nu))"
+                     "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * "
+                     "scal(grad(w), grad(w))"
+                     "- 2 * 4piG * A^2 * Spp");
 
-      // definition for the baryonic mass integral
-      // eq. 4.5 arxiv.org/abs/1003.5015v2, where we set mb = 1.
-      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
+        // definition for the baryonic mass integral
+        // eq. 4.5 arxiv.org/abs/1003.5015v2, where we set mb = 1.
+        syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
 
-      // first integral of the euler equation for a uniformly rotating star
-      // eq. 3.98 arxiv.org/abs/1003.5015v2
-      syst.add_def(d, "firstint = H + log(N) - 0.5 * log(Wsq)");
-      break;
-    // outside the matter is absent and the sources are zero
-    default:
-      syst.add_eq_full(d, "H = 0");
-      syst.add_def(d, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                      "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
-      syst.add_def(d, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
-      syst.add_def(d, "eqlapBterm = lap2(lapBterm)");
-      syst.add_def(d, "eqlapAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
-                "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))");
-      break;
+        // first integral of the euler equation for a uniformly rotating star
+        // eq. 3.98 arxiv.org/abs/1003.5015v2
+        syst.add_def(d, "firstint = H + log(N) - 0.5 * log(Wsq)");
+        break;
+      // outside the matter is absent and the sources are zero
+      default:
+        syst.add_eq_full(d, "H = 0");
+        syst.add_def(
+            d,
+            "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
+            "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
+        syst.add_def(d,
+                     "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 "
+                     "* log(B))))");
+        syst.add_def(d, "eqlapBterm = lap2(lapBterm)");
+        syst.add_def(d,
+                     "eqlapAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
+                     "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * "
+                     "scal(grad(w), grad(w))");
+        break;
     }
   }
 
@@ -579,13 +608,13 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
 
     // output the data and diagnostics at this particular step
     std::stringstream ss;
-    ss << "rot_2k_chkpt" << ite - 1 ;
+    ss << "rot_2k_chkpt" << ite - 1;
     bconfig.set_filename(ss.str());
 
     if (rank == 0) {
       print_diagnostics_norot(space, syst, bconfig, ite, conv);
       // if(bconfig.control(CHECKPOINT))
-        // bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
+      // bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
     }
     // count the steps
     ite++;
@@ -593,8 +622,8 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   // Update fluid quantities in Config file
   update_config<eos_t>(bconfig, syst);
   // Update gravitational mass in Config file
-  bconfig.set(BCO_PARAMS::MADM) =
-  space.get_domain(ndom-1)->integ(syst.give_val_def("intMadm")()(ndom-1), OUTER_BC);
+  bconfig.set(BCO_PARAMS::MADM) = space.get_domain(ndom - 1)->integ(
+      syst.give_val_def("intMadm")()(ndom - 1), OUTER_BC);
 
   std::array<bool, NUM_STAGES> saved_stages = bconfig.return_stages();
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
@@ -606,9 +635,10 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   // Ensure the additional fields are set in the Config file
   bconfig.set_field(BCO_FIELDS::LAP_BTERM) = true;
   bconfig.set_field(BCO_FIELDS::LAP_WTERM) = true;
-  if(rank == 0) {
+  if (rank == 0) {
     std::cout << "Success!\n";
-    bco_utils::save_to_file(space, bconfig, lapAterm, nu, logh, lapBterm, wrsint);
+    bco_utils::save_to_file(space, bconfig, lapAterm, nu, logh, lapBterm,
+                            wrsint);
   }
   // reset stages
   stage_enabled = saved_stages;
@@ -620,8 +650,8 @@ int NS_solver_2d_uniform_rot (config_t& bconfig) {
   return EXIT_SUCCESS;
 }
 
-template<class eos_t, typename config_t>
-int NS_solver_2d_differential_rot (config_t& bconfig) {
+template <class eos_t, typename config_t>
+int NS_solver_2d_differential_rot(config_t& bconfig) {
   // initialize MPI
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -636,8 +666,8 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   std::string spacein = bconfig.space_filename();
 
   // load the space (and thus the domain setup)
-	FILE* ff1 = fopen (spacein.c_str(), "r") ;
-	Space_polar_adapted space (ff1) ;
+  FILE* ff1 = fopen(spacein.c_str(), "r");
+  Space_polar_adapted space(ff1);
 
   // number of domains defining the space
   int ndom = space.get_nbr_domains();
@@ -652,29 +682,32 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   Scalar lapBterm(space);
   Scalar wrsint(space);
   Scalar Omega(space);
-  Omega = (std::fabs(bconfig(BCO_PARAMS::OMEGA)) < 1e-7) ? 1e-7 : bconfig(BCO_PARAMS::OMEGA);
+  Omega = (std::fabs(bconfig(BCO_PARAMS::OMEGA)) < 1e-7)
+              ? 1e-7
+              : bconfig(BCO_PARAMS::OMEGA);
   Omega.std_base();
 
   // load the fields defined on the space - these should be there since NOROT stage
-	Scalar lapAterm(space, ff1) ;
-	Scalar nu(space, ff1) ;
-  Scalar logh(space, ff1) ;
+  Scalar lapAterm(space, ff1);
+  Scalar nu(space, ff1);
+  Scalar logh(space, ff1);
 
   // Check if additional fields are present for the Bterm and omega term
   // to determine if we read them in from file.
-  if(bconfig.set_field(BCO_FIELDS::LAP_BTERM) && bconfig.set_field(BCO_FIELDS::LAP_WTERM)) {
-    if(rank == 0)
+  if (bconfig.set_field(BCO_FIELDS::LAP_BTERM) &&
+      bconfig.set_field(BCO_FIELDS::LAP_WTERM)) {
+    if (rank == 0)
       std::cout << "Starting from shift and omega fields from file\n";
     lapBterm = Scalar(space, ff1);
     wrsint = Scalar(space, ff1);
     // If we have a previous differential rotation solution...
-    if(bconfig.set_field(BCO_FIELDS::DIFF_OMEGA)) {
-      if(rank == 0)
+    if (bconfig.set_field(BCO_FIELDS::DIFF_OMEGA)) {
+      if (rank == 0)
         std::cout << "Starting from Omega field from file\n";
       Omega = Scalar(space, ff1);
     }
   } else {
-    if(rank == 0)
+    if (rank == 0)
       std::cout << "Generating new shift and omega fields\n";
     Scalar w(space);
     w.annule_hard();
@@ -686,12 +719,12 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
     Scalar tmp(N * B - 1);
     lapBterm = Scalar(tmp.mult_sin_theta().mult_r());
   }
-  fclose(ff1) ;
+  fclose(ff1);
   // Need to ensure this parameter is set such that
   // lap(wrsint) in the system of equations will
   // use \tilde{lap_3} as defined in eq. 3.21
   wrsint.affect_parameters();
-  wrsint.set_parameters()->set_m_quant() = 1 ;
+  wrsint.set_parameters()->set_m_quant() = 1;
   wrsint.std_base();
 
   auto npts = space.get_domain(1)->get_nbr_points();
@@ -700,13 +733,13 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   // - the origin
   // - equitorial point on the stellar surface, P(r=R_eq, theta=pi/2)
   // - polar point on the stellar surface P(r=R_pole, theta=0)
-  Index pos_origin (npts);
-  Index pos_eq (npts);
-  pos_eq.set(0) = npts(0) - 1; /// Set to outer radius
-  pos_eq.set(1) = npts(1) - 1; /// Set theta to be on the xy plane.
+  Index pos_origin(npts);
+  Index pos_eq(npts);
+  pos_eq.set(0) = npts(0) - 1;  /// Set to outer radius
+  pos_eq.set(1) = npts(1) - 1;  /// Set theta to be on the xy plane.
 
-  Index pos_pole (npts);
-  pos_pole.set(0) = npts(0) - 1; /// Set to outer radius
+  Index pos_pole(npts);
+  pos_pole.set(0) = npts(0) - 1;  /// Set to outer radius
 
   auto adpt_dom = space.get_domain(1);
   // Initialize Radii variables from current solution
@@ -717,24 +750,27 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   bconfig.set(BCO_PARAMS::RMID) = R0;
 
   // Extract Constants
-  double diffAratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
-  double diffRratio = bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
+  double diffAratio =
+      bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_ARATIO);
+  double diffRratio =
+      bconfig.template diffrot<double>(DIFFROT_PARAMS::DIFF_RRATIO);
 
   // int q = bconfig.template diffrot<int>(DIFFROT_PARAMS::DIFF_Q);
 
   // Initialize KEH rotation law parameter A
   double diffA = diffAratio * R0;
 
-  std::string firstint{"firstint = (H + log(N) - 0.5 * log(Wsq)) - 0.5 * j^2 / diffA^2"};
+  std::string firstint{
+      "firstint = (H + log(N) - 0.5 * log(Wsq)) - 0.5 * j^2 / diffA^2"};
 
   if (rank == 0)
     std::cout << "###################################" << std::endl
-              << "Differential Rotating models"      << std::endl
+              << "Differential Rotating models" << std::endl
               << "Law: KEH\n"
               << "First Integral: " << firstint << std::endl
               << "Fixed A / R0: " << diffAratio << std::endl
               << "Initial Rp/Re: " << Rp / R0 << " {" << diffRratio << "}\n"
-              << "Initial R0: " << R0 <<std::endl
+              << "Initial R0: " << R0 << std::endl
               << "###################################" << "\n\n";
 
   // setup a system of equations
@@ -809,9 +845,9 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
 
   // define the EOS operators
   Param p;
-  syst.add_ope ("eps", &EOS<eos_t,EPSILON>::action, &p);
-  syst.add_ope ("press", &EOS<eos_t,PRESSURE>::action, &p);
-  syst.add_ope ("rho", &EOS<eos_t,DENSITY>::action, &p);
+  syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
+  syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
+  syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
 
   // define rest-mass density, internal energy and
   // pressure through the enthalpy
@@ -826,60 +862,76 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
 
   for (int d = 0; d < ndom; d++) {
     switch (d) {
-    // in the star the constraint equations are sourced by the matter
-    case 0:
-    case 1:
+      // in the star the constraint equations are sourced by the matter
+      case 0:
+      case 1:
 
-      // source terms 3.36 - 3.38, arxiv.org/abs/1003.5015v2
-      // after rescaling by P/ rho
-      syst.add_def(d, "E = Wsq * press * h - press * delta");
-      syst.add_def(d, "Srrtt = press * delta");
-      // Note: in the definition of the phi component of the pressure,
-      // eq. 3.37, we ignore Brsin(theta) since it cancels analytically
-      // with 1/Brsin(theta) that appears in eqw below
-      syst.add_def(d, "pressp = (E + Srrtt) * U");
-      syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
-      syst.add_def(d, "S = 2 * Srrtt + Spp");
+        // source terms 3.36 - 3.38, arxiv.org/abs/1003.5015v2
+        // after rescaling by P/ rho
+        syst.add_def(d, "E = Wsq * press * h - press * delta");
+        syst.add_def(d, "Srrtt = press * delta");
+        // Note: in the definition of the phi component of the pressure,
+        // eq. 3.37, we ignore Brsin(theta) since it cancels analytically
+        // with 1/Brsin(theta) that appears in eqw below
+        syst.add_def(d, "pressp = (E + Srrtt) * U");
+        syst.add_def(d, "Spp = delta * press * (1 + Usq) + E * Usq");
+        syst.add_def(d, "S = 2 * Srrtt + Spp");
 
-      // eq. 3.14, arxiv.org/abs/1003.5015v2
-      syst.add_def(d, "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu + log(B))) "
-                            "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w)) "
-                            "- 4piG * A^2 * (E + S)");
-      // Note: the source term is different from eq 3.15, arxiv.org/abs/1003.5015v2
-      // by a factor of 1/Brsin(theta) as discussed above
-      syst.add_def(d, "eqw = delta * lap(wrsint) - delta * multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
-                          "+ 4 * 4piG * N * A^2 / B * pressp");
+        // eq. 3.14, arxiv.org/abs/1003.5015v2
+        syst.add_def(d,
+                     "eqnu  = delta * lap(nu) + delta * scal(grad(nu), grad(nu "
+                     "+ log(B))) "
+                     "- delta * multrsint(multrsint(B^2)) / 2 / N^2 * "
+                     "scal(grad(w), grad(w)) "
+                     "- 4piG * A^2 * (E + S)");
+        // Note: the source term is different from eq 3.15, arxiv.org/abs/1003.5015v2
+        // by a factor of 1/Brsin(theta) as discussed above
+        syst.add_def(d,
+                     "eqw = delta * lap(wrsint) - delta * "
+                     "multrsint(scal(grad(w), grad(nu - 3 * log(B))))"
+                     "+ 4 * 4piG * N * A^2 / B * pressp");
 
-      // eq. 3.16, arxiv.org/abs/1003.5015v2
-      syst.add_def(d, "eqlapBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 * multrsint(B) * (2 * Srrtt)");
+        // eq. 3.16, arxiv.org/abs/1003.5015v2
+        syst.add_def(d,
+                     "eqlapBterm = delta * lap2(lapBterm) - 2 * 4piG * N * A^2 "
+                     "* multrsint(B) * (2 * Srrtt)");
 
-      // eq. 3.17, arxiv.org/abs/1003.5015v2
-      syst.add_def(d, "eqlapAterm = delta * lap2(lapAterm) + delta * scal(grad(nu), grad(nu))"
-                      "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))"
-                      "- 2 * 4piG * A^2 * Spp");
+        // eq. 3.17, arxiv.org/abs/1003.5015v2
+        syst.add_def(d,
+                     "eqlapAterm = delta * lap2(lapAterm) + delta * "
+                     "scal(grad(nu), grad(nu))"
+                     "- 3 * delta * multrsint(multrsint(B^2)) / 4 / N^2 * "
+                     "scal(grad(w), grad(w))"
+                     "- 2 * 4piG * A^2 * Spp");
 
-      // definition for the baryonic mass integral
-      // eq. 4.5 arxiv.org/abs/1003.5015v2, where we set mb = 1.
-      syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
+        // definition for the baryonic mass integral
+        // eq. 4.5 arxiv.org/abs/1003.5015v2, where we set mb = 1.
+        syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
 
-      // first integral of the euler equation for a differentially rotating star
-      // eq. 3.101 arxiv.org/abs/1003.5015v2
-      syst.add_def(d, firstint.c_str());
-      syst.add_eq_full(d, "Omega - omelaw = 0");
-      break;
-    // outside the matter is absent and the sources are zero
-    default:
-      syst.add_eq_full(d, "H = 0");
+        // first integral of the euler equation for a differentially rotating star
+        // eq. 3.101 arxiv.org/abs/1003.5015v2
+        syst.add_def(d, firstint.c_str());
+        syst.add_eq_full(d, "Omega - omelaw = 0");
+        break;
+      // outside the matter is absent and the sources are zero
+      default:
+        syst.add_eq_full(d, "H = 0");
 
-      syst.add_def(d, "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
-                      "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
-      syst.add_def(d, "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 * log(B))))");
-      syst.add_def(d, "eqlapBterm = lap2(lapBterm)");
-      syst.add_def(d, "eqlapAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
-                "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * scal(grad(w), grad(w))");
-      break;
+        syst.add_def(
+            d,
+            "eqnu  = lap(nu) + scal(grad(nu), grad(nu + log(B))) "
+            "- multrsint(multrsint(B^2)) / 2 / N^2 * scal(grad(w), grad(w))");
+        syst.add_def(d,
+                     "eqw = lap(wrsint) - multrsint(scal(grad(w), grad(nu - 3 "
+                     "* log(B))))");
+        syst.add_def(d, "eqlapBterm = lap2(lapBterm)");
+        syst.add_def(d,
+                     "eqlapAterm = lap2(lapAterm) + scal(grad(nu), grad(nu))"
+                     "- 3 * multrsint(multrsint(B^2)) / 4 / N^2 * "
+                     "scal(grad(w), grad(w))");
+        break;
     }
-    if( d <= space.ADAPTED_INNER)
+    if (d <= space.ADAPTED_INNER)
       syst.add_eq_full(d, "Omega - omelaw = 0");
     else
       syst.add_eq_full(d, "Omega = 0");
@@ -889,8 +941,8 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   // Much more reliable convergence
   syst.add_eq_matching(2, INNER_BC, "Omega");
   syst.add_eq_matching(2, INNER_BC, "dn(Omega)");
-  syst.add_eq_inside(2,"Omega = 0");
-  for(int d = 3; d < ndom; ++d) {
+  syst.add_eq_inside(2, "Omega = 0");
+  for (int d = 3; d < ndom; ++d) {
     syst.add_eq_full(d, "Omega = 0");
   }
   // Add constraint equation so the System of equation ensuring
@@ -931,13 +983,13 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
 
     // output the data and diagnostics at this particular step
     std::stringstream ss;
-    ss << "rot_2k_chkpt" << ite - 1 ;
+    ss << "rot_2k_chkpt" << ite - 1;
     bconfig.set_filename(ss.str());
 
     if (rank == 0) {
       print_diagnostics_norot(space, syst, bconfig, ite, conv);
       // if(bconfig.control(CHECKPOINT))
-        // bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
+      // bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
     }
     // count the steps
     ite++;
@@ -946,8 +998,8 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   update_config<eos_t>(bconfig, syst);
 
   // Update gravitational mass in Config file
-  bconfig.set(BCO_PARAMS::MADM) =
-  space.get_domain(ndom-1)->integ(syst.give_val_def("intMadm")()(ndom-1), OUTER_BC);
+  bconfig.set(BCO_PARAMS::MADM) = space.get_domain(ndom - 1)->integ(
+      syst.give_val_def("intMadm")()(ndom - 1), OUTER_BC);
 
   std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
   stage_enabled.fill(false);
@@ -956,17 +1008,18 @@ int NS_solver_2d_differential_rot (config_t& bconfig) {
   bconfig.set_field(BCO_FIELDS::LAP_BTERM) = true;
   bconfig.set_field(BCO_FIELDS::LAP_WTERM) = true;
   bconfig.set_field(BCO_FIELDS::DIFF_OMEGA) = true;
-  if(rank == 0) {
+  if (rank == 0) {
     std::cout << "Success!\n";
-    bco_utils::save_to_file(space, bconfig, lapAterm, nu, logh, lapBterm, wrsint, Omega);
+    bco_utils::save_to_file(space, bconfig, lapAterm, nu, logh, lapBterm,
+                            wrsint, Omega);
   }
   MPI_Barrier(MPI_COMM_WORLD);
   return EXIT_SUCCESS;
 }
 
-template<class eos_t, class config_t>
+template <class eos_t, class config_t>
 void update_config(config_t& bconfig, System_of_eqs& syst) {
-  auto const &  space = syst.get_space();
+  auto const& space = syst.get_space();
 
   auto rs = bco_utils::get_rmin_rmax(space, 1);
   auto h = syst.give_val_def("h")();
@@ -974,22 +1027,26 @@ void update_config(config_t& bconfig, System_of_eqs& syst) {
 
   // bconfig.set(BCO_PARAMS::RMID) = rs[0];
   bconfig.set(BCO_PARAMS::HC) = hc;
-  bconfig.set(BCO_PARAMS::NC) = EOS<eos_t,DENSITY>::get(bconfig(BCO_PARAMS::HC));
+  bconfig.set(BCO_PARAMS::NC) =
+      EOS<eos_t, DENSITY>::get(bconfig(BCO_PARAMS::HC));
 }
 
 // diagnostics at runtime
 #define FORMAT std::setw(10) << std::left << std::showpos
-template<typename space_t, typename syst_t, typename config_t>
-void print_diagnostics_norot(space_t const & space, syst_t const & syst,
-    const config_t & bconfig, int iter, double err) {
+
+template <typename space_t, typename syst_t, typename config_t>
+void print_diagnostics_norot(space_t const& space,
+                             syst_t const& syst,
+                             const config_t& bconfig,
+                             int iter,
+                             double err) {
 
   // total number of domains
-  int ndom = space.get_nbr_domains() ;
+  int ndom = space.get_nbr_domains();
 
   // compute the baryonic mass at volume integral from the given integrant
-  double baryonic_mass =
-      syst.give_val_def("intMb")()(0).integ_volume() +
-      syst.give_val_def("intMb")()(1).integ_volume();
+  double baryonic_mass = syst.give_val_def("intMb")()(0).integ_volume() +
+                         syst.give_val_def("intMb")()(1).integ_volume();
 
   // compute the ADM mass as surface integral at infinity
   Val_domain integMadm(syst.give_val_def("intMadm")()(ndom - 1));
@@ -1004,28 +1061,28 @@ void print_diagnostics_norot(space_t const & space, syst_t const & syst,
   auto rs = bco_utils::get_rmin_rmax(space, 1);
 
   // output to standard output
-  std::ios_base::fmtflags f( std::cout.flags() );
+  std::ios_base::fmtflags f(std::cout.flags());
   std::cout << "=======================================" << std::endl
             << FORMAT << "Iter: " << iter << std::endl
             << FORMAT << "Error: " << err << std::endl
             << FORMAT << "Mb: " << baryonic_mass << std::endl
             << FORMAT << "Madm: " << Madm << std::endl
-            << FORMAT << "Mk: " << Mk << " ["
-            << std::abs(Madm - Mk) / Madm << "]" << std::endl;
+            << FORMAT << "Mk: " << Mk << " [" << std::abs(Madm - Mk) / Madm
+            << "]" << std::endl;
   std::cout << FORMAT << "R: " << rs[0] << " " << rs[1] << "\n\n";
   std::cout.flags(f);
-} // end print diagnostics norot
-
+}  // end print diagnostics norot
 
 //standardized filename for each converged dataset at the end of each stage.
-template<typename config_t>
-std::string converged_filename(const std::string&  stage, config_t bconfig) {
+template <typename config_t>
+std::string converged_filename(const std::string& stage, config_t bconfig) {
   std::stringstream ss;
   ss << "NS2D";
-  if(stage != "") ss  << "_" << stage << ".";
-  else ss << ".";
-  ss << bconfig(MADM) << "."
-     << bconfig(CHI)<< "."
-     << std::setfill('0')  << std::setw(2) << bconfig(BCO_RES);
+  if (stage != "")
+    ss << "_" << stage << ".";
+  else
+    ss << ".";
+  ss << bconfig(MADM) << "." << bconfig(CHI) << "." << std::setfill('0')
+     << std::setw(2) << bconfig(BCO_RES);
   return ss.str();
 }
