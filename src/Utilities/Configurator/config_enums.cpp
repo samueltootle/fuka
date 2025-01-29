@@ -41,8 +41,8 @@ const std::map<std::string, BIN_PARAMS> MBIN_PARAMS = {
   {"qpig",QPIG},                // units scaling - 4*pi*G
   {"rext", REXT},               // fixed exterior radius (~2*DIST)
   {"q", Q},                     // Mass ratio
-  {"adot", ADOT},               // Radial infall velocity (for eccentricity reduction) 
-  {"ecc_omega", ECC_OMEGA},     // Fixed omega used for eccentricity reduction 
+  {"adot", ADOT},               // Radial infall velocity (for eccentricity reduction)
+  {"ecc_omega", ECC_OMEGA},     // Fixed omega used for eccentricity reduction
   {"outer_shells", OUTER_SHELLS}, // Number of shells before compactified domain
 };
 
@@ -159,7 +159,7 @@ const std::map<std::string, STAGES> MSTAGE = {
 /**
  * The following stage maps are sub-sets of MSTAGE.
  * This is used to allow only the relevant stage names for a given
- * solver to be shown in the configurator file.  However, 
+ * solver to be shown in the configurator file.  However,
  * for new solvers that are not composed of NSs or BHs and have
  * not been assigned such a subset in config_bin.hpp,
  * the default is the full list of stages.
@@ -189,6 +189,9 @@ const std::map<std::string, STAGES> M2DNSSTAGE = {
   {"uniform_rotation", UNIFORM_ROT},
   {"differential_rotation", DIFF_ROT},
 };
+const std::map<std::string, STAGES> MBINHEADONSTAGE = {
+  {"heaon",HEADON},
+};
 
 const std::map<std::string, CONTROLS> MCONTROLS = {
   {"use_pn", USE_PN},            ///< Use PN eccentricity parameters - replaces ADOT and ECC_OMEGA
@@ -198,7 +201,7 @@ const std::map<std::string, CONTROLS> MCONTROLS = {
   // {"fixed_mb", MB_FIXING},      ///< For an isolated NS, fix using Baryonic mass
   // {"delete_shift", DELETE_SHIFT},///< at the start of the solver, choose to delete the shift
   {"corot_binary", COROT_BIN},   ///< control whether a binary is purely corotating
-  
+
   // Control whether codes such as increase resolution make updates from the config file
   // variables or directly from the numerical space
   //{"use_config_vars", USE_CONFIG_VARS},

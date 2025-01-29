@@ -87,7 +87,7 @@ enum STAGES {
   PRE=0, FIXED_OMEGA, NOROT_BC, COROT_EQUAL, \
   TOTAL, TOTAL_BC, TOTAL_FIXED_COM, TESTING, \
   GRAV,  VEL_POT_ONLY, ECC_RED, BIN_BOOST, LINBOOST, \
-  QE, HYDRO_RESCALE, UNIFORM_ROT, DIFF_ROT, NUM_STAGES \
+  QE, HYDRO_RESCALE, UNIFORM_ROT, DIFF_ROT, HEADON, NUM_STAGES \
 };
 
 /** @brief enum CONTROLS enumerator over sequence controls */
@@ -133,6 +133,7 @@ extern const std::map<std::string, BCO_FIELDS> MBCO_SFIELDS_1;
 extern const std::map<std::string, STAGES> MSTAGE;
 extern const std::map<std::string, CONTROLS> MCONTROLS;
 extern const std::map<std::string, SEQ_SETTINGS> MSEQ_SETTINGS;
+extern const std::map<std::string, STAGES> MBINHEADONSTAGE;
 extern const std::map<std::string, STAGES> MBNSSTAGE;
 extern const std::map<std::string, STAGES> MBHNSSTAGE;
 extern const std::map<std::string, STAGES> MBBHSTAGE;
