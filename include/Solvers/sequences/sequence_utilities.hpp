@@ -83,19 +83,19 @@ Parameter_sequence<idx_t...> parse_seq_tree(Tree const & tree,
  * @param tree  Boost tree to search
  * @param map Map containing potential inputs
  * @param branch_name Node to read from tree (binary, ns, etc) 
- * @return uint Number of sequences found
+ * @return unsigned int Number of sequences found
  */
 template<class map_t>
-uint number_of_sequences(Tree const & tree, map_t const & map, std::string const branch_name);
+unsigned int number_of_sequences(Tree const & tree, map_t const & map, std::string const branch_name);
 
 /**
  * @brief Static recursive search for number of detected sequences 
  * based on the given inputs - needed to verify only one sequence is present.
  * 
  * @param tree  Boost tree to search
- * @return uint Number of sequences found
+ * @return unsigned int Number of sequences found
  */
-inline uint number_of_sequences_binary(Tree const & tree);
+inline unsigned int number_of_sequences_binary(Tree const & tree);
 
 /**
  * @brief Search for a sequence in a tree based on the inputs
@@ -115,7 +115,7 @@ decltype(auto) find_sequence(Tree const & tree, map_t const & map,
  * @brief Recursive search for a sequence in a tree based on the inputs
  * 
  * @param tree  Boost tree to search
- * @return uint Number of sequences found
+ * @return unsigned int Number of sequences found
  */
 inline decltype(auto) find_sequence_binary(Tree const & tree);
 
