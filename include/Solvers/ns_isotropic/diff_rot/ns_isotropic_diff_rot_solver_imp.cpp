@@ -126,9 +126,7 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::syst_init(
 
   // define the EOS operators
   Param p;
-  syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
-  syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
-  syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
+  Kadath::FUKA_EOS::set_eos_ope_struct<eos_t>()(syst, p);
 
   // define rest-mass density, internal energy and pressure through the enthalpy
   syst.add_def("rho = rho(h)");
