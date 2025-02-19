@@ -77,7 +77,7 @@ public:
   std::map<std::string, STAGES> bin_stages{MSTAGE}; ///<Map of only relevant stages
 
 
-  /** 
+  /**
    * Default constructor initializing pointers to 0
    * and parameters to NaN.  This is a feature, not a
    * bug.
@@ -90,11 +90,11 @@ public:
    * Copy constructor. Slightly messy due to handling of pointers to
    * BCO parameter containers.
    */
-  BIN_INFO(const BIN_INFO& b) : bin_params{b.bin_params}, bin_stages{b.bin_stages} 
+  BIN_INFO(const BIN_INFO& b) : bin_params{b.bin_params}, bin_stages{b.bin_stages}
   {
     for(int i = 0; i < 2; ++i) {
       if( b.BCOS[i] ) {
-        auto b_type = b.BCOS[i]->get_type(); 
+        auto b_type = b.BCOS[i]->get_type();
         if(b_type == "bh") {
           auto child_ptr = dynamic_cast<BCO_BH_INFO*>(b.BCOS[i].get());
           BCOS[i] = std::make_unique<BCO_BH_INFO>(*child_ptr);
@@ -103,7 +103,7 @@ public:
           BCOS[i] = std::make_unique<BCO_NS_INFO>(*child_ptr);
         }
       }
-    }      
+    }
   }
 
   /**
@@ -128,7 +128,7 @@ public:
 
     return *this;
   }
-  
+
   /**
    * Move assignment operator
    */
@@ -236,7 +236,7 @@ public:
    * @param[output] bin_params Array of binary parameters
    */
   Array &return_params() { return bin_params; }
-  
+
   /* BIN_INFO::return_bcos
    * This function will return the raw arrays, but this is discouraged.
    * It is best to use the overloaded operators to access information
@@ -255,10 +255,11 @@ public:
   /* BIN_INFO::get_stage_map
    * Returns binary parameter stages map
    *
-   * @param[output] bin_map binary parameter map
+   * @param[output] bin_map binary stages map
    */
   const auto& get_stage_map() const { return bin_stages; }
-  
+  void set_stage_map(const std::map<std::string, STAGES>& _stages) { bin_stages = _stages; }
+
   /* BIN_INFO::get_map
    * Returns BCO parameter map
    *
@@ -266,7 +267,7 @@ public:
    * @param[output] bco_map binary parameter map
    */
   auto &get_map(const int BCOidx) const { return BCOS[BCOidx]->get_map(); };
-  auto &get_eos_map(const int BCOidx = BCO1) const { 
+  auto &get_eos_map(const int BCOidx = BCO1) const {
     if(auto child_ptr = dynamic_cast<BCO_NS_INFO*>(BCOS[BCOidx].get())) {
       return child_ptr->get_eos_map();
     }
@@ -280,7 +281,7 @@ public:
   std::string get_name_string() const {
     return get_type();
   }
-  
+
   /* BIN_INFO::operator()
    * This operator returns the requested parameter for a given BCO
    *
@@ -308,7 +309,7 @@ public:
    * @param[input]  BCOidx Index of BCO of interest
    * @param[output] eos_param reference to eos parameter to assign
    * @throws std::invalid_argument Throws when dynamic_cast fails
-   */ 
+   */
   auto& set_eos_param(const int idx, const int BCOidx) const {
     if(auto child_ptr = dynamic_cast<BCO_NS_INFO*>(BCOS[BCOidx].get())) {
       return child_ptr->set_eos_param(idx);
@@ -324,7 +325,7 @@ public:
    * @param[input]  BCOidx Index of BCO of interest
    * @param[output] eos_param eos parameter value - not assignable.
    * @throws std::invalid_argument Throws when dynamic_cast fails
-   */ 
+   */
   template<typename T>
   constexpr T get_eos_param(const int idx, const int BCOidx) const {
     if(auto child_ptr = dynamic_cast<BCO_NS_INFO*>(BCOS[BCOidx].get())) {
@@ -334,7 +335,7 @@ public:
   }
   friend std::ostream &operator<<(std::ostream &, const BIN_INFO &);
 
-  /** 
+  /**
    * BIN_INFO::set_defaults
    * Allow the setting of default configurator values for base binary setup
    *
@@ -375,7 +376,7 @@ public:
     bconfig.set(BIN_PARAMS::COMY) = 0.;
     bconfig.set(BIN_PARAMS::OUTER_SHELLS) = 0;
     bconfig.set(BIN_PARAMS::GOMEGA) = 0.;
-    
+
     // Set default fields
     bconfig.set_field(BCO_FIELDS::SHIFT)    = true;
     bconfig.set_field(BCO_FIELDS::LAPSE)    = true;
@@ -390,14 +391,14 @@ public:
     bconfig.control(CONTROLS::SEQUENCES) = true;
     bconfig.control(CONTROLS::USE_BOOSTED_CO) = true;
     bconfig.control(CONTROLS::FIXED_GOMEGA) = true;
-    
+
     bconfig.set_stage(STAGES::TOTAL_BC) = true;
     bconfig.set_stage(STAGES::ECC_RED) = true;
 
     bconfig.seq_setting(SEQ_SETTINGS::INIT_RES) = 9;
   }
 
-  /** 
+  /**
    * BIN_INFO::set_minimal_defaults
    * Allow the setting of default configurator values for base binary setup
    *

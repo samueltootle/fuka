@@ -45,15 +45,15 @@ struct kadath_config_boost : public configurator_base {
   using CArray = std::array<bool, NUM_CONTROLS>;
   protected:
     Tree branch_in;
-    FArray fields{};       
-    SArray stages{};       
-    CArray controls{};     
+    FArray fields{};
+    SArray stages{};
+    CArray controls{};
     std::array<double, NUM_SEQ_SETTINGS> seq_settings{};
     ParamC container;      ///< Parameter container
 
   public:
     kadath_config_boost();
-    
+
     /**
       * Default constructor used for reading in *.info config files
       *
@@ -62,7 +62,7 @@ struct kadath_config_boost : public configurator_base {
       *
      */
     kadath_config_boost(std::string ifile);
-    
+
     /**
       * kadath_config_boost::open_config
       *
@@ -73,7 +73,7 @@ struct kadath_config_boost : public configurator_base {
       * @return status
      */
     int open_config();
-    
+
     /**
       * kadath_config_boost::write_config()
       * write the current configuration to file
@@ -116,8 +116,8 @@ struct kadath_config_boost : public configurator_base {
     auto& set_stage(const int idx) { return stages[idx]; }
     auto const & set_stage(const int idx) const { return stages[idx]; }
 
-    auto const & control(const int idx) const { return controls[idx]; }   
-    auto& control(const int idx) { return controls[idx]; } 
+    auto const & control(const int idx) const { return controls[idx]; }
+    auto& control(const int idx) { return controls[idx]; }
 
     auto& seq_setting(const int idx) { return seq_settings[idx]; }
     auto const & seq_setting(const int idx) const { return seq_settings[idx]; }
@@ -145,7 +145,7 @@ struct kadath_config_boost : public configurator_base {
       * kadath_config_boost::get_map
       * get map of base parameter container
       */
-    constexpr auto& get_map() const { 
+    constexpr auto& get_map() const {
       return container.get_map();
     }
 
@@ -154,16 +154,18 @@ struct kadath_config_boost : public configurator_base {
       * get map of child parameter container where idx is the child idx (i.e. BCO1)
       * @param[input] idx: child container array index
       */
-    constexpr auto& get_map(const int idx) const { 
+    constexpr auto& get_map(const int idx) const {
       return container.get_map(idx);
     }
+
+    void set_stage_map(const std::map<int, std::string>& map) { container.set_stage_map(map); }
 
     /**
       * overloaded () to obtain parameters from base parameter container
       * but throws an error when a NaN is encountered
       * @param[input] idx: index of parameter to read/write
       */
-    constexpr auto& operator()(const int idx) { 
+    constexpr auto& operator()(const int idx) {
       if(!check_for_nan(container.get_map(), container(idx), idx)) {
         return container(idx);
       }
@@ -191,7 +193,7 @@ struct kadath_config_boost : public configurator_base {
       * @return parameter
       */
     template<typename... idx_t>
-    constexpr void reset(const idx_t... idxs) { 
+    constexpr void reset(const idx_t... idxs) {
       container(idxs...) = std::nan("1");
     }
 
@@ -203,7 +205,7 @@ struct kadath_config_boost : public configurator_base {
       * @return parameter
       */
     template<typename... idx_t>
-    constexpr auto& set(const idx_t... idxs) { 
+    constexpr auto& set(const idx_t... idxs) {
       return container(idxs...);
     }
 
@@ -215,7 +217,7 @@ struct kadath_config_boost : public configurator_base {
 
     template<typename... T>
     constexpr auto& operator()(std::tuple<T...> const & t)
-    {        
+    {
       return this->operator()(t, std::index_sequence_for<T...>{});
     }
 
@@ -227,10 +229,10 @@ struct kadath_config_boost : public configurator_base {
 
     template<typename... T>
     constexpr auto& set(std::tuple<T...> const & t)
-    {        
+    {
       return this->set(t, std::index_sequence_for<T...>{});
     }
-   
+
     /**
       * kadath_config_boost::set_eos()
       * set funct to set parameters of the EOS for base or child parameter container
@@ -238,14 +240,14 @@ struct kadath_config_boost : public configurator_base {
       * @param[input] idxs: index/indices of eos parameter to set
      */
     template<typename... idx_t>
-    constexpr auto& set_eos(const idx_t... idxs) { 
-      return container.set_eos_param(idxs...); 
+    constexpr auto& set_eos(const idx_t... idxs) {
+      return container.set_eos_param(idxs...);
     }
 
     /**
       * kadath_config_boost::eos()
       * get parameter value of the std::variant eos_parameter for base or child parameter container
-      * (see config_bco.hpp for expected types) 
+      * (see config_bco.hpp for expected types)
       *
       * here we use template 'specializations' based on type traits to determine
       * how to extract data from a std::variant container.
@@ -258,12 +260,12 @@ struct kadath_config_boost : public configurator_base {
     constexpr const T eos(idx_t... idx) {
       T var{};
       auto set_var = [&](auto&& v) mutable {
-        using v_t = std::decay_t<decltype(v)>;  
+        using v_t = std::decay_t<decltype(v)>;
         if constexpr (std::is_arithmetic_v<v_t>) {
           if(!std::isnan(v))
             var = v;
-        } 
-      };  
+        }
+      };
       std::visit(set_var, this->set_eos(idx...));
       return var;
     }
@@ -273,11 +275,11 @@ struct kadath_config_boost : public configurator_base {
     constexpr const T eos(idx_t... idx) {
       T var{};
       auto set_var = [&](auto&& v) mutable {
-        using v_t = std::decay_t<decltype(v)>;  
-        if constexpr (std::is_same_v<v_t, std::string>) {   
-            var = v;    
-        }    
-      };  
+        using v_t = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<v_t, std::string>) {
+            var = v;
+        }
+      };
       std::visit(set_var, this->set_eos(idx...));
       return var;
     }
@@ -289,8 +291,8 @@ struct kadath_config_boost : public configurator_base {
       * @param[input] idxs: index/indices of eos parameter to set
      */
     template<typename... idx_t>
-    constexpr auto& set_diffrot(const idx_t... idxs) { 
-      return container.set_diffrot_param(idxs...); 
+    constexpr auto& set_diffrot(const idx_t... idxs) {
+      return container.set_diffrot_param(idxs...);
     }
 
     template<class... T, size_t... I>
@@ -301,14 +303,14 @@ struct kadath_config_boost : public configurator_base {
 
     template<typename... T>
     constexpr auto& set_diffrot(std::tuple<T...> const & t)
-    {        
+    {
       return this->set_diffrot(t, std::index_sequence_for<T...>{});
     }
 
     /**
       * kadath_config_boost::diffrot()
       * get parameter value of the std::variant eos_parameter for base or child parameter container
-      * (see config_bco.hpp for expected types) 
+      * (see config_bco.hpp for expected types)
       *
       * here we use template 'specializations' based on type traits to determine
       * how to extract data from a std::variant container.
@@ -321,12 +323,12 @@ struct kadath_config_boost : public configurator_base {
     constexpr const T diffrot(idx_t... idx) {
       T var{};
       auto set_var = [&](auto&& v) mutable {
-        using v_t = std::decay_t<decltype(v)>;  
+        using v_t = std::decay_t<decltype(v)>;
         if constexpr (std::is_arithmetic_v<v_t>) {
           if(!std::isnan(v))
             var = v;
-        } 
-      };  
+        }
+      };
       std::visit(set_var, this->set_diffrot(idx...));
       return var;
     }
@@ -336,11 +338,11 @@ struct kadath_config_boost : public configurator_base {
     constexpr const T diffrot(idx_t... idx) {
       T var{};
       auto set_var = [&](auto&& v) mutable {
-        using v_t = std::decay_t<decltype(v)>;  
-        if constexpr (std::is_same_v<v_t, std::string>) {   
-            var = v;    
-        }    
-      };  
+        using v_t = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<v_t, std::string>) {
+            var = v;
+        }
+      };
       std::visit(set_var, this->set_diffrot(idx...));
       return var;
     }
@@ -358,7 +360,7 @@ struct kadath_config_boost : public configurator_base {
     auto get_diffrot_map(idx_t... BCOidx) {
       return container.get_diffrot_map(BCOidx...);
     }
-    
+
     inline void set_seq_defaults();
 
     friend std::ostream& operator<< <>(std::ostream&, const kadath_config_boost<ParamC>&) ;

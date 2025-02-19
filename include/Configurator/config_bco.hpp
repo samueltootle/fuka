@@ -47,8 +47,8 @@ protected:
    */
   const Map bco_map{MBCO_PARAMS};
   std::map<std::string, STAGES> bco_stages{MSTAGE};
-  
-  /** 
+
+  /**
    *Array to store parameters
    */
   Array bco_params{};
@@ -70,7 +70,7 @@ public:
   /**
    * BCO_INFO move constructor
    */
-  BCO_INFO(BCO_INFO&& b) noexcept 
+  BCO_INFO(BCO_INFO&& b) noexcept
     : bco_params(std::move(b.bco_params)), bco_stages(std::move(b.bco_stages)) {}
 
   /**
@@ -100,11 +100,11 @@ public:
   virtual Tree return_branch() {
     return build_branch<Tree>(MBCO_PARAMS, bco_params);
   }
-  
+
   /**
    * BCO_INFO::get_name_string
    * Returns BCO type with an added int, 1 or 2.  Needed
-   * for config_binary.hpp 
+   * for config_binary.hpp
    *
    * @param[input]  N integer to concatenate with type
    * @param[output] string concatenated string
@@ -148,14 +148,17 @@ public:
    * @param[output] bco_map Parameter map
    */
   Map const &get_map() const { return bco_map; }
-  
+
   /* BIN_INFO::get_stage_map
    * Returns binary parameter stages map
    *
    * @param[output] bin_map binary parameter map
    */
-  virtual std::map<std::string, STAGES> const & get_stage_map() const { 
-    return bco_stages; 
+  virtual std::map<std::string, STAGES> const & get_stage_map() const {
+    return bco_stages;
+  }
+  virtual void set_stage_map(const std::map<std::string, STAGES>& _stages) {
+    bco_stages = _stages;
   }
 
   /**
@@ -216,7 +219,7 @@ public:
   /**
    * BCO_BH_INFO::get_name_string
    * Returns BCO type with an added int, 1 or 2.  Needed
-   * for config_binary.hpp 
+   * for config_binary.hpp
    *
    * @param[input]  N integer to concatenate with type
    * @param[output] string concatenated string
@@ -242,9 +245,9 @@ public:
    */
   virtual std::string get_type() const override { return node_t; }
 
-  /** 
+  /**
    * BCO_BH_INFO::set_defaults
-   * Allow the setting of default configurator values for a base BH setup - do not modify 
+   * Allow the setting of default configurator values for a base BH setup - do not modify
    *
    * @tparam config_t configuration file type
    * @param bconfig reference to configuration file to be modified
@@ -255,25 +258,25 @@ public:
     // Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
     bconfig.set(BCO_PARAMS::DIM)     = 3;
-    
+
     // Units of the system - 4 * PI * G
     bconfig.set(BCO_PARAMS::BCO_QPIG) = 4 * M_PI;
-    
-    // Nucleus Radius 
+
+    // Nucleus Radius
     bconfig.set(BCO_PARAMS::RIN)  = 0.1;
-    
+
     // Initial guess for BH - radius
     bconfig.set(BCO_PARAMS::RMID) = 0.3;
-    
+
     // Radius of outer boundary - matched with compactified domain
     bconfig.set(BCO_PARAMS::ROUT) = 5 * bconfig(RMID) ;
-    
+
     // Additional shells can be added between RMID and ROUT for refined resolution
     bconfig.set(BCO_PARAMS::NSHELLS) = 0;
-    
+
     // Initial dimensionless spin
     bconfig.set(BCO_PARAMS::CHI) = 0;
-    
+
     // Initial guess of omega
     bconfig.set(BCO_PARAMS::OMEGA) = 0;
 
@@ -283,9 +286,9 @@ public:
 
     bconfig.set(BCO_PARAMS::BVELX) = 0.;
     bconfig.set(BCO_PARAMS::BVELY) = 0.;
-    
-    /** 
-     * fixed lapse is used for the PRE stage only.  
+
+    /**
+     * fixed lapse is used for the PRE stage only.
      * Once the system is solved using the Neumann lapse condition
      * this value is updated in the config file in the standard solver */
     bconfig.set(BCO_PARAMS::FIXED_LAPSE)  = .3;
@@ -305,9 +308,9 @@ public:
     bconfig.control(CONTROLS::SAVE_COS) = false;
   }
 
-    /** 
+    /**
    * BCO_BH_INFO::set_minimal_defaults
-   * Allow the setting of default configurator values for a base BH setup - do not modify 
+   * Allow the setting of default configurator values for a base BH setup - do not modify
    *
    * @tparam config_t configuration file type
    * @param bconfig reference to configuration file to be modified
@@ -317,7 +320,7 @@ public:
     //start - set BH properties in config file
     //Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
-    
+
     //Initial dimensionless spin
     bconfig.set(BCO_PARAMS::CHI) = 0;
     bconfig.set(BCO_PARAMS::MCH) = 0.5 ;
@@ -342,7 +345,7 @@ public:
  */
 
 class BCO_NS_INFO : public BCO_INFO {
-public:  
+public:
   using vars_t  = std::variant<double, int, std::string>;
   using EOSArray = std::array<vars_t, NUM_BCO_PARAMS>;
   using EOSMap   = std::map<std::string, EOS_PARAMS>;
@@ -361,34 +364,34 @@ protected:
   DIFFROT_map const diffrot_map{MDIFFROT_PARAMS};
 
 public:
-  /** 
+  /**
    * BCO_NS_INFO::BCO_NS_INFO
    * In addition to the parent constructor, we initialize the
-   * the EOS array to NaN as well. 
+   * the EOS array to NaN as well.
    */
   BCO_NS_INFO() : BCO_INFO() {
     bco_stages = MNSSTAGE;
     eos_params.fill(std::nan("1"));
     diffrot_params.fill(std::nan("1"));
   }
-  
+
   /**
    * BCO_NS_INFO copy constructor
    */
-  BCO_NS_INFO(const BCO_NS_INFO& b) 
-    : BCO_INFO(b), 
-      eos_params{b.eos_params}, diffrot_params(b.diffrot_params) 
+  BCO_NS_INFO(const BCO_NS_INFO& b)
+    : BCO_INFO(b),
+      eos_params{b.eos_params}, diffrot_params(b.diffrot_params)
       { }
 
   /**
    * BCO_NS_INFO move constructor
    */
-  BCO_NS_INFO(BCO_NS_INFO&& b) noexcept 
-    : BCO_INFO(std::move(b)), 
+  BCO_NS_INFO(BCO_NS_INFO&& b) noexcept
+    : BCO_INFO(std::move(b)),
       eos_params(std::move(b.eos_params)),
       diffrot_params(std::move(b.diffrot_params))
       { }
-  
+
   /**
    * BCO_NS_INFO assignment operator
    */
@@ -399,7 +402,7 @@ public:
     this->diffrot_params = b.diffrot_params;
     return *this;
   }
-  
+
   /**
    * BCO_NS_INFO move assignment operator
    */
@@ -442,7 +445,7 @@ public:
   /**
    * BCO_NS_INFO::get_name_string
    * Returns BCO type with an added int, 1 or 2.  Needed
-   * for config_binary.hpp 
+   * for config_binary.hpp
    *
    * @param[input]  N integer to concatenate with type
    * @param[output] string concatenated string
@@ -463,13 +466,13 @@ public:
   /**
    * BCO_NS_INFO::read_params
    * Reads the mapped parameters from a given branch
-   * 
+   *
    * @param[input] branch input branch to read bco and eos params from
    */
   virtual void read_params(Tree &branch) override {
     read_keys(bco_map, bco_params, branch);
     read_keys(eos_map, eos_params, branch);
-    
+
     if(branch.find("differential_rotation") != branch.not_found())
       read_keys(diffrot_map, diffrot_params, read_branch(branch, "differential_rotation"));
     // if(!is_storage_all_nan(diffrot_params)) {
@@ -480,7 +483,7 @@ public:
   /**
    * BCO_NS_INFO::return_branch
    * Builds a single branch from the stored bco and eos parameters
-   * 
+   *
    * @param[output] branch branch containing bco and eos params
    */
   //
@@ -489,11 +492,11 @@ public:
     Tree eos_childs = build_branch<Tree>(eos_map, eos_params);
     for (auto child : eos_childs)
       branch.push_back(child);
-    
+
     if(!is_storage_all_nan(diffrot_params)) {
       Tree diffrot_branch(build_branch<Tree>(diffrot_map, diffrot_params));
       branch.add_child("differential_rotation", diffrot_branch);
-    }    
+    }
     return branch;
   }
 
@@ -504,7 +507,7 @@ public:
    * @param[output] node_t node type
    */
   virtual std::string get_type() const override { return node_t; }
-  
+
   /**
    * BCO_NS_INFO::set_eos_param
    * Returns reference to EOS param allowing value assignment
@@ -545,9 +548,9 @@ public:
   template<typename T>
   const T get_diffrot_param(const int idx) const { return std::get<T>(diffrot_params[idx]); }
 
-  /** 
+  /**
    * BCO_NS_INFO::set_defaults
-   * Allow the setting of default configurator values for a base NS setup - do not modify 
+   * Allow the setting of default configurator values for a base NS setup - do not modify
    *
    * @tparam config_t configuration file type
    * @param bconfig reference to configuration file to be modified
@@ -559,34 +562,34 @@ public:
     bconfig.set_eos(EOS_PARAMS::EOSTYPE)    = "Cold_Table";
     bconfig.set_eos(EOS_PARAMS::HCUT)       = 0.0;
     bconfig.set_eos(EOS_PARAMS::INTERP_PTS) = 2000;
-    
+
     bconfig.set(BCO_PARAMS::HC) = 1.26;
     bconfig.set(BCO_PARAMS::NC) = 1.37e-3;
 
     // Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
     bconfig.set(BCO_PARAMS::DIM)     = 3;
-    
+
     // Units of the system - 4 * PI * G
     bconfig.set(BCO_PARAMS::BCO_QPIG) = 4 * M_PI;
-    
+
     // Initial guess for NS - radius
     bconfig.set(BCO_PARAMS::RMID)     = 6.2;
-    
-    // Nucleus Radius 
+
+    // Nucleus Radius
     bconfig.set(BCO_PARAMS::RIN)      = 0.5 * bconfig(RMID);
 
     // Radius of outer boundary - matched with compactified domain
     bconfig.set(BCO_PARAMS::ROUT)     = 1.5 * bconfig(RMID) ;
-    
+
     // Additional shells between RIN and RMID
     bconfig.set(BCO_PARAMS::NINSHELLS) = 0;
     // Additional shells between RMID and ROUT
     bconfig.set(BCO_PARAMS::NSHELLS)   = 0;
-    
+
     // Initial dimensionless spin
     bconfig.set(BCO_PARAMS::CHI)   = 0;
-    
+
     // Initial guess of omega
     bconfig.set(BCO_PARAMS::OMEGA) = 0;
 
@@ -613,9 +616,9 @@ public:
     bconfig.control(CONTROLS::SAVE_COS) = false;
   }
 
-  /** 
+  /**
    * BCO_NS_INFO::set_minimal_defaults
-   * Allow the setting of default configurator values for a base NS setup - do not modify 
+   * Allow the setting of default configurator values for a base NS setup - do not modify
    *
    * @tparam config_t configuration file type
    * @param bconfig reference to configuration file to be modified
@@ -645,18 +648,18 @@ public:
 
 class BCO_ISO_NS_INFO : public BCO_NS_INFO {
   public:
-  /** 
+  /**
    * BCO_NS_INFO::BCO_NS_INFO
    * In addition to the parent constructor, we initialize the
-   * the EOS array to NaN as well. 
+   * the EOS array to NaN as well.
    */
   BCO_ISO_NS_INFO() : BCO_NS_INFO() {
     bco_stages = M2DNSSTAGE;
   }
 
-  /** 
+  /**
    * BCO_NS_INFO::set_defaults
-   * Allow the setting of default configurator values for a base NS setup - do not modify 
+   * Allow the setting of default configurator values for a base NS setup - do not modify
    *
    * @tparam config_t configuration file type
    * @param bconfig reference to configuration file to be modified
@@ -668,23 +671,23 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
     bconfig.set_eos(EOS_PARAMS::EOSTYPE)    = "Cold_Table";
     bconfig.set_eos(EOS_PARAMS::HCUT)       = 0.0;
     bconfig.set_eos(EOS_PARAMS::INTERP_PTS) = 2000;
-    
+
     bconfig.set(BCO_PARAMS::HC) = 1.26;
     bconfig.set(BCO_PARAMS::NC) = 1.37e-3;
 
     // Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
     bconfig.set(BCO_PARAMS::DIM)     = 2;
-    
+
     // Units of the system - 4 * PI * G
     bconfig.set(BCO_PARAMS::BCO_QPIG) = 4 * M_PI;
 
     // Additional shells between RMID and ROUT
     bconfig.set(BCO_PARAMS::NSHELLS)   = 0;
-    
+
     // Initial dimensionless spin
     bconfig.set(BCO_PARAMS::CHI)   = 0;
-    
+
     // Initial guess of omega
     bconfig.set(BCO_PARAMS::OMEGA) = 0;
 
@@ -699,13 +702,13 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
     // end   - set NS stages
 
     // start - set NS fields in config file
-    
+
     // Make sure all other fields are disabled
     // Starting from scratch, we only need three fields for the
     // non-rotating case.
     for(auto i = 0; i < BCO_FIELDS::NUM_BCO_FIELDS; i++)
       bconfig.set_field(i) = false;
-    
+
     // Document fields that will be stored
     bconfig.set_field(BCO_FIELDS::LOGH)   = true;
     bconfig.set_field(BCO_FIELDS::NU)     = true;
@@ -718,9 +721,9 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
     bconfig.control(CONTROLS::SAVE_COS) = false;
   }
 
-  /** 
+  /**
    * BCO_NS_INFO::set_minimal_defaults
-   * Allow the setting of default configurator values for a base NS setup - do not modify 
+   * Allow the setting of default configurator values for a base NS setup - do not modify
    *
    * @tparam config_t configuration file type
    * @param bconfig reference to configuration file to be modified
@@ -781,7 +784,7 @@ public:
   /**
    * BCO_KSBH_INFO::get_name_string
    * Returns BCO type with an added int, 1 or 2.  Needed
-   * for config_binary.hpp 
+   * for config_binary.hpp
    *
    * @param[input]  N integer to concatenate with type
    * @param[output] string concatenated string
@@ -807,9 +810,9 @@ public:
    */
   virtual std::string get_type() const override { return node_t; }
 
-  /** 
+  /**
    * BCO_KSBH_INFO::set_defaults
-   * Allow the setting of default configurator values for a base BH setup - do not modify 
+   * Allow the setting of default configurator values for a base BH setup - do not modify
    *
    * @tparam config_t configuration file type
    * @param bconfig reference to configuration file to be modified
@@ -820,25 +823,25 @@ public:
     //Resolution of the initial setup
     bconfig.set(BCO_RES)  = 9;
     bconfig.set(DIM)      = 3;
-    
+
     //Units of the system - 4 * PI * G
     bconfig.set(BCO_QPIG) = 4 * M_PI;
-    
-    //Nucleus Radius 
+
+    //Nucleus Radius
     bconfig.set(RIN)      = 1.;
-    
+
     //Initial guess for BH - radius
     bconfig.set(RMID)     = 2.;
-    
+
     //Radius of outer boundary - matched with compactified domain
     bconfig.set(ROUT)     = 2. * bconfig(RMID) ;
-    
+
     //Additional shells can be added between RMID and ROUT for refined resolution
     bconfig.set(NSHELLS)  = 1;
-    
+
     //Initial dimensionless spin
     bconfig.set(CHI)      = 0;
-    
+
     //Initial guess of omega
     bconfig.set(OMEGA)    = 0;
 
