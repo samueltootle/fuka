@@ -29,8 +29,7 @@
  * \ingroup FUKA
  * @{*/
 namespace Kadath::FUKA_Solvers {
-// using ::Kadath::FUKA_Config;
-// using ::Kadath::FUKA_Config_Utils;
+using ::Kadath::FUKA_Config;
 
 struct NS_XCTS_BASE {
   using base_space_t = Space_spheric_adapted;
@@ -44,12 +43,13 @@ struct NS_XCTS_BASE {
   using cfary_t = std::array<std::optional<Vector>, NUM_VECTORS>;
 
  protected:
-  internal_variable(int, rank) internal_variable(int, verbosity)
-      internal_variable(int, ndom) internal_variable(std::string, outputdir)
-          internal_variable(int, last_stage_idx)
-              internal_variable(std::string,
-                                stagename)::Kadath::FUKA_Config::STAGES
-      solver_stage{::Kadath::FUKA_Config::STAGES::NUM_STAGES};
+  internal_variable(int, rank)
+  internal_variable(int, verbosity)
+  internal_variable(int, ndom)
+  internal_variable(std::string, outputdir)
+  internal_variable(int, last_stage_idx)
+  internal_variable(std::string, stagename)
+  STAGES solver_stage{STAGES::NUM_STAGES};
 
   // EOS Parameters - Perhaps this should be a container?
   internal_variable(double, h_cut);
