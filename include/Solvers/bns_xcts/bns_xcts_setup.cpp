@@ -6,7 +6,7 @@
 namespace Kadath {
 namespace FUKA_Solvers {
 template <class config_t>
-inline void bns_xcts_setup_bin_config(config_t& bconfig) {
+inline void bns_xcts_setup_headon_config(config_t& bconfig) {
   using namespace ::Kadath::bco_utils;
   check_dist(bconfig(BIN_PARAMS::DIST), bconfig(BCO_PARAMS::MADM, NODES::BCO1),
              bconfig(BCO_PARAMS::MADM, NODES::BCO2));
@@ -21,6 +21,12 @@ inline void bns_xcts_setup_bin_config(config_t& bconfig) {
   bconfig.set(BIN_PARAMS::COM) = com_estimate(
       bconfig(BIN_PARAMS::DIST), bconfig(BCO_PARAMS::MADM, NODES::BCO1),
       bconfig(BCO_PARAMS::MADM, NODES::BCO2));
+}
+
+template <class config_t>
+inline void bns_xcts_setup_bin_config(config_t& bconfig) {
+  using namespace ::Kadath::bco_utils;
+  bns_xcts_setup_headon_config(bconfig);
 
   // obtain 3PN estimate for the global, orbital omega
   KadathPNOrbitalParams(bconfig, bconfig(BCO_PARAMS::MADM, NODES::BCO1),
@@ -150,9 +156,7 @@ inline void operator()(kadath_config_boost<BCO_NS_INFO>& NS1config,
                               bconfig(BCO_PARAMS::RMID, NODES::BCO2));
   const double rout_sep_est =
       (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
-  const double rout_max_est = gold_ratio * r_max_tot;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
-      // (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
       bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
   // end updating config vars
@@ -164,7 +168,7 @@ inline void operator()(kadath_config_boost<BCO_NS_INFO>& NS1config,
   for (int e = 0; e < out_bounds.size(); ++e)
     out_bounds[e] = bconfig(BIN_PARAMS::REXT) * (1. + e * 0.25);
 
-  // set reasonable radii to each stellar domain
+  // Determine optimal grid struction based on isolated solutions
   std::vector<double> NS1_bounds;
   {
     auto drPsi(compute_drPsi(spacein1, confin1,
