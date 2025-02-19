@@ -2,6 +2,7 @@
 #include <string>
 #include "Configurator/config_binary.hpp"
 #include "Configurator/configurator_boost.hpp"
+#include "EOS/FUKA_EOS_Utilities.hh"
 
 namespace Kadath::FUKA_Solvers {
 
@@ -71,37 +72,8 @@ inline void set_eos_ope(System_of_eqs& syst, Param& p) {
 
 template <class solver_t>
 inline void initialize_EOS(solver_t& solver) {
-  auto& h_cut = solver.set_h_cut();
-  auto& eos_file = solver.set_eos_file();
-  auto& eos_type = solver.set_eos_type();
-  auto& bconfig = solver.get_bconfig();
+  auto& bconfig = *(solver.get_bconfig());
 
-  // Initialize EOS
-  h_cut =
-      (*bconfig).template eos<double>(Kadath::FUKA_Config::EOS_PARAMS::HCUT);
-  eos_file = (*bconfig).template eos<std::string>(
-      Kadath::FUKA_Config::EOS_PARAMS::EOSFILE);
-  eos_type = (*bconfig).template eos<std::string>(
-      Kadath::FUKA_Config::EOS_PARAMS::EOSTYPE);
-
-  if (eos_type == "Cold_Table") {
-    using namespace Kadath::Margherita;
-    using eos_t = Kadath::Margherita::Cold_Table;
-
-    const int interp_pts =
-        ((*bconfig).template eos<int>(
-             Kadath::FUKA_Config::EOS_PARAMS::INTERP_PTS) == 0)
-            ? 2000
-            : (*bconfig).template eos<int>(
-                  Kadath::FUKA_Config::EOS_PARAMS::INTERP_PTS);
-
-    EOS<eos_t, PRESSURE>::init(eos_file, h_cut, interp_pts);
-  } else if (eos_type == "Cold_PWPoly") {
-    using namespace Kadath::Margherita;
-    using eos_t = Kadath::Margherita::Cold_PWPoly;
-    EOS<eos_t, PRESSURE>::init(eos_file, h_cut);
-  } else {
-    throw std::invalid_argument("\nInvalid EOS Type\n)");
-  }
+  ::Kadath::FUKA_EOS::EOS_initialize::init(bconfig);
 }
 }  // namespace Kadath::FUKA_Solvers

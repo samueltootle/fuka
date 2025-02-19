@@ -409,8 +409,9 @@ void NS_XCTS_DIFF_ROT<eos_t>::initialize_spinup() {
     return;
   }
   return;
-  spinup.reset(new Parameter_sequence<DIFFROT_PARAMS>(
-      "R_ratio", DIFFROT_PARAMS::DIFF_RRATIO));
+  spinup.reset(
+      new Parameter_sequence<DIFFROT_PARAMS>("R_ratio",
+                                             DIFFROT_PARAMS::DIFF_RRATIO));
   spinup->set(0.7, 0.7, diffRratio);
   auto const spinidx = std::get<0>(spinup->get_indices());
   const double dx = 0.05;
