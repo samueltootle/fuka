@@ -121,7 +121,7 @@ struct launch_ns_solver {
         launch(diffrot_solver, true, true);
       } while (diffrot_solver.increment_spin());
       // FIXME? launch(diffrot_solver);
-      launch(diffrot_solver, true, true);
+      launch(diffrot_solver, false, true);
     }
     return exit_status;
   };

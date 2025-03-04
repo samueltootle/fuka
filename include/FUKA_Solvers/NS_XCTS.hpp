@@ -29,7 +29,7 @@
  * \ingroup FUKA
  * @{*/
 namespace Kadath::FUKA_Solvers {
-using ::Kadath::FUKA_Config;
+using namespace ::Kadath::FUKA_Config;
 
 struct NS_XCTS_BASE {
   using base_space_t = Space_spheric_adapted;
