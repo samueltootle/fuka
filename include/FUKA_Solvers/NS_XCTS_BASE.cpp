@@ -235,6 +235,7 @@ inline void NS_XCTS_BASE::regrid() {
   MPI_Barrier(MPI_COMM_WORLD);
 
   // Ensure all ranks have the same config file
+  bconfig->set_outputdir(outputdir);
   bconfig->set_filename(outputfile);
   bconfig->open_config();
 
