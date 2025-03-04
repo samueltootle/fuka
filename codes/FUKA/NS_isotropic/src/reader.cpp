@@ -143,16 +143,23 @@ void reader_2d_diffrot(config_t bconfig) {
   // eq 4.40 evaluated at spatial infinity, Gourgoulhon
   syst.add_def(ndom - 1, "intJ = -multrsint(multrsint(dr(w))) / 4 / 4piG");
 
+  // (3.31) Upper Phi component of U vector (r, theta = 0)
+  syst.add_def("UphiU = (Omega - w) / N");
+  // (3.32)
+  syst.add_def("U = multrsint(B * UphiU)");
+  syst.add_def("Usq = U*U");
+  syst.add_def("Wsq = 1 / (1 - Usq)");
+  syst.add_def("W = sqrt(Wsq)");
+  // Lower Phi component of U vector = u . \xi
+  // (3.85)
+  syst.add_def("UphiL = multrsint(multrsint(B^2 * UphiU))");
+  syst.add_def("j = Wsq / N * UphiL");
+
   for (int d = 0; d < ndom; d++) {
     switch (d) {
       // in the star the constraint equations are sourced by the matter
       case 0:
       case 1:
-        syst.add_def(d, "U = multrsint(B / N * (Omega - w))");
-        syst.add_def(d, "Usq = U*U");
-        syst.add_def(d, "Wsq = 1 / (1 - Usq)");
-        syst.add_def(d, "W = sqrt(Wsq)");
-
         // sources rescaled by p/rho as in Papenfort2021
         syst.add_def(d, "E = Wsq * (press * h - Wsq * press * delta / Wsq)");
         syst.add_def(d, "Srrtt = press * delta");
@@ -172,6 +179,12 @@ void reader_2d_diffrot(config_t bconfig) {
 
         // definition for the baryonic mass integral, eq 4.5
         syst.add_def(d, "intMb = W * rho * A^2 * B * 4piG / 2");
+
+        // Momentum volume integral over the star.
+        // P^6 doesn't yield reasonable results as expected.
+        syst.add_def(d, "vintJ = rho * j * A^2 * B * 4piG / 2");
+        syst.add_def(d, "intT = Omega * vintJ");
+        syst.add_def(d, "inteps  = intMb * eps(h)");
 
         // first integral of the euler equation for a static, non-rotating star, i.e. a TOV
         syst.add_def(d, "firstint = H + log(N) - 0.5 * log(Wsq)");
@@ -222,6 +235,15 @@ void reader_2d_diffrot(config_t bconfig) {
   Scalar intGRV2(syst.give_val_def("GRV2")());
   intGRV2.coef_i();
 
+  double T_integral = 0.0;
+  Scalar Tint = syst.give_val_def("intT")();
+
+  double J_vintegral = 0.0;
+  Scalar Jvol = syst.give_val_def("vintJ")();
+
+  double eps_integral = 0.0;
+  Scalar epsint = syst.give_val_def("inteps")();
+
   // double LAM3=0;
   // Scalar intLAM3(syst.give_val_def("lam3")());
   // intLAM3.coef_i();
@@ -255,6 +277,9 @@ void reader_2d_diffrot(config_t bconfig) {
     } while (pos.inc());
     VJadm += J_o_Porho.integ_volume();
     baryonic_mass += intMb(i).integ_volume();
+    T_integral += Tint(i).integ_volume();
+    J_vintegral += Jvol(i).integ_volume();
+    eps_integral += epsint(i).integ_volume();
     double tmp = GRV2_vd.integ_volume();
     cout << i << ": " << tmp << '\n';
     GRV2 += tmp;
@@ -284,6 +309,12 @@ void reader_2d_diffrot(config_t bconfig) {
   // ADM angular momentum at infinity
   Val_domain integJ(syst.give_val_def("intJ")()(ndom - 1));
   double J = space.get_domain(ndom - 1)->integ(integJ, OUTER_BC);
+
+  T_integral *= 0.5;
+  double W_be = T_integral + eps_integral + baryonic_mass - MadmB;
+  std::cout << "T_integral: " << T_integral << std::endl;
+  std::cout << "W_be: " << W_be << std::endl;
+  std::cout << "Beta: " << T_integral / W_be << std::endl;
 
   auto npts = space.get_domain(1)->get_nbr_points();
 
