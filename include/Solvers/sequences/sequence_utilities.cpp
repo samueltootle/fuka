@@ -119,17 +119,17 @@ config_t generate_sequence_config(config_t& seqconfig, std::string outputdir) {
   return bconfig;
 }
 
-template <class config_t, class... bco_t>
-void update_eos_parameters(config_t& seqconfig,
-                           config_t& bconfig,
+template <class src_config_t, class dst_config_t, class... bco_t>
+void update_eos_parameters(src_config_t& seqconfig,
+                           dst_config_t& bconfig,
                            bco_t... bco) {
   for (int idx = 0; idx < EOS_PARAMS::NUM_EOS_PARAMS; ++idx)
     bconfig.set_eos(idx, bco...) = seqconfig.set_eos(idx, bco...);
 }
 
-template <class config_t, class... bco_t>
-void update_diffrot_parameters(config_t& seqconfig,
-                               config_t& bconfig,
+template <class src_config_t, class dst_config_t, class... bco_t>
+void update_diffrot_parameters(src_config_t& seqconfig,
+                               dst_config_t& bconfig,
                                bco_t... bco) {
   for (int idx = 0; idx < DIFFROT_PARAMS::NUM_DIFFROT_PARAMS; ++idx)
     bconfig.set_diffrot(idx, bco...) = seqconfig.set_diffrot(idx, bco...);
