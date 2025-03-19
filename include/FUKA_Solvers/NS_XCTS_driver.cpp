@@ -10,7 +10,7 @@
 namespace Kadath::FUKA_Solvers {
 
 template <class eos_t>
-struct launch_ns_solver {
+struct launch_ns_xcts_solver {
   template <class config_t>
   int operator()(const int rank,
                  config_t& bconfig,
@@ -167,7 +167,7 @@ inline int ns_xcts_solver_driver(NS_XCTS_BASE::base_config_t& bconfig,
   const std::string eos_type =
       bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
   using namespace Kadath::FUKA_EOS;
-  exit_status = EOS_Function_Dispatcher::dispatch<launch_ns_solver>(
+  exit_status = EOS_Function_Dispatcher::dispatch<launch_ns_xcts_solver>(
       bconfig, eos_type, rank, bconfig, outputdir, resolution, seq);
 
   MPI_Barrier(MPI_COMM_WORLD);

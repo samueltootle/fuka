@@ -27,6 +27,7 @@
 #include "mpi.h"
 #include "ns_3d_xcts/ns_3d_xcts_driver.hpp"
 #include "ns_3d_xcts/ns_3d_xcts_solver.hpp"
+#include "ns_3d_xcts/NS_ISO_to_XCTS_convert.hpp"
 #include "ns_isotropic/ns_isotropic_driver.hpp"
 #include "sequences/parameter_sequence.hpp"
 #include "solvers.hpp"
@@ -263,7 +264,7 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig, ns_sequence const &
 
   auto ns_iso_sol_config = ns_isotropic_sequence(nsconfig, seq, resolution, output_path);
 
-  const std::string eos_type = bconfig.eos<std::string>(EOSTYPE);
+  const std::string eos_type = bconfig.template eos<std::string>(EOSTYPE);
   EOS_Function_Dispatcher::dispatch<NS_ISO_to_XCTS_convert>(ns_iso_sol_config, eos_type,
                                                             ns_iso_sol_config, output_path);
   bconfig.set_filename("initns_xcts.info");
