@@ -123,7 +123,8 @@ struct NS_ISO_to_XCTS_convert {
           Point abs_coords(2);
           abs_coords.set(1) = r_xy;
           abs_coords.set(2) = z;
-          omega.set_domain(dom).set(pos) = iso_omega->val_point(abs_coords);
+          if(iso_omega)
+            omega.set_domain(dom).set(pos) = iso_omega->val_point(abs_coords);
 
           shift.set(1).set_domain(dom).set(pos) =
               all_data[input_reader_t::OUTPUT_VARS::BETA1];
@@ -168,9 +169,12 @@ struct NS_ISO_to_XCTS_convert {
     bconfig.set_field(BCO_FIELDS::CONF) = true;
     bconfig.set_field(BCO_FIELDS::SHIFT) = true;
     bconfig.set_field(BCO_FIELDS::LOGH) = true;
-    bconfig.set_field(BCO_FIELDS::DIFF_OMEGA) = true;
+    bconfig.set_field(BCO_FIELDS::DIFF_OMEGA) = !omega(0).check_if_zero();
     // write space and config to files on one processor
     bconfig.set_stage(PRE) = false;
-    bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, omega);
+    if(bconfig.set_field(BCO_FIELDS::DIFF_OMEGA))
+      bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, omega);
+    else
+      bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh);
   }
 };
