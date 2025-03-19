@@ -30,6 +30,7 @@
 #include "ns_3d_xcts/NS_ISO_to_XCTS_convert.hpp"
 #include "ns_isotropic/ns_isotropic_driver.hpp"
 #include "sequences/parameter_sequence.hpp"
+#include "sequences/sequence_utilities.hpp"
 #include "solvers.hpp"
 
 /**
