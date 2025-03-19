@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -72,6 +72,7 @@ int main(int argc, char** argv) {
     // We now have to assume bconfig is a minimal config
     // that contains sequences _init/_final
     bconfig.open_config();
+    EOS_initialize::init(bconfig);
     bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
     if (bconfig.set_stage(STAGES::TOTAL_BC)) {
       bconfig.set_stage(STAGES::TOTAL_BC) = false;
