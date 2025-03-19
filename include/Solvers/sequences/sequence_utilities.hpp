@@ -27,9 +27,9 @@ namespace FUKA_Solvers {
  * @param bconfig Full Config
  * @param bco Optional index for the relevant CO to update
  */
-template <class config_t, class... bco_t>
-void update_eos_parameters(config_t& seqconfig,
-                           config_t& bconfig,
+template <class src_config_t, class dst_config_t, class... bco_t>
+void update_eos_parameters(src_config_t& seqconfig,
+                           dst_config_t& bconfig,
                            bco_t... bco);
 
 /**
