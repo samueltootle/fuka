@@ -289,8 +289,7 @@ inline int ns_xcts_driver(NS_XCTS_BASE::base_config_t& bconfig,
   bconfig.set(resolution_indices) = resolution.init();
 
   std::string initial_guess_filename = solve_NS_ISO_from_XCTS_config(bconfig, seq);
-  bconfig.set_filename(initial_guess_filename);
-  bconfig.open_config();
+  bconfig = NS_XCTS_BASE::base_config_t(initial_guess_filename);
   bconfig.control(CONTROLS::SEQUENCES) = false;
 
   exit_status = launch_final_stage_driver(bconfig, seq, resolution, outputdir);
