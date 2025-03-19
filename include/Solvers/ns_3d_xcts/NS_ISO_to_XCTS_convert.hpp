@@ -172,6 +172,14 @@ struct NS_ISO_to_XCTS_convert {
     bconfig.set_field(BCO_FIELDS::DIFF_OMEGA) = !omega(0).check_if_zero();
     // write space and config to files on one processor
     bconfig.set_stage(PRE) = false;
+
+    std::array<bool, NUM_STAGES>& stage_enabled = bconfig.return_stages();
+    auto [last_stage, last_stage_idx] = get_last_enabled(MSTAGE, stage_enabled);
+    // Ensure only the final stage is used
+    // e.g. avoid NOROT stage
+    stage_enabled.fill(false);
+    stage_enabled[last_stage_idx] = true;
+
     if(bconfig.set_field(BCO_FIELDS::DIFF_OMEGA))
       bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, omega);
     else
