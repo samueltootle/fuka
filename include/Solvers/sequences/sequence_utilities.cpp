@@ -139,8 +139,8 @@ Parameter_sequence<idx_t...> parse_seq_tree(Tree const & tree,
 }
 
 template<class map_t>
-uint number_of_sequences(Tree const & tree, map_t const & map, std::string const branch_name) {
-    uint cnt{0};
+unsigned int number_of_sequences(Tree const & tree, map_t const & map, std::string const branch_name) {
+    unsigned int cnt{0};
     for(const auto& [ key, index ]: map) {
         // Ignore resolution since this is treated separately
         if(key == "res")
@@ -152,8 +152,8 @@ uint number_of_sequences(Tree const & tree, map_t const & map, std::string const
     return cnt;
 }
 
-inline uint number_of_sequences_binary(Tree const & tree) {
-  uint cnt{0};
+inline unsigned int number_of_sequences_binary(Tree const & tree) {
+  unsigned int cnt{0};
   std::string const branch_name{"binary"};
   cnt += number_of_sequences(tree, MBIN_PARAMS, branch_name);
 

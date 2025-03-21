@@ -35,7 +35,7 @@ void export_radii(space_t & space, dict_t& vars,
   }
   space_radius.std_base();
 
-  uint cnt = 1;
+  unsigned int cnt = 1;
   for(int i = dom_min; i < dom_max; ++i) {
     Index pos(space.get_domain(i)->get_radius().get_conf().get_dimensions());
     pos.set(0) = space.get_domain(i)->get_nbr_points()(0)-1;
