@@ -61,7 +61,8 @@ struct FUKA_EOS_Wrapper {
     else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
       rho = ghl_hybrid_compute_rho_cold_from_P_cold(ghl_eos_params.get(), P_in);
     } else if constexpr (eos == ghl_eos_tabulated) {
-      rho = ghl_tabulated_compute_rho_from_P(ghl_eos_params.get(), P_in);
+      double P_bounded = Kadath::GHL_EOS::ghl_tabulated_check_press(ghl_eos_params, P_in);
+      rho = ghl_tabulated_compute_rho_from_P(ghl_eos_params.get(), P_bounded);
     }
 #endif
     return rho;
