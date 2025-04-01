@@ -70,7 +70,7 @@ inline auto populate_ghl_tabulated(std::string table_par_file) {
       parser.table_abspath.c_str(), parser.rho_atm, parser.rho_min,
       parser.rho_max, parser.Ye_atm, parser.Ye_min, parser.Ye_max, parser.T_atm,
       parser.T_min, parser.T_max, &eos);
-  ghl_tabulated_compute_Ye_P_eps_of_rho_beq_constant_T(1.1e-2, &eos);
+  ghl_tabulated_compute_Ye_P_eps_of_rho_beq_constant_T(parser.T_beta, &eos);
   eos_params = std::make_unique<ghl_eos_parameters>(eos);
 
   ghl_modify_beta_equ_table(eos_params);
@@ -132,6 +132,22 @@ inline double ghl_tabulated_check_rho(
   lrho = std::min(lrho, ghl_eos_params->table_logrho[N-1]);
 
   return std::exp(lrho);
+}
+
+// GRHaYL will error out rather than enforce table bounds.
+// Therefore we check them here to avoid errors.
+inline double ghl_tabulated_check_press(
+  std::unique_ptr<ghl_eos_parameters>& ghl_eos_params,
+  const double P_in) {
+
+  // Enforce lower bound
+  double lpress = std::max(std::log(P_in), ghl_eos_params->lp_of_lr[0]) ;
+
+  const auto N = ghl_eos_params->N_rho;
+  // Enforce upper bound
+  lpress = std::min(lpress, ghl_eos_params->lp_of_lr[N-1]);
+
+  return std::exp(lpress);
 }
 
 }  // namespace GHL_EOS
