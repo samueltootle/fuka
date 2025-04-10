@@ -263,9 +263,6 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig, ns_sequence const &
   nsconfig.set_filename("initns");
   nsconfig.set_outputdir(output_path);
 
-  if (bconfig.control(CONTROLS::USE_BOOSTED_CO))
-    nsconfig.set_stage(STAGES::BIN_BOOST) = true;
-
   auto ns_iso_sol_config = ns_isotropic_sequence(nsconfig, seq, resolution, output_path);
 
   const std::string eos_type = bconfig.template eos<std::string>(EOSTYPE);
