@@ -312,9 +312,9 @@ void reader_2d_diffrot(config_t bconfig) {
 
   T_integral *= 0.5;
   double W_be = T_integral + eps_integral + baryonic_mass - MadmB;
-  std::cout << "T_integral: " << T_integral << std::endl;
-  std::cout << "W_be: " << W_be << std::endl;
-  std::cout << "Beta: " << T_integral / W_be << std::endl;
+  //std::cout << "T_integral: " << T_integral << std::endl;
+  //std::cout << "W_be: " << W_be << std::endl;
+  //std::cout << "Beta: " << T_integral / W_be << std::endl;
 
   auto npts = space.get_domain(1)->get_nbr_points();
 
@@ -381,7 +381,8 @@ void reader_2d_diffrot(config_t bconfig) {
             << FORMAT << std::scientific << "Central log(h) = " << loghc
             << std::endl
             << FORMAT << std::scientific << "Central Pressure = " << pc
-            << "\n\n";
+            << "\n"
+            << FORMAT << "Beta: " << T_integral / W_be << "\n\n";
   // << FORMAT << std::scientific << "Central dlog(h)/dx = " << central_dHdx << std::endl
   // << FORMAT << std::scientific << "Central Euler Constant = "<< central_euler << std::endl
   // << FORMAT << "Integrated log(h) = "    << H_integral << "\n\n";
