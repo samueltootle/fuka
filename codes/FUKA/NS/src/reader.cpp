@@ -161,6 +161,11 @@ struct reader_3d {
           syst.add_def(d, "intMb = P^6 * rho(h) * W");
           syst.add_def(d, "firstint = H + log(N) - log(W)");
           syst.add_def(d, "intH  = P^6 * H * W");
+
+          syst.add_def(d, "j = P^4 * Wsquare * f_ij * U^i * mg^j / N");
+          syst.add_def(d, "vintJ = N * rho(h) * j * P^6");
+          syst.add_def(d, "intT = ome * vintJ");
+          syst.add_def(d, "inteps  = intMb * eps(h)");
           break;
       }
     }
@@ -194,6 +199,19 @@ struct reader_3d {
                            syst.give_val_def("intMb")()(1).integ_volume();
     double H_integral = syst.give_val_def("intH")()(0).integ_volume() +
                         syst.give_val_def("intH")()(1).integ_volume();
+
+    double T_integral = syst.give_val_def("intT")()(0).integ_volume() +
+    syst.give_val_def("intT")()(1).integ_volume();
+    T_integral *= 0.5;
+
+    double J_vintegral = syst.give_val_def("vintJ")()(0).integ_volume() +
+    syst.give_val_def("vintJ")()(1).integ_volume();
+
+    double eps_integral = syst.give_val_def("inteps")()(0).integ_volume() +
+    syst.give_val_def("inteps")()(1).integ_volume();
+
+    double W_be = T_integral + eps_integral + baryonic_mass - Madm;
+    double BETA = T_integral / W_be;
 
     syst.add_def("intMsq = P^4");
     double A =
@@ -273,7 +291,8 @@ struct reader_3d {
               << "Central dlog(h)/dx = " << central_dHdx << std::endl
               << FORMAT << std::scientific
               << "Central Euler Constant = " << central_euler << std::endl
-              << FORMAT << "Integrated log(h) = " << H_integral << "\n\n";
+              << FORMAT << "Integrated log(h) = " << H_integral << "\n"
+              << FORMAT << "Beta = " << BETA << "\n\n";
 
     std::cout << FORMAT << "Mk = " << Mk << std::scientific
               << ", Diff: " << 2. * fabs(Madm - Mk) / (Madm + Mk) << std::endl
