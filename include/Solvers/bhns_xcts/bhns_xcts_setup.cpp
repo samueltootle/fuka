@@ -161,6 +161,7 @@ inline void operator()(kadath_config_boost<BCO_NS_INFO>& NSconfig,
     auto drPsi(compute_drPsi(bhspacein, bhconf,
                              Metric_flat(bhspacein, bhshift.get_basis()),
                              {0, 1}));
+    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) = 1.4;
     BH_bounds = set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO2);
   }
   // end setup domain boundaries
