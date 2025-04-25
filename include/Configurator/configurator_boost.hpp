@@ -158,7 +158,7 @@ struct kadath_config_boost : public configurator_base {
       return container.get_map(idx);
     }
 
-    void set_stage_map(const std::map<int, std::string>& map) { container.set_stage_map(map); }
+    void set_stage_map(const std::map<std::string, STAGES>& map) { container.set_stage_map(map); }
 
     /**
       * overloaded () to obtain parameters from base parameter container
