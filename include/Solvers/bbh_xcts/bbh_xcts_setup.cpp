@@ -12,31 +12,37 @@
 namespace Kadath {
 namespace FUKA_Solvers {
 namespace bco_u = ::Kadath::bco_utils;
-/**
- * @brief
- *
- * @tparam config_t
- * @param bconfig
- */
 
-template <class config_t>
-void bbh_xcts_setup_bin_config(config_t& bconfig) {
+inline void bbh_xcts_setup_headon_config(config_t& bconfig) {
+  using namespace ::Kadath::bco_utils;
   check_dist(bconfig(BIN_PARAMS::DIST), bconfig(BCO_PARAMS::MCH, NODES::BCO1),
              bconfig(BCO_PARAMS::MCH, NODES::BCO2));
 
   // Binary Parameters
-  bconfig.set(BIN_PARAMS::REXT) = 2.0 * bconfig(BIN_PARAMS::DIST);
+  bconfig.set(BIN_PARAMS::REXT) = 2 * bconfig(BIN_PARAMS::DIST);
+
   bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MCH, NODES::BCO2) /
                                bconfig(BCO_PARAMS::MCH, NODES::BCO1);
 
   // classical Newtonian estimate
-  bconfig.set(BIN_PARAMS::COM) = bco_u::com_estimate(
-      bconfig(BIN_PARAMS::DIST), bconfig(BCO_PARAMS::MCH, NODES::BCO1),
-      bconfig(BCO_PARAMS::MCH, NODES::BCO2));
+  bconfig.set(BIN_PARAMS::COM) = com_estimate(
+      bconfig(BIN_PARAMS::DIST), bconfig(BCO_PARAMS::MADM, NODES::BCO1),
+      bconfig(BCO_PARAMS::MADM, NODES::BCO2));
+}
 
-  // obtain 3PN estimate for the global, orbital omega
-  bco_u::KadathPNOrbitalParams(bconfig, bconfig(BCO_PARAMS::MCH, NODES::BCO1),
-                               bconfig(BCO_PARAMS::MCH, NODES::BCO2));
+template <class config_t>
+void bbh_xcts_setup_bin_config(config_t& bconfig) {
+  bbh_xcts_setup_headon_config(bconfig);
+  auto& stages = bconfig.return_stages();
+
+  // In the case of a head-on collision, we need do not
+  // need 3.5PN estimates for the orbital velocity nor
+  // the radial infall velocity.
+  if (!bconfig(STAGES::HEADON)) {
+    // obtain 3PN estimate for the global, orbital omega
+    bco_u::KadathPNOrbitalParams(bconfig, bconfig(BCO_PARAMS::MCH, NODES::BCO1),
+    bconfig(BCO_PARAMS::MCH, NODES::BCO2));
+  }
 
   // delete ADOT, this can always be recalculated during
   // the eccentricity reduction stage
