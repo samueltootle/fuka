@@ -192,7 +192,7 @@ int bns_xcts_sequence(config_t& seqconfig,
       // Retain adot in case it is set from the start manually
       auto const adot = bconfig.set(BIN_PARAMS::ADOT);
 
-      // Adot is deleted here
+      // Adot is potentially deleted here
       bns_xcts_setup_bin_config(bconfig);
 
       // Reset ADOT
