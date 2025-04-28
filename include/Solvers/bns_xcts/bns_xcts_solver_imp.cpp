@@ -115,10 +115,10 @@ int bns_xcts_solver<eos_t, config_t, space_t>::solve() {
   }
 
   if (stage_enabled[STAGES::TOTAL]) {
-    if (bconfig.control(STAGES::FIXED_GOMEGA)) {
+    if (bconfig.control(CONTROLS::FIXED_GOMEGA)) {
       this->solver_stage = STAGES::TOTAL_BC;
       exit_status = hydro_rescaling_stages("TOTAL_FIXED_OMEGA");
-      bconfig.control(STAGES::FIXED_GOMEGA) = false;
+      bconfig.control(CONTROLS::FIXED_GOMEGA) = false;
       if (exit_status != EXIT_SUCCESS)
         std::_Exit(EXIT_FAILURE);
     }
