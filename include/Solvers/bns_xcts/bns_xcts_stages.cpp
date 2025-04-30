@@ -300,19 +300,25 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
   int exit_status = EXIT_SUCCESS;
 
   if (rank == 0)
-    if (solver_stage == TOTAL_BC)
+    if (solver_stage == TOTAL_BC) {
       std::cout << "############################" << std::endl
                 << "Py fixing without first integral and fixed omega, chi = "
                 << bconfig(CHI, BCO1) << "," << bconfig(CHI, BCO2)
                 << " and q = " << bconfig(Q) << std::endl
                 << "with Py BC fixing" << std::endl
                 << "############################" << std::endl;
-    else if (solver_stage == ECC_RED)
+    } else if (solver_stage == ECC_RED) {
       std::cout << "############################" << std::endl
                 << "Eccentricity reduction step with fixed omega, chi = "
                 << bconfig(CHI, BCO1) << "," << bconfig(CHI, BCO2)
                 << " and q = " << bconfig(Q) << std::endl
                 << "############################" << std::endl;
+    } else if (solver_stage == HEADON) {
+      std::cout << "############################" << std::endl
+                << "Head-on collision of two stars from rest."
+                << "q = " << bconfig(Q) << std::endl
+                << "############################" << std::endl;
+    }
 
   if (solver_stage == ECC_RED) {
     // determine whether to use PN estimates of the orbital frequency and adot
@@ -383,13 +389,24 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
   // populate all the boiler-plate constants, variables, and definitions
   syst_init(syst);
 
-  // "center of mass" on the x-axis, connecting both stellar centers
-  // fixed by the vanishing of the ADM linear momentum at infinity
-  syst.add_var("xaxis", bconfig(COM));
+  if(solver_stage == HEADON) {
+    // "center of mass" on the x-axis, connecting both stellar centers
+    // fixed by the vanishing of the ADM linear momentum at infinity
+    syst.add_cst("xaxis", bconfig(COM));
 
-  // same on the y-axis in case finite momenta develope by
-  // the eccentricity reduction parameters
-  syst.add_var("yaxis", bconfig(COMY));
+    // same on the y-axis in case finite momenta develope by
+    // the eccentricity reduction parameters
+    syst.add_cst("yaxis", bconfig(COMY));
+  } else{
+    // "center of mass" on the x-axis, connecting both stellar centers
+    // fixed by the vanishing of the ADM linear momentum at infinity
+    syst.add_var("xaxis", bconfig(COM));
+
+    // same on the y-axis in case finite momenta develope by
+    // the eccentricity reduction parameters
+    syst.add_var("yaxis", bconfig(COMY));
+  }
+
 
   // no additional force-balance is computed,
   // the matter distribution is fixed modulo the scaling factos above,
@@ -536,22 +553,18 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
                                         "integ(intS2) / Madm2 / Madm2 = chi2");
   }
 
-  // enforcing the vanishing of the x- & y-component of the ADM linear momentum
-  // at infinity, fixing the "center of mass" shift on the x-axis
-  space.add_eq_int_inf(syst, "integ(intPx) = 0");
-  space.add_eq_int_inf(syst, "integ(intPy) = 0");
+  if(solver_stage != HEADON) {
+    // enforcing the vanishing of the x- & y-component of the ADM linear momentum
+    // at infinity, fixing the "center of mass" shift on the x-axis
+    space.add_eq_int_inf(syst, "integ(intPx) = 0");
+    space.add_eq_int_inf(syst, "integ(intPy) = 0");
+  }
 
   // fix the central enthalpy by baryonic mass volume integrals
   space.add_eq_int_volume(syst, space.NS1, space.ADAPTED1,
                           "integvolume(intMb) = Mb1");
   space.add_eq_int_volume(syst, space.NS2, space.ADAPTED2,
                           "integvolume(intMb) = Mb2");
-
-  // compute a quasi-local approximation of the ADM component masses
-  // space.add_eq_int_volume(syst, space.NS1, space.ADAPTED1,
-  //                         "integvolume(intM) = qlMadm1");
-  // space.add_eq_int_volume(syst, space.NS2, space.ADAPTED2,
-  //                         "integvolume(intM) = qlMadm2");
 
   // print initial diagnostics
   if (rank == 0)

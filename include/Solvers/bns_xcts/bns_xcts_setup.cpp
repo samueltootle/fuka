@@ -28,9 +28,16 @@ inline void bns_xcts_setup_bin_config(config_t& bconfig) {
   using namespace ::Kadath::bco_utils;
   bns_xcts_setup_headon_config(bconfig);
 
-  // obtain 3PN estimate for the global, orbital omega
-  KadathPNOrbitalParams(bconfig, bconfig(BCO_PARAMS::MADM, NODES::BCO1),
-                        bconfig(BCO_PARAMS::MADM, NODES::BCO2));
+  auto& stages = bconfig.return_stages();
+
+  // In the case of a head-on collision, we need do not
+  // need 3.5PN estimates for the orbital velocity nor
+  // the radial infall velocity.
+  if (!bconfig(STAGES::HEADON)) {
+    // obtain 3PN estimate for the global, orbital omega
+    KadathPNOrbitalParams(bconfig, bconfig(BCO_PARAMS::MADM, NODES::BCO1),
+                          bconfig(BCO_PARAMS::MADM, NODES::BCO2));
+  }
 
   // delete ADOT, this can always be recalculated during
   // the eccentricity reduction stage

@@ -153,7 +153,8 @@ const std::map<std::string, STAGES> MSTAGE = {
   {"vel_pot_only",VEL_POT_ONLY}, // Depricate
   {"ecc_red", ECC_RED},
   {"binary_boost", BIN_BOOST},
-  {"testing",TESTING}
+  {"testing",TESTING},
+  {"headon",HEADON}
 };
 
 /**
@@ -190,7 +191,7 @@ const std::map<std::string, STAGES> M2DNSSTAGE = {
   {"differential_rotation", DIFF_ROT},
 };
 const std::map<std::string, STAGES> MBINHEADONSTAGE = {
-  {"heaon",HEADON},
+  {"headon",HEADON},
 };
 
 const std::map<std::string, CONTROLS> MCONTROLS = {

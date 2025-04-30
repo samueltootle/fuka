@@ -152,10 +152,10 @@ public:
       init_bco(idx, b);
       ++idx;
     }
-    set_stage_map(bco_types);
+    initialize_bin_stage_map(bco_types);
   }
 
-  void set_stage_map(std::array<std::string, 2> bco_types) {
+  void initialize_bin_stage_map(std::array<std::string, 2> bco_types) {
     if( bco_types[0] == bco_types[1] ){ //check for BBH or BNS
       if( bco_types[0] == "ns" )
         bin_stages = MBNSSTAGE;
@@ -192,7 +192,7 @@ public:
       ++tidx;
     }
 
-    set_stage_map(tmp_ary);
+    initialize_bin_stage_map(tmp_ary);
   }
 
   /**

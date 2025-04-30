@@ -99,8 +99,11 @@ int bns_xcts_driver(config_t& bconfig,
     // Solve only TOTAL - hydrostatic equilibrium -
     // before increasing resolution
     // All other stages only rescale the matter
+
+    bool headon = stages[HEADON];
     stages.fill(false);
-    stages[TOTAL] = true;
+    stages[TOTAL] = !headon;
+    stages[HEADON] = headon;
   }
 
   auto regrid = [&]() {
@@ -171,8 +174,9 @@ int bns_xcts_sequence(config_t& seqconfig,
 
   // Initialize full configurator
   config_t base_config = bns_xcts_sequence_setup(seqconfig, outputdir);
-  // Needed to obtain hydrostatic equilibrium solution
-  base_config.set_stage(STAGES::TOTAL) = true;
+  // Needed to obtain hydrostatic equilibrium solution for
+  // inspiral configurations
+  base_config.set_stage(STAGES::TOTAL) = !(base_config.return_stages()[STAGES::HEADON]);
 
   base_config.set(resolution_indices) = resolution.init();
 
@@ -192,7 +196,7 @@ int bns_xcts_sequence(config_t& seqconfig,
       // Retain adot in case it is set from the start manually
       auto const adot = bconfig.set(BIN_PARAMS::ADOT);
 
-      // Adot is deleted here
+      // Adot is potentially deleted here
       bns_xcts_setup_bin_config(bconfig);
 
       // Reset ADOT

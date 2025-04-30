@@ -114,28 +114,35 @@ int bns_xcts_solver<eos_t, config_t, space_t>::solve() {
     std::cout << "=================================" << endl;
   }
 
-  if (stage_enabled[TOTAL]) {
-    if (bconfig.control(FIXED_GOMEGA)) {
-      this->solver_stage = TOTAL_BC;
+  if (stage_enabled[STAGES::TOTAL]) {
+    if (bconfig.control(CONTROLS::FIXED_GOMEGA)) {
+      this->solver_stage = STAGES::TOTAL_BC;
       exit_status = hydro_rescaling_stages("TOTAL_FIXED_OMEGA");
-      bconfig.control(FIXED_GOMEGA) = false;
+      bconfig.control(CONTROLS::FIXED_GOMEGA) = false;
       if (exit_status != EXIT_SUCCESS)
         std::_Exit(EXIT_FAILURE);
     }
-    this->solver_stage = TOTAL;
+    this->solver_stage = STAGES::TOTAL;
     exit_status = hydrostatic_equilibrium_stage();
     if (exit_status != EXIT_SUCCESS)
       std::_Exit(EXIT_FAILURE);
   }
-  if (stage_enabled[TOTAL_BC]) {
-    this->solver_stage = TOTAL_BC;
+  if (stage_enabled[STAGES::TOTAL_BC]) {
+    this->solver_stage = STAGES::TOTAL_BC;
     exit_status = hydro_rescaling_stages("TOTAL_BC");
     if (exit_status != EXIT_SUCCESS)
       std::_Exit(EXIT_FAILURE);
   }
 
-  if (stage_enabled[ECC_RED]) {
-    this->solver_stage = ECC_RED;
+  if (stage_enabled[STAGES::HEADON]) {
+    this->solver_stage = STAGES::HEADON;
+    exit_status = hydro_rescaling_stages("HEAD_ON");
+    if (exit_status != EXIT_SUCCESS)
+      std::_Exit(EXIT_FAILURE);
+  }
+
+  if (stage_enabled[STAGES::ECC_RED]) {
+    this->solver_stage = STAGES::ECC_RED;
     exit_status = hydro_rescaling_stages("ECC_RED");
     if (exit_status != EXIT_SUCCESS)
       std::_Exit(EXIT_FAILURE);

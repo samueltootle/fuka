@@ -136,6 +136,8 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
                            exclusion_doms, old_space.OUTER));
   std::vector<double> NS_bounds{
       set_arb_boundsv3(bconfig, drPsi, old_space.ADAPTEDNS + 1, NODES::BCO1)};
+
+  bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) = 1.4;
   std::vector<double> BH_bounds{
       set_arb_boundsv3(bconfig, drPsi, old_space.ADAPTEDBH + 1, NODES::BCO2)};
   // end setup bounds
