@@ -16,90 +16,90 @@ if(Python3_FOUND)
     set (LIB1 pyConfigurator)
     set (SOURCESLIB src/${LIB1}.cpp)
     add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
-    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES}  ${GRHAYL_LIBRARIES} Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
-    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1}/) 
-    
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1}/)
+
     #Library 1
     set (LIB1 bbh_reader)
     set (LIB1MOD bbh)
     set (SOURCESLIB src/${LIB1}.cpp)
     add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
-    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES}  ${GRHAYL_LIBRARIES} Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
-    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
-  
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/)
+
     #Library 1
     set (LIB1 bh_reader)
     set (LIB1MOD bh)
     set (SOURCESLIB src/${LIB1}.cpp)
     add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
-    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} ${GRHAYL_LIBRARIES}  Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
-    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/)
 
     #Library 1
     set (LIB1 bhns_reader)
-    set (LIB1MOD bhns)    
+    set (LIB1MOD bhns)
     set (SOURCESLIB src/${LIB1}.cpp)
     add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
-    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} ${GRHAYL_LIBRARIES}  Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
-    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/)
 
     #Library 1
     set (LIB1 bns_reader)
-    set (LIB1MOD bns)    
+    set (LIB1MOD bns)
     set (SOURCESLIB src/${LIB1}.cpp)
     add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
-    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} ${GRHAYL_LIBRARIES}  Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
-    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
-   
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/)
+
     #Library 1
     set (LIB1 ns_reader)
-    set (LIB1MOD ns)    
+    set (LIB1MOD ns)
     set (SOURCESLIB src/${LIB1}.cpp)
     add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
-    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} ${GRHAYL_LIBRARIES}  Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
-    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
-    
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/)
+
     #Library 1
     set (LIB1 ns_isotropic_diffrot_reader)
-    set (LIB1MOD ns)    
+    set (LIB1MOD ns)
     set (SOURCESLIB src/${LIB1}.cpp)
     add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
-    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} ${GRHAYL_LIBRARIES}  Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
-    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/)
 
     #Library 1
     set (LIB1 ns_isotropic_uniformrot_reader)
-    set (LIB1MOD ns)    
+    set (LIB1MOD ns)
     set (SOURCESLIB src/${LIB1}.cpp)
     add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
-    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} ${GRHAYL_LIBRARIES}  Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
-    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
-    
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/)
+
     #Library 1
     set (LIB1 ns_isotropic_norot_reader)
-    set (LIB1MOD ns)    
+    set (LIB1MOD ns)
     set (SOURCESLIB src/${LIB1}.cpp)
     add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
-    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} ${GRHAYL_LIBRARIES}  Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
-    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/)
 
     #Library 1
     set (LIB1 ns_diffrot_reader)
-    set (LIB1MOD ns)    
+    set (LIB1MOD ns)
     set (SOURCESLIB src/${LIB1}.cpp)
     add_library(${LIB1} SHARED ${SOURCESLIB} ${HEADERS})
-    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} Boost::python)
+    target_link_libraries(${LIB1} ${LIB_KADATH} ${PGPLOT_LIBRARIES} ${GSL_LIBRARIES} ${FFTW_LIBRARIES} ${LAPACK_LIBRARIES} ${SCALAPACK_LIBRARIES} ${BLACS_LIBRARIES} ${GRHAYL_LIBRARIES}  Boost::python)
     set_target_properties(${LIB1} PROPERTIES PREFIX "_")
-    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/) 
+    set_target_properties(${LIB1} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../lib/fukaID_readers/${LIB1MOD}/)
 
 
   else()
