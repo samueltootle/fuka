@@ -355,11 +355,9 @@ void reader_2d_diffrot(config_t bconfig) {
   auto res_t = space.get_domain(0)->get_nbr_points()(1);
 
   // output to stdout
-  std::cout << FORMAT << "RES = "
-            << "[" << res_r << "," << res_t << "]\n"
+  std::cout << FORMAT << "RES = " << "[" << res_r << "," << res_t << "]\n"
             << FORMAT << "Coord R_IN = " << rin1 << std::endl
-            << FORMAT << "Coord R = "
-            << "[" << rmin << ", " << rmax << "]\n";
+            << FORMAT << "Coord R = " << "[" << rmin << ", " << rmax << "]\n";
   std::cout << FORMAT << "Coord R_OUT = "
             << bco_utils::get_radius(space.get_domain(2), OUTER_BC) << "\n";
   print_shells(3, ndom - 1);
@@ -567,11 +565,9 @@ void reader_2d_norot(config_t bconfig) {
   auto res_t = space.get_domain(0)->get_nbr_points()(1);
 
   // output to stdout
-  std::cout << FORMAT << "RES = "
-            << "[" << res_r << "," << res_t << "]\n"
+  std::cout << FORMAT << "RES = " << "[" << res_r << "," << res_t << "]\n"
             << FORMAT << "Coord R_IN = " << rin1 << std::endl
-            << FORMAT << "Coord R = "
-            << "[" << rmin << ", " << rmax << "]\n";
+            << FORMAT << "Coord R = " << "[" << rmin << ", " << rmax << "]\n";
   std::cout << FORMAT << "Coord R_OUT = "
             << bco_utils::get_radius(space.get_domain(2), OUTER_BC) << "\n";
   print_shells(3, ndom - 1);
