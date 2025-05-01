@@ -110,6 +110,7 @@ inline std::vector<int> vector_of_domains(int const dom_min,
   std::iota(doms.begin(), doms.end(), dom_min);
   return doms;
 }
+
 /** @}*/
 }  // namespace FUKA_Syst_tools
 }  // namespace Kadath

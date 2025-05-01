@@ -1,8 +1,8 @@
 #pragma once
 #include "Configurator/config_bco.hpp"
 #include "Configurator/config_binary.hpp"
-#include "coord_fields.hpp"
 #include "EOS/EOS.hh"
+#include "coord_fields.hpp"
 
 /**
  * \addtogroup Syst_tools
@@ -179,6 +179,7 @@ inline void syst_init_quasi_local_defs_hydro(System_of_eqs& syst,
     syst.add_def(d, "intH  = P^6 * H * W");
   }
 }
+
 /** @}*/
 }  // namespace FUKA_Syst_tools
 }  // namespace Kadath

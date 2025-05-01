@@ -3,6 +3,7 @@
  * \ingroup FUKA
  * @{*/
 using namespace Kadath::FUKA_Config;
+
 namespace Kadath {
 namespace FUKA_Solvers {
 

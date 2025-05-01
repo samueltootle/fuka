@@ -24,6 +24,7 @@
 #include <vector>
 #include "Configurator/configurator_base.hpp"
 #include "Configurator/configurator_boost.hpp"
+
 /**
  * \addtogroup Sequences
  * \ingroup FUKA
@@ -57,19 +58,26 @@ struct Parameter_sequence_base {
  public:
   Parameter_sequence_base() = default;
   Parameter_sequence_base(Parameter_sequence_base const&) = default;
+
   Parameter_sequence_base(std::string _str) : parameter_str(_str) {}
+
   /// Determine if a sequence has been initialized
   bool is_set() const { return !std::isnan(seqinit) && !std::isnan(seqfinal); }
+
   bool is_varying() const {
     return !std::isnan(seqinit) && !std::isnan(seqfinal) && seqinit != seqfinal;
   }
+
   /// Determine if a default value is initialized
   bool is_default_set() const { return !std::isnan(parameter_val); }
 
   /// Getters
   double const& init() const { return seqinit; }
+
   double const& final() const { return seqfinal; }
+
   double const& default_val() const { return parameter_val; }
+
   std::string const& str() const { return parameter_str; }
 };
 
@@ -91,6 +99,7 @@ struct Parameter_sequence : public Parameter_sequence_base {
  public:
   Parameter_sequence() = default;
   Parameter_sequence(Parameter_sequence const&) = default;
+
   /**
    * @brief Construct a new Parameter_sequence object from a string and tuple
    * objects
@@ -150,11 +159,14 @@ struct Parameter_sequence : public Parameter_sequence_base {
 
   /// Getters
   int const& iterations() const { return N; }
+
   std::tuple<Ts...> const& get_indices() const { return parameter_indices; }
+
   /// Evaluate conditional to determine, e.g. if a loop should end
   bool loop_condition(double const& val) const {
     return conditional(val, seqfinal);
   }
+
   /// Formatted output
   friend std::ostream& operator<< <Ts...>(std::ostream&,
                                           const Parameter_sequence<Ts...>&);
@@ -201,11 +213,13 @@ struct Resolution_sequence : public Parameter_sequence_base {
 
   /// Getter
   std::tuple<Ts...> const& get_indices() const { return parameter_indices; }
+
   /// Formatted output
   friend std::ostream& operator<< <ndom, Ts...>(
       std::ostream&,
       const Resolution_sequence<ndom, Ts...>&);
 };
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

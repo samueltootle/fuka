@@ -231,4 +231,5 @@ bool seq_is_mass_fixing(seq_t& seq);
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "sequence_utilities.cpp"

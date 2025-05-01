@@ -354,7 +354,9 @@ inline std::string get_ns_spin_fixing_output(
   }
   return output.str();
 }
+
 /** @}*/
 }  // namespace FUKA_Syst_tools
 }  // namespace Kadath
+
 #include "fuka_syst_setup_hydro.hpp"
