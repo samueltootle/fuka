@@ -17,12 +17,13 @@
 */
 
 #pragma once
-#include "config_bco.hpp"
-#include "configurator_boost.hpp"
+#include <array>
 #include <cmath>
 #include <memory>
-#include <array>
 #include <numeric>
+#include "config_bco.hpp"
+#include "configurator_boost.hpp"
+
 namespace Kadath {
 namespace FUKA_Config {
 /**
@@ -38,8 +39,8 @@ namespace FUKA_Config {
  */
 class BIN_INFO {
 
-private:
-  const std::string node_t{"binary"}; ///< node type
+ private:
+  const std::string node_t{"binary"};  ///< node type
 
   /**
    * BIN_INFO::init_bco
@@ -62,43 +63,41 @@ private:
         std::cerr << "Static switch not defined for " << bco_type << std::endl;
         std::_Exit(EXIT_FAILURE);
         break;
-      }
+    }
   }
 
-protected:
-  using Array  = std::array<double, NUM_BPARAMS>;
+ protected:
+  using Array = std::array<double, NUM_BPARAMS>;
   using BArray = std::array<std::unique_ptr<BCO_INFO>, 2>;
-  using Map    = std::map<std::string, BIN_PARAMS>;
+  using Map = std::map<std::string, BIN_PARAMS>;
 
-public:
-  BArray BCOS{}; ///< Array of pointers to BCOs
-  Array bin_params{}; ///<Array storing Binary parameters
-  Map bin_map{MBIN_PARAMS}; ///<Map of parameter strings to enum indexes
-  std::map<std::string, STAGES> bin_stages{MSTAGE}; ///<Map of only relevant stages
-
+ public:
+  BArray BCOS{};             ///< Array of pointers to BCOs
+  Array bin_params{};        ///<Array storing Binary parameters
+  Map bin_map{MBIN_PARAMS};  ///<Map of parameter strings to enum indexes
+  std::map<std::string, STAGES> bin_stages{
+      MSTAGE};  ///<Map of only relevant stages
 
   /**
    * Default constructor initializing pointers to 0
    * and parameters to NaN.  This is a feature, not a
    * bug.
    */
-  BIN_INFO() {
-    bin_params.fill(std::nan("1"));
-  }
+  BIN_INFO() { bin_params.fill(std::nan("1")); }
 
   /**
    * Copy constructor. Slightly messy due to handling of pointers to
    * BCO parameter containers.
    */
-  BIN_INFO(const BIN_INFO& b) : bin_params{b.bin_params}, bin_stages{b.bin_stages}
-  {
-    for(int i = 0; i < 2; ++i) {
-      if( b.BCOS[i] ) {
+  BIN_INFO(const BIN_INFO& b)
+      : bin_params{b.bin_params}, bin_stages{b.bin_stages} {
+    for (int i = 0; i < 2; ++i) {
+      if (b.BCOS[i]) {
         auto b_type = b.BCOS[i]->get_type();
-        if(b_type == "bh") {
+        if (b_type == "bh") {
           auto child_ptr = dynamic_cast<BCO_BH_INFO*>(b.BCOS[i].get());
           BCOS[i] = std::make_unique<BCO_BH_INFO>(*child_ptr);
-        } else if(b_type == "ns") {
+        } else if (b_type == "ns") {
           auto child_ptr = dynamic_cast<BCO_NS_INFO*>(b.BCOS[i].get());
           BCOS[i] = std::make_unique<BCO_NS_INFO>(*child_ptr);
         }
@@ -110,18 +109,18 @@ public:
    * Move contructor
    */
   BIN_INFO(BIN_INFO&& b) noexcept
-    : bin_params(std::move(b.bin_params)), bin_stages(std::move(b.bin_stages))
-  {
-    for(int i = 0; i < 2; ++i)
+      : bin_params(std::move(b.bin_params)),
+        bin_stages(std::move(b.bin_stages)) {
+    for (int i = 0; i < 2; ++i)
       BCOS[i] = std::move(b.BCOS[i]);
   }
 
   /**
    * Assignment operator
    */
-  BIN_INFO& operator=(const BIN_INFO& b)
-  {
-    if (this == &b) return *this;
+  BIN_INFO& operator=(const BIN_INFO& b) {
+    if (this == &b)
+      return *this;
 
     BIN_INFO tmp(b);
     *this = std::move(tmp);
@@ -132,10 +131,9 @@ public:
   /**
    * Move assignment operator
    */
-  BIN_INFO& operator=(BIN_INFO&& b) noexcept
-  {
+  BIN_INFO& operator=(BIN_INFO&& b) noexcept {
     this->bin_params = std::move(b.bin_params);
-    for(int i = 0; i < 2; ++i)
+    for (int i = 0; i < 2; ++i)
       this->BCOS[i] = std::move(b.BCOS[i]);
     this->bin_stages = std::move(b.bin_stages);
     return *this;
@@ -146,9 +144,9 @@ public:
    *
    * @param[input] bco_types vector of strings containing bco types
    */
-  void init_binary(std::array<std::string,2> bco_types) {
+  void init_binary(std::array<std::string, 2> bco_types) {
     int idx = 0;
-    for(auto& b : bco_types){
+    for (auto& b : bco_types) {
       init_bco(idx, b);
       ++idx;
     }
@@ -156,12 +154,12 @@ public:
   }
 
   void initialize_bin_stage_map(std::array<std::string, 2> bco_types) {
-    if( bco_types[0] == bco_types[1] ){ //check for BBH or BNS
-      if( bco_types[0] == "ns" )
+    if (bco_types[0] == bco_types[1]) {  //check for BBH or BNS
+      if (bco_types[0] == "ns")
         bin_stages = MBNSSTAGE;
-      if( bco_types[0] == "bh" )
+      if (bco_types[0] == "bh")
         bin_stages = MBBHSTAGE;
-    } else if( bco_types[0] == "ns" && bco_types[1] == "bh")
+    } else if (bco_types[0] == "ns" && bco_types[1] == "bh")
       bin_stages = MBHNSSTAGE;
   }
 
@@ -172,7 +170,7 @@ public:
    *
    * @param[input] bin_tree Tree containing all parameters of the binary and BCOs
    */
-  void read_params(Tree &bin_tree) {
+  void read_params(Tree& bin_tree) {
     // Read-in strictly binary related parameters
     read_keys(bin_map, bin_params, bin_tree);
 
@@ -185,10 +183,10 @@ public:
 
     // Initialize BCO pointer array based on the BCO types from the Tree
     // and send the branch to BCO_INFO child for reading in the parameters
-    for (auto &bco : tmp_ary) {
+    for (auto& bco : tmp_ary) {
       init_bco(tidx, bco.substr(0, 2));
       BCOS[tidx]->read_params(bin_tree.get_child(bco.data()));
-      bco = bco.substr(0,2);
+      bco = bco.substr(0, 2);
       ++tidx;
     }
 
@@ -235,7 +233,7 @@ public:
    *
    * @param[output] bin_params Array of binary parameters
    */
-  Array &return_params() { return bin_params; }
+  Array& return_params() { return bin_params; }
 
   /* BIN_INFO::return_bcos
    * This function will return the raw arrays, but this is discouraged.
@@ -243,14 +241,14 @@ public:
    *
    * @param[output] BCOs array of BCO pointers
    */
-  BArray &return_bcos() { return BCOS; }
+  BArray& return_bcos() { return BCOS; }
 
   /* BIN_INFO::get_map
    * Returns binary parameter map
    *
    * @param[output] bin_map binary parameter map
    */
-  Map const &get_map() const { return bin_map; }
+  Map const& get_map() const { return bin_map; }
 
   /* BIN_INFO::get_stage_map
    * Returns binary parameter stages map
@@ -258,7 +256,10 @@ public:
    * @param[output] bin_map binary stages map
    */
   const auto& get_stage_map() const { return bin_stages; }
-  void set_stage_map(const std::map<std::string, STAGES>& _stages) { bin_stages = _stages; }
+
+  void set_stage_map(const std::map<std::string, STAGES>& _stages) {
+    bin_stages = _stages;
+  }
 
   /* BIN_INFO::get_map
    * Returns BCO parameter map
@@ -266,21 +267,21 @@ public:
    * @param[input]  BOCidx BCO pointer index
    * @param[output] bco_map binary parameter map
    */
-  auto &get_map(const int BCOidx) const { return BCOS[BCOidx]->get_map(); };
-  auto &get_eos_map(const int BCOidx = BCO1) const {
-    if(auto child_ptr = dynamic_cast<BCO_NS_INFO*>(BCOS[BCOidx].get())) {
+  auto& get_map(const int BCOidx) const { return BCOS[BCOidx]->get_map(); };
+
+  auto& get_eos_map(const int BCOidx = BCO1) const {
+    if (auto child_ptr = dynamic_cast<BCO_NS_INFO*>(BCOS[BCOidx].get())) {
       return child_ptr->get_eos_map();
     }
-    throw std::invalid_argument("\nInvalid EOS Parameter indices for assignment\n");
+    throw std::invalid_argument(
+        "\nInvalid EOS Parameter indices for assignment\n");
   };
 
   std::string get_name_string(const int BCOidx) const {
-    return BCOS[BCOidx]->get_name_string(BCOidx+1);
+    return BCOS[BCOidx]->get_name_string(BCOidx + 1);
   }
 
-  std::string get_name_string() const {
-    return get_type();
-  }
+  std::string get_name_string() const { return get_type(); }
 
   /* BIN_INFO::operator()
    * This operator returns the requested parameter for a given BCO
@@ -289,7 +290,7 @@ public:
    * @param[input]  BCOidx Index of BCO of interest
    * @param[output] *BCOS[BCOidx])(idx) referene to BCO parameter requested
    */
-  auto &operator()(const int idx, const int BCOidx) {
+  auto& operator()(const int idx, const int BCOidx) {
     return (*BCOS[BCOidx])(idx);
   }
 
@@ -299,7 +300,7 @@ public:
    * @param[input]  idx Index of the Paramter of interest - see config_enum
    * @param[output] bin_params[idx] referene to binary parameter requested
    */
-  auto &operator()(const int idx) { return bin_params[idx]; }
+  auto& operator()(const int idx) { return bin_params[idx]; }
 
   /* BIN_INFO::set_eos_param
    * Returns a reference to a BCO's EOS parameter to set.  Cannot be used
@@ -311,10 +312,11 @@ public:
    * @throws std::invalid_argument Throws when dynamic_cast fails
    */
   auto& set_eos_param(const int idx, const int BCOidx) const {
-    if(auto child_ptr = dynamic_cast<BCO_NS_INFO*>(BCOS[BCOidx].get())) {
+    if (auto child_ptr = dynamic_cast<BCO_NS_INFO*>(BCOS[BCOidx].get())) {
       return child_ptr->set_eos_param(idx);
     }
-    throw std::invalid_argument("\nInvalid EOS Parameter indices for assignment\n");
+    throw std::invalid_argument(
+        "\nInvalid EOS Parameter indices for assignment\n");
   }
 
   /* BIN_INFO::get_eos_param
@@ -326,14 +328,16 @@ public:
    * @param[output] eos_param eos parameter value - not assignable.
    * @throws std::invalid_argument Throws when dynamic_cast fails
    */
-  template<typename T>
+  template <typename T>
   constexpr T get_eos_param(const int idx, const int BCOidx) const {
-    if(auto child_ptr = dynamic_cast<BCO_NS_INFO*>(BCOS[BCOidx].get())) {
+    if (auto child_ptr = dynamic_cast<BCO_NS_INFO*>(BCOS[BCOidx].get())) {
       return child_ptr->template get_eos_param<T>(idx);
     }
-    throw std::invalid_argument("\nInvalid EOS Parameter indices for reading\n");
+    throw std::invalid_argument(
+        "\nInvalid EOS Parameter indices for reading\n");
   }
-  friend std::ostream &operator<<(std::ostream &, const BIN_INFO &);
+
+  friend std::ostream& operator<<(std::ostream&, const BIN_INFO&);
 
   /**
    * BIN_INFO::set_defaults
@@ -345,23 +349,23 @@ public:
   template <typename config_t>
   void set_defaults(config_t& bconfig) {
     bool includes_matter = false;
-    std::array<double,2> Ms{};
+    std::array<double, 2> Ms{};
     // copy Compact Object defaults
-    for(auto& bco : {NODES::BCO1, NODES::BCO2}) {
+    for (auto& bco : {NODES::BCO1, NODES::BCO2}) {
       const auto bcotype = BCOS[bco]->get_type();
-      if(bcotype == "ns") {
+      if (bcotype == "ns") {
         kadath_config_boost<BCO_NS_INFO> nsconfig;
         nsconfig.set_defaults();
-        for(auto i = 0; i < BCO_PARAMS::NUM_BCO_PARAMS; ++i)
+        for (auto i = 0; i < BCO_PARAMS::NUM_BCO_PARAMS; ++i)
           bconfig.set(i, bco) = nsconfig.set(i);
-        for(auto i = 0; i < EOS_PARAMS::NUM_EOS_PARAMS; ++i)
+        for (auto i = 0; i < EOS_PARAMS::NUM_EOS_PARAMS; ++i)
           bconfig.set_eos(i, bco) = nsconfig.set_eos(i);
         includes_matter = true;
         Ms[bco] = bconfig(BCO_PARAMS::MADM, bco);
-      } else if(bcotype == "bh") {
+      } else if (bcotype == "bh") {
         kadath_config_boost<BCO_BH_INFO> bhconfig;
         bhconfig.set_defaults();
-        for(int i = 0; i < BCO_PARAMS::NUM_BCO_PARAMS; ++i)
+        for (int i = 0; i < BCO_PARAMS::NUM_BCO_PARAMS; ++i)
           bconfig.set(i, bco) = bhconfig.set(i);
         Ms[bco] = bconfig(BCO_PARAMS::MCH, bco);
       }
@@ -378,12 +382,12 @@ public:
     bconfig.set(BIN_PARAMS::GOMEGA) = 0.;
 
     // Set default fields
-    bconfig.set_field(BCO_FIELDS::SHIFT)    = true;
-    bconfig.set_field(BCO_FIELDS::LAPSE)    = true;
-    bconfig.set_field(BCO_FIELDS::CONF)     = true;
-    if(includes_matter) {
-      bconfig.set_field(BCO_FIELDS::LOGH)   = true;
-      bconfig.set_field(BCO_FIELDS::PHI)    = true;
+    bconfig.set_field(BCO_FIELDS::SHIFT) = true;
+    bconfig.set_field(BCO_FIELDS::LAPSE) = true;
+    bconfig.set_field(BCO_FIELDS::CONF) = true;
+    if (includes_matter) {
+      bconfig.set_field(BCO_FIELDS::LOGH) = true;
+      bconfig.set_field(BCO_FIELDS::PHI) = true;
     }
 
     // The following controls are required for an
@@ -408,23 +412,23 @@ public:
   template <typename config_t>
   void set_minimal_defaults(config_t& bconfig) {
     bool includes_matter = false;
-    std::array<double,2> Ms{};
+    std::array<double, 2> Ms{};
     // copy Compact Object defaults
-    for(auto& bco : {NODES::BCO1, NODES::BCO2}) {
+    for (auto& bco : {NODES::BCO1, NODES::BCO2}) {
       const auto bcotype = BCOS[bco]->get_type();
-      if(bcotype == "ns") {
+      if (bcotype == "ns") {
         kadath_config_boost<BCO_NS_INFO> nsconfig;
         nsconfig.set_minimal_defaults();
-        for(auto i = 0; i < BCO_PARAMS::NUM_BCO_PARAMS; ++i)
+        for (auto i = 0; i < BCO_PARAMS::NUM_BCO_PARAMS; ++i)
           bconfig.set(i, bco) = nsconfig.set(i);
-        for(auto i = 0; i < EOS_PARAMS::NUM_EOS_PARAMS; ++i)
+        for (auto i = 0; i < EOS_PARAMS::NUM_EOS_PARAMS; ++i)
           bconfig.set_eos(i, bco) = nsconfig.set_eos(i);
         includes_matter = true;
         Ms[bco] = bconfig(BCO_PARAMS::MADM, bco);
-      } else if(bcotype == "bh") {
+      } else if (bcotype == "bh") {
         kadath_config_boost<BCO_BH_INFO> bhconfig;
         bhconfig.set_minimal_defaults();
-        for(int i = 0; i < BCO_PARAMS::NUM_BCO_PARAMS; ++i)
+        for (int i = 0; i < BCO_PARAMS::NUM_BCO_PARAMS; ++i)
           bconfig.set(i, bco) = bhconfig.set(i);
         Ms[bco] = bconfig(BCO_PARAMS::MCH, bco);
       }
@@ -441,8 +445,10 @@ public:
     bconfig.control(CONTROLS::SAVE_COS) = false;
   }
 };
+
 /**
  * @}*/
 
-std::ostream &operator<<(std::ostream &out, const BIN_INFO &BIN);
-}}
+std::ostream& operator<<(std::ostream& out, const BIN_INFO& BIN);
+}  // namespace FUKA_Config
+}  // namespace Kadath

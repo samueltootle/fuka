@@ -17,9 +17,10 @@
 */
 
 #pragma once
-#include "configurator_boost.hpp"
 #include <cmath>
 #include <variant>
+#include "configurator_boost.hpp"
+
 namespace Kadath {
 namespace FUKA_Config {
 /**
@@ -35,12 +36,12 @@ namespace FUKA_Config {
  */
 class BCO_INFO {
 
-private:
-  std::string node_t{"bco"}; ///< string containing node type
+ private:
+  std::string node_t{"bco"};  ///< string containing node type
 
-protected:
+ protected:
   using Array = std::array<double, NUM_BCO_PARAMS>;
-  using Map   = std::map<std::string, BCO_PARAMS>;
+  using Map = std::map<std::string, BCO_PARAMS>;
 
   /**
    * std::map for mapping configuration strings to enum indexes
@@ -53,25 +54,25 @@ protected:
    */
   Array bco_params{};
 
-public:
+ public:
   /**
    * Constructor.  Everything is set to nan.
    * this is a feature - not a bug
    */
-  BCO_INFO() : bco_stages(MSTAGE) {
-    bco_params.fill(std::nan("1"));
-  }
+  BCO_INFO() : bco_stages(MSTAGE) { bco_params.fill(std::nan("1")); }
 
   /**
    * BCO_INFO copy constructor
    */
-  BCO_INFO(const BCO_INFO& b) : bco_params(b.bco_params), bco_stages(b.bco_stages) {}
+  BCO_INFO(const BCO_INFO& b)
+      : bco_params(b.bco_params), bco_stages(b.bco_stages) {}
 
   /**
    * BCO_INFO move constructor
    */
   BCO_INFO(BCO_INFO&& b) noexcept
-    : bco_params(std::move(b.bco_params)), bco_stages(std::move(b.bco_stages)) {}
+      : bco_params(std::move(b.bco_params)),
+        bco_stages(std::move(b.bco_stages)) {}
 
   /**
    * BCO_INFO assignment operator
@@ -82,7 +83,7 @@ public:
     return *this;
   }
 
-   /**
+  /**
    * BCO_INFO move assignment operator
    */
   BCO_INFO& operator=(BCO_INFO&& b) noexcept {
@@ -128,7 +129,7 @@ public:
    *
    * param[input] branch branch containing BCO paramters
    */
-  virtual void read_params(Tree &branch) {
+  virtual void read_params(Tree& branch) {
     read_keys(bco_map, bco_params, branch);
   }
 
@@ -147,16 +148,17 @@ public:
    *
    * @param[output] bco_map Parameter map
    */
-  Map const &get_map() const { return bco_map; }
+  Map const& get_map() const { return bco_map; }
 
   /* BIN_INFO::get_stage_map
    * Returns binary parameter stages map
    *
    * @param[output] bin_map binary parameter map
    */
-  virtual std::map<std::string, STAGES> const & get_stage_map() const {
+  virtual std::map<std::string, STAGES> const& get_stage_map() const {
     return bco_stages;
   }
+
   virtual void set_stage_map(const std::map<std::string, STAGES>& _stages) {
     bco_stages = _stages;
   }
@@ -168,9 +170,9 @@ public:
    *
    * @param[output] bco_params[idx] requested BCO parameter
    */
-  auto &operator()(const int idx) { return bco_params[idx]; }
+  auto& operator()(const int idx) { return bco_params[idx]; }
 
-  friend std::ostream &operator<<(std::ostream &, const BCO_INFO &);
+  friend std::ostream& operator<<(std::ostream&, const BCO_INFO&);
 };
 
 /**
@@ -180,14 +182,12 @@ public:
  */
 
 class BCO_BH_INFO : public BCO_INFO {
-private:
-  std::string node_t = "bh"; ///< string containing node type
+ private:
+  std::string node_t = "bh";  ///< string containing node type
 
+ public:
+  BCO_BH_INFO() : BCO_INFO() { bco_stages = MBHSTAGE; }
 
-public:
-  BCO_BH_INFO() : BCO_INFO() {
-    bco_stages = MBHSTAGE;
-  }
   /**
    * BCO_INFO copy constructor
    */
@@ -207,7 +207,7 @@ public:
     return *this;
   }
 
-   /**
+  /**
    * BCO_INFO move assignment operator
    */
   BCO_BH_INFO& operator=(const BCO_BH_INFO&& b) noexcept {
@@ -257,19 +257,19 @@ public:
     // start - set BH properties in config file
     // Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
-    bconfig.set(BCO_PARAMS::DIM)     = 3;
+    bconfig.set(BCO_PARAMS::DIM) = 3;
 
     // Units of the system - 4 * PI * G
     bconfig.set(BCO_PARAMS::BCO_QPIG) = 4 * M_PI;
 
     // Nucleus Radius
-    bconfig.set(BCO_PARAMS::RIN)  = 0.1;
+    bconfig.set(BCO_PARAMS::RIN) = 0.1;
 
     // Initial guess for BH - radius
     bconfig.set(BCO_PARAMS::RMID) = 0.3;
 
     // Radius of outer boundary - matched with compactified domain
-    bconfig.set(BCO_PARAMS::ROUT) = 5 * bconfig(RMID) ;
+    bconfig.set(BCO_PARAMS::ROUT) = 5 * bconfig(RMID);
 
     // Additional shells can be added between RMID and ROUT for refined resolution
     bconfig.set(BCO_PARAMS::NSHELLS) = 0;
@@ -281,8 +281,8 @@ public:
     bconfig.set(BCO_PARAMS::OMEGA) = 0;
 
     // MIRR and MCH are fixing parameters...this is what the resulting BH will be
-    bconfig.set(BCO_PARAMS::MIRR)  = 0.5 ;
-    bconfig.set(BCO_PARAMS::MCH)   = 0.5 ;
+    bconfig.set(BCO_PARAMS::MIRR) = 0.5;
+    bconfig.set(BCO_PARAMS::MCH) = 0.5;
 
     bconfig.set(BCO_PARAMS::BVELX) = 0.;
     bconfig.set(BCO_PARAMS::BVELY) = 0.;
@@ -291,7 +291,7 @@ public:
      * fixed lapse is used for the PRE stage only.
      * Once the system is solved using the Neumann lapse condition
      * this value is updated in the config file in the standard solver */
-    bconfig.set(BCO_PARAMS::FIXED_LAPSE)  = .3;
+    bconfig.set(BCO_PARAMS::FIXED_LAPSE) = .3;
     //end   - set BH parameters
 
     //start - set BH stages in config file
@@ -299,7 +299,7 @@ public:
     //end   - set BH stages
 
     //start - set BH fields in config file
-    bconfig.set_field(BCO_FIELDS::CONF)  = true;
+    bconfig.set_field(BCO_FIELDS::CONF) = true;
     bconfig.set_field(BCO_FIELDS::LAPSE) = true;
     bconfig.set_field(BCO_FIELDS::SHIFT) = true;
     //end   - set BH fields
@@ -308,7 +308,7 @@ public:
     bconfig.control(CONTROLS::SAVE_COS) = false;
   }
 
-    /**
+  /**
    * BCO_BH_INFO::set_minimal_defaults
    * Allow the setting of default configurator values for a base BH setup - do not modify
    *
@@ -323,7 +323,7 @@ public:
 
     //Initial dimensionless spin
     bconfig.set(BCO_PARAMS::CHI) = 0;
-    bconfig.set(BCO_PARAMS::MCH) = 0.5 ;
+    bconfig.set(BCO_PARAMS::MCH) = 0.5;
     //end   - set BH parameters
     bconfig.set_stage(STAGES::TOTAL_BC) = true;
   }
@@ -345,17 +345,17 @@ public:
  */
 
 class BCO_NS_INFO : public BCO_INFO {
-public:
-  using vars_t  = std::variant<double, int, std::string>;
+ public:
+  using vars_t = std::variant<double, int, std::string>;
   using EOSArray = std::array<vars_t, NUM_BCO_PARAMS>;
-  using EOSMap   = std::map<std::string, EOS_PARAMS>;
+  using EOSMap = std::map<std::string, EOS_PARAMS>;
   using DIFFROT_ary = std::array<vars_t, DIFFROT_PARAMS::NUM_DIFFROT_PARAMS>;
   using DIFFROT_map = std::map<std::string, DIFFROT_PARAMS>;
 
-protected:
-  std::string node_t{"ns"}; ///< node type
+ protected:
+  std::string node_t{"ns"};  ///< node type
 
-  EOSArray eos_params{}; ///< Array storing EOS parameters
+  EOSArray eos_params{};  ///< Array storing EOS parameters
 
   //std::map for mapping configuration strings to EOS enum indexes
   const EOSMap eos_map{MEOS_PARAMS};
@@ -363,7 +363,7 @@ protected:
   DIFFROT_ary diffrot_params{};
   DIFFROT_map const diffrot_map{MDIFFROT_PARAMS};
 
-public:
+ public:
   /**
    * BCO_NS_INFO::BCO_NS_INFO
    * In addition to the parent constructor, we initialize the
@@ -379,18 +379,17 @@ public:
    * BCO_NS_INFO copy constructor
    */
   BCO_NS_INFO(const BCO_NS_INFO& b)
-    : BCO_INFO(b),
-      eos_params{b.eos_params}, diffrot_params(b.diffrot_params)
-      { }
+      : BCO_INFO(b),
+        eos_params{b.eos_params},
+        diffrot_params(b.diffrot_params) {}
 
   /**
    * BCO_NS_INFO move constructor
    */
   BCO_NS_INFO(BCO_NS_INFO&& b) noexcept
-    : BCO_INFO(std::move(b)),
-      eos_params(std::move(b.eos_params)),
-      diffrot_params(std::move(b.diffrot_params))
-      { }
+      : BCO_INFO(std::move(b)),
+        eos_params(std::move(b.eos_params)),
+        diffrot_params(std::move(b.diffrot_params)) {}
 
   /**
    * BCO_NS_INFO assignment operator
@@ -421,6 +420,7 @@ public:
    * param[out] eos_params
    */
   const EOSArray& return_eos_params() const { return eos_params; }
+
   /**
    * BCO_NS_INFO::return_eos_map
    * Return a reference to the EOS parameter map
@@ -435,6 +435,7 @@ public:
    * param[out] diffrot_params
    */
   const DIFFROT_ary& return_diffrot_params() const { return diffrot_params; }
+
   /**
    * BCO_NS_INFO::return_diffrot_map
    * Return a reference to the differential rotation parameter map
@@ -469,12 +470,13 @@ public:
    *
    * @param[input] branch input branch to read bco and eos params from
    */
-  virtual void read_params(Tree &branch) override {
+  virtual void read_params(Tree& branch) override {
     read_keys(bco_map, bco_params, branch);
     read_keys(eos_map, eos_params, branch);
 
-    if(branch.find("differential_rotation") != branch.not_found())
-      read_keys(diffrot_map, diffrot_params, read_branch(branch, "differential_rotation"));
+    if (branch.find("differential_rotation") != branch.not_found())
+      read_keys(diffrot_map, diffrot_params,
+                read_branch(branch, "differential_rotation"));
     // if(!is_storage_all_nan(diffrot_params)) {
     //   print_params(diffrot_map, diffrot_params);
     // }
@@ -493,7 +495,7 @@ public:
     for (auto child : eos_childs)
       branch.push_back(child);
 
-    if(!is_storage_all_nan(diffrot_params)) {
+    if (!is_storage_all_nan(diffrot_params)) {
       Tree diffrot_branch(build_branch<Tree>(diffrot_map, diffrot_params));
       branch.add_child("differential_rotation", diffrot_branch);
     }
@@ -525,10 +527,12 @@ public:
    * @tparam T type of EOS parameter - See vars_t for options
    * @param[output] eos_param[idx]
    */
-  template<typename T>
-  const T get_eos_param(const int idx) const { return std::get<T>(eos_params[idx]); }
+  template <typename T>
+  const T get_eos_param(const int idx) const {
+    return std::get<T>(eos_params[idx]);
+  }
 
-/**
+  /**
    * BCO_NS_INFO::set_diffrot_param
    * Returns reference to EOS param allowing value assignment
    * Note type is vars_t which is a std::variant
@@ -545,8 +549,10 @@ public:
    * @tparam T type of EOS parameter - See vars_t for options
    * @param[output] eos_param[idx]
    */
-  template<typename T>
-  const T get_diffrot_param(const int idx) const { return std::get<T>(diffrot_params[idx]); }
+  template <typename T>
+  const T get_diffrot_param(const int idx) const {
+    return std::get<T>(diffrot_params[idx]);
+  }
 
   /**
    * BCO_NS_INFO::set_defaults
@@ -558,9 +564,9 @@ public:
   template <typename config_t>
   void set_defaults(config_t& bconfig) {
     // start - set NS properties in config file
-    bconfig.set_eos(EOS_PARAMS::EOSFILE)    = "togashi.lorene";
-    bconfig.set_eos(EOS_PARAMS::EOSTYPE)    = "Cold_Table";
-    bconfig.set_eos(EOS_PARAMS::HCUT)       = 0.0;
+    bconfig.set_eos(EOS_PARAMS::EOSFILE) = "togashi.lorene";
+    bconfig.set_eos(EOS_PARAMS::EOSTYPE) = "Cold_Table";
+    bconfig.set_eos(EOS_PARAMS::HCUT) = 0.0;
     bconfig.set_eos(EOS_PARAMS::INTERP_PTS) = 2000;
 
     bconfig.set(BCO_PARAMS::HC) = 1.26;
@@ -568,48 +574,48 @@ public:
 
     // Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
-    bconfig.set(BCO_PARAMS::DIM)     = 3;
+    bconfig.set(BCO_PARAMS::DIM) = 3;
 
     // Units of the system - 4 * PI * G
     bconfig.set(BCO_PARAMS::BCO_QPIG) = 4 * M_PI;
 
     // Initial guess for NS - radius
-    bconfig.set(BCO_PARAMS::RMID)     = 6.2;
+    bconfig.set(BCO_PARAMS::RMID) = 6.2;
 
     // Nucleus Radius
-    bconfig.set(BCO_PARAMS::RIN)      = 0.5 * bconfig(RMID);
+    bconfig.set(BCO_PARAMS::RIN) = 0.5 * bconfig(RMID);
 
     // Radius of outer boundary - matched with compactified domain
-    bconfig.set(BCO_PARAMS::ROUT)     = 1.5 * bconfig(RMID) ;
+    bconfig.set(BCO_PARAMS::ROUT) = 1.5 * bconfig(RMID);
 
     // Additional shells between RIN and RMID
     bconfig.set(BCO_PARAMS::NINSHELLS) = 0;
     // Additional shells between RMID and ROUT
-    bconfig.set(BCO_PARAMS::NSHELLS)   = 0;
+    bconfig.set(BCO_PARAMS::NSHELLS) = 0;
 
     // Initial dimensionless spin
-    bconfig.set(BCO_PARAMS::CHI)   = 0;
+    bconfig.set(BCO_PARAMS::CHI) = 0;
 
     // Initial guess of omega
     bconfig.set(BCO_PARAMS::OMEGA) = 0;
 
     // We initialize based on fixed MADM
-    bconfig.set(BCO_PARAMS::MADM)    = 1.4 ;
-    bconfig.set(BCO_PARAMS::QLMADM)  = 1.4 ;
-    bconfig.set(BCO_PARAMS::MB)      = 1.55 ;
+    bconfig.set(BCO_PARAMS::MADM) = 1.4;
+    bconfig.set(BCO_PARAMS::QLMADM) = 1.4;
+    bconfig.set(BCO_PARAMS::MB) = 1.55;
     // end   - set NS parameters
 
     // start - set NS stages in config file
-    bconfig.set_stage(STAGES::PRE)      = false;
+    bconfig.set_stage(STAGES::PRE) = false;
     bconfig.set_stage(STAGES::NOROT_BC) = true;
     bconfig.set_stage(STAGES::TOTAL_BC) = true;
     // end   - set NS stages
 
     // start - set NS fields in config file
-    bconfig.set_field(BCO_FIELDS::SHIFT)    = true;
-    bconfig.set_field(BCO_FIELDS::LAPSE)    = true;
-    bconfig.set_field(BCO_FIELDS::CONF)     = true;
-    bconfig.set_field(BCO_FIELDS::LOGH)     = true;
+    bconfig.set_field(BCO_FIELDS::SHIFT) = true;
+    bconfig.set_field(BCO_FIELDS::LAPSE) = true;
+    bconfig.set_field(BCO_FIELDS::CONF) = true;
+    bconfig.set_field(BCO_FIELDS::LOGH) = true;
     // end   - set NS fields
 
     bconfig.seq_setting(SEQ_SETTINGS::INIT_RES) = 9;
@@ -626,17 +632,17 @@ public:
   template <typename config_t>
   void set_minimal_defaults(config_t& bconfig) {
     // start - set NS properties in config file
-    bconfig.set_eos(EOS_PARAMS::EOSFILE)    = "togashi.lorene";
-    bconfig.set_eos(EOS_PARAMS::EOSTYPE)    = "Cold_Table";
+    bconfig.set_eos(EOS_PARAMS::EOSFILE) = "togashi.lorene";
+    bconfig.set_eos(EOS_PARAMS::EOSTYPE) = "Cold_Table";
 
     // Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
 
     // Initial dimensionless spin
-    bconfig.set(BCO_PARAMS::CHI)     = 0;
+    bconfig.set(BCO_PARAMS::CHI) = 0;
 
     // We initialize based on fixed MADM
-    bconfig.set(BCO_PARAMS::MADM)    = 1.4 ;
+    bconfig.set(BCO_PARAMS::MADM) = 1.4;
     // end   - set NS parameters
 
     // start - set NS stages in config file
@@ -647,15 +653,13 @@ public:
 };
 
 class BCO_ISO_NS_INFO : public BCO_NS_INFO {
-  public:
+ public:
   /**
    * BCO_NS_INFO::BCO_NS_INFO
    * In addition to the parent constructor, we initialize the
    * the EOS array to NaN as well.
    */
-  BCO_ISO_NS_INFO() : BCO_NS_INFO() {
-    bco_stages = M2DNSSTAGE;
-  }
+  BCO_ISO_NS_INFO() : BCO_NS_INFO() { bco_stages = M2DNSSTAGE; }
 
   /**
    * BCO_NS_INFO::set_defaults
@@ -667,9 +671,9 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
   template <typename config_t>
   void set_defaults(config_t& bconfig) {
     // start - set NS properties in config file
-    bconfig.set_eos(EOS_PARAMS::EOSFILE)    = "togashi.lorene";
-    bconfig.set_eos(EOS_PARAMS::EOSTYPE)    = "Cold_Table";
-    bconfig.set_eos(EOS_PARAMS::HCUT)       = 0.0;
+    bconfig.set_eos(EOS_PARAMS::EOSFILE) = "togashi.lorene";
+    bconfig.set_eos(EOS_PARAMS::EOSTYPE) = "Cold_Table";
+    bconfig.set_eos(EOS_PARAMS::HCUT) = 0.0;
     bconfig.set_eos(EOS_PARAMS::INTERP_PTS) = 2000;
 
     bconfig.set(BCO_PARAMS::HC) = 1.26;
@@ -677,23 +681,23 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
 
     // Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
-    bconfig.set(BCO_PARAMS::DIM)     = 2;
+    bconfig.set(BCO_PARAMS::DIM) = 2;
 
     // Units of the system - 4 * PI * G
     bconfig.set(BCO_PARAMS::BCO_QPIG) = 4 * M_PI;
 
     // Additional shells between RMID and ROUT
-    bconfig.set(BCO_PARAMS::NSHELLS)   = 0;
+    bconfig.set(BCO_PARAMS::NSHELLS) = 0;
 
     // Initial dimensionless spin
-    bconfig.set(BCO_PARAMS::CHI)   = 0;
+    bconfig.set(BCO_PARAMS::CHI) = 0;
 
     // Initial guess of omega
     bconfig.set(BCO_PARAMS::OMEGA) = 0;
 
     // We initialize based on fixed MADM
-    bconfig.set(BCO_PARAMS::MADM)    = 1.4 ;
-    bconfig.set(BCO_PARAMS::MB)      = 1.5 ;
+    bconfig.set(BCO_PARAMS::MADM) = 1.4;
+    bconfig.set(BCO_PARAMS::MB) = 1.5;
     // end   - set NS parameters
 
     // start - set NS stages in config file
@@ -706,12 +710,12 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
     // Make sure all other fields are disabled
     // Starting from scratch, we only need three fields for the
     // non-rotating case.
-    for(auto i = 0; i < BCO_FIELDS::NUM_BCO_FIELDS; i++)
+    for (auto i = 0; i < BCO_FIELDS::NUM_BCO_FIELDS; i++)
       bconfig.set_field(i) = false;
 
     // Document fields that will be stored
-    bconfig.set_field(BCO_FIELDS::LOGH)   = true;
-    bconfig.set_field(BCO_FIELDS::NU)     = true;
+    bconfig.set_field(BCO_FIELDS::LOGH) = true;
+    bconfig.set_field(BCO_FIELDS::NU) = true;
     bconfig.set_field(BCO_FIELDS::LAP_ATERM) = true;
     bconfig.set_field(BCO_FIELDS::LAP_BTERM) = true;
     // end   - set NS fields
@@ -731,17 +735,17 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
   template <typename config_t>
   void set_minimal_defaults(config_t& bconfig) {
     // start - set NS properties in config file
-    bconfig.set_eos(EOS_PARAMS::EOSFILE)    = "gam2.polytrope";
-    bconfig.set_eos(EOS_PARAMS::EOSTYPE)    = "Cold_PWPoly";
+    bconfig.set_eos(EOS_PARAMS::EOSFILE) = "gam2.polytrope";
+    bconfig.set_eos(EOS_PARAMS::EOSTYPE) = "Cold_PWPoly";
 
     // Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
 
     // Initial omega
-    bconfig.set(BCO_PARAMS::OMEGA)   = 0;
+    bconfig.set(BCO_PARAMS::OMEGA) = 0;
 
     // Currently only HC is reliable...
-    bconfig.set(BCO_PARAMS::MADM)    = 1.4 ;
+    bconfig.set(BCO_PARAMS::MADM) = 1.4;
     bconfig.set(BCO_PARAMS::HC) = 1.26;
     // end   - set NS parameters
 
@@ -761,20 +765,22 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
  */
 
 class BCO_KSBH_INFO : public BCO_INFO {
-private:
-  std::string node_t = "bh"; ///< string containing node type
+ private:
+  std::string node_t = "bh";  ///< string containing node type
 
-public:
-  BCO_KSBH_INFO() : BCO_INFO() {
-    bco_stages = MKSBHSTAGE;
-  }
+ public:
+  BCO_KSBH_INFO() : BCO_INFO() { bco_stages = MKSBHSTAGE; }
+
   BCO_KSBH_INFO(const BCO_KSBH_INFO& b) : BCO_INFO(b) {}
+
   BCO_KSBH_INFO(BCO_KSBH_INFO&& b) noexcept : BCO_INFO(std::move(b)) {}
+
   BCO_KSBH_INFO& operator=(BCO_KSBH_INFO& b) {
     this->bco_params = b.bco_params;
     this->bco_stages = b.bco_stages;
     return *this;
   }
+
   BCO_KSBH_INFO& operator=(const BCO_KSBH_INFO&& b) noexcept {
     this->bco_params = std::move(b.bco_params);
     this->bco_stages = std::move(b.bco_stages);
@@ -821,38 +827,38 @@ public:
   void set_defaults(config_t& bconfig) {
     //start - set BH properties in config file
     //Resolution of the initial setup
-    bconfig.set(BCO_RES)  = 9;
-    bconfig.set(DIM)      = 3;
+    bconfig.set(BCO_RES) = 9;
+    bconfig.set(DIM) = 3;
 
     //Units of the system - 4 * PI * G
     bconfig.set(BCO_QPIG) = 4 * M_PI;
 
     //Nucleus Radius
-    bconfig.set(RIN)      = 1.;
+    bconfig.set(RIN) = 1.;
 
     //Initial guess for BH - radius
-    bconfig.set(RMID)     = 2.;
+    bconfig.set(RMID) = 2.;
 
     //Radius of outer boundary - matched with compactified domain
-    bconfig.set(ROUT)     = 2. * bconfig(RMID) ;
+    bconfig.set(ROUT) = 2. * bconfig(RMID);
 
     //Additional shells can be added between RMID and ROUT for refined resolution
-    bconfig.set(NSHELLS)  = 1;
+    bconfig.set(NSHELLS) = 1;
 
     //Initial dimensionless spin
-    bconfig.set(CHI)      = 0;
+    bconfig.set(CHI) = 0;
 
     //Initial guess of omega
-    bconfig.set(OMEGA)    = 0;
+    bconfig.set(OMEGA) = 0;
 
     //MIRR and MCH are fixing parameters...this is what the resulting BH will be
-    bconfig.set(MIRR)     = 1. ;
-    bconfig.set(MCH)      = 1. ;
-    bconfig.set(KERR_MCH) = 1. ;
-    bconfig.set(KERR_CHI) = 0. ;
+    bconfig.set(MIRR) = 1.;
+    bconfig.set(MCH) = 1.;
+    bconfig.set(KERR_MCH) = 1.;
+    bconfig.set(KERR_CHI) = 0.;
 
-    bconfig.set(BVELX)    = 0.;
-    bconfig.set(BVELY)    = 0.;
+    bconfig.set(BVELX) = 0.;
+    bconfig.set(BVELY) = 0.;
     //end   - set BH parameters
 
     //start - set BH stages in config file
@@ -860,20 +866,22 @@ public:
     //end   - set BH stages
 
     //start - set BH fields in config file
-    bconfig.set_field(CONF)  = true;
+    bconfig.set_field(CONF) = true;
     bconfig.set_field(LAPSE) = true;
     bconfig.set_field(SHIFT) = true;
-    bconfig.set_field(KS_K)  = true;
-    bconfig.set_field(KS_LAPSE)  = true;
-    bconfig.set_field(KS_METRIC)  = true;
+    bconfig.set_field(KS_K) = true;
+    bconfig.set_field(KS_LAPSE) = true;
+    bconfig.set_field(KS_METRIC) = true;
     //end   - set BH fields
 
     bconfig.seq_setting(INIT_RES) = 9;
     bconfig.control(SAVE_COS) = true;
   }
 };
+
 /**
  * @}*/
 
-std::ostream &operator<<(std::ostream &out, const BCO_INFO &BCO);
-}}
+std::ostream& operator<<(std::ostream& out, const BCO_INFO& BCO);
+}  // namespace FUKA_Config
+}  // namespace Kadath
