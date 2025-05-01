@@ -113,8 +113,8 @@ struct EOS_Function_Dispatcher {
       return wrapper.template operator()<F>(std::forward<Args>(args)...);
     }
 #endif
-    throw std::invalid_argument("\nCannot dispatch kernel. Invalid EOS type:" +
-      eos_type + "\n");
+    throw std::invalid_argument(
+        "\nCannot dispatch kernel. Invalid EOS type:" + eos_type + "\n");
   }
 };
 
@@ -179,8 +179,8 @@ struct EOS_initialize {
       return;
     }
 #endif
-    throw std::invalid_argument("\nCannot initialize EOS. Invalid EOS type: " +
-                                 eos_type + "\n");
+    throw std::invalid_argument(
+        "\nCannot initialize EOS. Invalid EOS type: " + eos_type + "\n");
   }
 };
 }  // namespace FUKA_EOS

@@ -61,7 +61,8 @@ struct FUKA_EOS_Wrapper {
     else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
       rho = ghl_hybrid_compute_rho_cold_from_P_cold(ghl_eos_params.get(), P_in);
     } else if constexpr (eos == ghl_eos_tabulated) {
-      double P_bounded = Kadath::GHL_EOS::ghl_tabulated_check_press(ghl_eos_params, P_in);
+      double P_bounded =
+          Kadath::GHL_EOS::ghl_tabulated_check_press(ghl_eos_params, P_in);
       rho = ghl_tabulated_compute_rho_from_P(ghl_eos_params.get(), P_bounded);
     }
 #endif
@@ -179,7 +180,8 @@ struct FUKA_EOS_Wrapper {
       ghl_hybrid_compute_P_cold_and_eps_cold(ghl_eos_params.get(), rhoB_in, &P,
                                              &eps_cold);
     } else if constexpr (eos == ghl_eos_tabulated) {
-      rhoB_in = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params, rhoB_in);
+      rhoB_in =
+          Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params, rhoB_in);
       P = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rhoB_in);
       eps_cold =
           ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rhoB_in);
