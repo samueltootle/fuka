@@ -4,56 +4,85 @@
 
 ## Overview - Updated
 Included are the Frankfurt initial data solvers and utilities based on the Kadath
-  spectral solver library.  The original solvers written by the aformentioned authors
-  (hereafter denoted as FUKAv1) are located in ./codes/FUKAv1/[BH, NS, BHNS, BNS, BBH] respectively.
-  The solvers in the next version release, denoted as FUKAv2, can be found in ./codes/FUKAv2/[BH, NS, BHNS, BNS, BBH] respectively.
-	Both FUKAv1 (v1) and FUKAv2 (v2) includes support for polytropic equations of state as well as tabulated EOS
+  spectral solver library.  The original solvers written by the aforementioned authors
+  (hereafter denoted as FUKAv1) are deprecated, but can be obtained by checking out
+  the previous version of FUKA `git checkout fukav2.1` which are then located in
+  are located in `./codes/FUKAv1/[BH, NS, BHNS, BNS, BBH]` respectively.
+
+  The FUKA solvers from now are can be found in ./codes/FUKA/[BH, NS, BHNS, BNS, BBH] respectively.
+	The latest FUKA solvers includes support for polytropic equations of state as well as tabulated EOS
   in the standard LORENE format.  Examples and additional details can be found in the [eos](https://bitbucket.org/fukaws/fuka/src/fuka/eos/) directory.
 
-## FUKAv2.2 Release Notes:
-With this release, user demanded shells around compact objects have been removed.  In its place is a significantly more robust solution
-which determines an optimal configuration of spherical grids around each compact object in binary spaces. 
-  
-## FUKA Maintainer(s):  
+  As of FUKAv2.3, FUKA now supports *stellar collapse* format equations of state using the `GRHayLEOS` library.
+  The `GRHayL` can be found [here](https://github.com/GRHayL/GRHayL) and needs to be installed separately before
+  compiling the Kadath library and, after, the FUKA codes.
+
+## FUKAv2.3 Release Notes:
+### Refactored features
+1. Many components of the Kadath library have been refactored to support copy constructor operations
+    * Note: This only works with memory pools turned off, e.g. `-DDEFAULT_KAD_MEM` and should only be used
+    for exporting ID solutions to an evolution framework
+2. The EOS module has been overhauled to enable easier incorporation of EOS backends, see e.g. `include/EOS/FUKA_EOS_Wrapper.hh`
+3. The algorithm for computing shells around objects has been revised again enabling more accurate and efficient calculations of
+highly asymmetric binaries at very close and very large separations.
+4. FUKA Python readers have been refactored to use the new EOS backends.
+    * New readers have been added to support new ID solutions
+
+### New Features
+* A new solver that computes solutions of isolated neutron stars in quasi-isotropic coordinates is now available, see [NS_isotropic](./codes/FUKA/NS_isotropic/)
+  * This solver supports irrotational, uniform, and differential rotation models.
+  * Currently differential rotation models are limited to the
+  [KEH law](https://ui.adsabs.harvard.edu/link_gateway/1989MNRAS.239..153K/doi:10.1093/mnras/239.1.153)
+* A new solver that computes solutions of differentially rotating neutron stars in XCTS coordinates is now available,
+see [NS_DIFFROT](./codes/FUKA/NS_DIFFROT/)
+* Support for temperature dependent EOS' in *stellar collapse* format is now available
+  * Users must first build and install the [GRHayL](https://github.com/GRHayL/GRHayL) library before building the Kadath library and, after, the FUKA solvers.
+  * At compile time for the Kadath library and FUKA solvers, `cmake` searches the environment variables `GRHAYL_ROOT` for `GRHayL` resources, so this must be set manually by users.
+  * Also, `cmake` must be ran with `-DGRHAYL_EOS=ON`
+* A new suite of exporters are now available for all ID solutions.  These exporters leverage the new copy constructors in Kadath
+to allow for multi-threaded import by evolution frameworks.
+    * Note: This only works with memory pools turned off, e.g. compiling Kadath and executables with `-DDEFAULT_KAD_MEM`
+
+## FUKA Maintainer(s):
 
 Samuel D. Tootle - tootle@itp.uni-frankfurt.de
 
 ## KADATH Maintainer:
 Philippe Grandclément - philippe.grandclement@obspm.fr
 
-License      : GPLv3+ for all other code  
+License      : GPLv3+ for all other code
 
 ## REQUIRED CITATIONS:
 
-1) L. Jens Papenfort, Samuel D. Tootle, Philippe Grandclément, Elias R. Most, Luciano Rezzolla: https://arxiv.org/abs/2103.09911  
-  
-2) Philippe Grandclément, http://dx.doi.org/10.1016/j.jcp.2010.01.005  
+1) L. Jens Papenfort, Samuel D. Tootle, Philippe Grandclément, Elias R. Most, Luciano Rezzolla: https://arxiv.org/abs/2103.09911
+
+2) Philippe Grandclément, http://dx.doi.org/10.1016/j.jcp.2010.01.005
 
 # 1. Purpose
 
 This collection of ID solvers aims at delivering consistent initial data (ID)
 solutions to the eXtended Conformal Thin-Sandwich (XCTS) formulation of
 Einstein's field equations for a variety of compact object configurations.
-  
+
 As each solver has their own specific nuances and considerations, we have included
-a README in each solver directory to provide a basis for getting started with the 
-respective solver.  
-  
-Additionally, each initial data has a respective exporter which can be seen 
-in `src/Utilities/Exporters`.  These exporters allow one to compile an interface code 
-for an evolution framework along with the Kadath static library located in `$HOME_KADATH/lib`, in 
-order to export data based on input grid points.  
+a README in each solver directory to provide a basis for getting started with the
+respective solver.
+
+Additionally, each initial data has a respective exporter which can be seen
+in `src/Utilities/Exporters`.  These exporters allow one to compile an interface code
+for an evolution framework along with the Kadath static library located in `$HOME_KADATH/lib`, in
+order to export data based on input grid points.
 
 # 2. Modifications from base Kadath
 
-In addition to the solving routines included within `$HOME_KADATH/codes`, we also note the major overall modifications 
-and additions that differ from base Kadath.  
-1.  This branch includes memory optimizations that inspired portions of the optimization (now main) branch  
-2.  Modification/addition of numerical spaces for the BH, BBH, BNS, and BHNS  
+In addition to the solving routines included within `$HOME_KADATH/codes`, we also note the major overall modifications
+and additions that differ from base Kadath.
+1.  This branch includes memory optimizations that inspired portions of the optimization (now main) branch
+2.  Modification/addition of numerical spaces for the BH, BBH, BNS, and BHNS
 3.  Addition of an equation of state infrastructure utilizing Margherita standalone to handle
-tabulated and polytropic EOS - see [include/EOS](https://bitbucket.org/fukaws/fuka/src/fuka/include/EOS)  
+tabulated and polytropic EOS - see [include/EOS](https://bitbucket.org/fukaws/fuka/src/fuka/include/EOS)
 4.  Addition of the Configurator framework to enable extensibility of solvers by managing controls,
-stages, and key variables - see [include/Configurator](https://bitbucket.org/fukaws/fuka/src/fuka/include/Configurator)  
+stages, and key variables - see [include/Configurator](https://bitbucket.org/fukaws/fuka/src/fuka/include/Configurator)
 5.  Addition of exporters for all the previously mentioned ID types - see [src/Utilities/Exporters](https://bitbucket.org/fukaws/fuka/src/fuka/src/Utilities/Exporters)
 
 **Note: as of summer 2021, the FUKA solvers are based on the deprecated branch of Kadath.  Given the optimizations and changes made
@@ -63,7 +92,7 @@ Currently, there is no timeline for when this will be done.**
 
 # 3. Public Thorns for use with the Einstein Toolkit
 
-The following workspace includes the FUKA ID respository (including versioned branches) 
+The following workspace includes the FUKA ID respository (including versioned branches)
 as well as available thorns for use with the Einstein Toolkit in order to import FUKA ID:
 https://bitbucket.org/fukaws/
 
@@ -97,14 +126,20 @@ https://bitbucket.org/fukaws/
       - Path to the MPI C++ wrapper (when not automatically detected by cmake)
     - `-DMPI_C_COMPILER  = <compiler pile>`
       - Path to the MPI C wrapper (when not automatically detected by cmake)
+    - (optional) `-DDEFAULT_KAD_MEM`
+      - Deactivate memory pools to allow for thread-safe exporters.  ***Do not use with ID solvers!***
+    - (optional) `-DGRHAYL_EOS=ON`
+      - Enable support for stellar collapse tables using the GRHayLEOS library.
+      - GRHayL must be installed separately by the user
+      - The environment variables `GRHAYL_ROOT` must be set by the user to the directory GRHayL was installed to.
 
-Example using GNU+mpi compilers:  
-    `cmake -DCMAKE_BUILD_TYPE=Release -DPAR_VERSION=On -DMPI_CXX_COMPILER=mpic++ -DMPI_C_COMPILER=mpicc ..`
+Example using GNU+mpi compilers:
+    `cmake -DCMAKE_BUILD_TYPE=Release -DPAR_VERSION=On -DMPI_CXX_COMPILER=mpic++ -DMPI_C_COMPILER=mpicc -DGRHAYL_EOS=OFF ..`
 
 In most HPC systems, `cmake` will likely not find the dependency libraries that the user may intend.  Therefore,
-one must specify them manually through the [CMakeLocal.cmake](https://bitbucket.org/fukaws/fuka/src/fuka/Cmake/CMakeLocal.cmake) file 
-(the `fftw` and `scalapack` libraries must usually be provided in this way). 
-Some working [CMakeLocal.cmake](https://bitbucket.org/fukaws/fuka/src/fuka/Cmake/CMakeLocal.cmake) files 
+one must specify them manually through the [CMakeLocal.cmake](https://bitbucket.org/fukaws/fuka/src/fuka/Cmake/CMakeLocal.cmake) file
+(the `fftw` and `scalapack` libraries must usually be provided in this way).
+Some working [CMakeLocal.cmake](https://bitbucket.org/fukaws/fuka/src/fuka/Cmake/CMakeLocal.cmake) files
 are provided for HPC systems in Germany as well as examples for personal computers.
 
 Once cmake has been successfully invoked, use make -j $KAD_NUMC to start the compilation.
@@ -112,11 +147,11 @@ Once cmake has been successfully invoked, use make -j $KAD_NUMC to start the com
 ## Compiling the library with the compile script
 
 A script called [compile](https://bitbucket.org/fukaws/fuka/src/fuka/build_release/compile) is also provided that can be used to facilitate the installation process. So long as the above environment variables are set and the libraries are found, no additional input is necessary.
-Run the compile script within the `build_release` directory using 
+Run the compile script within the `build_release` directory using
 
-`. compile` 
+`. compile`
 
-in order to build the library.  
+in order to build the library.
 
 ## Compiling FUKA solvers
 The above mentioned [compile script](https://bitbucket.org/fukaws/fuka/src/fuka/build_release/compile) has been added as a symbolic link to the FUKAv1 and FUKAv2 solver directories for convenience to compile the individual solvers.
@@ -134,3 +169,4 @@ The above mentioned [compile script](https://bitbucket.org/fukaws/fuka/src/fuka/
 7. MPI
 8. Boost
 9. Boost::python (to compile [PythonTools](https://bitbucket.org/fukaws/fuka/src/fuka/codes/PythonTools/))
+10. (optional) [GRHayL](https://github.com/GRHayL/GRHayL)
