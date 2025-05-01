@@ -25,9 +25,9 @@
 #include "bco_utilities.hpp"
 #include "bh_3d_xcts/bh_3d_xcts_solver.hpp"
 #include "mpi.h"
+#include "ns_3d_xcts/NS_ISO_to_XCTS_convert.hpp"
 #include "ns_3d_xcts/ns_3d_xcts_driver.hpp"
 #include "ns_3d_xcts/ns_3d_xcts_solver.hpp"
-#include "ns_3d_xcts/NS_ISO_to_XCTS_convert.hpp"
 #include "ns_isotropic/ns_isotropic_driver.hpp"
 #include "sequences/parameter_sequence.hpp"
 #include "sequences/sequence_utilities.hpp"
@@ -225,7 +225,8 @@ Scalar compute_drPsi(space_t& space,
 }
 
 template <typename config_t>
-std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig, ns_sequence const & seq) {
+std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig,
+                                          ns_sequence const& seq) {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   std::string output_path = (bconfig.control(CONTROLS::SAVE_COS))
@@ -254,7 +255,7 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig, ns_sequence const &
 
   // Tells the NS driver to initialize the numerical space and fields
   nsconfig.control(CONTROLS::SEQUENCES) = true;
-    update_eos_parameters(bconfig, nsconfig);
+  update_eos_parameters(bconfig, nsconfig);
   update_diffrot_parameters(bconfig, nsconfig);
 
   Parameter_sequence resolution("res", BCO_PARAMS::BCO_RES);
@@ -263,13 +264,16 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig, ns_sequence const &
   nsconfig.set_filename("initns");
   nsconfig.set_outputdir(output_path);
 
-  auto ns_iso_sol_config = ns_isotropic_sequence(nsconfig, seq, resolution, output_path);
+  auto ns_iso_sol_config =
+      ns_isotropic_sequence(nsconfig, seq, resolution, output_path);
 
   const std::string eos_type = bconfig.template eos<std::string>(EOSTYPE);
   nsconfig.control(CONTROLS::SEQUENCES) = false;
-  if(rank == 0) {
-    EOS_Function_Dispatcher::dispatch<NS_ISO_to_XCTS_convert>(ns_iso_sol_config, eos_type,
-                                                              ns_iso_sol_config, output_path);
+  if (rank == 0) {
+    EOS_Function_Dispatcher::dispatch<NS_ISO_to_XCTS_convert>(ns_iso_sol_config,
+                                                              eos_type,
+                                                              ns_iso_sol_config,
+                                                              output_path);
   }
   ns_iso_sol_config.set_filename("initns_xcts.info");
   ns_iso_sol_config.set_outputdir(output_path);
@@ -277,6 +281,7 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig, ns_sequence const &
 
   return ns_iso_sol_config.config_filename_abs();
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

@@ -82,4 +82,5 @@ inline void check_dist(double dist,
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "bco_solver_utils_imp.cpp"

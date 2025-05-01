@@ -1,8 +1,8 @@
 #include "EOS/EOS.hh"
+#include "EOS/FUKA_EOS_Utilities.hh"
 #include "bco_utilities.hpp"
 #include "coord_fields.hpp"
 #include "ns_3d_xcts/ns_3d_xcts_solver.hpp"
-#include "EOS/FUKA_EOS_Utilities.hh"
 
 /**
  * \addtogroup Solver_utils
@@ -70,7 +70,7 @@ struct setup_3dns_xcts_functor {
     int ndom = 4 + shells;
 
     std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov =
-      setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
+        setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
     std::vector<double> bounds(ndom - 1);
 
     Kadath::bco_utils::set_NS_bounds(bounds, bconfig);
@@ -103,7 +103,7 @@ struct setup_2dns_isotropic_functor {
     int ndom = 4 + shells;
 
     std::unique_ptr<Kadath::Margherita::MargheritaTOV<eos_t>> tov =
-      setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
+        setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
 
     Array<double> bounds(ndom - 1);
 
@@ -154,7 +154,9 @@ void write_ns_init_setup_tofile_XCTS(Space_spheric_adapted& space,
                                      config_t& bconfig,
                                      tov_t& tov) {
   using eos_t = typename tov_t::eos_t;
+
   enum ltpQ { LAPSE = 0, RHO, CONF };
+
   const int ndom = space.get_nbr_domains();
   Base_tensor basis(space, CARTESIAN_BASIS);
   // setup fields
@@ -211,7 +213,9 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space,
                                             config_t& bconfig,
                                             tov_t& tov) {
   using eos_t = typename tov_t::eos_t;
+
   enum ltpQ { LAPSE = 0, RHO, CONF };
+
   const int ndom = space.get_nbr_domains();
 
   // setup fields
@@ -368,11 +372,13 @@ auto setup_interpolator_from_TOV(tov_t& tov) {
 
   // linear interpolation of conf(r_isotropic), lapse(r_isotropic), and
   // rho(r_isotropic) The order here dictates the enum ltpQ enum
-  linear_interp_t<double, 3> ltp(
-      max_iter, std::move(radius_lin_ptr), std::move(lapse_lin_ptr),
-      std::move(rho_lin_ptr), std::move(conf_lin_ptr));
+  linear_interp_t<double, 3> ltp(max_iter, std::move(radius_lin_ptr),
+                                 std::move(lapse_lin_ptr),
+                                 std::move(rho_lin_ptr),
+                                 std::move(conf_lin_ptr));
   return ltp;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

@@ -56,6 +56,7 @@ struct Exporter {
 
  public:
   Exporter() : space(nullptr) {}
+
   Exporter(std::string config_filename) : space(nullptr), bconfig(nullptr) {
     bconfig.reset(new base_config_t{config_filename});
     bconfig->open_config();

@@ -120,8 +120,9 @@ void write_ns2d_isotropic_init_setup_tofile(Space_polar_adapted& space,
  * @return tov the 1D tov solution
  */
 template <typename eos_t, typename config_t>
-auto setup_ns_config_from_TOV(config_t& bconfig,
-                              size_t mass_fixing_idx = ::Kadath::FUKA_Config::BCO_PARAMS::MADM);
+auto setup_ns_config_from_TOV(
+    config_t& bconfig,
+    size_t mass_fixing_idx = ::Kadath::FUKA_Config::BCO_PARAMS::MADM);
 
 /**
  * setup_interpolator_from_TOV
@@ -162,4 +163,5 @@ void write_KerrSchild_bh_init_setup_tofile_XCTS(space_t& space,
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "co_solver_utils_imp.cpp"
