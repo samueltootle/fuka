@@ -200,6 +200,7 @@ int ns_isotropic_uniform_rot_regrid(config_t& bconfig, std::string outputfile) {
 
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

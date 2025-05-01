@@ -90,4 +90,5 @@ struct bns_setup_boosted_3d;
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "bns_xcts_setup.cpp"

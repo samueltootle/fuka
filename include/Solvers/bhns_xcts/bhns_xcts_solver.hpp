@@ -118,8 +118,10 @@ class bhns_xcts_solver : XCTS_Solver<config_t, space_t> {
   // Update bconfig(HC) and bconfig(NC)
   void update_config_quantities(const double& loghc);
 };
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "bhns_xcts_solver_imp.cpp"
 #include "bhns_xcts_stages.cpp"

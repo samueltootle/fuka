@@ -203,6 +203,7 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::norot_stage(
   }
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

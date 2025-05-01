@@ -275,7 +275,8 @@ void bns_xcts_solver<eos_t, config_t, space_t>::syst_init(System_of_eqs& syst) {
 }
 
 template <class eos_t, typename config_t, typename space_t>
-void bns_xcts_solver<eos_t, config_t, space_t>::syst_init_Aterms(System_of_eqs& syst) {
+void bns_xcts_solver<eos_t, config_t, space_t>::syst_init_Aterms(
+    System_of_eqs& syst) {
 
   // the conformal extrinsic curvature
   syst.add_def(
@@ -397,7 +398,7 @@ template <class eos_t, typename config_t, typename space_t>
 void bns_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(
     System_of_eqs& syst) {
 
-  for(auto BCO : {NODES::BCO1, NODES::BCO2}) {
+  for (auto BCO : {NODES::BCO1, NODES::BCO2}) {
     const int nuc_dom = (BCO == NODES::BCO1) ? space.NS1 : space.NS2;
     const int dom = (BCO == NODES::BCO1) ? space.ADAPTED1 : space.ADAPTED2;
 
@@ -406,7 +407,8 @@ void bns_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(
 
     auto loghc = bco_utils::get_boundary_val(nuc_dom, logh, INNER_BC);
     bconfig.set(BCO_PARAMS::HC, BCO) = std::exp(loghc);
-    bconfig.set(BCO_PARAMS::NC, BCO) = EOS<eos_t, DENSITY>::get(bconfig(BCO_PARAMS::HC));
+    bconfig.set(BCO_PARAMS::NC, BCO) =
+        EOS<eos_t, DENSITY>::get(bconfig(BCO_PARAMS::HC));
 
     // Update Quasi-local gravitational mass
     double ql_mass = 0.;
@@ -416,9 +418,8 @@ void bns_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(
     }
     bconfig.set(BCO_PARAMS::QLMADM, BCO) = ql_mass;
   }
-
-
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

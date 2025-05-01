@@ -148,6 +148,7 @@ int bh_3d_xcts_regrid(config_t& bconfig, std::string outputfile) {
   Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift);
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

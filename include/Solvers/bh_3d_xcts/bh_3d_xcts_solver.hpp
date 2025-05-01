@@ -107,8 +107,10 @@ class bh_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
   int binary_boost_stage(kadath_config_boost<BIN_INFO>& binconfig,
                          const size_t bco);
 };
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "bh_3d_xcts_solver_imp.cpp"
 #include "bh_3d_xcts_stages.cpp"

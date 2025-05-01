@@ -623,6 +623,7 @@ int bhns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
     checkpoint();
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

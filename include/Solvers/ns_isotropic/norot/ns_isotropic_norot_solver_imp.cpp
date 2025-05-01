@@ -226,6 +226,7 @@ void ns_isotropic_norot_solver<eos_t, config_t, space_t>::
     bconfig.set(BCO_PARAMS::MADM) = Madm;
   }
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

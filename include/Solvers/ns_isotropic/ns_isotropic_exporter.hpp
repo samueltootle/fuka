@@ -1,6 +1,7 @@
 #include "EOS/FUKA_EOS_Utilities.hh"
 #include "Solvers/exporter.hpp"
 #include "exporter_utilities.hpp"
+
 namespace Kadath::FUKA_Solvers {
 
 struct CFMS_NS_ISO_Exporter
@@ -186,7 +187,9 @@ struct CFMS_NS_ISO_Exporter
   std::vector<std::reference_wrapper<const Scalar>> const& get_quants() const {
     return quants;
   }
+
   bool is_export_ready() const { return export_ready; }
+
   const int& get_ndim() const { return ndim; }
 
   CFMS_NS_ISO_Exporter()
@@ -344,6 +347,7 @@ struct CFMS_NS_ISO_Exporter
   template <class eos_t>
   struct export_pointwise_imp {
     friend CFMS_NS_ISO_Exporter;
+
     output_ary_t operator()(CFMS_NS_ISO_Exporter& base,
                             double const& x,
                             double const& y,
@@ -393,10 +397,12 @@ struct CFMS_NS_ISO_Exporter
       }};
       // clang-format on
 
-      auto const gammaDD_Cart = basis_transform.matrixDD__sph_to_cart(gammaDD_Sph);
+      auto const gammaDD_Cart =
+          basis_transform.matrixDD__sph_to_cart(gammaDD_Sph);
       auto const KDD_Cart = basis_transform.matrixDD__sph_to_cart(KDD_Sph);
       auto const betaU_Cart = basis_transform.vectorU__sph_to_cart(betaU_Sph);
-      auto const FluidVelU_Cart = basis_transform.vectorU__sph_to_cart(FluidVelU_Sph);
+      auto const FluidVelU_Cart =
+          basis_transform.vectorU__sph_to_cart(FluidVelU_Sph);
       base.out_pw[OUTPUT_VARS::BETA1] = betaU_Cart[0];
       base.out_pw[OUTPUT_VARS::BETA2] = betaU_Cart[1];
       base.out_pw[OUTPUT_VARS::BETA3] = betaU_Cart[2];
@@ -485,6 +491,7 @@ struct CFMS_NS_ISO_Exporter
   template <class eos_t>
   struct export_pointwise__spherical_imp {
     friend CFMS_NS_ISO_Exporter;
+
     output_ary_t operator()(CFMS_NS_ISO_Exporter& base,
                             double const& x,
                             double const& y,
@@ -563,6 +570,7 @@ struct CFMS_NS_ISO_Exporter
       return base.out_pw;
     }
   };
+
   /**
    * @brief Interface to export an array of OUTPUT_VARS for a given point in a
    * spherical basis.  The logic for determining the EOS type is here and adds a

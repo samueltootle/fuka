@@ -105,4 +105,5 @@ int bbh_xcts_sequence(config_t& seqconfig,
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "bbh_xcts_driver.cpp"

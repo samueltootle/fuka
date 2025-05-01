@@ -184,6 +184,7 @@ void ns_isotropic_diff_rot_solver<eos_t, config_t, space_t>::print_diagnostics(
   std::cout << FORMAT << "R: " << rs[0] << " " << rs[1] << "\n\n";
   std::cout.flags(f);
 }  // end print diagnostics
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

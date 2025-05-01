@@ -92,8 +92,10 @@ class bbh_xcts_solver : XCTS_Solver<config_t, space_t> {
 
   int solve_stage(std::string stage_text);
 };
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "bbh_xcts_solver_imp.cpp"
 #include "bbh_xcts_stages.cpp"

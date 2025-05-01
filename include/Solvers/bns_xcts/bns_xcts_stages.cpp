@@ -88,15 +88,15 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydrostatic_equilibrium_stage() {
     // if outside the stellar domains, without matter sources
     // resort to the source-free constraint equations
     // and set matter (and velocity potential) to zero
-    if ((d >= space.ADAPTED2 + 1) || ((d >= space.ADAPTED1 + 1) && (d < space.NS2))) {
+    if ((d >= space.ADAPTED2 + 1) ||
+        ((d >= space.ADAPTED1 + 1) && (d < space.NS2))) {
       if (!bconfig.control(COROT_BIN))
         syst.add_eq_full(d, "phi= 0");
 
       syst.add_eq_full(d, "H  = 0");
 
       syst.add_def(d, "eqP = D^i D_i P + A_ij * A^ij / P^7 / 8");
-      syst.add_def(d,
-                   "eqNP = D^i D_i NP - 7. / 8. * NP / P^8 * A_ij * A^ij");
+      syst.add_def(d, "eqNP = D^i D_i NP - 7. / 8. * NP / P^8 * A_ij * A^ij");
       syst.add_def(d,
                    "eqbet^i = D_j D^j bet^i + D^i D_j bet^j / 3. - 2. * A^ij * "
                    "D_j Ntilde");
@@ -372,7 +372,8 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
   for (int d = 0; d < ndom; d++)
     // the enthalpy is equal to the constant part everywhere
     // outside of the stars, i.e. zero
-    if ((d >= space.ADAPTED2 + 1) || ((d >= space.ADAPTED1 + 1) && (d < space.NS2)))
+    if ((d >= space.ADAPTED2 + 1) ||
+        ((d >= space.ADAPTED1 + 1) && (d < space.NS2)))
       syst.add_def(d, "H  = Hconst");
 
   // inside the stars, it is the constant part
@@ -389,7 +390,7 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
   // populate all the boiler-plate constants, variables, and definitions
   syst_init(syst);
 
-  if(solver_stage == HEADON) {
+  if (solver_stage == HEADON) {
     // "center of mass" on the x-axis, connecting both stellar centers
     // fixed by the vanishing of the ADM linear momentum at infinity
     syst.add_cst("xaxis", bconfig(COM));
@@ -397,7 +398,7 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
     // same on the y-axis in case finite momenta develope by
     // the eccentricity reduction parameters
     syst.add_cst("yaxis", bconfig(COMY));
-  } else{
+  } else {
     // "center of mass" on the x-axis, connecting both stellar centers
     // fixed by the vanishing of the ADM linear momentum at infinity
     syst.add_var("xaxis", bconfig(COM));
@@ -406,7 +407,6 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
     // the eccentricity reduction parameters
     syst.add_var("yaxis", bconfig(COMY));
   }
-
 
   // no additional force-balance is computed,
   // the matter distribution is fixed modulo the scaling factos above,
@@ -435,13 +435,13 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
     // if outside the stellar domains, without matter sources
     // resort to the source-free constraint equations
     // and set matter (and velocity potential) to zero
-    if ((d >= space.ADAPTED2 + 1) || ((d >= space.ADAPTED1 + 1) && (d < space.NS2))) {
+    if ((d >= space.ADAPTED2 + 1) ||
+        ((d >= space.ADAPTED1 + 1) && (d < space.NS2))) {
       if (!bconfig.control(COROT_BIN))
         syst.add_eq_full(d, "phi= 0");
 
       syst.add_def(d, "eqP = D^i D_i P + A_ij * A^ij / P^7 / 8");
-      syst.add_def(d,
-                   "eqNP = D^i D_i NP - 7. / 8. * NP / P^8 * A_ij * A^ij");
+      syst.add_def(d, "eqNP = D^i D_i NP - 7. / 8. * NP / P^8 * A_ij * A^ij");
       syst.add_def(d,
                    "eqbet^i = D_j D^j bet^i + D^i D_j bet^j / 3. - 2. * A^ij * "
                    "D_j Ntilde");
@@ -553,7 +553,7 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
                                         "integ(intS2) / Madm2 / Madm2 = chi2");
   }
 
-  if(solver_stage != HEADON) {
+  if (solver_stage != HEADON) {
     // enforcing the vanishing of the x- & y-component of the ADM linear momentum
     // at infinity, fixing the "center of mass" shift on the x-axis
     space.add_eq_int_inf(syst, "integ(intPx) = 0");
@@ -626,6 +626,7 @@ int bns_xcts_solver<eos_t, config_t, space_t>::hydro_rescaling_stages(
     checkpoint();
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

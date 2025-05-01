@@ -24,8 +24,8 @@
 #include <math.h>
 #include <sstream>
 #include "Configurator/config_binary.hpp"
-#include "bco_utilities.hpp"
 #include "Solvers/bco_solver_utils.hpp"
+#include "bco_utilities.hpp"
 #include "kadath.hpp"
 
 /**
@@ -52,16 +52,16 @@ inline void update_bin_config(config_t& bconfig,
     bconfig.set(REXT) = 2. * bconfig(DIST);
 
     const double r_max_tot =
-      (bconfig(BCO_PARAMS::RMID, NODES::BCO1) > bconfig(RMID, NODES::BCO2))
-        ? bconfig(BCO_PARAMS::RMID, NODES::BCO1)
-        : bconfig(BCO_PARAMS::RMID, NODES::BCO2);
+        (bconfig(BCO_PARAMS::RMID, NODES::BCO1) > bconfig(RMID, NODES::BCO2))
+            ? bconfig(BCO_PARAMS::RMID, NODES::BCO1)
+            : bconfig(BCO_PARAMS::RMID, NODES::BCO2);
 
     const double rout_sep_est =
         (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
     const double rout_min_est = bco_u::gold_ratio * r_max_tot;
 
     bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
-      //  (rout_sep_est < rout_min_est) ? rout_min_est : rout_sep_est;
+    //  (rout_sep_est < rout_min_est) ? rout_min_est : rout_sep_est;
     bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
         bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
   }
@@ -81,8 +81,10 @@ inline int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
   // Update config vars
   // This control was mainly for testing
   if (!bconfig.control(USE_CONFIG_VARS)) {
-    bco_u::update_config_BH_radii(old_space, bconfig, old_space.BH1 + 1, old_conf, NODES::BCO1);
-    bco_u::update_config_BH_radii(old_space, bconfig, old_space.BH2 + 1, old_conf, NODES::BCO2);
+    bco_u::update_config_BH_radii(old_space, bconfig, old_space.BH1 + 1,
+                                  old_conf, NODES::BCO1);
+    bco_u::update_config_BH_radii(old_space, bconfig, old_space.BH2 + 1,
+                                  old_conf, NODES::BCO2);
   }  // end updating config vars
 
   update_bin_config(bconfig, old_space, old_conf, old_lapse);
@@ -197,6 +199,7 @@ inline int bbh_xcts_regrid(config_t& bconfig, std::string outputfile) {
   bco_u::save_to_file(space, bconfig, conf, lapse, shift);
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

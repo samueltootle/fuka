@@ -332,6 +332,7 @@ void ns_3d_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(
   }
   bconfig.set(QLMADM) = bconfig(MADM);
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

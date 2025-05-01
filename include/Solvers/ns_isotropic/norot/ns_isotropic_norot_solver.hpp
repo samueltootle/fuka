@@ -22,6 +22,7 @@
 #pragma once
 #include "Solvers/sequences/ns_sequence.hpp"
 #include "Solvers/solvers.hpp"
+
 /**
  * \addtogroup NS_XCTS
  * \ingroup FUKA
@@ -91,8 +92,10 @@ class ns_isotropic_norot_solver : public Solver<config_t, space_t> {
 
   void update_config_quantities(System_of_eqs& syst);
 };
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "ns_isotropic_norot_solver_imp.cpp"
 #include "ns_isotropic_norot_stages.cpp"

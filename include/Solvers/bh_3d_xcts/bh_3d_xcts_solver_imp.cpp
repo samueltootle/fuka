@@ -223,6 +223,7 @@ void bh_3d_xcts_solver<config_t, space_t>::print_diagnostics(
   std::cout.flags(f);
   std::cout << "=======================================" << "\n\n";
 }  // end print diagnostics rot
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

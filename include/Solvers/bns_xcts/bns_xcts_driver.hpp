@@ -105,4 +105,5 @@ int bns_xcts_sequence(config_t& seqconfig,
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "bns_xcts_driver.cpp"

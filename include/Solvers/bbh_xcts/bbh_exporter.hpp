@@ -1,6 +1,7 @@
 #pragma once
 #include "Solvers/exporter.hpp"
 #include "bin_bh.hpp"
+
 namespace Kadath::FUKA_Solvers {
 
 struct CFMS_BBH_Exporter
@@ -106,7 +107,9 @@ struct CFMS_BBH_Exporter
   std::vector<std::reference_wrapper<const Scalar>> const& get_quants() const {
     return quants;
   }
+
   bool is_export_ready() const { return export_ready; }
+
   const int& get_ndim() const { return ndim; }
 
   CFMS_BBH_Exporter()

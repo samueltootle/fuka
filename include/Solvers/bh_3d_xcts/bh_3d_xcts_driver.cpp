@@ -349,6 +349,7 @@ inline int bh_3d_xcts_binary_boost_driver(
   }
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

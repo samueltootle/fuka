@@ -151,8 +151,10 @@ class ns_isotropic_diff_rot_solver : public Solver<config_t, space_t> {
     }
   }
 };
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "ns_isotropic_diff_rot_solver_imp.cpp"
 #include "ns_isotropic_diff_rot_stages.cpp"

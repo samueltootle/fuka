@@ -10,7 +10,8 @@ using input_reader_t = Kadath::FUKA_Solvers::CFMS_NS_ISO_Exporter;
 
 template <class eos_t>
 struct NS_ISO_to_XCTS_convert {
-  void operator()(kadath_config_boost<BCO_ISO_NS_INFO>& in_bconfig, std::string output_dir = ".") {
+  void operator()(kadath_config_boost<BCO_ISO_NS_INFO>& in_bconfig,
+                  std::string output_dir = ".") {
     // Convert from QI solution
     input_reader_t input_reader(in_bconfig.config_filename_abs());
 
@@ -36,7 +37,7 @@ struct NS_ISO_to_XCTS_convert {
 
     kadath_config_boost<BCO_NS_INFO> bconfig(in_bconfig.config_filename_abs());
     bconfig.set(BCO_PARAMS::DIM) = 3;
-    bconfig.set_filename(output_dir+"/initns_xcts.info");
+    bconfig.set_filename(output_dir + "/initns_xcts.info");
 
     // number of dimensions
     const int dim = bconfig(DIM);
@@ -123,7 +124,7 @@ struct NS_ISO_to_XCTS_convert {
           Point abs_coords(2);
           abs_coords.set(1) = r_xy;
           abs_coords.set(2) = z;
-          if(iso_omega)
+          if (iso_omega)
             omega.set_domain(dom).set(pos) = iso_omega->val_point(abs_coords);
 
           shift.set(1).set_domain(dom).set(pos) =
@@ -180,7 +181,7 @@ struct NS_ISO_to_XCTS_convert {
     stage_enabled.fill(false);
     stage_enabled[last_stage_idx] = true;
 
-    if(bconfig.set_field(BCO_FIELDS::DIFF_OMEGA))
+    if (bconfig.set_field(BCO_FIELDS::DIFF_OMEGA))
       bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh, omega);
     else
       bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh);

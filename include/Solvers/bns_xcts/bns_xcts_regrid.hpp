@@ -23,9 +23,9 @@
 #pragma once
 
 #include "Configurator/config_binary.hpp"
+#include "Solvers/bco_solver_utils.hpp"
 #include "Solvers/fuka_syst/fuka_syst.hpp"
 #include "bco_utilities.hpp"
-#include "Solvers/bco_solver_utils.hpp"
 #include "kadath_bin_ns.hpp"
 
 /**
@@ -89,13 +89,14 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   // start Update config vars
   update_config_NS_radii(old_space, bconfig, old_space.ADAPTED1, NODES::BCO1);
   update_config_NS_radii(old_space, bconfig, old_space.ADAPTED2, NODES::BCO2);
-  double r_max_tot = std::max(bconfig(BCO_PARAMS::RMID, BCO1), bconfig(BCO_PARAMS::RMID, BCO2));
+  double r_max_tot = std::max(bconfig(BCO_PARAMS::RMID, BCO1),
+                              bconfig(BCO_PARAMS::RMID, BCO2));
 
   const double rout_sep_est =
       (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
   const double rout_max_est = gold_ratio * r_max_tot;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
-      // (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
+  // (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
       bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
   // end updating config vars
@@ -116,8 +117,8 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   old_space_radius.std_base();
   // end create old radius scalar fields
 
-  std::vector<int> ns_interior_doms{FUKA_Syst_tools::vector_of_domains(
-      old_space.NS1, old_space.ADAPTED1)};
+  std::vector<int> ns_interior_doms{
+      FUKA_Syst_tools::vector_of_domains(old_space.NS1, old_space.ADAPTED1)};
   std::vector<int> exclusion_doms{old_space.NS2, old_space.ADAPTED1};
   // concat domain lists together
   std::for_each(ns_interior_doms.rbegin(), ns_interior_doms.rend(),
@@ -126,8 +127,8 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
                   exclusion_doms.insert(it, e);
                 });
   Scalar drPsi(compute_drPsi(old_space, old_conf,
-                           Metric_flat(old_space, old_shift.get_basis()),
-                           exclusion_doms, old_space.OUTER));
+                             Metric_flat(old_space, old_shift.get_basis()),
+                             exclusion_doms, old_space.OUTER));
 
   std::vector<double> out_bounds(1 + bconfig(BIN_PARAMS::OUTER_SHELLS));
   // set reasonable radii to each stellar domain
@@ -250,6 +251,7 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

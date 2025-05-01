@@ -118,8 +118,10 @@ class ns_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
   // Update bconfig(HC) and bconfig(NC)
   void update_config_quantities(System_of_eqs& syst);
 };
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "ns_3d_xcts_solver_imp.cpp"
 #include "ns_3d_xcts_stages.cpp"

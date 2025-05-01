@@ -1,6 +1,6 @@
 #include "NS_XCTS.hpp"
-#include "Solvers/co_solver_utils.hpp"
 #include "Solvers/bco_solver_utils.hpp"
+#include "Solvers/co_solver_utils.hpp"
 #include "name_tools.hpp"
 
 /**
@@ -288,7 +288,8 @@ inline int ns_xcts_driver(NS_XCTS_BASE::base_config_t& bconfig,
   auto resolution_indices = resolution.get_indices();
   bconfig.set(resolution_indices) = resolution.init();
 
-  std::string initial_guess_filename = solve_NS_ISO_from_XCTS_config(bconfig, seq);
+  std::string initial_guess_filename =
+      solve_NS_ISO_from_XCTS_config(bconfig, seq);
   bconfig = NS_XCTS_BASE::base_config_t(initial_guess_filename);
   bconfig.control(CONTROLS::SEQUENCES) = false;
 

@@ -1,6 +1,7 @@
 #include "EOS/FUKA_EOS_Utilities.hh"
 #include "Solvers/exporter.hpp"
 #include "bhns.hpp"
+
 namespace Kadath::FUKA_Solvers {
 
 struct CFMS_BHNS_Exporter
@@ -168,7 +169,9 @@ struct CFMS_BHNS_Exporter
   std::vector<std::reference_wrapper<const Scalar>> const& get_quants() const {
     return quants;
   }
+
   bool is_export_ready() const { return export_ready; }
+
   const int& get_ndim() const { return ndim; }
 
   CFMS_BHNS_Exporter()
@@ -237,6 +240,7 @@ struct CFMS_BHNS_Exporter
   template <class eos_t>
   struct export_pointwise_imp {
     friend CFMS_BHNS_Exporter;
+
     output_ary_t operator()(CFMS_BHNS_Exporter& base,
                             double const& x,
                             double const& y,
@@ -244,8 +248,9 @@ struct CFMS_BHNS_Exporter
                             double const interpolation_offset = 0.,
                             int const interp_order = 8,
                             double const delta_r_rel = 0.3) {
-      base.quant_vals = base.interpolate_pointwise(
-          x, y, z, interpolation_offset, interp_order, delta_r_rel);
+      base.quant_vals =
+          base.interpolate_pointwise(x, y, z, interpolation_offset,
+                                     interp_order, delta_r_rel);
 
       // Fill output vector by storing non-conformal quantities
       auto const psi = base.quant_vals[XCTS_VARS::XCTS_PSI];

@@ -1,4 +1,5 @@
 #include "EOS/FUKA_EOS_Utilities.hh"
+
 /**
  * \addtogroup BNS_XCTS
  * \ingroup FUKA
@@ -10,9 +11,7 @@ namespace FUKA_Solvers {
 template <class eos_t>
 struct launch_bns_solver {
   template <class config_t>
-  int operator()(const int rank,
-                 config_t& bconfig,
-                 std::string outputdir) {
+  int operator()(const int rank, config_t& bconfig, std::string outputdir) {
 
     std::string spacein = bconfig.space_filename();
 
@@ -53,7 +52,7 @@ struct launch_bns_solver {
       bconfig.set_outputdir(outputdir);
     }
     if (bconfig.control(DELETE_SHIFT))
-    shift.annule_hard();
+      shift.annule_hard();
 
     bns_xcts_solver<eos_t, decltype(bconfig), decltype(space)> bns_solver(
         bconfig, space, basis, conf, lapse, shift, logh, phi);
@@ -72,8 +71,10 @@ int bns_xcts_solution_driver(config_t& bconfig, std::string outputdir) {
   const std::string eos_type =
       bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE, NODES::BCO1);
 
-  exit_status = EOS_Function_Dispatcher::dispatch<launch_bns_solver>(
-        bconfig, eos_type, rank, bconfig, outputdir);
+  exit_status =
+      EOS_Function_Dispatcher::dispatch<launch_bns_solver>(bconfig, eos_type,
+                                                           rank, bconfig,
+                                                           outputdir);
 
   return exit_status;
 }
@@ -176,7 +177,8 @@ int bns_xcts_sequence(config_t& seqconfig,
   config_t base_config = bns_xcts_sequence_setup(seqconfig, outputdir);
   // Needed to obtain hydrostatic equilibrium solution for
   // inspiral configurations
-  base_config.set_stage(STAGES::TOTAL) = !(base_config.return_stages()[STAGES::HEADON]);
+  base_config.set_stage(STAGES::TOTAL) =
+      !(base_config.return_stages()[STAGES::HEADON]);
 
   base_config.set(resolution_indices) = resolution.init();
 
@@ -220,6 +222,7 @@ int bns_xcts_sequence(config_t& seqconfig,
   }
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

@@ -120,8 +120,10 @@ class bns_xcts_solver : XCTS_Solver<config_t, space_t> {
   // Update bconfig(HC) and bconfig(NC)
   void update_config_quantities(System_of_eqs& syst);
 };
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "bns_xcts_solver_imp.cpp"
 #include "bns_xcts_stages.cpp"

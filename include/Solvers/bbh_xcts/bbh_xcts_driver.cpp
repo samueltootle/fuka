@@ -65,8 +65,9 @@ int bbh_xcts_solution_driver(config_t& bconfig, std::string outputdir) {
   if (bconfig.control(DELETE_SHIFT))
     shift.annule_hard();
 
-  bbh_xcts_solver<decltype(bconfig), decltype(space)> bbh_solver(
-      bconfig, space, basis, conf, lapse, shift);
+  bbh_xcts_solver<decltype(bconfig), decltype(space)> bbh_solver(bconfig, space,
+                                                                 basis, conf,
+                                                                 lapse, shift);
   bbh_solver.solve();
 
   return exit_status;
@@ -189,6 +190,7 @@ int bbh_xcts_sequence(config_t& seqconfig,
   }
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

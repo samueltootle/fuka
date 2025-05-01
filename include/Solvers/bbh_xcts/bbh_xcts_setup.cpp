@@ -25,9 +25,10 @@ inline void bbh_xcts_setup_headon_config(config_t& bconfig) {
                                bconfig(BCO_PARAMS::MCH, NODES::BCO1);
 
   // classical Newtonian estimate
-  bconfig.set(BIN_PARAMS::COM) = com_estimate(
-      bconfig(BIN_PARAMS::DIST), bconfig(BCO_PARAMS::MADM, NODES::BCO1),
-      bconfig(BCO_PARAMS::MADM, NODES::BCO2));
+  bconfig.set(BIN_PARAMS::COM) =
+      com_estimate(bconfig(BIN_PARAMS::DIST),
+                   bconfig(BCO_PARAMS::MADM, NODES::BCO1),
+                   bconfig(BCO_PARAMS::MADM, NODES::BCO2));
 }
 
 template <class config_t>
@@ -41,7 +42,7 @@ void bbh_xcts_setup_bin_config(config_t& bconfig) {
   if (!bconfig(STAGES::HEADON)) {
     // obtain 3PN estimate for the global, orbital omega
     bco_u::KadathPNOrbitalParams(bconfig, bconfig(BCO_PARAMS::MCH, NODES::BCO1),
-    bconfig(BCO_PARAMS::MCH, NODES::BCO2));
+                                 bconfig(BCO_PARAMS::MCH, NODES::BCO2));
   }
 
   // delete ADOT, this can always be recalculated during
@@ -113,15 +114,15 @@ inline void bbh_xcts_setup_boosted_3d(
   bconfig.set(BCO_PARAMS::NSHELLS, NODES::BCO1) = nshells1;
   bconfig.set(BCO_PARAMS::NSHELLS, NODES::BCO2) = nshells2;
 
-  const double r_max_tot =
-      std::max(bconfig(BCO_PARAMS::RMID, NODES::BCO1), bconfig(RMID, NODES::BCO2));
+  const double r_max_tot = std::max(bconfig(BCO_PARAMS::RMID, NODES::BCO1),
+                                    bconfig(RMID, NODES::BCO2));
 
   const double rout_sep_est =
       (bconfig(BIN_PARAMS::DIST) / 2. - r_max_tot) / 3. + r_max_tot;
   // const double rout_min_est = bco_u::gold_ratio * r_max_tot;
 
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
-    //  (rout_sep_est < rout_min_est) ? rout_min_est : rout_sep_est;
+  //  (rout_sep_est < rout_min_est) ? rout_min_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
       bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
 
@@ -258,6 +259,7 @@ inline void bbh_xcts_setup_boosted_3d(
 
   bco_u::save_to_file(space, bconfig, conf, lapse, shift);
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

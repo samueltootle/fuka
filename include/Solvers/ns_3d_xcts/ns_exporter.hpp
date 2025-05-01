@@ -1,5 +1,6 @@
 #include "EOS/FUKA_EOS_Utilities.hh"
 #include "Solvers/exporter.hpp"
+
 namespace Kadath::FUKA_Solvers {
 
 struct CFMS_NS_Exporter
@@ -186,7 +187,9 @@ struct CFMS_NS_Exporter
   std::vector<std::reference_wrapper<const Scalar>> const& get_quants() const {
     return quants;
   }
+
   bool is_export_ready() const { return export_ready; }
+
   const int& get_ndim() const { return ndim; }
 
   CFMS_NS_Exporter()
@@ -277,6 +280,7 @@ struct CFMS_NS_Exporter
   template <class eos_t>
   struct export_pointwise_fluid_vars_imp {
     friend CFMS_NS_Exporter;
+
     output_ary_t operator()(CFMS_NS_Exporter& base,
                             double const& x,
                             double const& y,
@@ -335,6 +339,7 @@ struct CFMS_NS_Exporter
   template <class eos_t>
   struct export_pointwise_imp {
     friend CFMS_NS_Exporter;
+
     output_ary_t operator()(CFMS_NS_Exporter& base,
                             double const& x,
                             double const& y,

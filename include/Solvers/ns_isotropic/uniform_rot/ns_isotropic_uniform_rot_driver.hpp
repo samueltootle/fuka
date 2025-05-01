@@ -66,4 +66,5 @@ inline int ns_isotropic_uniform_rot_driver(config_t& bconfig,
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "ns_isotropic_uniform_rot_driver_imp.cpp"

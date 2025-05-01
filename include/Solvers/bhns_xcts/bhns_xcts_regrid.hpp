@@ -24,9 +24,9 @@
 #include <math.h>
 #include <sstream>
 #include "Configurator/config_binary.hpp"
+#include "Solvers/bco_solver_utils.hpp"
 #include "Solvers/fuka_syst/fuka_syst.hpp"
 #include "bco_utilities.hpp"
-#include "Solvers/bco_solver_utils.hpp"
 #include "kadath.hpp"
 
 /**
@@ -34,6 +34,7 @@
  * \ingroup FUKA
  * @{*/
 using namespace Kadath::FUKA_Config;
+
 namespace Kadath {
 namespace FUKA_Solvers {
 using config_t = kadath_config_boost<BIN_INFO>;
@@ -89,15 +90,17 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   // Update config vars
   // This control was mainly for testing
   if (!bconfig.control(USE_CONFIG_VARS)) {
-    update_config_NS_radii(old_space, bconfig, old_space.ADAPTEDNS, NODES::BCO1);
+    update_config_NS_radii(old_space, bconfig, old_space.ADAPTEDNS,
+                           NODES::BCO1);
 
-    update_config_BH_radii(old_space, bconfig, old_space.ADAPTEDBH, old_conf, NODES::BCO2);
+    update_config_BH_radii(old_space, bconfig, old_space.ADAPTEDBH, old_conf,
+                           NODES::BCO2);
 
     double rmax = std::max(bconfig(RMID, BCO1), bconfig(RMID, BCO2));
     const double rout_sep_est = (bconfig(DIST) / 2. - rmax) / 3. + rmax;
     const double rout_max_est = gold_ratio * rmax;
     bconfig.set(ROUT, BCO1) = rout_sep_est;
-        // (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
+    // (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
     bconfig.set(ROUT, BCO2) = bconfig(ROUT, BCO1);
   }  // end updating config vars
 
@@ -122,8 +125,8 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   for (int e = 0; e < out_bounds.size(); ++e)
     out_bounds[e] = bconfig(REXT) * (1. + e * 0.25);
 
-  std::vector<int> ns_interior_doms{FUKA_Syst_tools::vector_of_domains(
-      old_space.NS, old_space.ADAPTEDNS)};
+  std::vector<int> ns_interior_doms{
+      FUKA_Syst_tools::vector_of_domains(old_space.NS, old_space.ADAPTEDNS)};
   std::vector<int> exclusion_doms{old_space.BH, old_space.BH + 1};
   // concat domain lists together
   std::for_each(ns_interior_doms.rbegin(), ns_interior_doms.rend(),
@@ -244,6 +247,7 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   save_to_file(space, bconfig, conf, lapse, shift, logh, phi);
   return EXIT_SUCCESS;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

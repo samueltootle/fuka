@@ -292,6 +292,7 @@ void bbh_xcts_solver<config_t, space_t>::print_diagnostics(
 
   cout << std::string(42, '=') << endl;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

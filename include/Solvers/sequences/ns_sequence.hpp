@@ -45,21 +45,29 @@ class ns_sequence : public seq_t {
    * @param _ts Parameter pack consisting of the desired Config indices
    */
   ns_sequence(std::string _str, BCO_PARAMS _ts) : seq_t(_str, _ts) {}
+
   ns_sequence(seq_t const& seq) : seq_t(seq) {}
 
   // Getters
   double const& mass_val() const { return mass_fixing_val; }
+
   BCO_PARAMS const& mass_idx() const { return mass_fixing_idx; }
+
   double const& spin_val() const { return spin_fixing_val; }
+
   BCO_PARAMS const& spin_idx() const { return spin_fixing_idx; }
 
   // Setters
   void set_mass_val(double const& _val) { mass_fixing_val = _val; }
+
   void set_mass_idx(BCO_PARAMS const& _val) { mass_fixing_idx = _val; }
+
   void set_spin_val(double const& _val) { spin_fixing_val = _val; }
+
   void set_spin_idx(BCO_PARAMS const& _val) { spin_fixing_idx = _val; }
 
   bool is_mass_set() const { return !std::isnan(mass_fixing_val); }
+
   bool is_spin_set() const { return !std::isnan(spin_fixing_val); }
 
   std::string mass_str() const {
@@ -67,6 +75,7 @@ class ns_sequence : public seq_t {
         get_key_val_pair_from_val(MBCO_PARAMS, mass_fixing_idx);
     return mass_key;
   }
+
   std::string spin_str() const {
     auto [spin_key, spin_idx] =
         get_key_val_pair_from_val(MBCO_PARAMS, spin_fixing_idx);
@@ -284,5 +293,6 @@ inline void initialize_config_from_fixing_values(config_t& bconfig,
   bconfig.set(seq.mass_idx()) = seq.mass_val();
   bconfig.set(seq.spin_idx()) = seq.spin_val();
 }
+
 /** @}*/
 }  // namespace Kadath::FUKA_Solvers

@@ -17,9 +17,7 @@ namespace FUKA_Solvers {
 template <class eos_t>
 struct launch_bhns_solver {
   template <class config_t>
-  int operator()(const int rank,
-                 config_t& bconfig,
-                 std::string outputdir) {
+  int operator()(const int rank, config_t& bconfig, std::string outputdir) {
 
     std::string spacein = bconfig.space_filename();
 
@@ -60,10 +58,10 @@ struct launch_bhns_solver {
       bconfig.set_outputdir(outputdir);
     }
     if (bconfig.control(DELETE_SHIFT))
-    shift.annule_hard();
+      shift.annule_hard();
 
-    bhns_xcts_solver<eos_t, decltype(bconfig), decltype(space)> bhns_xcts_solver(
-        bconfig, space, basis, conf, lapse, shift, logh, phi);
+    bhns_xcts_solver<eos_t, decltype(bconfig), decltype(space)>
+        bhns_xcts_solver(bconfig, space, basis, conf, lapse, shift, logh, phi);
     return bhns_xcts_solver.solve();
   };
 };
@@ -79,8 +77,10 @@ int bhns_xcts_solution_driver(config_t& bconfig, std::string outputdir) {
   const std::string eos_type =
       bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE, NODES::BCO1);
 
-  exit_status = EOS_Function_Dispatcher::dispatch<launch_bhns_solver>(
-        bconfig, eos_type, rank, bconfig, outputdir);
+  exit_status =
+      EOS_Function_Dispatcher::dispatch<launch_bhns_solver>(bconfig, eos_type,
+                                                            rank, bconfig,
+                                                            outputdir);
 
   return exit_status;
 }
@@ -219,6 +219,7 @@ int bhns_xcts_sequence(config_t& seqconfig,
   }
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

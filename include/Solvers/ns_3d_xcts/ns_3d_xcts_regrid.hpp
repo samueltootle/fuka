@@ -184,6 +184,7 @@ int ns_3d_xcts_regrid(config_t& bconfig, std::string outputfile) {
 
   return EXIT_SUCCESS;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

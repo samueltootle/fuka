@@ -64,4 +64,5 @@ inline void bbh_xcts_setup_boosted_3d(
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
+
 #include "bbh_xcts_setup.cpp"

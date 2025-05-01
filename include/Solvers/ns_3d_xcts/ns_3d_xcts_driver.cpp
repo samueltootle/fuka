@@ -1,4 +1,5 @@
 #include "EOS/FUKA_EOS_Utilities.hh"
+
 /**
  * \addtogroup NS_XCTS
  * \ingroup FUKA
@@ -104,7 +105,7 @@ struct launch_ns_boost_solver {
     }
 
     ns_3d_xcts_solver<eos_t, decltype(bconfig), decltype(space)> ns_solver(
-          bconfig, space, basis, conf, lapse, logh, shift);
+        bconfig, space, basis, conf, lapse, logh, shift);
     return ns_solver.binary_boost_stage(binconfig, bco);
   };
 };
@@ -169,8 +170,10 @@ config_t ns_3d_xcts_sequence(config_t& seqconfig,
   if (bconfig.control(CONTROLS::SEQUENCES) ||
       bconfig.control(CONTROLS::RESOLVE)) {
     if (rank == 0) {
-      EOS_Function_Dispatcher::dispatch<setup_3dns_xcts_functor>(
-          bconfig, eos_type, bconfig, mass_fixing);
+      EOS_Function_Dispatcher::dispatch<setup_3dns_xcts_functor>(bconfig,
+                                                                 eos_type,
+                                                                 bconfig,
+                                                                 mass_fixing);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     // make sure all ranks have the same config
@@ -278,8 +281,10 @@ int ns_3d_xcts_stationary_driver(config_t& bconfig,
     outputdir = cwd.string();
   }
 
-  exit_status = EOS_Function_Dispatcher::dispatch<launch_ns_solver>(
-        bconfig, eos_type, rank, bconfig, outputdir, seq);
+  exit_status =
+      EOS_Function_Dispatcher::dispatch<launch_ns_solver>(bconfig, eos_type,
+                                                          rank, bconfig,
+                                                          outputdir, seq);
 
   return exit_status;
 }
@@ -434,7 +439,7 @@ inline int ns_3d_xcts_binary_boost_driver(
   using namespace Kadath::FUKA_EOS;
 
   const std::string eos_type =
-        bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
+      bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE);
 
   const int final_res = bconfig(BCO_PARAMS::BCO_RES);
   bool res_inc = (bconfig.seq_setting(SEQ_SETTINGS::INIT_RES) < final_res);
@@ -453,6 +458,7 @@ inline int ns_3d_xcts_binary_boost_driver(
   }
   return exit_status;
 }
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

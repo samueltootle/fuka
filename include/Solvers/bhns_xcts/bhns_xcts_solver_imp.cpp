@@ -365,6 +365,7 @@ void bhns_xcts_solver<eos_t, config_t, space_t>::print_diagnostics(
   std::cout.flags(f);
   std::cout << "=======================================" << endl;
 }  // end print_diagnostics
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

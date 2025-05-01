@@ -46,6 +46,7 @@ namespace fs = std::filesystem;
 
 using namespace ::Kadath::FUKA_Config;
 using namespace ::Kadath::FUKA_Config_Utils;
+
 namespace Kadath {
 namespace FUKA_Solvers {
 
@@ -85,6 +86,7 @@ class Solver {
  public:
   Solver(config_t& config_in, space_t& space_in)
       : space(space_in), bconfig(config_in), ndom(space_in.get_nbr_domains()) {}
+
   virtual ~Solver() = default;
 
  protected:
@@ -184,7 +186,7 @@ class Solver {
 
       auto& stages = bconfig.return_stages();
       auto [last_stage_name, last_stage_idx] = get_last_enabled(MSTAGE, stages);
-      if(solver_stage != last_stage_idx)
+      if (solver_stage != last_stage_idx)
         // Deactivate current stage since we found solution
         old_solution.set_stage(solver_stage) = false;
       bconfig = old_solution;
@@ -252,6 +254,7 @@ class XCTS_Solver : public Solver<config_t, space_t> {
         cfields(space),
         basis(base_in) {}
 };
+
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath

@@ -1,7 +1,8 @@
 #pragma once
+#include <algorithm>
 #include "Solvers/exporter.hpp"
 #include "adapted_bh.hpp"
-#include <algorithm>
+
 namespace Kadath::FUKA_Solvers {
 
 struct CFMS_BH_Exporter
@@ -126,12 +127,18 @@ struct CFMS_BH_Exporter
 
   void populate_quants();
 
-  public:
-  interp_ary_t const & get__quant_vals() const { return quant_vals; }
-  std::vector<std::reference_wrapper<const Scalar>> const & get_quants() const { return quants; }
+ public:
+  interp_ary_t const& get__quant_vals() const { return quant_vals; }
+
+  std::vector<std::reference_wrapper<const Scalar>> const& get_quants() const {
+    return quants;
+  }
+
   bool is_export_ready() const { return export_ready; }
+
   void set__export_ready(bool v) { export_ready = v; }
-  const int & get_ndim() const { return ndim; }
+
+  const int& get_ndim() const { return ndim; }
 
   CFMS_BH_Exporter()
       : Exporter<config_t, space_t>(),
@@ -163,15 +170,34 @@ struct CFMS_BH_Exporter
   CFMS_BH_Exporter& operator=(const CFMS_BH_Exporter& b);
 
  public:
-  interp_ary_t interpolate_pointwise_subset(double const & x, double const & y, double const & z,
-    std::vector<XCTS_VARS> slice, double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
-  interp_ary_t interpolate_pointwise__solution_gfs(double const & x, double const & y, double const & z,
-    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
-  interp_ary_t interpolate_pointwise(double const & x, double const & y, double const & z,
-    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
+  interp_ary_t interpolate_pointwise_subset(
+      double const& x,
+      double const& y,
+      double const& z,
+      std::vector<XCTS_VARS> slice,
+      double const interpolation_offset = 0.,
+      int const interp_order = 8,
+      double const delta_r_rel = 0.3);
+  interp_ary_t interpolate_pointwise__solution_gfs(
+      double const& x,
+      double const& y,
+      double const& z,
+      double const interpolation_offset = 0.,
+      int const interp_order = 8,
+      double const delta_r_rel = 0.3);
+  interp_ary_t interpolate_pointwise(double const& x,
+                                     double const& y,
+                                     double const& z,
+                                     double const interpolation_offset = 0.,
+                                     int const interp_order = 8,
+                                     double const delta_r_rel = 0.3);
 
-  output_ary_t export_pointwise(double const & x, double const & y, double const & z,
-    double const interpolation_offset = 0., int const interp_order = 8, double const delta_r_rel = 0.3);
+  output_ary_t export_pointwise(double const& x,
+                                double const& y,
+                                double const& z,
+                                double const interpolation_offset = 0.,
+                                int const interp_order = 8,
+                                double const delta_r_rel = 0.3);
 
   grid_ary_t export_coordinate_array(int const npoints,
                                      double const* xx,
