@@ -637,8 +637,7 @@ struct basis_transform_spherical_tofrom_cart {
     // dx^i/dx^i'
     Jac_dCart_dSph[0][0] = Jac_dSph_dCart[0][0];
     Jac_dCart_dSph[0][1] = Jac_dSph_dCart[1][0] * rsq;
-    Jac_dCart_dSph[0][2] =
-        Jac_dSph_dCart[2][0] * rsint * rsint;  //-sint * sinp * r_ ;
+    Jac_dCart_dSph[0][2] = Jac_dSph_dCart[2][0] * rsint * rsint;
 
     // dy^i/dx^i'
     Jac_dCart_dSph[1][0] = Jac_dSph_dCart[0][1];
