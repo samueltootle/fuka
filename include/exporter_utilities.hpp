@@ -514,5 +514,166 @@ void partial_fill_excision(bh_exporter_t& bh_exporter, const int dom_to_fill, co
 }
 
 std::string throw_no_multithreaded_support_error(std::string not_implemented);
+
+struct basis_transform_spherical_tofrom_cart {
+  static constexpr int dim = 3;
+  using vector_t = std::array<double, dim>;
+  using matrix_t = std::array<vector_t, dim>;
+
+  private:
+  matrix_t Jac_dSph_dCart;
+  matrix_t Jac_dCart_dSph;
+
+  double r_{0.};
+  double theta_{0.};
+  double phi_{0.};
+
+  void set__Jacobians() {
+    using std::sin;
+    using std::cos;
+    const double sint = sin(theta_);
+    const double cost = cos(theta_);
+    const double sinp = sin(phi_);
+    const double cosp = cos(phi_);
+
+    const double rsq = r_ * r_;
+    const double rsint = r_ * sint;
+    const double rsint_sq = rsint * rsint;
+
+    const double div_r = 1. / r_;
+    const double div_rsint = 1. / rsint;
+
+    // dr^i/dx^i'
+    Jac_dSph_dCart[0][0] =  sint * cosp;
+    Jac_dSph_dCart[0][1] =  sint * sinp;
+    Jac_dSph_dCart[0][2] =  cost;
+
+    // dtheta^i/dx^i'
+    Jac_dSph_dCart[1][0] =  cost * cosp * div_r;
+    Jac_dSph_dCart[1][1] =  cost * sinp * div_r;
+    Jac_dSph_dCart[1][2] = -sint * div_r;
+
+    // dphi^i/dx^i'
+    Jac_dSph_dCart[2][0] = -sinp * div_rsint;
+    Jac_dSph_dCart[2][1] =  cosp * div_rsint;
+    Jac_dSph_dCart[2][2] =  0.0;
+
+    // dx^i/dx^i'
+    Jac_dCart_dSph[0][0] = Jac_dSph_dCart[0][0] ;
+    Jac_dCart_dSph[0][1] = Jac_dSph_dCart[1][0] * rsq ;
+    Jac_dCart_dSph[0][2] = Jac_dSph_dCart[2][0] * rsint * rsint;  //-sint * sinp * r_ ;
+
+    // dy^i/dx^i'
+    Jac_dCart_dSph[1][0] = Jac_dSph_dCart[0][1] ;
+    Jac_dCart_dSph[1][1] = Jac_dSph_dCart[1][1] * rsq ;
+    Jac_dCart_dSph[1][2] = Jac_dSph_dCart[2][1] * rsint_sq;
+
+    // dz^i/dx^i'
+    Jac_dCart_dSph[2][0] = Jac_dSph_dCart[0][2] ;
+    Jac_dCart_dSph[2][1] = Jac_dSph_dCart[1][2] * rsq;
+    Jac_dCart_dSph[2][2] = 0.0 ;
+  }
+
+  public:
+  void set__cart(const double x, const double y, const double z) {
+    using std::sqrt;
+    const double rsq = x * x + y * y + z * z;
+    r_ = sqrt(rsq);
+    if(std::fabs(r_) < 1e-12) {
+      r_ = 1e-12;
+      theta_ = 1e-12;
+      phi_ = 1e-12;
+    } else if(std::fabs(x) < 1e-12 && std::fabs(y) < 1e-12) {
+      theta_ = 1e-12;
+      phi_ = 1e-12;
+    } else {
+      theta_ = acos(z / r_); //theta (angle from Z to xy plane)
+      phi_ = atan2(y, x); // phi (angle from x to y axis)
+    }
+    set__Jacobians();
+  }
+
+  void set__sph(const double r, const double theta, const double phi) {
+    r_ = r;
+    theta_ = theta;
+    phi_ = phi;
+    set__Jacobians();
+  }
+
+  basis_transform_spherical_tofrom_cart() = default;
+
+  vector_t vectorU__sph_to_cart(const vector_t& V__sph) const {
+    vector_t res_vectorU;
+    for(int iCart = 0; iCart < dim; ++iCart) {
+      res_vectorU[iCart] = 0.;
+      for(int iSph = 0; iSph < dim; ++iSph) {
+        res_vectorU[iCart] += Jac_dCart_dSph[iCart][iSph] * V__sph[iSph];
+      }
+    }
+    return res_vectorU;
+  }
+
+  vector_t vectorD__sph_to_cart(const vector_t& V__sph) const {
+    vector_t res_vectorD;
+    for(int iCart = 0; iCart < dim; ++iCart) {
+      res_vectorD[iCart] = 0.;
+      for(int iSph = 0; iSph < dim; ++iSph) {
+        res_vectorD[iCart] += Jac_dSph_dCart[iSph][iCart] * V__sph[iSph];
+      }
+    }
+    return res_vectorD;
+  }
+
+  matrix_t matrixDD__sph_to_cart(const matrix_t& MDD__sph) const {
+    matrix_t res_matrixDD;
+    for(auto& col : res_matrixDD)
+      col.fill(0);
+
+    for(int iSph = 0; iSph < dim; ++iSph) {
+      auto tmp_CartvectorD = vectorD__sph_to_cart(MDD__sph[iSph]);
+
+      for(int iCart = 0; iCart < dim; ++iCart) {
+        for(int jCart = 0; jCart < dim; ++jCart) {
+          res_matrixDD[iCart][jCart] += Jac_dSph_dCart[iSph][iCart] * tmp_CartvectorD[jCart];
+        }
+      }
+    }
+    return res_matrixDD;
+  }
+
+  vector_t vectorD__cart_to_sph(const vector_t& V__sph) const {
+    vector_t res_vectorD;
+    for(int iSph = 0; iSph < dim; ++iSph) {
+      res_vectorD[iSph] = 0.;
+      for(int iCart = 0; iCart < dim; ++iCart) {
+        res_vectorD[iSph] += Jac_dCart_dSph[iCart][iSph] * V__sph[iCart];
+      }
+    }
+    return res_vectorD;
+  }
+
+  matrix_t matrixDD__cart_to_sph(const matrix_t& MDD__cart) const {
+    matrix_t res_matrixDD;
+    for(auto& col : res_matrixDD)
+      col.fill(0);
+
+    for(int iCart = 0; iCart < dim; ++iCart) {
+      auto tmp_SphvectorD = vectorD__cart_to_sph(MDD__cart[iCart]);
+
+
+      for(int iSph = 0; iSph < dim; ++iSph) {
+        for(int jSph = 0; jSph < dim; ++jSph) {
+          res_matrixDD[iSph][jSph] += Jac_dCart_dSph[iCart][iSph] * tmp_SphvectorD[jSph];
+        }
+      }
+    }
+    return res_matrixDD;
+  }
+
+  double get_r() const { return r_; }
+  double get_theta() const { return theta_; }
+  double get_phi() const { return phi_; }
+  double get_r_sq() const { return r_ * r_; }
+};
 /** @}*/
 }
