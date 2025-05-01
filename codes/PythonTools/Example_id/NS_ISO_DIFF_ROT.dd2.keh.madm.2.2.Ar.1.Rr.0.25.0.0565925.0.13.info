@@ -1,0 +1,55 @@
+ns
+{
+    chi 1.1332319415687051
+    dim 2
+    hc 1.0551514268486923
+    madm 2.2000000002705815
+    mb 2.3811177766620513
+    nc 0.00048178765863923317
+    nshells 0
+    omega 0.056592467191039261
+    qpig 12.566370614359172
+    res 13
+    rin 1.4784062604061023
+    rmid 11.821988702747161
+    rout 19.136892628141613
+    eosfile dd2.lorene
+    eostype Cold_Table
+    differential_rotation
+    {
+        A_ratio 1
+        R_ratio 0.25
+        law keh
+    }
+}
+fields
+{
+    diff_omega on
+    lap_Aterm on
+    lap_Bterm on
+    lap_wterm on
+    logh on
+    nu on
+}
+stages
+{
+    differential_rotation on
+    norot_bc off
+    uniform_rotation off
+}
+sequence_controls
+{
+    centralized_cos off
+    checkpoint off
+    corot_binary off
+    fixed_lapse off
+    resolve off
+    sequences off
+    use_pn off
+}
+sequence_settings
+{
+    initial_resolution 9
+    solver_max_iterations 100
+    solver_precision 1.0000000000000001e-09
+}
