@@ -182,7 +182,7 @@ void reader_2d_diffrot(config_t bconfig) {
 
         // Momentum volume integral over the star.
         // P^6 doesn't yield reasonable results as expected.
-        syst.add_def(d, "vintJ = rho * j * A^2 * B * 4piG / 2");
+        syst.add_def(d, "vintJ = rho * j * N * A^2 * B * 4piG / 2");
         syst.add_def(d, "intT = Omega * vintJ");
         syst.add_def(d, "inteps  = intMb * eps(h)");
 
