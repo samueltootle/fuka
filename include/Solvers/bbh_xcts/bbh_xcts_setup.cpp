@@ -27,8 +27,8 @@ inline void bbh_xcts_setup_headon_config(config_t& bconfig) {
   // classical Newtonian estimate
   bconfig.set(BIN_PARAMS::COM) =
       com_estimate(bconfig(BIN_PARAMS::DIST),
-                   bconfig(BCO_PARAMS::MADM, NODES::BCO1),
-                   bconfig(BCO_PARAMS::MADM, NODES::BCO2));
+                   bconfig(BCO_PARAMS::MCH, NODES::BCO1),
+                   bconfig(BCO_PARAMS::MCH, NODES::BCO2));
 }
 
 template <class config_t>
