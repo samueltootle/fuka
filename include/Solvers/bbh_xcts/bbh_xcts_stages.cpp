@@ -93,13 +93,9 @@ int bbh_xcts_solver<config_t, space_t>::solve_stage(std::string stage_text) {
     syst.add_var("ome", bconfig(GOMEGA));
   }
 
-  if (bconfig.control(FIXED_GOMEGA)) {
-    syst.add_cst("xaxis", bconfig(COM));
-    syst.add_cst("yaxis", bconfig(COMY));
-  } else {
-    syst.add_var("xaxis", bconfig(COM));
-    syst.add_var("yaxis", bconfig(COMY));
-  }
+  syst.add_var("xaxis", bconfig(COM));
+  syst.add_var("yaxis", bconfig(COMY));
+
   syst_init(syst);
 
   std::string bigB{"B^i = bet^i + ome * Morb^i"};
@@ -136,12 +132,8 @@ int bbh_xcts_solver<config_t, space_t>::solve_stage(std::string stage_text) {
     space.add_eq_int_inf(syst, "integ(dn(N) + 2 * dn(P)) = 0");
   }
 
-  if (!bconfig.control(FIXED_GOMEGA)) {
-    // minimize ADM linear momenta at infinity, Pz is zero by symmetry
-    // space.add_eq_int_inf(syst, "integ(COMx) - xaxis = 0");
-    space.add_eq_int_inf(syst, "integ(intPx) = 0");
-    space.add_eq_int_inf(syst, "integ(intPy) = 0");
-  }
+  space.add_eq_int_inf(syst, "integ(intPx) = 0");
+  space.add_eq_int_inf(syst, "integ(intPy) = 0");
 
   // Lapse condition BCs
   if (bconfig.control(USE_FIXED_LAPSE)) {
