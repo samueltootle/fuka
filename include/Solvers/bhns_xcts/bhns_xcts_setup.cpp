@@ -18,7 +18,9 @@ inline void bhns_xcts_setup_headon_config(config_t& bconfig) {
 
   bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MADM, NODES::BCO1) /
                                bconfig(BCO_PARAMS::MCH, NODES::BCO2);
-
+  bconfig.set(BIN_PARAMS::Q) = (bconfig.set(BIN_PARAMS::Q) > 1.0)
+                                   ? 1.0 / bconfig.set(BIN_PARAMS::Q)
+                                   : bconfig.set(BIN_PARAMS::Q);
   // classical Newtonian estimate
   bconfig.set(BIN_PARAMS::COM) =
       com_estimate(bconfig(BIN_PARAMS::DIST),
@@ -150,6 +152,12 @@ struct bhns_setup_boosted_3d {
     bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
     bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
         bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
+
+    const double q = bconfig.set(BIN_PARAMS::Q);
+    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1) =
+        2.0 * std::pow(2.0, shell_factor / q);
+    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) =
+        std::pow(2.0, shell_factor / q);
     // end updating config vars
 
     // setup domain boundaries
@@ -171,7 +179,6 @@ struct bhns_setup_boosted_3d {
       auto drPsi(compute_drPsi(bhspacein, bhconf,
                                Metric_flat(bhspacein, bhshift.get_basis()),
                                {0, 1}));
-      bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) = 1.4;
       BH_bounds = set_arb_boundsv3(bconfig, drPsi, 2, NODES::BCO2);
     }
     // end setup domain boundaries

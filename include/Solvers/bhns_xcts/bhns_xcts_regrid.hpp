@@ -42,6 +42,15 @@ using config_t = kadath_config_boost<BIN_INFO>;
 inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   using namespace ::Kadath::bco_utils;
   bconfig.set(Q) = bconfig(MADM, BCO1) / bconfig(MCH, BCO2);
+  bconfig.set(BIN_PARAMS::Q) = (bconfig.set(BIN_PARAMS::Q) > 1.0)
+                                   ? 1.0 / bconfig.set(BIN_PARAMS::Q)
+                                   : bconfig.set(BIN_PARAMS::Q);
+
+  const double q = bconfig.set(BIN_PARAMS::Q);
+  bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1) =
+      2.0 * std::pow(2.0, shell_factor / q);
+  bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) =
+      std::pow(2.0, shell_factor / q);
 
   if (std::isnan(bconfig.set(OUTER_SHELLS)))
     bconfig.set(OUTER_SHELLS) = 0;
@@ -140,7 +149,6 @@ inline int bhns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   std::vector<double> NS_bounds{
       set_arb_boundsv3(bconfig, drPsi, old_space.ADAPTEDNS + 1, NODES::BCO1)};
 
-  bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) = 1.4;
   std::vector<double> BH_bounds{
       set_arb_boundsv3(bconfig, drPsi, old_space.ADAPTEDBH + 1, NODES::BCO2)};
   // end setup bounds
