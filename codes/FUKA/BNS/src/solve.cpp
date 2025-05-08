@@ -36,6 +36,7 @@ int main(int argc, char** argv) {
   }
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int err = EXIT_SUCCESS;
 
   namespace solvers = ::Kadath::FUKA_Solvers;
   using config_t = kadath_config_boost<BIN_INFO>;
@@ -90,7 +91,6 @@ int main(int argc, char** argv) {
 
     auto seq = solvers::find_sequence_binary(tree);
     auto seq_bin = solvers::find_sequence(tree, MBIN_PARAMS, "binary");
-    int err = EXIT_SUCCESS;
 
     if (!(seq.is_set() || seq_bin.is_set()) &&
         !bconfig.control(CONTROLS::SEQUENCES))
@@ -98,17 +98,28 @@ int main(int argc, char** argv) {
     else {
 
       auto [branch_name, key, val] = find_leaf(tree, "N");
-      if (!key.empty())
+      if (!key.empty()) {
         seq.set_N(std::stoi(val));
-      if (seq.is_set())
-        err =
-            bns_xcts_sequence(bconfig, seq, resolution, InitSolver::outputdir);
-      else
-        err = bns_xcts_sequence(bconfig, seq_bin, resolution,
-                                InitSolver::outputdir);
+        seq_bin.set_N(std::stoi(val));
+      }
+      if (seq.is_set()) {
+        if (rank == 0) {
+          std::cout << stdio_header("Companion Sequence", '-') << std::endl
+                    << seq << std::endl;
+        }
+        err = solvers::bns_xcts_sequence(bconfig, seq, resolution,
+                                         InitSolver::outputdir);
+      } else {
+        if (rank == 0) {
+          std::cout << stdio_header("Binary Sequence", '-') << std::endl
+                    << seq_bin << std::endl;
+        }
+        err = solvers::bns_xcts_sequence(bconfig, seq_bin, resolution,
+                                         InitSolver::outputdir);
+      }
     }
   }
 
   MPI_Finalize();
-  return EXIT_SUCCESS;
+  return err;
 }

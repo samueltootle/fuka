@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
   }
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int err = EXIT_SUCCESS;
 
   namespace solvers = ::Kadath::FUKA_Solvers;
   using config_t = kadath_config_boost<BIN_INFO>;
@@ -90,20 +91,32 @@ int main(int argc, char** argv) {
 
     if (!(seq.is_set() || seq_bin.is_set()) &&
         !bconfig.control(CONTROLS::SEQUENCES))
-      int err = bbh_xcts_driver(bconfig, resolution, InitSolver::outputdir);
+      err =
+          solvers::bbh_xcts_driver(bconfig, resolution, InitSolver::outputdir);
     else {
 
       auto [branch_name, key, val] = find_leaf(tree, "N");
-      if (!key.empty())
+      if (!key.empty()) {
         seq.set_N(std::stoi(val));
-      if (seq.is_set())
-        solvers::bbh_xcts_sequence(bconfig, seq, resolution,
-                                   InitSolver::outputdir);
-      else
-        solvers::bbh_xcts_sequence(bconfig, seq_bin, resolution,
-                                   InitSolver::outputdir);
+        seq_bin.set_N(std::stoi(val));
+      }
+      if (seq.is_set()) {
+        if (rank == 0) {
+          std::cout << stdio_header("Companion Sequence", '-') << std::endl
+                    << seq << std::endl;
+        }
+        err = solvers::bbh_xcts_sequence(bconfig, seq, resolution,
+                                         InitSolver::outputdir);
+      } else {
+        if (rank == 0) {
+          std::cout << stdio_header("Binary Sequence", '-') << std::endl
+                    << seq_bin << std::endl;
+        }
+        err = solvers::bbh_xcts_sequence(bconfig, seq_bin, resolution,
+                                         InitSolver::outputdir);
+      }
     }
   }
   MPI_Finalize();
-  return EXIT_SUCCESS;
+  return err;
 }
