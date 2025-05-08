@@ -23,7 +23,9 @@ inline void bbh_xcts_setup_headon_config(config_t& bconfig) {
 
   bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MCH, NODES::BCO2) /
                                bconfig(BCO_PARAMS::MCH, NODES::BCO1);
-
+  bconfig.set(BIN_PARAMS::Q) = (bconfig.set(BIN_PARAMS::Q) > 1.0)
+                                   ? 1.0 / bconfig.set(BIN_PARAMS::Q)
+                                   : bconfig.set(BIN_PARAMS::Q);
   // classical Newtonian estimate
   bconfig.set(BIN_PARAMS::COM) =
       com_estimate(bconfig(BIN_PARAMS::DIST),
@@ -125,6 +127,12 @@ inline void bbh_xcts_setup_boosted_3d(
   //  (rout_sep_est < rout_min_est) ? rout_min_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
       bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
+
+  const double q = bconfig.set(BIN_PARAMS::Q);
+  bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1) =
+      std::pow(2.0, bco_u::shell_factor / q);
+  bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) =
+      bconfig(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1);
 
   std::vector<double> out_bounds(1 + bconfig(BIN_PARAMS::OUTER_SHELLS));
   std::vector<double> BH1_bounds;

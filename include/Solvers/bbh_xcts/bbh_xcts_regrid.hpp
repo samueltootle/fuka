@@ -46,6 +46,9 @@ inline void update_bin_config(config_t& bconfig,
     bconfig.set(OUTER_SHELLS) = 0;
 
   bconfig.set(Q) = bconfig(MCH, BCO1) / bconfig(MCH, BCO2);
+  bconfig.set(BIN_PARAMS::Q) = (bconfig.set(BIN_PARAMS::Q) > 1.0)
+                                   ? 1.0 / bconfig.set(BIN_PARAMS::Q)
+                                   : bconfig.set(BIN_PARAMS::Q);
 
   if (!bconfig.control(USE_CONFIG_VARS)) {
 
@@ -64,6 +67,12 @@ inline void update_bin_config(config_t& bconfig,
     //  (rout_sep_est < rout_min_est) ? rout_min_est : rout_sep_est;
     bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
         bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
+
+    const double q = bconfig.set(BIN_PARAMS::Q);
+    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1) =
+        std::pow(2.0, bco_u::shell_factor / q);
+    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) =
+        bconfig(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1);
   }
 }
 
