@@ -35,5 +35,10 @@ bool is_tensor (const char*, const char*, int&, char*&, Array<int>*&) ;
 std::string extract_path(std::string fullvar);
 std::string extract_filename(std::string fullvar);
 std::string str_tolower(std::string s);
+inline std::string stdio_header(std::string s, const char header_char = '*') {
+    int n = ((42 - s.size()) > 0) ? 42 - s.size() : s.size() - 42;
+    n /= 2;
+    return std::string(n, header_char) + s + std::string(n, header_char);
+}
 }
 #endif
