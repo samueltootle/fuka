@@ -271,9 +271,7 @@ std::ostream& operator<<(std::ostream& out,
                          const Parameter_sequence<Ts...>& Seq) {
   auto indices = Seq.get_indices();
   std::string s = Seq.str() + " sequence";
-  int n = ((42 - s.size()) > 0) ? 42 - s.size() : s.size() - 42;
-  n /= 2;
-  std::string title = std::string(n, '*') + s + std::string(n, '*');
+  std::string title = stdio_header(s);
   out << title << std::endl;
   if (Seq.is_set() || Seq.is_default_set()) {
     if (Seq.is_set()) {
