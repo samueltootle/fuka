@@ -17,7 +17,9 @@ inline void bns_xcts_setup_headon_config(config_t& bconfig) {
 
   bconfig.set(BIN_PARAMS::Q) = bconfig(BCO_PARAMS::MADM, NODES::BCO2) /
                                bconfig(BCO_PARAMS::MADM, NODES::BCO1);
-
+  bconfig.set(BIN_PARAMS::Q) = (bconfig.set(BIN_PARAMS::Q) > 1.0)
+                                   ? 1.0 / bconfig.set(BIN_PARAMS::Q)
+                                   : bconfig.set(BIN_PARAMS::Q);
   // classical Newtonian estimate
   bconfig.set(BIN_PARAMS::COM) =
       com_estimate(bconfig(BIN_PARAMS::DIST),
@@ -169,6 +171,11 @@ struct bns_setup_boosted_3d {
     bconfig.set(BCO_PARAMS::ROUT, NODES::BCO1) = rout_sep_est;
     bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
         bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
+    const double q = bconfig.set(BIN_PARAMS::Q);
+    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1) =
+        2.0 * std::pow(2.0, shell_factor / q);
+    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) =
+        bconfig(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1);
     // end updating config vars
 
     // setup domain boundaries

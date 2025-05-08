@@ -99,6 +99,11 @@ int bns_xcts_regrid(config_t& bconfig, std::string output_fname) {
   // (rout_sep_est > rout_max_est) ? rout_max_est : rout_sep_est;
   bconfig.set(BCO_PARAMS::ROUT, NODES::BCO2) =
       bconfig(BCO_PARAMS::ROUT, NODES::BCO1);
+  const double q = bconfig.set(BIN_PARAMS::Q);
+  bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1) =
+      2.0 * std::pow(2.0, shell_factor / q);
+  bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) =
+      bconfig(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1);
   // end updating config vars
 
   // create old radius scalar field
