@@ -42,7 +42,8 @@ constexpr double psi = 1.55;
 constexpr double psisq = psi * psi;
 constexpr double invpsisq = 1. / psisq;
 
-static constexpr double shell_factor = std::log(1.855) / (100.0 * std::log(2.0));
+static constexpr double shell_factor =
+    std::log(1.855) / (100.0 * std::log(2.0));
 
 #define EQUI -11
 #define INNER_EQUI -12
@@ -810,7 +811,8 @@ std::vector<double> set_arb_boundsv3(config_t& bconfig,
     // end point setup
 
     // some upper bound that should never be hit!
-    auto max_shells = std::ceil((Rout - r_init) / (bco_utils::gold_ratio * r_init));
+    auto max_shells =
+        std::ceil((Rout - r_init) / (bco_utils::gold_ratio * r_init));
 
     for (auto i = 1; i < max_shells; ++i) {
       r0 = r1;
@@ -982,7 +984,7 @@ void update_config_BH_radii(space_t& space,
   bconfig.set(RIN, idx...) = est_r_div2;
 
   // update config RMID based on AH Surface radius
-  bco_utils::set_radius(1, space, bconfig, RMID);
+  bco_utils::set_radius(dom, space, bconfig, RMID, idx...);
 }
 
 /**
