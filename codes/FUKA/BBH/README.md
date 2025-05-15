@@ -4,14 +4,14 @@
 # Overview
 
 Here lies the binary black hole initial data solver and diagnostic code.  The initial data is constructed using maximal
-slicing with a flat spacial metric.  Therefore, the dimensionless spins of the black holes are limited to 
+slicing with a flat spacial metric.  Therefore, the dimensionless spins of the black holes are limited to
 approximately `[-0.84, 0.84]`.  The v2 code is a vast improvement over the v1 code as it uses super-imposed BH solutions
 to initialize the binary instead of building the binary from flat space.  When comparing to FUKAv1, generating equal-mass non-rotating
-ID is roughly `>4x` faster due to the reduced number of stages.  When comparing to FUKAv1, generating arbitrary spin and unequal mass, the cost savings is roughly `(4 + N)x` faster 
+ID is roughly `>4x` faster due to the reduced number of stages.  When comparing to FUKAv1, generating arbitrary spin and unequal mass, the cost savings is roughly `(4 + N)x` faster
 where N is, in the case of FUKAv1, the number of iterative solutions needed to achieve a given mass ratio and spin.
 
 <b>
-Note:  
+Note:
 
 - When referring to `Mtot` below, we will be referring to the sum of the individual Christodoulou masses `Mtot := (MCH_MINUS + MCH_PLUS)`
 where plus and minus simply refer to their location on the x-axis.
@@ -42,9 +42,9 @@ where plus and minus simply refer to their location on the x-axis.
 
 We can deconstruct the name to make it understandable:
 
-- `BBH_ECC_RED.` denotes a converged BBH solution after the eccentricity reduction stage is completed which uses 
-3.5th order PN estimates for the orbital frequency and radial infall velocity. This is meant to distinguish the solution 
-from earlier stages which will be discussed later. This also distinquishes it from checkpoints that can be turned on which 
+- `BBH_ECC_RED.` denotes a converged BBH solution after the eccentricity reduction stage is completed which uses
+3.5th order PN estimates for the orbital frequency and radial infall velocity. This is meant to distinguish the solution
+from earlier stages which will be discussed later. This also distinquishes it from checkpoints that can be turned on which
 are saved to file during each iteration of the solver
 - `10`: separation distance in geometric units!
 - `0.0.`: In this case, both BHs are not spinning
@@ -65,41 +65,44 @@ Which results in the following:
 ###################### BH_MINUS ######################
             Center_COM = (-5.00000, 0, 0)
             Coord R_IN = +0.21488
-               Coord R = +0.40658
-           Coord R_OUT = +1.39076
+               Coord R = +0.40655
+                SHELL1 = +0.70641
+                SHELL2 = +0.96499
+                SHELL3 = +1.18645
+           Coord R_OUT = +1.95318
                Areal R = +1.00000
-                 LAPSE = [+0.39165, +0.42362]
-                   PSI = [+1.56539, +1.57119]
+                 LAPSE = [+0.39125, +0.42322]
+                   PSI = [+1.56543, +1.57124]
                   Mirr = +0.50000[+0.50000]
                    Mch = +0.50000[+0.50000]
                    Chi = +0.00000[+0.00000]
-                     S = +1.03401e-12
-                 Omega = +2.54278e-02
+                     S = +9.24859e-15
+                 Omega = +2.54262e-02
 ###################### BH_PLUS ######################
             Center_COM = (+5.00000, 0, 0)
-...
 ###################### Binary ######################
                    RES = [+9,+9,+8]
                      Q = +1.00000
             Separation = +10.00 [+10.00] (+14.77km)
          Orbital Omega = +2.79950e-02
-            Komar mass = +9.88086e-01
-              Adm mass = +9.89694e-01, Diff: +1.62621e-03
+            Komar mass = +9.90422e-01
+              Adm mass = +9.89785e-01, Diff: +6.42784e-04
             Total Mirr = +1.00000
              Total Mch = +1.00000
-           Adm moment. = +9.63771e-01
-        Binding energy = -1.03061e-02
+           Adm moment. = +9.64175e-01
+        Binding energy = -1.02145e-02
                M * Ome = +2.79950e-02
-              E_b / mu = -4.12245e-02
-                    Px = +7.16056e-16
-                    Py = -5.75227e-16
+              E_b / mu = -4.08582e-02
+                    Px = -4.05910e-16
+                    Py = +3.68740e-16
                     Pz = +0.00000e+00
-                  COMx = -4.47100e-13, A-COMx = +7.73112e-12
-                  COMy = +1.43039e-13, A-COMy = -2.21596e-11
+                  COMx = +7.99327e-13, A-COMx = +2.20467e-11
+                  COMy = +4.94940e-14, A-COMy = +6.02923e-12
                 A-COMz = +0.00000e+00
+
 ```
 
-The first two blocks contain information related to the component BHs.  These details are covered in the 
+The first two blocks contain information related to the component BHs.  These details are covered in the
 [BH README](https://bitbucket.org/fukaws/fuka/src/fuka/codes/FUKAv2_Solvers/BH/).
 The only additional parameter is the `Center_COM`.  This is the coordinate center of each object when shifted by the
 "center-of-mass" of the binary or, more specifically, the location of the axis of rotation for the binary that can approximate
@@ -125,14 +128,14 @@ but we'll discuss only the details relevant to the BBH case.  For details on all
 see more in [Configurator](https://bitbucket.org/fukaws/fuka/src/fuka/include/Configurator/) README.
 
 <b>
-Notes: 
+Notes:
 
 1. It is always best practice to generate new ID using the `initial_bbh.info`.  Using old initial
 data unless for very small changes in `chi` is inefficient.
 
 2. In FUKAv2.2 a minimal Config file was introduced such that only the basic fixing parameters most
-relevant to users are shown.  This minimal Config file can be bypassed by running: 
-    
+relevant to users are shown.  This minimal Config file can be bypassed by running:
+
     solve full
 
 to obtain the full Config file. Although useful for development, there is little advantage to using
@@ -164,7 +167,7 @@ binary
 ```
 
 The above includes parameters that must be fixed by the user.  The parameters for each BH are simply copied from the isolated solution which can be read
-in detail in the [BH README](https://bitbucket.org/fukaws/fuka/src/fuka/codes/FUKAv2_Solvers/BH/) - 
+in detail in the [BH README](https://bitbucket.org/fukaws/fuka/src/fuka/codes/FUKAv2_Solvers/BH/) -
 the same fixing applies also in the BBH.
 
 The fixing parameters most relevant to the binary are
@@ -216,11 +219,11 @@ sequence_controls
 }
 ```
 
-- `checkpoint`: this will result in checkpoints being saved to file during each solving iteration - mainly helpful for high 
+- `checkpoint`: this will result in checkpoints being saved to file during each solving iteration - mainly helpful for high
 resolution binary ID where walltimes or server failures are a concern prior to a converged solution being obtained
 - `corot_binary`: the objects are no longer fixed based on `chi` and instead provide a corotating ID solution
 - `fixed_lapse`: toggling this control enables a fixed lapse on the horizon - not recommended
-- `sequences`: this toggle is enabled by default and essentially tells the driver routine to start from scratch.  
+- `sequences`: this toggle is enabled by default and essentially tells the driver routine to start from scratch.
 If this is enabled when attempting to use a previous solution, the previous fields and numerical space (i.e. the `dat` file) is ignored
 - `use_pn`: toggle whether to always use 3.5PN estimates.  It is important to ensure this is off if the user wants to specify their own `adot` and `global_omega`
 parameters by hand (e.g. for iterative eccentricity reduction)
@@ -247,16 +250,16 @@ sequence_settings
 Now that you've generated the simplest case and we have a better understanding of the config file, we can try something more interesting
 
 1. Open the initial config file in your favorite editor
-1. Set the binary resolution: `res 11` 
+1. Set the binary resolution: `res 11`
 2. For BH1 set:
-    - `mch 0.1` 
+    - `mch 0.1`
     - `chi -0.5`
 3. For BH2 set:
-    - `mch 0.9` 
+    - `mch 0.9`
     - `chi 0.85`
 3. Run (using parallelization) using this config file, e.g. `mpirun ./bin/Release/solve initial_bh.info`
 
-This time around we see the iterative `chi` increase being done for the primary BH, but overall the only changes 
+This time around we see the iterative `chi` increase being done for the primary BH, but overall the only changes
 observed are related to the isolated BH solvers (see the BH README for details), but the binary solver itself
 is consistent.
 
@@ -323,24 +326,24 @@ We can of course verify that the ID matches our expectation using
 
 ## Initial Setup
 
-To generate the initial setup for BBH ID, we first need to make some guesses based on the input 
+To generate the initial setup for BBH ID, we first need to make some guesses based on the input
 Christodoulou masses and the coordinate separation
 
   1. `COM` - An estimate of the center-of-mass: this is purely Newtonian
   2. `global_omega` - An estimate of the orbital frequency: 3.5th PN estimate
 
 Once these estimates are computed an interface code is ran
-which 
+which
 
-- solves each BH configuration in isolation 
-(See the [BH README](https://bitbucket.org/fukaws/fuka/src/fuka/codes/FUKAv2_Solvers/BH/) for more details).  
+- solves each BH configuration in isolation
+(See the [BH README](https://bitbucket.org/fukaws/fuka/src/fuka/codes/FUKAv2_Solvers/BH/) for more details).
 - obtains boosted isolated solution using the estimated `global_omega`
 
-At this point, the binary numerical space and fields are constructed and the isolated solutions are interpolated onto 
+At this point, the binary numerical space and fields are constructed and the isolated solutions are interpolated onto
 the new grid using the idea of super-imposed solutions.  Specifically:
 
 - a decay parameter `w` is chosen such that `w = distance / 2 =: decay_limit`
-- the fields are interpolated such that the solutions decay exponentially away from each object as 
+- the fields are interpolated such that the solutions decay exponentially away from each object as
 `decay_rate = exp(-(r_BH / w)^4)` where `r_BH` is the coordinate distance to the respective BH center
 - The resulting value at a given point is then simply the sum of the background with the deviations from the background from the isolated solutions
 
@@ -348,35 +351,35 @@ For example, if we wanted to compute the initial guess for the lapse at a given 
 
 `lapse(x) = 1. + decay_rate_BH1 * (lapse_BH1 - 1.) + decay_rate_BH2 * (lapse_BH2 - 1.)`
 
-This is then repeated for all fields in all numerical domains, with the compactified domain set to the asymptotic 
+This is then repeated for all fields in all numerical domains, with the compactified domain set to the asymptotic
 values of the fields, i.e. `lapse = psi = 1`, `shift = 0`.
 
 ## TOTAL_BC Stage
 
-The `TOTAL_BC` stage solves the full XCTS system of equations consistently and all at once.  The only thing that distinguishes 
-`TOTAL_BC` from `ECC_RED` is that, by default, `TOTAL_BC` fixes the variable `global_omega` using the quasi-equilibrium 
-assumption of `Madm == Mkomar` where as `ECC_RED` uses user-defined value for `ecc_omega` and `adot` or the built-in 3.5PN estimates.  
+The `TOTAL_BC` stage solves the full XCTS system of equations consistently and all at once.  The only thing that distinguishes
+`TOTAL_BC` from `ECC_RED` is that, by default, `TOTAL_BC` fixes the variable `global_omega` using the quasi-equilibrium
+assumption of `Madm == Mkomar` where as `ECC_RED` uses user-defined value for `ecc_omega` and `adot` or the built-in 3.5PN estimates.
 However, when running a new initial data sequence, the `global_omega` is initially fixed in the `TOTAL_BC` stage using the initial 3.5PN estimate prior to obtaining a quasi-equilibrium solution.
 
-There is of course a very simple reason for this - otherwise the solution would diverge.  Put simply, in ID generation of 
-binary objects the shift is very sensitive in such systems and, as such, can cause wild changes in the solution before 
+There is of course a very simple reason for this - otherwise the solution would diverge.  Put simply, in ID generation of
+binary objects the shift is very sensitive in such systems and, as such, can cause wild changes in the solution before
 convergence is obtained, if at all.  Additionally, the quasi-equilibrium equations for BBHs are evaluated at "infinity" on the surface of
- the compatified domain which is incredibly course.  To get around these challenges, `global_omega` is fixed for one solving 
+ the compatified domain which is incredibly course.  To get around these challenges, `global_omega` is fixed for one solving
  stage to allow all the fields to converge to a reasonable initial solution.
 
 After this initial solution is obtained, the `fixed_omega` control is deactivated and the `TOTAL_BC` stage is reran with the
-quasi-equilibrium constraint.  This is also done to ensure an accurate `COM` is found before obtaining 3.5PN estimates of the 
+quasi-equilibrium constraint.  This is also done to ensure an accurate `COM` is found before obtaining 3.5PN estimates of the
 `global_omega` and `adot` within the `ECC_RED` stage.
 
 ## ECC_RED Stage
 
-In this stage `global_omega` and `adot` are fixed to generate a less eccentric binary than when using a quasi-equilibrium 
+In this stage `global_omega` and `adot` are fixed to generate a less eccentric binary than when using a quasi-equilibrium
 approximation. After an initial 3.5PN estimate
 binary has been created, two new parameters appear called `ecc_omega` and `adot`.
 
 - In the event `ecc_omega` or `adot` are not present in the config file, 3.5PN estimates will always be used
 - In the event the control `use_pn` is set to `on`, the values for `ecc_omega` and `adot` will **ALWAYS** be overwritten
-- In the event `ecc_omega` and `adot` are both set and `use_pn` is set to `off`, these parameters will only be used in the 
+- In the event `ecc_omega` and `adot` are both set and `use_pn` is set to `off`, these parameters will only be used in the
 `ecc_red` stage regardless of whether previous stages are ran that change `global_omega`
   - For an example, say one wanted to generate initial data using configurations and eccentricity reduction parameters from
   a published dataset in the [SXS database](https://data.black-holes.org/waveforms/catalog.html), one could set `adot` and
@@ -385,6 +388,6 @@ binary has been created, two new parameters appear called `ecc_omega` and `adot`
 
 ### Automated resolution increase
 
-Once the above procedures are completed for the last stage and the input `res` is higher than the `initial_resolution`, 
-the low resolution solution is interpolated onto the higher resolution numerical grid and is used as the initial guess before 
+Once the above procedures are completed for the last stage and the input `res` is higher than the `initial_resolution`,
+the low resolution solution is interpolated onto the higher resolution numerical grid and is used as the initial guess before
 running the last stage again.  No additional iterative procedures are required at this point.
