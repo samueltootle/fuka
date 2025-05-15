@@ -38,7 +38,7 @@ where plus and minus simply refer to their location on the x-axis.
 
 1. Generate the initial config file by running `solve` for the first time
 2. Rerun (using parallelization) using this config file, e.g. `mpirun ./bin/Release/solve initial_bbh.info`
-3. This will result in the generation of a pair of files containing the solution: `BBH_ECC_RED.10.0.0.1.q1.0.0.09.<info/dat>`
+3. This will result in the generation of a pair of files containing the solution: `BBH_ECC_RED.10.0.0.1.q1.3.3.09.<info/dat>`
 
 We can deconstruct the name to make it understandable:
 
@@ -57,7 +57,7 @@ The default configuration for BBH has a total mass of 1M and non-spinning.
 Aside from the diagnostics observed during the solver stage, we can use the reader
 to verify the ID.  This can be done by running:
 
-`./bin/Release/reader BBH_ECC_RED.10.0.0.1.q1.0.0.09.info`
+`./bin/Release/reader BBH_ECC_RED.10.0.0.1.q1.3.3.09.info`
 
 Which results in the following:
 
@@ -263,63 +263,69 @@ This time around we see the iterative `chi` increase being done for the primary 
 observed are related to the isolated BH solvers (see the BH README for details), but the binary solver itself
 is consistent.
 
-This results in the converged dataset of `BBH_ECC_RED.10.-0.5.0.84.1.q0.111111.4.0.11.info/dat`, however, the other implicit solutions have been saved as well.
+This results in the converged dataset of `BBH_ECC_RED.10.-0.5.0.85.1.q0.111111.9.1.09.info/dat`, however, the other implicit solutions have been saved as well.
+Here we're only showing the solution for `res 9`
 
 We can of course verify that the ID matches our expectation using
 
-`./bin/Release/reader BBH_ECC_RED.10.-0.5.0.84.1.q0.111111.4.0.11.info`
+`./bin/Release/reader BBH_ECC_RED.10.-0.5.0.85.1.q0.111111.9.1.09.info`
 
 ```
 ###################### BH_MINUS ######################
-            Center_COM = (-9.03164, 0, 0)
-            Coord R_IN = +0.03655
+            Center_COM = (-9.03306, 0, 0)
+            Coord R_IN = +0.04067
                Coord R = +0.06982
-                SHELL1 = +0.23658
-                SHELL2 = +0.43893
-                SHELL3 = +0.81773
-                SHELL4 = +1.19654
-           Coord R_OUT = +1.57535
+                SHELL1 = +0.16404
+                SHELL2 = +0.31583
+                SHELL3 = +0.46351
+                SHELL4 = +0.59132
+                SHELL5 = +0.70830
+                SHELL6 = +0.81981
+                SHELL7 = +0.92884
+                SHELL8 = +1.03728
+                SHELL9 = +1.14643
+           Coord R_OUT = +1.98304
                Areal R = +0.19319
-                 LAPSE = [+0.32657, +0.37619]
-                   PSI = [+1.64808, +1.68739]
+                 LAPSE = [+0.32587, +0.37706]
+                   PSI = [+1.64808, +1.68731]
                   Mirr = +0.09659[+0.09659]
                    Mch = +0.10000[+0.10000]
                    Chi = -0.50000[-0.50000]
                      S = -5.00000e-03
-                 Omega = +1.22833e+00
+                 Omega = +1.22823e+00
 ###################### BH_PLUS ######################
-            Center_COM = (+0.96836, 0, 0)
-            Coord R_IN = +0.28990
-               Coord R = +0.48258
-           Coord R_OUT = +1.57535
-               Areal R = +1.58082
-                 LAPSE = [+0.27855, +0.32071]
-                   PSI = [+1.76198, +1.84146]
-                  Mirr = +0.79041[+0.79041]
+            Center_COM = (+0.96694, 0, 0)
+            Coord R_IN = +0.28755
+               Coord R = +0.47063
+                SHELL1 = +0.84228
+           Coord R_OUT = +1.98304
+               Areal R = +1.57270
+                 LAPSE = [+0.27125, +0.31481]
+                   PSI = [+1.77692, +1.86153]
+                  Mirr = +0.78635[+0.78635]
                    Mch = +0.90000[+0.90000]
-                   Chi = +0.84000[+0.84000]
-                     S = +6.80400e-01
-                 Omega = -3.05617e-01
+                   Chi = +0.85000[+0.85000]
+                     S = +6.88500e-01
+                 Omega = -3.14349e-01
 ###################### Binary ######################
-                   RES = [+11,+11,+10]
+                   RES = [+9,+9,+8]
                      Q = +0.11111
             Separation = +10.00 [+10.00] (+14.77km)
-         Orbital Omega = +2.76358e-02
-            Komar mass = +1.00280e+00
-              Adm mass = +1.00178e+00, Diff: +1.02289e-03
-            Total Mirr = +0.88700
+         Orbital Omega = +2.76359e-02
+            Komar mass = +1.00340e+00
+              Adm mass = +1.00220e+00, Diff: +1.19505e-03
+            Total Mirr = +0.88294
              Total Mch = +1.00000
-           Adm moment. = +1.00876e+00
-        Binding energy = +1.77658e-03
-               M * Ome = +2.76358e-02
-              E_b / mu = +1.97398e-02
-                    Px = +2.44642e-15
-                    Py = +3.84685e-15
+           Adm moment. = +1.01608e+00
+        Binding energy = +2.20345e-03
+               M * Ome = +2.76359e-02
+              E_b / mu = +2.44828e-02
+                    Px = -9.67410e-16
+                    Py = +1.46871e-15
                     Pz = +0.00000e+00
-                  COMx = -4.03164e+00, A-COMx = -4.01375e+00
-                  COMy = +7.86537e-03, A-COMy = -9.38194e-03
+                  COMx = -4.03306e+00, A-COMx = -4.01502e+00
+                  COMy = +8.08478e-03, A-COMy = -9.10206e-03
                 A-COMz = +0.00000e+00
-
 ```
 
 # How BBH ID is Generated
