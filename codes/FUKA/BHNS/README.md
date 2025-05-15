@@ -301,7 +301,7 @@ Now that you've generated the simplest case and we have a better understanding o
 This time around we see the iterative `chi` increase being done for the NS and BH, but overall the only changes
 observed are related to the isolated solvers.  The binary solver itself is consistent.
 
-This results in the converged dataset of `BHNS_ECC_RED.togashi.28.0.52.0.3.6.q0.487603.0.0.11.info/dat`, however, the other implicit solutions have been saved as well:
+This results in the converged dataset of `BHNS_ECC_RED.togashi.35.0.0.52.3.6.q0.487603.0.3.11.info/dat`, however, the other implicit solutions have been saved as well:
 
 1. `BHNS_TOTAL_BC_FIXED_OMEGA.`: is the initial solution after the import of the two isolated solutions have been solved in the binary space for a fixed COM and orbital frequency.
 The hydro fields are simply rescaled to enforce the
@@ -311,41 +311,49 @@ specified baryonic mass, but the fluid is not in hydrostatic equilibrium
 
 We can of course verify that the ID matches our expectation using
 
-`./bin/Release/reader BHNS_ECC_RED.togashi.35.0.0.52.3.6.q0.487603.0.1.11.info`
+`./bin/Release/reader BHNS_ECC_RED.togashi.35.0.0.52.3.6.q0.487603.0.3.11.info`
 
 ```
 ###################### Neutron Star ######################
-            Center_COM = (-23.59686, 0, 0)
-            Coord R_IN = +2.97849
-               Coord R = [+5.96366,+6.22923] ([+8.80832,+9.20057] km)
-           Coord R_OUT = +9.98390
-               Areal R = +7.74423 [+11.43822km]
-                 NS Mb = +1.28308 (+0.36394,+0.91914,)
+            Center_COM = (-23.59763, 0, 0)
+            Coord R_IN = +2.97727
+               Coord R = [+5.96365,+6.22928] ([+8.80830,+9.20064] km)
+           Coord R_OUT = +9.98243
+               Areal R = +7.74418 [+11.43815km]
+     Circumferential R = +7.99012e+00 [+1.18014e+01km]
+         Mass Shedding = +9.33509e-01
+                 NS Mb = +1.28301 (+0.36353,+0.91948,)
      Isolated ADM Mass = +1.18000
-      Quasi-local Madm = +1.15569 Diff:+0.02060
-         Quasi-local S = +0.00000
-                   Chi = +0.00000 [+0.00000]
+      Quasi-local Madm = +1.15564 Diff:+0.02064
+         Quasi-local S = -0.00000
+                   Chi = -0.00000 [+0.00000]
                  Omega = +0.00007
-       Central Density = +1.22110e-03
-        Central log(h) = +1.83889e-01
-      Central Pressure = +1.57870e-04
-    Central dlog(h)/dx = -3.32816e-15
-Central Euler Constant = +7.58121e-01
-     Integrated log(h) = +141.62632
+             Local P_y = -0.10610
+             Local P_x = +0.02196
+       Central Density = +1.22106e-03
+        Central log(h) = +1.83876e-01
+      Central Pressure = +1.57850e-04
+    Central dlog(h)/dx = +2.37385e-15
+Central Euler Constant = +7.58116e-01
+     Integrated log(h) = +141.61276
 
 ###################### Black Hole ######################
-            Center_COM = (+11.40314, 0, 0)
-            Coord R_IN = +0.94460
-               Coord R = +1.79601 [+2.65270km]
-                SHELL1 = +5.93655
-           Coord R_OUT = +9.98390
+            Center_COM = (+11.40237, 0, 0)
+            Coord R_IN = +0.94394
+               Coord R = +1.79599 [+2.65268km]
+                SHELL1 = +2.23108
+                SHELL2 = +2.66434
+                SHELL3 = +3.06550
+           Coord R_OUT = +9.98243
                Areal R = +4.66020 [+6.88312km]
-                LAPSE = [+0.37053, +0.39461]
-                  PSI = [+1.60043, +1.62193]
+                LAPSE = [+0.37049, +0.39457]
+                  PSI = [+1.60044, +1.62194]
                   Mirr = +2.33010
                    Mch = +2.42000 [+2.42000]
-                   Chi = +0.52001 [+0.52000]
-                     S = +3.04536
+                   Chi = +0.52000 [+0.52000]
+                     S = +3.04533
+             Local P_y = +0.01715
+             Local P_x = -0.00002
                  Omega = -0.04983
 
 ###################### Binary ######################
@@ -353,19 +361,20 @@ Central Euler Constant = +7.58121e-01
                      Q = +0.48760
             Separation = +35.00 [+9.72] (+51.69km)
          Orbital Omega = +0.00807
-            Komar mass = +3.56884
-              Adm mass = +3.56615, Diff: +0.00076
+            Komar mass = +3.56924
+              Adm mass = +3.56616, Diff: +0.00086
             Total Mass = +3.60000 [+3.60000]
-           Adm moment. = +13.77530
-        Binding energy = -0.03385
+           Adm moment. = +13.77526
+        Binding energy = -0.03384
             Minf * Ome = +0.02906
             E_b / Minf = -0.00940
-                    Px = +8.46062e-15
-                    Py = -2.04151e-15
-                    Pz = +0.00000e+00
-                  COMx = -6.09686, A-COMx = -6.07039
-                  COMy = -0.03263, A-COMy = -0.10284
+               ADM P_x = -2.29154e-15
+               ADM P_y = -6.18854e-15
+               ADM P_z = +0.00000e+00
+                  COMx = -6.09763, A-COMx = -6.07096
+                  COMy = -0.03260, A-COMy = -0.10283
                 A-COMz = +0.00000
+
 ```
 
 # How BHNS ID is Generated
