@@ -371,7 +371,7 @@ class Domain : public MemoryMappable {
      * @param prec [input] : precision of the computation (used when comparing doubles).
      * @returns a \c true if the point is in the domain and \c false otherwise.
      */
-     virtual bool is_in(const Point& xx, double prec=1e-13) const ;
+     virtual bool is_in(const Point& xx, double prec=1e-12) const ;
      /**
      * Computes the numerical coordinates from the physical ones.
      * @param xxx [input] : the absolute Cartesian coordinates of the point.
