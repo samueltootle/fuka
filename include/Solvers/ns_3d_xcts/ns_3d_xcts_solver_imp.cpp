@@ -87,9 +87,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve() {
   if (rank == 0)
     std::cout << "Last stage: " << last_stage << "\n";
 
-  double const& final_chi = (!bconfig.control(CONTROLS::ITERATIVE_CHI))
-                                ? bconfig(BCO_PARAMS::CHI)
-                                : bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI);
+  double const final_chi = bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI);
   double const initial_chi = bconfig(BCO_PARAMS::CHI);
 
   if (stage_enabled[STAGES::NOROT_BC]) {
