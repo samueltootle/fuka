@@ -130,7 +130,7 @@ inline void bbh_xcts_setup_boosted_3d(
 
   const double q = bconfig.set(BIN_PARAMS::Q);
   bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1) =
-      std::pow(2.0, bco_u::shell_factor / q);
+      1.7 * std::pow(2.0, bco_u::shell_factor / q);
   bconfig.set(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO2) =
       bconfig(BCO_PARAMS::MIN_SHELL_DR, NODES::BCO1);
 
