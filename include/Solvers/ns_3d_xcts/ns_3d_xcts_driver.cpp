@@ -209,6 +209,11 @@ config_t ns_3d_xcts_sequence(config_t& seqconfig,
     // the final ADM mass and spin
     bconfig(BCO_PARAMS::MADM) = final_MADM;
     bconfig.control(CONTROLS::SEQUENCES) = false;
+
+    // Ensure only the final stage is used
+    // e.g. avoid NOROT stage
+    stage_enabled.fill(false);
+    stage_enabled[last_stage_idx] = true;
   }
   exit_status = ns_3d_xcts_base_solution_driver(bconfig, outputdir, &seq);
   // Ensure only the final stage is used
@@ -448,7 +453,9 @@ inline int ns_3d_xcts_binary_boost_driver(
   // Obtain stationary solution
   ns_sequence tmp_seq{};
   verify_ns_fixing_values(bconfig, tmp_seq);
+  bconfig.set_stage(BIN_BOOST) = false;
   bconfig = ns_3d_xcts_sequence(bconfig, tmp_seq, resolution, outputdir);
+  bconfig.set_stage(BIN_BOOST) = true;
   // FIXME make sure only last stage is active?
   // Used to manually disable norot here.
   while (exit_status == RUN_BOOST) {
