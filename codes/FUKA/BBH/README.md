@@ -65,19 +65,16 @@ Which results in the following:
 ###################### BH_MINUS ######################
             Center_COM = (-5.00000, 0, 0)
             Coord R_IN = +0.21488
-               Coord R = +0.40655
-                SHELL1 = +0.70641
-                SHELL2 = +0.96499
-                SHELL3 = +1.18645
+               Coord R = +0.40651
            Coord R_OUT = +1.95318
                Areal R = +1.00000
-                 LAPSE = [+0.39125, +0.42322]
-                   PSI = [+1.56543, +1.57124]
+                 LAPSE = [+0.39317, +0.42512]
+                   PSI = [+1.56552, +1.57133]
                   Mirr = +0.50000[+0.50000]
                    Mch = +0.50000[+0.50000]
-                   Chi = +0.00000[+0.00000]
-                     S = +9.24859e-15
-                 Omega = +2.54262e-02
+                   Chi = -0.00000[+0.00000]
+                     S = -1.66046e-15
+                 Omega = +2.54341e-02
 ###################### BH_PLUS ######################
             Center_COM = (+5.00000, 0, 0)
 ###################### Binary ######################
@@ -85,21 +82,20 @@ Which results in the following:
                      Q = +1.00000
             Separation = +10.00 [+10.00] (+14.77km)
          Orbital Omega = +2.79950e-02
-            Komar mass = +9.90422e-01
-              Adm mass = +9.89785e-01, Diff: +6.42784e-04
+            Komar mass = +9.76165e-01
+              Adm mass = +9.91272e-01, Diff: +1.53565e-02
             Total Mirr = +1.00000
              Total Mch = +1.00000
-           Adm moment. = +9.64175e-01
-        Binding energy = -1.02145e-02
+           Adm moment. = +9.61464e-01
+        Binding energy = -8.72808e-03
                M * Ome = +2.79950e-02
-              E_b / mu = -4.08582e-02
-                    Px = -4.05910e-16
-                    Py = +3.68740e-16
+              E_b / mu = -3.49123e-02
+                    Px = -2.79898e-16
+                    Py = +1.62586e-16
                     Pz = +0.00000e+00
-                  COMx = +7.99327e-13, A-COMx = +2.20467e-11
-                  COMy = +4.94940e-14, A-COMy = +6.02923e-12
+                  COMx = +1.23895e-13, A-COMx = +1.52244e-11
+                  COMy = +2.90536e-15, A-COMy = -4.28121e-12
                 A-COMz = +0.00000e+00
-
 ```
 
 The first two blocks contain information related to the component BHs.  These details are covered in the
@@ -263,8 +259,7 @@ This time around we see the iterative `chi` increase being done for the primary 
 observed are related to the isolated BH solvers (see the BH README for details), but the binary solver itself
 is consistent.
 
-This results in the converged dataset of `BBH_ECC_RED.10.-0.5.0.85.1.q0.111111.9.1.09.info/dat`, however, the other implicit solutions have been saved as well.
-Here we're only showing the solution for `res 9`
+This results in the converged dataset of `BBH_ECC_RED.10.-0.5.0.85.1.q0.111111.3.0.11.info/dat`
 
 We can of course verify that the ID matches our expectation using
 
@@ -272,59 +267,51 @@ We can of course verify that the ID matches our expectation using
 
 ```
 ###################### BH_MINUS ######################
-            Center_COM = (-9.03306, 0, 0)
-            Coord R_IN = +0.04067
+            Center_COM = (-9.03308, 0, 0)
+            Coord R_IN = +0.03655
                Coord R = +0.06982
-                SHELL1 = +0.16404
-                SHELL2 = +0.31583
-                SHELL3 = +0.46351
-                SHELL4 = +0.59132
-                SHELL5 = +0.70830
-                SHELL6 = +0.81981
-                SHELL7 = +0.92884
-                SHELL8 = +1.03728
-                SHELL9 = +1.14643
-           Coord R_OUT = +1.98304
+                SHELL1 = +0.25084
+                SHELL2 = +0.69164
+           Coord R_OUT = +1.98044
                Areal R = +0.19319
-                 LAPSE = [+0.32587, +0.37706]
-                   PSI = [+1.64808, +1.68731]
+                 LAPSE = [+0.32662, +0.37621]
+                   PSI = [+1.64811, +1.68740]
                   Mirr = +0.09659[+0.09659]
                    Mch = +0.10000[+0.10000]
                    Chi = -0.50000[-0.50000]
                      S = -5.00000e-03
-                 Omega = +1.22823e+00
+                 Omega = +1.22845e+00
 ###################### BH_PLUS ######################
-            Center_COM = (+0.96694, 0, 0)
-            Coord R_IN = +0.28755
-               Coord R = +0.47063
-                SHELL1 = +0.84228
-           Coord R_OUT = +1.98304
+            Center_COM = (+0.96692, 0, 0)
+            Coord R_IN = +0.28503
+               Coord R = +0.47064
+           Coord R_OUT = +1.98044
                Areal R = +1.57270
-                 LAPSE = [+0.27125, +0.31481]
-                   PSI = [+1.77692, +1.86153]
+                 LAPSE = [+0.27136, +0.31494]
+                   PSI = [+1.77691, +1.86173]
                   Mirr = +0.78635[+0.78635]
                    Mch = +0.90000[+0.90000]
                    Chi = +0.85000[+0.85000]
                      S = +6.88500e-01
-                 Omega = -3.14349e-01
+                 Omega = -3.14472e-01
 ###################### Binary ######################
-                   RES = [+9,+9,+8]
+                   RES = [+11,+11,+10]
                      Q = +0.11111
             Separation = +10.00 [+10.00] (+14.77km)
-         Orbital Omega = +2.76359e-02
-            Komar mass = +1.00340e+00
-              Adm mass = +1.00220e+00, Diff: +1.19505e-03
+         Orbital Omega = +2.76356e-02
+            Komar mass = +1.00272e+00
+              Adm mass = +1.00223e+00, Diff: +4.89197e-04
             Total Mirr = +0.88294
              Total Mch = +1.00000
-           Adm moment. = +1.01608e+00
-        Binding energy = +2.20345e-03
-               M * Ome = +2.76359e-02
-              E_b / mu = +2.44828e-02
-                    Px = -9.67410e-16
-                    Py = +1.46871e-15
+           Adm moment. = +1.01677e+00
+        Binding energy = +2.23086e-03
+               M * Ome = +2.76356e-02
+              E_b / mu = +2.47874e-02
+                    Px = +5.66564e-15
+                    Py = -7.33888e-16
                     Pz = +0.00000e+00
-                  COMx = -4.03306e+00, A-COMx = -4.01502e+00
-                  COMy = +8.08478e-03, A-COMy = -9.10206e-03
+                  COMx = -4.03308e+00, A-COMx = -4.01442e+00
+                  COMy = +8.15763e-03, A-COMy = -9.11085e-03
                 A-COMz = +0.00000e+00
 ```
 
