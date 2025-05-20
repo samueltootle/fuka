@@ -4,13 +4,13 @@
 # Overview
 
 Here lies the binary neutron star initial data solver and diagnostic codes.  The initial data is constructed using maximal
-slicing with a flat spacial metric with which it is possible to achieve maximal spins up to 
+slicing with a flat spacial metric with which it is possible to achieve maximal spins up to
 approximately `[-0.6, 0.6]`.  The v2 code is a considerable improvement over the v1 code as it uses superimposed NS solutions
 to initialize the binary instead of building the binary from equal mass, non-boosted TOV solutions followed by iterative
 changes to the binary components.  When comparing to v1, generating equal-mass non-rotating is automated (i.e. the user no
 longer needs to perform the setup and solve separately), however, generating the ID is slightly slower due to needing to perform
-a stage of fixed orbital frequency prior to solving the hydro fields consistently.  Most importantly, 
-when generating arbitrary spin and unequal mass, the cost savings is roughly (N)x faster 
+a stage of fixed orbital frequency prior to solving the hydro fields consistently.  Most importantly,
+when generating arbitrary spin and unequal mass, the cost savings is roughly (N)x faster
 where N is, in the case of v1, the number of iterative solutions needed to achieve a given mass ratio and spin configurations.
 
 Note:  When referring to `Mtot` below, we will be referring to the sum of the ADM masses of the TOV solution as measured
@@ -39,9 +39,9 @@ where plus and minus simply refer to their location on the x-axis.
 
 We can deconstruct the name to make it understandable:
 
-- `BNS_ECC_RED.` denotes a converged BNS solution after the eccentricity reduction stage is completed which uses 
-3.5th order PN estimates for the orbital frequency and radial infall velocity. This is meant to distinguish the solution 
-from earlier stages which will be discussed later.This also distinguishes it from checkpoints that can be turned on which 
+- `BNS_ECC_RED.` denotes a converged BNS solution after the eccentricity reduction stage is completed which uses
+3.5th order PN estimates for the orbital frequency and radial infall velocity. This is meant to distinguish the solution
+from earlier stages which will be discussed later.This also distinguishes it from checkpoints that can be turned on which
 are saved to file during each iteration of the solver
 - `togashi`: the leading name of the eosfile
 - `30.2`: separation distance in geometric units!
@@ -62,49 +62,48 @@ Which results in the following:
 ```
 ###################### NS_MINUS ######################
             Center_COM = (-15.10000, 0, 0)
-            Coord R_IN = +3.16655
-               Coord R = [+5.95732,+6.12761] ([+8.79896,+9.05047] km)
-           Coord R_OUT = +9.25540
+            Coord R_IN = +3.16650
+               Coord R = [+5.95741,+6.12770] ([+8.79908,+9.05061] km)
+           Coord R_OUT = +9.25533
                Areal R = +7.79075 [+11.50693km]
-         Baryonic Mass = +1.55255 (+0.52518,+1.02737,)
+         Baryonic Mass = +1.55246 (+0.52511,+1.02735,)
      Isolated ADM Mass = +1.40000
-      Quasi-local Madm = +1.37754 Diff:+0.01605
-         Quasi-local S = +0.00000
-                   Chi = +0.00000 [+0.00000]
+      Quasi-local Madm = +1.37747 Diff:+0.01609
+         Quasi-local S = -0.00000
+                   Chi = -0.00000 [+0.00000]
                  Omega = +0.00004
-       x(max(Density)) = -15.10000 (+0.00000)
-       Central Density = +1.37425e-03
-        Central log(h) = +2.31793e-01
-      Central Pressure = +2.34396e-04
-    Central dlog(h)/dx = +6.32016e-15
-Central Euler Constant = -0.28323
-     Integrated log(h) = +186.22988
+       x(max(Density)) = -15.10000 (-0.00000)
+       Central Density = +1.37420e-03
+        Central log(h) = +2.31777e-01
+      Central Pressure = +2.34368e-04
+    Central dlog(h)/dx = -2.16809e-16
+Central Euler Constant = -0.28321
+     Integrated log(h) = +186.21495
 
 ###################### NS_PLUS ######################
             Center_COM = (+15.10000, 0, 0)
-...
 
 ###################### Binary ######################
                    RES = [+9,+9,+8]
                      Q = +1.00000
             Separation = +30.20 [+10.79] (+44.61km)
          Orbital Omega = +0.00901
-            Komar mass = +2.77644
-              Adm mass = +2.77347, Diff: +0.00053
+            Komar mass = +2.77630
+              Adm mass = +2.77333, Diff: +0.00054
      Total mass (Minf) = +2.80000
-           Adm moment. = +7.75769
-        Binding energy = -2.65311e-02
+           Adm moment. = +7.75720
+        Binding energy = -2.66666e-02
             Minf * Ome = +2.52151e-02
-            E_b / Minf = -9.47539e-03
-                    Px = +5.50470e-15
-                    Py = -6.51024e-15
-                    Pz = +0.00000e+00
+            E_b / Minf = -9.52380e-03
+               ADM P_x = -1.76726e-14
+               ADM P_y = +2.08646e-14
+               ADM P_z = +0.00000e+00
                   COMx = -0.00000, A-COMx = -0.00000
                   COMy = +0.00000, A-COMy = +0.00000
                 A-COMz = +0.00000
 ```
 
-The first two blocks contain information related to the component NSs - the second has been abbreviated since it contains identical information.  
+The first two blocks contain information related to the component NSs - the second has been abbreviated since it contains identical information.
 These details are covered in the [NS README](https://bitbucket.org/fukaws/fuka/src/fuka/codes/FUKAv2_Solvers/NS/).
 The only additional parameter is the `Center_COM`.  This is the coordinate center of each object when shifted by the
 "center-of-mass" of the binary or, more specifically, the location of the axis of rotation for the binary that can approximate a quasi-stationary solution.
@@ -129,13 +128,13 @@ but we'll discuss only the details relevant to the BNS case.  For details on all
 read more in the [Configurator README](https://bitbucket.org/fukaws/fuka/src/fuka/include/Configurator/).
 
 <b>
-Notes: 
+Notes:
 
 1. It is always best practice to generate new ID using the `initial_bns.info`.  Using old initial
 data unless for very small changes in `chi` is inefficient.
 
 2. In FUKAv2.2 a minimal Config file was introduced such that only the basic fixing parameters most
-relevant to users are shown.  This minimal Config file can be bypassed by running: 
+relevant to users are shown.  This minimal Config file can be bypassed by running:
     > `solve full`
 
     to obtain the full Config file. Although useful for development, there is little advantage to using
@@ -171,7 +170,7 @@ binary
 
 The above includes parameters that can be fixed by the user as well as parameters that are automated in the background
 and should not be changed.  The parameters for each NS are simply copied from the isolated solution which is discussed
-in detail in the [NS README](https://bitbucket.org/fukaws/fuka/src/fukav2//codes/FUKAv2_Solvers/NS/) - 
+in detail in the [NS README](https://bitbucket.org/fukaws/fuka/src/fukav2//codes/FUKAv2_Solvers/NS/) -
 the same fixing applies also in the BNS.  The relevant parameters to discuss are
 
 - `res` The resolution shown for the individual compact objects is the highest resolution the *isolated* dataset will be ran at.  This can be important for TOV solutions as the total baryonic mass is sensitive to the resolution.  `res 11` is the minimum recommended for production runs
@@ -229,11 +228,11 @@ sequence_controls
 }
 ```
 
-- `checkpoint`: this will result in checkpoints being saved to file during each solving iteration - mainly helpful for high 
+- `checkpoint`: this will result in checkpoints being saved to file during each solving iteration - mainly helpful for high
 resolution binary ID where walltimes or server failures are a concern prior to a converged solution being obtained
 - `corot_binary`: the objects are no longer fixed based on `chi` and instead provide a corotating ID solution
 - `fixed_lapse`: toggling this control enables a fixed lapse on the horizon - not recommended
-- `sequences`: this toggle is enabled by default and essentially tells the driver routine to start from scratch.  
+- `sequences`: this toggle is enabled by default and essentially tells the driver routine to start from scratch.
 If this is enabled when attempting to use a previous solution, the previous fields and numerical space (i.e. the `dat` file) is ignored
 - `use_pn`: toggle whether to always use 3.5PN estimates.  It is important to ensure this is off if the user wants to specify their own `adot` and `global_omega`
 parameters by hand (e.g. for iterative eccentricity reduction)
@@ -264,19 +263,19 @@ Now that you've generated the simplest case and we have a better understanding o
 1. Set `distance 30.2`
 1. (optional) set `res 11`
 2. For `ns1` set:
-    - `madm 1.18` 
+    - `madm 1.18`
     - `chi 0`
     - `res 11`
 3. For `ns2` set:
-    - `madm 2.42` 
+    - `madm 2.42`
     - `chi 0.52`
     - `res 11`
 3. Run (using parallelization) using this config file, e.g. `mpirun ./bin/Release/solve initial_bns.info`
 
 This time around we see the iterative `chi` increase being done for the primary NS as well as a regrid of the solution
-to the higher resolution before being imported into the initial binary setup. Overall, the main changes 
-observed are related to the isolated NS solvers 
-(see the [NS README](https://bitbucket.org/fukaws/fuka/src/fukav2//codes/FUKAv2_Solvers/NS/) for details), 
+to the higher resolution before being imported into the initial binary setup. Overall, the main changes
+observed are related to the isolated NS solvers
+(see the [NS README](https://bitbucket.org/fukaws/fuka/src/fukav2//codes/FUKAv2_Solvers/NS/) for details),
 but the binary solver itself is consistent when compared to the equal mass case.
 
 In the event you changed the resolution to 11pts, the solver will solve the binary at the `initial_resolution` until a
@@ -360,23 +359,23 @@ Central Euler Constant = -0.65064
 
 ## Initial Setup
 
-To generate the initial setup for a BNS ID, we first need to make some guesses based on the input 
+To generate the initial setup for a BNS ID, we first need to make some guesses based on the input
 ADM masses and the coordinate separation
 
   1. `COM` - An estimate of the center-of-mass: this is purely Newtonian
   2. `global_omega` - An estimate of the orbital frequency: 3.5th PN estimate
 
 Once these estimates are computed an interface code is ran
-which 
+which
 
-- solves each NS configuration in isolation (see the [NS README](https://bitbucket.org/fukaws/fuka/src/fuka/codes/FUKAv2_Solvers/NS/) for more details).  
+- solves each NS configuration in isolation (see the [NS README](https://bitbucket.org/fukaws/fuka/src/fuka/codes/FUKAv2_Solvers/NS/) for more details).
 - obtains boosted isolated solutions using the estimated `global_omega`
 
-At this point, the binary numerical space and fields are constructed and the isolated solutions are interpolated onto 
+At this point, the binary numerical space and fields are constructed and the isolated solutions are interpolated onto
 the new grid using the idea of superimposed solutions.  Specifically:
 
 - a decay parameter `decay_limit := w` is chosen such that `w = distance / 2`
-- the fields are interpolated such that the solutions decay exponetially away from each object as 
+- the fields are interpolated such that the solutions decay exponetially away from each object as
 `decay_rate = exp(-(r_NS / w)^4)` where `r_NS` is the coordinate distance to the respective NS
 - The resulting value at a given point is then simply the sum of the background with the deviations computed from the isolated solutions
 
@@ -384,12 +383,12 @@ For example, if we wanted to compute the initial guess for the lapse at a given 
 
 `lapse(x) = 1. + decay_rate_NS1 * (lapse_NS1(x) - 1.) + decay_rate_NS2 * (lapse_NS2(x) - 1.)`
 
-This is then repeated for all fields in all numerical domains, with the compactified domain set the asymptotic 
+This is then repeated for all fields in all numerical domains, with the compactified domain set the asymptotic
 values of the fields, i.e. `lapse = psi = 1`, `log(h) = shift = 0`.
 
 ## Initial Solution
 
-Once the initial guess has been setup for the BNS, the first solver stage solves the full XCTS system of equations consistently 
+Once the initial guess has been setup for the BNS, the first solver stage solves the full XCTS system of equations consistently
 and all using a fixed orbital velocity.  As a consequence the matter is simply rescaled to achieve the desired baryonic mass
 for each NS.  The reason for this is two fold:
 
