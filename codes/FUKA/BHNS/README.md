@@ -57,47 +57,42 @@ The default configuration for BHNS has a total mass of 2.8M and is non-spinning.
 Aside from the diagnostics observed during the solver stage, we can use the reader
 to verify the ID.  This can be done by running:
 
-`./bin/Release/reader BHNS_ECC_RED.togashi.35.0.0.2.8.q1.0.0.09.info`
+`./bin/Release/reader BHNS_ECC_RED.togashi.35.0.0.2.8.q1.0.2.09.info`
 
 Which results in the following:
 
 ```
 ###################### Neutron Star ######################
-            Center_COM = (-17.49240, 0, 0)
-            Coord R_IN = +3.16650
-               Coord R = [+6.01285,+6.13629] ([+8.88098,+9.06330] km)
+            Center_COM = (-17.49030, 0, 0)
+            Coord R_IN = +3.17083
+               Coord R = [+6.01367,+6.13650] ([+8.88219,+9.06360] km)
            Coord R_OUT = +10.05533
-               Areal R = +7.79365 [+11.51121km]
-     Circumferential R = +7.90935e+00 [+1.16821e+01km]
-         Mass Shedding = +9.70675e-01
-                 NS Mb = +1.55246 (+0.51612,+1.03634,)
+               Areal R = +7.79369 [+11.51127km]
+                 NS Mb = +1.55246 (+0.51779,+1.03467,)
      Isolated ADM Mass = +1.40000
-      Quasi-local Madm = +1.38016 Diff:+0.01417
-         Quasi-local S = +0.00000
-                   Chi = +0.00000 [+0.00000]
+      Quasi-local Madm = +1.38019 Diff:+0.01415
+         Quasi-local S = -0.00000
+                   Chi = -0.00000 [+0.00000]
                  Omega = +0.00003
-             Local P_y = -0.07272
+             Local P_y = -0.07270
              Local P_x = +0.00864
-       Central Density = +1.37445e-03
-        Central log(h) = +2.31860e-01
-      Central Pressure = +2.34512e-04
-    Central dlog(h)/dx = +5.00188e-17
-Central Euler Constant = +7.59966e-01
-     Integrated log(h) = +186.25095
+       Central Density = +1.37443e-03
+        Central log(h) = +2.31851e-01
+      Central Pressure = +2.34496e-04
+    Central dlog(h)/dx = +9.74512e-17
+Central Euler Constant = +7.60026e-01
+     Integrated log(h) = +186.24633
 
 ###################### Black Hole ######################
-            Center_COM = (+17.50760, 0, 0)
+            Center_COM = (+17.50970, 0, 0)
             Coord R_IN = +0.58273
-               Coord R = +1.15100 [+1.70002km]
-                SHELL1 = +1.57564
-                SHELL2 = +1.91563
-                SHELL3 = +2.22430
-                SHELL4 = +2.50740
-                SHELL5 = +2.76984
+               Coord R = +1.15113 [+1.70022km]
+                SHELL1 = +2.67859
+                SHELL2 = +4.98071
            Coord R_OUT = +10.05533
                Areal R = +2.80000 [+4.13560km]
-                LAPSE = [+0.39849, +0.42679]
-                  PSI = [+1.55740, +1.56197]
+                LAPSE = [+0.39858, +0.42687]
+                  PSI = [+1.55731, +1.56188]
                   Mirr = +1.40000
                    Mch = +1.40000 [+1.40000]
                    Chi = +0.00000 [+0.00000]
@@ -111,20 +106,19 @@ Central Euler Constant = +7.59966e-01
                      Q = +1.00000
             Separation = +35.00 [+12.50] (+51.69km)
          Orbital Omega = +0.00732
-            Komar mass = +2.78060
-              Adm mass = +2.77797, Diff: +0.00094
+            Komar mass = +2.77807
+              Adm mass = +2.77624, Diff: +0.00066
             Total Mass = +2.80000 [+2.80000]
-           Adm moment. = +8.13889
-        Binding energy = -0.02203
+           Adm moment. = +8.13653
+        Binding energy = -0.02376
             Minf * Ome = +0.02051
-            E_b / Minf = -0.00787
-               ADM P_x = +3.08166e-15
-               ADM P_y = +1.57266e-16
+            E_b / Minf = -0.00849
+               ADM P_x = +6.29424e-16
+               ADM P_y = -3.37719e-17
                ADM P_z = +0.00000e+00
-                  COMx = +0.00760, A-COMx = -0.01043
-                  COMy = -0.06461, A-COMy = -0.06498
+                  COMx = +0.00970, A-COMx = +0.00086
+                  COMy = -0.06490, A-COMy = -0.06541
                 A-COMz = +0.00000
-
 ```
 
 The first two blocks contain information related to the component objects.
@@ -311,70 +305,67 @@ specified baryonic mass, but the fluid is not in hydrostatic equilibrium
 
 We can of course verify that the ID matches our expectation using
 
-`./bin/Release/reader BHNS_ECC_RED.togashi.35.0.0.52.3.6.q0.487603.0.3.11.info`
+`./bin/Release/reader BHNS_ECC_RED.togashi.35.0.0.52.3.6.q0.487603.0.1.11.info`
 
 ```
 ###################### Neutron Star ######################
-            Center_COM = (-23.59763, 0, 0)
-            Coord R_IN = +2.97727
-               Coord R = [+5.96365,+6.22928] ([+8.80830,+9.20064] km)
-           Coord R_OUT = +9.98243
-               Areal R = +7.74418 [+11.43815km]
-     Circumferential R = +7.99012e+00 [+1.18014e+01km]
-         Mass Shedding = +9.33509e-01
-                 NS Mb = +1.28301 (+0.36353,+0.91948,)
+            Center_COM = (-23.58367, 0, 0)
+            Coord R_IN = +2.97659
+               Coord R = [+5.96195,+6.22697] ([+8.80580,+9.19723] km)
+           Coord R_OUT = +9.98108
+               Areal R = +7.74450 [+11.43862km]
+     Circumferential R = +7.98989e+00 [+1.18011e+01km]
+         Mass Shedding = +9.33739e-01
+                 NS Mb = +1.28557 (+0.36424,+0.92132,)
      Isolated ADM Mass = +1.18000
-      Quasi-local Madm = +1.15564 Diff:+0.02064
-         Quasi-local S = -0.00000
-                   Chi = -0.00000 [+0.00000]
+      Quasi-local Madm = +1.15772 Diff:+0.01889
+         Quasi-local S = +0.00000
+                   Chi = +0.00000 [+0.00000]
                  Omega = +0.00007
-             Local P_y = -0.10610
-             Local P_x = +0.02196
-       Central Density = +1.22106e-03
-        Central log(h) = +1.83876e-01
-      Central Pressure = +1.57850e-04
-    Central dlog(h)/dx = +2.37385e-15
-Central Euler Constant = +7.58116e-01
-     Integrated log(h) = +141.61276
+             Local P_y = -0.10622
+             Local P_x = +0.02195
+       Central Density = +1.22236e-03
+        Central log(h) = +1.84261e-01
+      Central Pressure = +1.58415e-04
+    Central dlog(h)/dx = -9.72895e-16
+Central Euler Constant = +7.57844e-01
+     Integrated log(h) = +141.97207
 
 ###################### Black Hole ######################
-            Center_COM = (+11.40237, 0, 0)
-            Coord R_IN = +0.94394
-               Coord R = +1.79599 [+2.65268km]
-                SHELL1 = +2.23108
-                SHELL2 = +2.66434
-                SHELL3 = +3.06550
-           Coord R_OUT = +9.98243
+            Center_COM = (+11.41633, 0, 0)
+            Coord R_IN = +0.94392
+               Coord R = +1.79588 [+2.65251km]
+                SHELL1 = +3.79279
+           Coord R_OUT = +9.98108
                Areal R = +4.66020 [+6.88312km]
-                LAPSE = [+0.37049, +0.39457]
-                  PSI = [+1.60044, +1.62194]
+                LAPSE = [+0.37045, +0.39455]
+                  PSI = [+1.60049, +1.62200]
                   Mirr = +2.33010
                    Mch = +2.42000 [+2.42000]
                    Chi = +0.52000 [+0.52000]
                      S = +3.04533
-             Local P_y = +0.01715
+             Local P_y = +0.01717
              Local P_x = -0.00002
-                 Omega = -0.04983
+                 Omega = -0.04982
 
 ###################### Binary ######################
                    RES = [+11,+11,+10]
                      Q = +0.48760
             Separation = +35.00 [+9.72] (+51.69km)
          Orbital Omega = +0.00807
-            Komar mass = +3.56924
-              Adm mass = +3.56616, Diff: +0.00086
+            Komar mass = +3.57132
+              Adm mass = +3.56820, Diff: +0.00087
             Total Mass = +3.60000 [+3.60000]
-           Adm moment. = +13.77526
-        Binding energy = -0.03384
+           Adm moment. = +13.79013
+        Binding energy = -0.03180
             Minf * Ome = +0.02906
-            E_b / Minf = -0.00940
-               ADM P_x = -2.29154e-15
-               ADM P_y = -6.18854e-15
+            E_b / Minf = -0.00883
+               ADM P_x = -2.46869e-14
+               ADM P_y = -4.05044e-15
                ADM P_z = +0.00000e+00
-                  COMx = -6.09763, A-COMx = -6.07096
-                  COMy = -0.03260, A-COMy = -0.10283
+                  COMx = -6.08367, A-COMx = -6.05686
+                  COMy = -0.03283, A-COMy = -0.10290
                 A-COMz = +0.00000
-
 ```
 
 # How BHNS ID is Generated
