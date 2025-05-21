@@ -227,6 +227,22 @@ struct reader_output {
         space.get_domain(space.ADAPTEDNS + 1)
             ->integ(syst.give_val_def("intPx")()(space.ADAPTEDNS + 1),
                     OUTER_BC);
+
+    auto npts = space.get_domain(space.ADAPTEDNS)->get_nbr_points();
+    Index pos_eq(npts);
+    pos_eq.set(0) = npts(0) - 1;  /// Set to outer radius
+    pos_eq.set(1) = npts(1) - 1;  /// Set theta to be on the xy plane.
+
+    Index pos_pole(npts);
+    pos_pole.set(0) = npts(0) - 1;  /// Set to outer radius
+
+    Val_domain logh_dr(logh(space.ADAPTEDNS).der_r());
+    double mass_shedding_parameter = logh_dr(pos_eq) / logh_dr(pos_pole);
+
+    double conf_eq = conf(space.ADAPTEDNS)(pos_eq);
+    double Circumferential_R =
+        conf_eq * conf_eq * space.get_domain(space.ADAPTEDNS)->get_radius()(pos_eq);
+    double& CR = Circumferential_R;
     // END NS Quantities
 
     // BH Quantities
@@ -349,6 +365,9 @@ struct reader_output {
     std::cout << FORMAT1 << "Coord R_OUT = " << rout_ns << std::endl
               << FORMAT1 << "Areal R = " << areal_rns << " ["
               << areal_rns * M2km << "km]\n"
+              << FORMAT << "Circumferential R = " << CR << " [" << CR * M2km
+              << "km]\n"
+              << FORMAT << "Mass Shedding = " << mass_shedding_parameter << endl
               << FORMAT1 << "NS Mb = " << MB1 << " (";
     print_shell_mb(baryonic_mass1);
     std::cout
