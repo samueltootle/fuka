@@ -57,7 +57,7 @@ The default configuration for BBH has a total mass of 1M and non-spinning.
 Aside from the diagnostics observed during the solver stage, we can use the reader
 to verify the ID.  This can be done by running:
 
-`./bin/Release/reader BBH_ECC_RED.10.0.0.1.q1.3.3.09.info`
+`./bin/Release/reader BBH_ECC_RED.10.0.0.1.q1.0.0.09.info`
 
 Which results in the following:
 
@@ -259,11 +259,11 @@ This time around we see the iterative `chi` increase being done for the primary 
 observed are related to the isolated BH solvers (see the BH README for details), but the binary solver itself
 is consistent.
 
-This results in the converged dataset of `BBH_ECC_RED.10.-0.5.0.85.1.q0.111111.3.0.11.info/dat`
+This results in the converged dataset of `BBH_ECC_RED.10.-0.5.0.85.1.q0.111111.2.0.11.info/dat`
 
 We can of course verify that the ID matches our expectation using
 
-`./bin/Release/reader BBH_ECC_RED.10.-0.5.0.85.1.q0.111111.9.1.09.info`
+`./bin/Release/reader BBH_ECC_RED.10.-0.5.0.85.1.q0.111111.2.0.11.info`
 
 ```
 ###################### BH_MINUS ######################
