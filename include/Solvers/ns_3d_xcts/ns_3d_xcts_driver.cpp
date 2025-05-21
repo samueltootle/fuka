@@ -417,6 +417,9 @@ inline int ns_3d_xcts_driver(config_t& bconfig,
     } else {
       bconfig.set(BCO_PARAMS::BCO_RES) += 2;
     }
+    if(rank == 0)
+      std::cout << "Increasing resolution to: " << bconfig(BCO_PARAMS::BCO_RES)
+                << "\n";
     regrid();
 
     // Placeholder
