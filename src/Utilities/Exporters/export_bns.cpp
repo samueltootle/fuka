@@ -38,7 +38,7 @@ std::array<std::vector<double>,NUM_OUT> KadathExportBNS(int const npoints,
   std::string kadath_filename = bconfig.space_filename();
 
 	FILE* fin = fopen(kadath_filename.c_str(), "r") ;
-	Space_bin_ns space(fin) ;
+	Space_bin_ns space(fin, bconfig.control(CONTROLS::OLD_ID)) ;
 	Scalar conf  (space, fin) ;
 	Scalar lapse (space, fin) ;
   Vector shift (space, fin) ;
