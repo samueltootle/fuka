@@ -16,18 +16,18 @@ binary
         decay_limit 15.300000000000001
         dim 3
         fixed_r 5.9622020191139562
-        hc 1.2598589173096877
+        hc 1.2611379123613295
         madm 1.3999999999999999
         mb 1.5535246159351981
         n_inner_shells 0
-        nc 0.0013718365368652295
+        nc 1.6681082754607759e-15
         nshells 0
         omega 3.637555787334751e-05
-        ql_madm 1.3783586000878625
+        ql_madm 1.3783586000602197
         qpig 12.566370614359172
         res 13
         rin 2.9811010095569781
-        rmid 6.330667473697595
+        rmid 6.1279606605505226
         rout 9.1846928481176633
         eosfile togashi.lorene
         eostype Cold_Table
@@ -40,18 +40,18 @@ binary
         decay_limit 15.300000000000001
         dim 3
         fixed_r 5.9622020191280747
-        hc 1.2598589173096877
+        hc 1.2611379123613651
         madm 1.3999999999999999
         mb 1.5535246159351981
         n_inner_shells 0
-        nc 0.0013718365368652295
+        nc 1.6681082754607759e-15
         nshells 0
         omega 3.6375557902588537e-05
-        ql_madm 1.3783586000878212
+        ql_madm 1.3783586000598624
         qpig 12.566370614359172
         res 13
         rin 2.9811010095640373
-        rmid 6.330667473697595
+        rmid 6.1279606605467709
         rout 9.1846928481176633
         eosfile togashi.lorene
         eostype Cold_Table
@@ -77,18 +77,11 @@ sequence_controls
 {
     centralized_cos on
     checkpoint off
-    co_use_shells off
     corot_binary off
-    delete_shift off
-    fixed_bin_omega off
     fixed_lapse off
-    fixed_mb off
-    initial_regrid on
+    old_initial_data on
     resolve off
-    sequences on
-    update_initial off
-    use_boosted_co on
-    use_fixed_r off
+    sequences off
     use_pn off
 }
 sequence_settings
