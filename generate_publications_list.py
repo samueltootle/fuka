@@ -51,6 +51,11 @@ This list is defined manually so as to ensure only publications where FUKA was u
 Therefore, it must be updated periodically.
 """
 publication_id_list = [
+    2912216,
+    2911149,
+    2893312,
+    2874509,
+    2871942,
     2857361,
     2856251,
     2854129,
