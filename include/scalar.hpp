@@ -54,6 +54,7 @@ Scalar exp (const Scalar&) ;
 Scalar sin (const Scalar&) ;
 Scalar cos (const Scalar&) ;
 Scalar atan (const Scalar&) ;
+Scalar log (const Scalar&) ;
 double diffmax (const Scalar&, const Scalar&) ;
 
 class Vector ;
@@ -100,6 +101,17 @@ class Scalar : public Tensor {
       virtual ~Scalar () ; ///< Destructor.
       
       virtual void save (FILE*) const ; ///< Saving function
+      
+      /**
+       * @brief Use with Caution! Construct a new Scalar object by copying
+	 * the coefficients/values/etc, but to a new Tensor with a different Space
+	 * pointer.  THIS ASSUMES BOTH SPACES ARE THE SAME, but with different
+	 * memory addresses
+       * 
+       * @param sp New space
+       * @param so Scalar field to copy
+       */
+      Scalar (const Space& sp, const Scalar& so) ;
     public:
 	/**
 	* @returns the number of dimensions.

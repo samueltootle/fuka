@@ -117,5 +117,78 @@ Val_domain Domain_polar_shell_outer_adapted::laplacian2 (const Val_domain& so, i
     res -= m * m * div_r(div_r(so.div_sin_theta().div_sin_theta())) ;
   return res ;
 }
+
+double Domain_polar_shell_outer_adapted::integrale (const Val_domain& so) const {
+  if (so.check_if_zero())
+    return 0 ;
+
+  Val_domain r2 (get_radius()*get_radius()) ;
+  r2.std_base() ;
+  Val_domain integrant (r2*mult_sin_theta(so)*(*der_rad_term_eq->val_t)()(num_dom)) ;
+  integrant.coef() ;
+ 
+  double res = 0 ;
+  Array<double> cf (integrant.get_coef()) ;
+
+  int baset = (*integrant.get_base().bases_1d[1]) (0) ;
+  switch (baset) {
+    case COS_ODD :
+	break ;
+    case SIN_EVEN :
+	break ;
+    case COS_EVEN : {
+	// Only m=0 :
+	double facttheta = M_PI ;
+	int baser = (*integrant.get_base().bases_1d[0]) (0) ;
+	switch (baser) {
+	      case CHEB : {
+		    for (int i=0 ; i<nbr_coefs(0) ; i+=2)
+			res += facttheta * (1./double(i+1) - 1./double(i-1)) *cf(i,0) ;
+		    break ;
+		    }
+	      case LEG : {
+		   res += facttheta*2*cf(0,0) ;
+		   break ;
+		  }
+	      default :
+		  cerr << "Case not yet implemented in Domain_polar_shell_outer_adapted::integrale" << endl ;
+		  abort() ;
+	}
+	break ;
+    }
+    case SIN_ODD : {
+	  for (int j=0 ; j<nbr_coefs(1) ; j++) {
+	    double facttheta = 2./double(2*j+1) ;
+	    int baser = (*integrant.get_base().bases_1d[0]) (0) ;
+	  switch (baser) {
+	      case CHEB : {
+		    for (int i=0 ; i<nbr_coefs(0) ; i+=2)
+			res += facttheta * (1./double(i+1) - 1./double(i-1)) *cf(i,j) ;
+		    break ;
+		    }
+	      case LEG : {
+		   res += facttheta*2*cf(0,j) ;
+		   break ;
+		  }
+	      default :
+		  cerr << "Case not yet implemented in Domain_polar_shell_outer_adapted::integrale" << endl ;
+		  abort() ;
+	    }
+      }
+      break ;
+    }
+    default : 
+      cerr << "Case not yet implemented in Domain_polar_shell_outer_adapted::integrale" << endl ;
+      abort() ;
+  }
+  // Phi contribution :
+  // res *= 2*M_PI;
+  return res ;
+}
+
+
+double Domain_polar_shell_outer_adapted::integ_volume (const Val_domain& so) const {
+  return integrale(so) ;
+}
 }
 

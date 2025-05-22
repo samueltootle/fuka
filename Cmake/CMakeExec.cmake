@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.12)  # Ensure the policy exists
+cmake_policy(SET CMP0074 NEW)        # Use the new behavior
 set(USE_KADATH_CMAKE_MODULES OFF)
 if(USE_KADATH_CMAKE_MODULES)
   set(CMAKE_MODULE_PATH $ENV{HOME_KADATH}/Cmake)
@@ -83,6 +85,17 @@ if(NOT PAR_VERSION)
 	    include(FindSUNDIALS) #SUNDIAL probably only used in sequential mode
     endif()
 endif(NOT PAR_VERSION)
+
+option(GRHAYL_EOS "Use GRHaYL EOS library" OFF)
+if (GRHAYL_EOS)
+	set(CMAKE_MODULE_PATH $ENV{HOME_KADATH}/Cmake)
+	include(FindGRHAYL)
+	find_package(GRHAYL)
+	add_definitions(-DWITH_GRHAYL_EOS)
+	message("GRHAYL_INCLUDES: " ${GRHAYL_INCLUDES})
+	include_directories (${GRHAYL_INCLUDES})
+	unset(CMAKE_MODULE_PATH)
+endif()
 
 #need to use C++17
 add_definitions(-std=c++17)

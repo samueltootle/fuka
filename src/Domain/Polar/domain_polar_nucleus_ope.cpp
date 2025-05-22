@@ -126,7 +126,7 @@ Val_domain Domain_polar_nucleus::dt (const Val_domain& so) const {
 
 double Domain_polar_nucleus::integrale (const Val_domain& so) const {
   double res = 0 ;
-  Val_domain integrant (mult_r(so)) ;
+  Val_domain integrant (mult_r(mult_r(mult_sin_theta(so)))*alpha) ;
   integrant.get_coef() ;
   Array<double> cf (integrant.get_coef()) ;
 
@@ -219,7 +219,7 @@ double Domain_polar_nucleus::integrale (const Val_domain& so) const {
   }
   // Phi contribution :
   //res *= 2*M_PI*alpha ;  
-  res *= alpha ;
+//   res *= alpha ;
   return res ;
 }
 

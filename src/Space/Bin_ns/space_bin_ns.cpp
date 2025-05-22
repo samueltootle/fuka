@@ -235,51 +235,160 @@ Space_bin_ns::Space_bin_ns (int ttype, double dist, double rinstar1, double rsta
     pinner_2->vars_to_terms() ;
     pinner_2->update() ;
 }
+
+Space_bin_ns::Space_bin_ns (Space_bin_ns const & sp) {
+
+	nbr_domains = sp.nbr_domains;
+  ndim = sp.ndim;
+  type_base = sp.type_base;
+
+  n_shells1 = sp.n_shells1;
+  n_shells2 = sp.n_shells2;
+
+  n_inner_shells1 = sp.n_inner_shells1;
+  n_inner_shells2 = sp.n_inner_shells2;
+
+  // We calculate domain indicies and ensure they match
+  // the imported space - should be consistent!
+  this->NS1 = 0;
+  assert(NS1 == sp.NS1);
+
+  this->NS2 = 3 + n_inner_shells1 + n_shells1;
+  assert(NS2 == sp.NS2);
+
+  this->ADAPTED1 = NS1 + n_inner_shells1 + 1;
+  assert(ADAPTED1 == sp.ADAPTED1);
+
+  this->ADAPTED2 = NS2 + n_inner_shells2 + 1;
+  assert(ADAPTED2 == sp.ADAPTED2);
+
+  this->OUTER = 6 + n_shells1 + n_inner_shells1 + n_shells2 + n_inner_shells2;
+  assert(OUTER == sp.OUTER);
+
+  this->n_shells_outer = nbr_domains - 12 - n_inner_shells1 - n_shells1 - n_inner_shells2 - n_shells2;
+  assert(n_shells_outer >= 0 && n_shells_outer == sp.n_shells_outer);
+
+	domains = new Domain* [nbr_domains] ;
+
+  auto add_spherical_shells = [&](auto start_idx, auto nshells) {
+    for(int i = 0; i < nshells; ++i) {
+      const Domain_shell* d_shell = dynamic_cast<const Domain_shell*> (sp.get_domain(start_idx+i)) ;
+      domains[start_idx+i] = new Domain_shell(*d_shell, true);
+    }
+  };
+
+	//First NS :
+  const Domain_nucleus* d_nuc1 = dynamic_cast<const Domain_nucleus*> (sp.get_domain(NS1)) ;
+  domains[NS1] = new Domain_nucleus(*d_nuc1, true);
+
+  add_spherical_shells(NS1+1, n_inner_shells1);
+
+  const Domain_shell_outer_adapted* sp_pouter_1 = dynamic_cast<const Domain_shell_outer_adapted*> (sp.get_domain(ADAPTED1)) ;
+  domains[ADAPTED1] = new Domain_shell_outer_adapted(*this, *sp_pouter_1) ;
+
+  const Domain_shell_inner_adapted* sp_pinner_1 = dynamic_cast<const Domain_shell_inner_adapted*> (sp.get_domain(ADAPTED1+1)) ;
+  domains[ADAPTED1+1] = new Domain_shell_inner_adapted(*this, *sp_pinner_1) ;
+
+  add_spherical_shells(ADAPTED1+2, n_shells1);
+
+	//second NS :
+  const Domain_nucleus* d_nuc2 = dynamic_cast<const Domain_nucleus*> (sp.get_domain(NS2)) ;
+  domains[NS2] = new Domain_nucleus(*d_nuc2, true);
+
+  add_spherical_shells(NS2+1, n_inner_shells2);
+
+  const Domain_shell_outer_adapted* sp_pouter_2 = dynamic_cast<const Domain_shell_outer_adapted*> (sp.get_domain(ADAPTED2)) ;
+  domains[ADAPTED2] = new Domain_shell_outer_adapted(*this, *sp_pouter_2) ;
+
+  const Domain_shell_inner_adapted* sp_pinner_2 = dynamic_cast<const Domain_shell_inner_adapted*> (sp.get_domain(ADAPTED2+1)) ;
+  domains[ADAPTED2+1] = new Domain_shell_inner_adapted(*this, *sp_pinner_2) ;
+
+  add_spherical_shells(ADAPTED2+2, n_shells2);
+
+	// Bispheric
+  const Domain_bispheric_chi_first* sp_chi_1 = dynamic_cast<const Domain_bispheric_chi_first*> (sp.get_domain(OUTER)) ;
+	domains[OUTER] = new Domain_bispheric_chi_first(*this, *sp_chi_1) ;
+
+  const Domain_bispheric_rect* sp_rec_1 = dynamic_cast<const Domain_bispheric_rect*> (sp.get_domain(OUTER+1)) ;
+	domains[OUTER+1] = new Domain_bispheric_rect(*this, *sp_rec_1) ;
+
+  const Domain_bispheric_eta_first* sp_eta = dynamic_cast<const Domain_bispheric_eta_first*> (sp.get_domain(OUTER+2)) ;
+  domains[OUTER+2] = new Domain_bispheric_eta_first(*this, *sp_eta) ;
+
+  const Domain_bispheric_rect* sp_rec_2 = dynamic_cast<const Domain_bispheric_rect*> (sp.get_domain(OUTER+3)) ;
+	domains[OUTER+3] = new Domain_bispheric_rect(*this, *sp_rec_2) ;
+
+  const Domain_bispheric_chi_first* sp_chi_2 = dynamic_cast<const Domain_bispheric_chi_first*> (sp.get_domain(OUTER+4)) ;
+	domains[OUTER+4] = new Domain_bispheric_chi_first(*this, *sp_chi_2) ;
+
+  add_spherical_shells(OUTER+5, n_shells_outer);
+
+	// Compactified
+  const Domain_compact* d_compact = dynamic_cast<const Domain_compact*> (sp.get_domain(nbr_domains-1)) ;
+	domains[nbr_domains-1] = new Domain_compact(*d_compact, true) ;
+
+  const Domain_shell_outer_adapted* pouter_1 = dynamic_cast<const Domain_shell_outer_adapted*> (domains[ADAPTED1]) ;
+  pouter_1->vars_to_terms() ;
+  pouter_1->update() ;
+  const Domain_shell_inner_adapted* pinner_1 = dynamic_cast<const Domain_shell_inner_adapted*> (domains[ADAPTED1+1]) ;
+  pinner_1->vars_to_terms() ;
+  pinner_1->update() ;
+  const Domain_shell_outer_adapted* pouter_2 = dynamic_cast<const Domain_shell_outer_adapted*> (domains[ADAPTED2]) ;
+  pouter_2->vars_to_terms() ;
+  pouter_2->update() ;
+  const Domain_shell_inner_adapted* pinner_2 = dynamic_cast<const Domain_shell_inner_adapted*> (domains[ADAPTED2+1]) ;
+  pinner_2->vars_to_terms() ;
+  pinner_2->update() ;
+}
+
 Space_bin_ns::Space_bin_ns (FILE* fd, bool old) {
 	fread_be (&nbr_domains, sizeof(int), 1, fd) ;
-  if(old){
-    n_shells1 = 0;
-    n_shells2 = 0;
-  }
-  else {
+  fread_be (&n_inner_shells1, sizeof(int), 1, fd) ;
+  fread_be (&n_inner_shells2, sizeof(int), 1, fd) ;
+
+  // in the original BNS, n_shells referred to interior shells
+  // whereas it now refers to exterior shells like for the BBH and BHNS
+  if(!old) {
     fread_be (&n_shells1, sizeof(int), 1, fd) ;
     fread_be (&n_shells2, sizeof(int), 1, fd) ;
-
   }
 	fread_be (&ndim, sizeof(int), 1, fd) ;
 	fread_be (&type_base, sizeof(int), 1, fd) ;
 
-  // FIXME this has to be changed if outer shells and NS shells would be combined
-  if(n_shells1 == 0 && n_shells2 == 0)
-  	n_shells_outer = nbr_domains-12 ;
-  else
-    n_shells_outer = 0;
+  n_shells_outer = nbr_domains - 12 - n_inner_shells1 - n_shells1 - n_shells2 - n_inner_shells2;
+  assert(n_shells_outer >= 0);
 
   NS1 = 0;
-  NS2 = 3 + n_shells1;
-  ADAPTED1 = NS1 + n_shells1 + 1;
-  ADAPTED2 = NS2 + n_shells2 + 1;
-  OUTER = 6 + n_shells1 + n_shells2;
+  NS2 = 3 + n_inner_shells1 + n_shells1;
+  ADAPTED1 = NS1 + n_inner_shells1 + 1;
+  ADAPTED2 = NS2 + n_inner_shells2 + 1;
+  OUTER = 6 + n_shells1 + n_inner_shells1 + n_shells2 + n_inner_shells2;
 
 	domains = new Domain* [nbr_domains] ;
 
 	//First NS :
 	domains[NS1] = new Domain_nucleus (NS1, fd) ;
 
-	for(int i = 0; i < n_shells1; ++i)
+	for(int i = 0; i < n_inner_shells1; ++i)
 	  domains[NS1+1+i]  = new Domain_shell(NS1+1+i, fd);
 
 	domains[ADAPTED1]   = new Domain_shell_outer_adapted (*this, ADAPTED1, fd) ;
 	domains[ADAPTED1+1] = new Domain_shell_inner_adapted (*this, ADAPTED1+1, fd) ;
 
+  for(int i = 0; i < n_shells1; ++i)
+	  domains[ADAPTED1+2+i]  = new Domain_shell(ADAPTED1+2+i, fd);
+
 	//second NS :
 	domains[NS2] = new Domain_nucleus (NS2, fd) ;
 
-	for(int i = 0; i < n_shells2; ++i)
+	for(int i = 0; i < n_inner_shells2; ++i)
 	  domains[NS2+1+i]  = new Domain_shell(NS2+1+i, fd);
 
 	domains[ADAPTED2]   = new Domain_shell_outer_adapted (*this, ADAPTED2, fd) ;
 	domains[ADAPTED2+1] = new Domain_shell_inner_adapted (*this, ADAPTED2+1, fd) ;
+
+  for(int i = 0; i < n_shells2; ++i)
+	  domains[ADAPTED2+2+i]  = new Domain_shell(ADAPTED2+2+i, fd);
 
 	// Bispheric
   domains[OUTER]   = new Domain_bispheric_chi_first(OUTER, fd) ;
@@ -322,6 +431,8 @@ Space_bin_ns::~Space_bin_ns() {
 
 void Space_bin_ns::save (FILE* fd) const  {
 	fwrite_be (&nbr_domains, sizeof(int), 1, fd) ;
+  fwrite_be (&n_inner_shells1, sizeof(int), 1, fd) ;
+  fwrite_be (&n_inner_shells2, sizeof(int), 1, fd) ;
 	fwrite_be (&n_shells1, sizeof(int), 1, fd) ;
 	fwrite_be (&n_shells2, sizeof(int), 1, fd) ;
 	fwrite_be (&ndim, sizeof(int), 1, fd) ;
@@ -455,7 +566,7 @@ void Space_bin_ns::xx_to_vars_variable_domains (System_of_eqs* sys, const Array<
 Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const {
   // FIXME not entirely sure if this is correct with outer shells
 
-	if (dom == ADAPTED1+1) {
+	if (dom == ADAPTED1 + 1 + n_shells1) {
 	  // First star ;
 	  Array<int> res (2,2) ;
 	  switch (bound) {
@@ -472,7 +583,7 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 	return res ;
 	}
 
-	if (dom == ADAPTED2 + 1) {
+	if (dom == ADAPTED2 + 1 + n_shells1) {
 		// second star ;
 		Array<int> res(2, 2) ;
 		switch (bound) {
@@ -493,7 +604,7 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 	  Array<int> res(2,1) ;
 	  switch (bound) {
 	    case INNER_BC :
-	      res.set(0,0) = ADAPTED1+1; // First star
+	      res.set(0,0) = ADAPTED1+1+n_shells1; // First star
 	      res.set(1,0) = OUTER_BC ;
 	      break ;
 	    case OUTER_BC :
@@ -511,7 +622,7 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 	  Array<int> res(2, 1) ;
 	  switch (bound) {
 	    case INNER_BC :
-	      res.set(0,0) = ADAPTED1+1; // First star
+	      res.set(0,0) = ADAPTED1+1+n_shells1; // First star
 	      res.set(1,0) = OUTER_BC ;
 	      break ;
 	    case OUTER_BC :
@@ -544,7 +655,7 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 	  Array<int> res(2, 1) ;
 	  switch (bound) {
 		case INNER_BC :
-		  res.set(0, 0) = ADAPTED2+1; // Second star
+		  res.set(0, 0) = ADAPTED2+1+n_shells2; // Second star
 		  res.set(1, 0) = OUTER_BC ;
 		  break ;
 		case OUTER_BC :
@@ -562,7 +673,7 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 	  Array<int> res(2, 1) ;
 	  switch (bound) {
 	    case INNER_BC :
-	      res.set(0,0) = ADAPTED2+1; // second nucleus
+	      res.set(0,0) = ADAPTED2+1+n_shells2; // second star
 	      res.set(1,0) = OUTER_BC ;
 	      break ;
 	    case OUTER_BC :
@@ -602,22 +713,23 @@ Array<int> Space_bin_ns::get_indices_matching_non_std(int dom, int bound) const 
 }
 
 Space_bin_ns::Space_bin_ns (int ttype, double dist, const std::vector<double>& NS1_bounds, const std::vector<double>& NS2_bounds,
-                            const std::vector<double>& outer_bounds, int nr) {
+                            const std::vector<double>& outer_bounds, int nr, const int n_inner_shellsNS1, const int n_inner_shellsNS2)
+                            : n_inner_shells1(n_inner_shellsNS1), n_inner_shells2(n_inner_shellsNS2) {
 
     ndim = 3 ;
 
     double rext = outer_bounds[0];
-    n_shells1 = int(NS1_bounds.size())-3;
-    n_shells2 = int(NS2_bounds.size())-3;
+    n_shells1 = int(NS1_bounds.size())-3-n_inner_shells1;
+    n_shells2 = int(NS2_bounds.size())-3-n_inner_shells2;
 
     NS1 = 0;
-    NS2 = 3 + n_shells1;
-    ADAPTED1 = NS1 + n_shells1 + 1;
-    ADAPTED2 = NS2 + n_shells2 + 1;
-    OUTER = 6 + n_shells1 + n_shells2;
+    NS2 = 3 + n_inner_shells1 + n_shells1;
+    ADAPTED1 = NS1 + n_inner_shells1 + 1;
+    ADAPTED2 = NS2 + n_inner_shells2 + 1;
+    OUTER = 6 + n_shells1 + n_inner_shells1 + n_shells2 + n_inner_shells2;
 
     n_shells_outer = outer_bounds.size()-1;
-    nbr_domains = 12 + n_shells1 + n_shells2 + n_shells_outer;
+    nbr_domains = 12 + n_inner_shells1 + n_shells1 + n_inner_shells2 + n_shells2 + n_shells_outer;
     type_base = ttype ;
     domains = new Domain* [nbr_domains] ;
 
@@ -626,7 +738,7 @@ Space_bin_ns::Space_bin_ns (int ttype, double dist, const std::vector<double>& N
     Dim_array res_bi(ndim) ;
     res_bi.set(0) = nr ; res_bi.set(1) = nr ; res_bi.set(2) = nr ;
 
-     // Bispheric :
+    // Bispheric :
     // Computation of aa
     Param par_a ;
     par_a.add_double(NS1_bounds.back(), 0) ;
@@ -645,24 +757,25 @@ Space_bin_ns::Space_bin_ns (int ttype, double dist, const std::vector<double>& N
     double eta_c = log((1+rext/aa)/(rext/aa-1)) ;
     double eta_lim = eta_c/2. ;
     double chi_lim = chi_lim_eta (eta_lim, rext, aa, chi_c) ;
-    
-    auto gen_ns_domains = [&](const int nuc_i, const int adapt_i, auto& bounds, const double& eta) {
-        const int ROUT   = int(bounds.size())-1;
-        const int RMID   = ROUT - 1;
-        const int RIN    = 0;
-        const int shells = ROUT - 2;
+
+    auto gen_ns_domains = [&](const int nuc_i, const int adapt_i, auto& bounds, const double& eta, const int& inner_shells, const int& outer_shells) {
+        const int RIN  = 0;
+        const int RMID = 1 + inner_shells;
 
         Point center (ndim) ;
         center.set(1) = aa*cosh(eta)/sinh(eta) ;
         domains[nuc_i] = new Domain_nucleus (nuc_i, ttype, bounds[RIN], center, res) ;
-        for(int i = RIN; i < shells; ++i) {
+        for(int i = RIN; i < inner_shells; ++i) {
             domains[nuc_i+1+i] = new Domain_shell(nuc_i+1+i, ttype, bounds[i], bounds[i+1], center, res);
         }
-        domains[adapt_i]   = new Domain_shell_outer_adapted (*this, adapt_i  , ttype, bounds[shells] , bounds[RMID], center, res) ;
-        domains[adapt_i+1] = new Domain_shell_inner_adapted (*this, adapt_i+1, ttype, bounds[RMID]   , bounds[ROUT], center, res) ;
+        domains[adapt_i]   = new Domain_shell_outer_adapted (*this, adapt_i  , ttype, bounds[inner_shells] , bounds[RMID], center, res) ;
+        domains[adapt_i+1] = new Domain_shell_inner_adapted (*this, adapt_i+1, ttype, bounds[RMID]   , bounds[RMID+1], center, res) ;
+
+        for(int i = 0; i < outer_shells; ++i)
+            domains[adapt_i+2 + i] = new Domain_shell(adapt_i+2+i, ttype, bounds[RMID+1 + i], bounds[RMID+1 + (i+1)], center, res);
     };
-    gen_ns_domains(NS1, ADAPTED1, NS1_bounds, eta_minus);
-    gen_ns_domains(NS2, ADAPTED2, NS2_bounds, eta_plus);
+    gen_ns_domains(NS1, ADAPTED1, NS1_bounds, eta_minus, n_inner_shells1, n_shells1);
+    gen_ns_domains(NS2, ADAPTED2, NS2_bounds, eta_plus, n_inner_shells2, n_shells2);
 
     // Bispheric part
     domains[OUTER] = new Domain_bispheric_chi_first(OUTER, ttype, aa, eta_minus, rext, chi_lim, res_bi) ;

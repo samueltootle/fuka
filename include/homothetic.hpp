@@ -58,6 +58,7 @@ class Domain_shell_inner_homothetic: public Domain_shell_inner_adapted {
   */
   Domain_shell_inner_homothetic (const Space& sp, int num, int ttype, double rin, double rout, const Point& cr, const Dim_array& nbr) ;
   Domain_shell_inner_homothetic (const Domain_shell_inner_homothetic & so) ; ///< Copy constructor.
+  Domain_shell_inner_homothetic (const Space& sp, const Domain_shell_inner_homothetic & so) ; ///< Copy constructor.
 /**
   * Constructor from a file
   * @param sp [input] : the associated \c Space.
@@ -119,6 +120,7 @@ class Domain_shell_outer_homothetic: public Domain_shell_outer_adapted {
   */
   Domain_shell_outer_homothetic (const Space& sp, int num, int ttype, double rin, double rout, const Point& cr, const Dim_array& nbr) ;
   Domain_shell_outer_homothetic (const Domain_shell_outer_homothetic & so) ; ///< Copy constructor.
+  Domain_shell_outer_homothetic (const Space& sp, const Domain_shell_outer_homothetic & so) ; ///< Copy constructor.
  /**
   * Constructor from a file
   * @param sp [input] : the associated \c Space.

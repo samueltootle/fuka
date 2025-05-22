@@ -81,7 +81,7 @@ static std::array<std::vector<double>, 3> Lorene_Table(const std::string &filena
   return vectors;
 }
 
-static std::array<std::vector<double>, 4> ID_Table(
+__attribute__((unused)) static std::array<std::vector<double>, 4> ID_Table(
     const std::string &filename) {
   using namespace Margherita_constants;
 
@@ -140,7 +140,7 @@ static void write_table(std::ostream &file) {
   file << "#" << std::endl;
 
   file << std::setiosflags(std::ios::scientific) << std::setprecision(16);
-
+*/
   /*
    auto rhoL = exp(Hot_Slice::lintp[0]);
    typename Hot_Slice::error_t error;

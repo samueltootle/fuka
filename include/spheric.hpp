@@ -80,6 +80,7 @@ class Domain_nucleus : public Domain {
   */
   Domain_nucleus (int num, int ttype, double radius, const Point& cr, const Dim_array& nbr) ;
   Domain_nucleus (const Domain_nucleus& so) ; ///< Copy constructor.
+  Domain_nucleus (const Domain_nucleus& so, bool import) ; ///< Copy constructor.
   /**
   * Constructor from a file
   * @param num : number of the domain (used by the \c Space).
@@ -570,6 +571,7 @@ class Domain_shell : public Domain {
   */
   Domain_shell (int num, int ttype, double r_int, double r_ext, const Point& cr, const Dim_array& nbr) ;
   Domain_shell (const Domain_shell& so) ; ///< Copy constructor.
+  Domain_shell (const Domain_shell& so, bool import) ; ///< Copy constructor.
  /**
   * Constructor from a file
   * @param num : number of the domain (used by the \c Space).
@@ -930,6 +932,7 @@ class Domain_compact : public Domain {
   */
   Domain_compact (int num, int ttype, double r_int, const Point& cr, const Dim_array& nbr) ;
   Domain_compact (const Domain_compact& so) ; ///< Copy constructor.
+  Domain_compact (const Domain_compact& so, bool import) ; ///< Copy constructor.
  /**
   * Constructor from a file
   * @param num : number of the domain (used by the \c Space).

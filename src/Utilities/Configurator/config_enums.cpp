@@ -41,8 +41,8 @@ const std::map<std::string, BIN_PARAMS> MBIN_PARAMS = {
   {"qpig",QPIG},                // units scaling - 4*pi*G
   {"rext", REXT},               // fixed exterior radius (~2*DIST)
   {"q", Q},                     // Mass ratio
-  {"adot", ADOT},               // Radial infall velocity (for eccentricity reduction) 
-  {"ecc_omega", ECC_OMEGA},     // Fixed omega used for eccentricity reduction 
+  {"adot", ADOT},               // Radial infall velocity (for eccentricity reduction)
+  {"ecc_omega", ECC_OMEGA},     // Fixed omega used for eccentricity reduction
   {"outer_shells", OUTER_SHELLS}, // Number of shells before compactified domain
 };
 
@@ -73,6 +73,9 @@ const std::map<std::string, BCO_PARAMS> MBCO_PARAMS = {
   {"kerr_chi", KERR_CHI},       // Kerr parameter a=J/M
   {"kerr_mch", KERR_MCH},       // Mass given to the analytical kerr background
   {"n_inner_shells",NINSHELLS}, // Shells inside a NS - binary only
+  {"jadm", JADM},
+  {"ql_jadm", QLJADM},
+  {"keplerian", KEPLERIAN},
 };
 
 const std::map<std::string, EOS_PARAMS> MEOS_PARAMS = {
@@ -105,9 +108,10 @@ const std::map<std::string, BCO_FIELDS> MBCO_FIELDS = {
   {"ndens", NDENS},
   {"phi", PHI},
   {"nu", NU},
-  {"incA", INCA},
-  {"bigA", BIGA},
-  {"np", NP},
+  {"lap_Aterm", LAP_ATERM},
+  {"lap_Bterm", LAP_BTERM},
+  {"lap_wterm", LAP_WTERM},
+  {"diff_omega", DIFF_OMEGA},
   {"ks_metric", KS_METRIC},
   {"ks_lapse", KS_LAPSE},
   {"ks_k", KS_K}
@@ -124,10 +128,6 @@ const std::map<std::string, BCO_FIELDS> MBCO_SFIELDS_1 = {
   {"conf", CONF},
   {"lapse", LAPSE},
   {"enth", ENTH},
-  {"nu", NU},
-  {"incA", INCA},
-  {"bigA", BIGA},
-  {"np", NP}
 };
 
 // Subset of fields that are Vectors - initialized to 0 always
@@ -138,24 +138,29 @@ const std::map<std::string, BCO_FIELDS> MBCO_VFIELDS = {
 
 // all reserved stage names
 const std::map<std::string, STAGES> MSTAGE = {
-  {"pre",PRE},
+  {"preconditioning",PRE},
   {"norot_bc",NOROT_BC},
-  {"fixed_omega",FIXED_OMEGA},
-  {"corot_equal",COROT_EQUAL},
-  {"total",TOTAL},
-  {"total_bc",TOTAL_BC},
-  {"total_fixed_com",TOTAL_FIXED_COM},
-  {"grav",GRAV},
-  {"vel_pot_only",VEL_POT_ONLY},
+  {"fixed_omega",FIXED_OMEGA}, // Depricate
+  {"corot_equal",COROT_EQUAL}, // Depricate
+  {"total",TOTAL},             // Depricate
+  {"total_bc",TOTAL_BC},       // Depricate
+  {"total_fixed_com",TOTAL_FIXED_COM}, // Depricate
+  {"grav",GRAV},               // Depricate
+  {"quasi_equilibrium", QE},
+  {"hydro_rescaling", HYDRO_RESCALE},
+  {"uniform_rotation", UNIFORM_ROT},
+  {"differential_rotation", DIFF_ROT},
+  {"vel_pot_only",VEL_POT_ONLY}, // Depricate
   {"ecc_red", ECC_RED},
   {"binary_boost", BIN_BOOST},
-  {"testing",TESTING}
+  {"testing",TESTING},
+  {"headon",HEADON}
 };
 
 /**
  * The following stage maps are sub-sets of MSTAGE.
  * This is used to allow only the relevant stage names for a given
- * solver to be shown in the configurator file.  However, 
+ * solver to be shown in the configurator file.  However,
  * for new solvers that are not composed of NSs or BHs and have
  * not been assigned such a subset in config_bin.hpp,
  * the default is the full list of stages.
@@ -180,28 +185,24 @@ const std::map<std::string, STAGES> MNSSTAGE = {
   {"norot_bc",NOROT_BC},
   {"total_bc",TOTAL_BC},
 };
+const std::map<std::string, STAGES> M2DNSSTAGE = {
+  {"norot_bc", NOROT_BC},
+  {"uniform_rotation", UNIFORM_ROT},
+  {"differential_rotation", DIFF_ROT},
+};
+const std::map<std::string, STAGES> MBINHEADONSTAGE = {
+  {"headon",HEADON},
+};
 
 const std::map<std::string, CONTROLS> MCONTROLS = {
   {"use_pn", USE_PN},            ///< Use PN eccentricity parameters - replaces ADOT and ECC_OMEGA
   {"sequences", SEQUENCES},      ///< Enable sequence generation - placeholder
   {"checkpoint", CHECKPOINT},    ///< Disable to only output after each solver stage is successful
-  // {"use_fixed_r", USE_FIXED_R},  ///< Solve BCO based on FIXED_R instead of Mirr, MADM, MB, etc.
-  // {"fixed_mb", MB_FIXING},      ///< For an isolated NS, fix using Baryonic mass
-  // {"delete_shift", DELETE_SHIFT},///< at the start of the solver, choose to delete the shift
   {"corot_binary", COROT_BIN},   ///< control whether a binary is purely corotating
-  
-  // Control whether codes such as increase resolution make updates from the config file
-  // variables or directly from the numerical space
-  //{"use_config_vars", USE_CONFIG_VARS},
-  // {"fixed_bin_omega", FIXED_GOMEGA}, ///< Fix binary orbital frequency
-  // {"update_initial", UPDATE_INIT}, ///< historical: add initial section to config
-  // {"use_boosted_co", USE_BOOSTED_CO}, ///< use boosted compact objects to construct binary initial guess
-  //{"iterative_chi", ITERATIVE_CHI},
   {"fixed_lapse", USE_FIXED_LAPSE}, ///< Use fixed lapse BC on black holes
   {"resolve", RESOLVE}, ///<Force resolve of ID even if a checkpoint exists
-  // {"initial_regrid", REGRID}, ///< Regrid before solving from a previous solution
   {"centralized_cos", SAVE_COS},///< Save CO solutions to a central location for reuse
-  // {"co_use_shells", CO_USE_SHELLS}, ///< Isolated Compact objects use defined shells (binary solvers)
+  {"old_initial_data", OLD_ID}, ///< Import using an old ID format
 };
 
 const std::map<std::string, SEQ_SETTINGS> MSEQ_SETTINGS = {
@@ -220,8 +221,22 @@ const std::map<std::string, CONTROLS> MMIN_CONTROLS = {
   {"checkpoint", CHECKPOINT},    ///< Disable to only output after each solver stage is successful
   {"corot_binary", COROT_BIN},   ///< control whether a binary is purely corotating
   {"fixed_lapse", USE_FIXED_LAPSE}, ///< Use fixed lapse BC on black holes
-  {"resolve", RESOLVE}, ///<Force resolve of ID even if a checkpoint exists
   {"centralized_cos", SAVE_COS},///< Save CO solutions to a central location for reuse
+  {"old_initial_data", OLD_ID}, ///< Import using an old ID format
+};
+
+const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS = {
+  {"law", DIFF_LAW}, // str differential rotation law
+  {"A_ratio",DIFF_ARATIO}, // Ratio of the differential rotation parameter A to equitoral radius
+  {"R_ratio",DIFF_RRATIO}, // Ratio of the polar to equitoral radius
+  {"q",DIFF_Q}, // q parameter in various differential rotation laws
+  {"p",DIFF_P}, // p parameter in various differential rotation laws
+  {"lambda1",DIFF_LAMBDA1}, // Lambda_1 parameter in various differential rotation laws
+  {"lambda2",DIFF_LAMBDA2}, // Lambda_2 parameter in various differential rotation laws
+  {"MC_gamma",MC_GAMMA}, // Gamma parameter for the MC law
+  {"MC_beta",MC_BETA}, // Beta parameter for the MC law
+  {"A", DIFF_A}, // Parameter in various laws
+  {"B", DIFF_B}, // Parameter in various laws
 };
 /** @}*/
 }}

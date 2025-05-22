@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt, matplotlib
 pyFUKA_libspath = os.getenv('HOME_KADATH')+'/codes/PythonTools/lib/'
 sys.path.append(pyFUKA_libspath)
 
-LabelSize=15
+LabelSize=25
 TickSize=15
-CbarLabelSize=15
+CbarLabelSize=20
 
 # Set default matplotlib settings
 plt.rcParams.update({
     'figure.figsize'    : [8.0, 8.0],
-    'text.usetex'       : matplotlib.checkdep_usetex(True),
+    'text.usetex'       : False, #matplotlib.checkdep_usetex(True) matplotlib deprecated this in 3.6...thanks
     'font.family'       : "sans-serif",
     'font.serif'        : "cm",
     'xtick.major.size'  : 6,
@@ -41,7 +41,7 @@ def gen_cbarlabel(var_name,sq=False,inv=False,log=False):
   if inv:
     cbarlabel = r'1 / ' + cbarlabel
   if log:
-    cbarlabel = r'\log \left( '+cbarlabel+r' \right)'
+    cbarlabel = r'\log_{10} \left( '+cbarlabel+r' \right)'
   cbarlabel = r'$'+cbarlabel+r'$'
   return cbarlabel
 
@@ -64,13 +64,22 @@ def get_reader_args(args, filepathabs):
     bbh = args.bbh,
     bns = args.bns,
     ns = args.ns,
-    bh = args.bh)
+    ns_diffrot= args.ns_diffrot,
+    ns_iso_norot = args.ns_iso_norot,
+    ns_iso_diffrot = args.ns_iso_diffrot,
+    ns_iso_uniformrot = args.ns_iso_uniformrot,
+    bh = args.bh,
+    )
   
 def get_reader(filepathabs,
                bhns=False,
                bns=False,
                bbh=False,
                ns=False,
+               ns_diffrot=False,
+               ns_iso_norot=False,
+               ns_iso_uniformrot=False,
+               ns_iso_diffrot=False,
                bh=False):
   reader = None
   if bhns:
@@ -88,6 +97,18 @@ def get_reader(filepathabs,
   elif ns:
     from fukaID_readers.ns import ns_reader
     reader = ns_reader(filepathabs)
+  elif ns_diffrot:
+    from fukaID_readers.ns import ns_diffrot_reader
+    reader = ns_diffrot_reader(filepathabs)    
+  elif ns_iso_norot:
+    from fukaID_readers.ns import ns_isotropic_norot_reader
+    reader = ns_isotropic_norot_reader(filepathabs)
+  elif ns_iso_uniformrot:
+    from fukaID_readers.ns import ns_isotropic_uniformrot_reader
+    reader = ns_isotropic_uniformrot_reader(filepathabs)
+  elif ns_iso_diffrot:
+    from fukaID_readers.ns import ns_isotropic_diffrot_reader
+    reader = ns_isotropic_diffrot_reader(filepathabs)
     
   return reader
 
@@ -215,6 +236,47 @@ def extract_data(
   
   if xlen == ylen:
     data=data.reshape(xlen,ylen)
+  return data
+
+def extract_data_isotropic(
+  reader, 
+  var, 
+  x_coords,
+  z_coords,
+  plotz=False,
+  logscale=False,
+  square=False,
+  inverse=False,
+  zval=0):
+  
+  import numpy as np
+  plotz=True
+  xlen = len(x_coords)
+  zlen = len(z_coords)
+  
+  '''
+  In isotropic coordinates, phi symmetry is imposed and, as such,
+  there is no y coordinate input for interpolation, only x and z.
+  '''
+  if not plotz:
+    coords_lst = [[x, zval] for x in x_coords]
+  else:
+    coords_lst = [[x, z] for z in z_coords for x in x_coords]
+
+  data = reader.getFieldValues(var, coords_lst, -1)
+  data = np.array(data)
+  
+  if square:
+    data *= data
+
+  if inverse:
+    data = 1. / data
+
+  if logscale:
+    data = np.array(np.log10(np.abs(data)+1e-15))
+  
+  if xlen == zlen:
+    data=data.reshape(xlen,zlen)
   return data
 
 def get_quiver_vars(var, plane):

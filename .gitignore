@@ -18,3 +18,4 @@ src/System_of_eqs/do_newton.cpp
 *.pickle
 *.png
 *.pdf
+*venv*/

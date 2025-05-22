@@ -90,6 +90,25 @@ Domain_shell_inner_adapted::Domain_shell_inner_adapted (const Domain_shell_inner
     normal_cart = new Term_eq (*so.normal_cart) ;
 }
 
+// Constructor by copy
+Domain_shell_inner_adapted::Domain_shell_inner_adapted (const Space& sp, const Domain_shell_inner_adapted& so) : 
+	Domain(so, true), sp(sp),
+		  outer_radius (so.outer_radius), center(so.center) {
+
+  inner_radius = new Val_domain (this, *so.inner_radius) ;
+	
+  inner_radius_term_eq = 0x0 ;
+  rad_term_eq = 0x0 ;
+  der_rad_term_eq = 0x0 ;
+  dt_rad_term_eq = 0x0 ;
+  dp_rad_term_eq = 0x0 ;
+  normal_spher = 0x0 ;
+  normal_cart = 0x0 ;
+  
+  do_coloc() ;
+  inner_radius->coef();
+}
+
 Domain_shell_inner_adapted::Domain_shell_inner_adapted (const Space& sss, int num, FILE* fd) : Domain(num, fd), sp(sss), center(fd) {
 	fread_be (&outer_radius, sizeof(double), 1, fd) ;
         inner_radius = new Val_domain(this, fd) ;

@@ -86,6 +86,7 @@ class Domain : public MemoryMappable {
   explicit Domain (int num, int ttype, const Dim_array& res) ; ///< Constructor from a number of points and a type of base
   explicit Domain (int, FILE*) ; ///< Constructor from a file
   Domain (const Domain& so) ; ///< Copy constructor.
+  Domain (const Domain& so, bool import) ; ///< Copy constructor.
 
  public:
   virtual ~Domain() ; ///< Destructor.
@@ -370,7 +371,7 @@ class Domain : public MemoryMappable {
      * @param prec [input] : precision of the computation (used when comparing doubles).
      * @returns a \c true if the point is in the domain and \c false otherwise.
      */
-     virtual bool is_in(const Point& xx, double prec=1e-13) const ;
+     virtual bool is_in(const Point& xx, double prec=1e-12) const ;
      /**
      * Computes the numerical coordinates from the physical ones.
      * @param xxx [input] : the absolute Cartesian coordinates of the point.

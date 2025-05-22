@@ -30,6 +30,14 @@ std::ostream & operator<<(std::ostream &out, const BCO_INFO &BCO) {
   Kadath::FUKA_Config_Utils::print_params(BCO.bco_map, BCO.bco_params, out);
   if(auto ns_ptr = dynamic_cast<const BCO_NS_INFO*>(&BCO)) {
       print_params(ns_ptr->get_eos_map(), ns_ptr->return_eos_params());
+      if(!is_storage_all_nan(ns_ptr->return_diffrot_params())) {
+        s = "differential rotation parameters";
+        n = ((42 - s.size()) > 0) ? 42 - s.size() : s.size() - 42;
+        n /= 2;
+        title = std::string(n, '*') + s + std::string(n, '*');
+        out << title << std::endl;
+        print_params(ns_ptr->get_diffrot_map(), ns_ptr->return_diffrot_params());
+      }
   }
   return out;
 }

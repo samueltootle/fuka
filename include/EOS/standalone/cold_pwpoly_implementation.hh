@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include "cold_pwpoly.hh"
+#include "./brent.hh"
 #include <cmath>
 
 #ifndef COLD_PWPOLY_IMP_HH
@@ -123,38 +124,54 @@ inline double Cold_PWPoly::rho__press_cold(double &press_cold, error_t &error) {
 
 inline double Cold_PWPoly::rho__h_cold(double & h_cold, error_t &error) {
 
-  // Range check
-  if (h_cold <= 1.) {
-    h_cold = 1.;
-    error[0] = true;
-    return rho_tab[0];
-  }
-  auto index = find_piece__h_cold(h_cold, error);
+  double epsmin, epsmax;
+  const auto press_min = press_cold_eps_cold__rho(epsmin, rhomin, error);
+  const auto press_max = press_cold_eps_cold__rho(epsmax, rhomax, error);
 
-  const double gam_minusone = gamma_tab[index] - 1;
-  const double denom = gamma_tab[index] * k_tab[index];
-  const double numerator = gam_minusone * (h_cold - 1. - eps_tab[index]);
-  double rho = pow(numerator / denom, 1./gam_minusone);
+  const auto h_max = 1. + epsmax + press_max/rhomax;
+  const auto h_min = 1. + epsmin + press_min/rhomin;
+
+  // Range check
+  if (h_cold < h_min) {
+    h_cold = h_min;
+    error[0] = true;
+    return rhomin;
+  }
+  if (h_cold > h_max) {
+    h_cold = h_max;
+    error[0] = true;
+    return rhomax;
+  }
+
+  const auto func = [&](const double &lrho) {
+   double eps_cold;
+   double rho = std::exp(lrho);
+   const double press_cold = press_cold_eps_cold__rho(eps_cold, rho, error);
+   return h_cold - ( 1. + eps_cold + press_cold / exp(lrho) );
+  };
+  auto lrho = zero_brent<>(log(rhomin/10.), 0.999*log(rhomax), 1.0e-13, func);
+
+  double rho = std::exp(lrho);
   error = check_range(rho);
   return rho;
 }
 
-inline double 
+inline double
 Cold_PWPoly::rho_energy_dedp__press_cold(double &energy, double &dedp, double &press,
     error_t &error){
-  
+
   auto rho = rho__press_cold(press,error);
-  
+
   double eps;
   press_cold_eps_cold__rho(eps,rho,error);
-  
+
   auto const dpdrho = dpress_cold_drho__rho(rho,error);
-  
+
   energy = rho*(1.+eps);
   auto const rhoh = energy + press;
-  
+
   dedp = rhoh/(dpdrho*rho);
-  
+
   return rho;
 
 }

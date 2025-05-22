@@ -50,6 +50,23 @@ Domain_bispheric_rect::Domain_bispheric_rect (const Domain_bispheric_rect& so) :
 	p_dsint = (so.p_dsint!=0x0) ? new Val_domain(*so.p_dsint) : 0x0 ;
 }
 
+Domain_bispheric_rect::Domain_bispheric_rect (const Space& sp, const Domain_bispheric_rect& so) : Domain(so, true), aa(so.aa), 
+		eta_minus(so.eta_minus), eta_plus(so.eta_plus), chi_min(so.chi_min) {
+	p_eta = (so.p_eta!=0x0) ? new Val_domain(this, *so.p_eta) : 0x0 ;
+	p_chi = (so.p_chi!=0x0) ? new Val_domain(this, *so.p_chi) : 0x0 ;
+	p_phi = (so.p_phi!=0x0) ? new Val_domain(this, *so.p_phi) : 0x0 ;
+	p_detadx = (so.p_detadx!=0x0) ? new Val_domain(this, *so.p_detadx) : 0x0 ;
+	p_detady = (so.p_detady!=0x0) ? new Val_domain(this, *so.p_detady) : 0x0 ;
+	p_detadz = (so.p_detadz!=0x0) ? new Val_domain(this, *so.p_detadz) : 0x0 ;
+	p_dchidx = (so.p_dchidx!=0x0) ? new Val_domain(this, *so.p_dchidx) : 0x0 ;
+	p_dchidy = (so.p_dchidy!=0x0) ? new Val_domain(this, *so.p_dchidy) : 0x0 ;
+	p_dchidz = (so.p_dchidz!=0x0) ? new Val_domain(this, *so.p_dchidz) : 0x0 ;
+	p_dphidy = (so.p_dphidy!=0x0) ? new Val_domain(this, *so.p_dphidy) : 0x0 ;
+	p_dphidz = (so.p_dphidz!=0x0) ? new Val_domain(this, *so.p_dphidz) : 0x0 ;  
+	p_dsint  = (so.p_dsint!=0x0 ) ? new Val_domain(this, *so.p_dsint ) : 0x0 ;
+	do_coloc() ;
+}
+
 Domain_bispheric_rect::Domain_bispheric_rect (int num, FILE* fd) : Domain(num, fd) {
 	fread_be (&aa, sizeof(double), 1, fd) ;
 	fread_be (&eta_minus, sizeof(double), 1, fd) ;

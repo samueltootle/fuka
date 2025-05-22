@@ -59,6 +59,18 @@ class Vector : public Tensor {
 
 	virtual ~Vector() ;			///< Destructor
 
+	/**
+	 * @brief Use with Caution! Construct a new Vector object by copying
+	 * the coefficients/values/etc, but to a new Tensor with a different Space
+	 * pointer.  THIS ASSUMES BOTH SPACES ARE THE SAME, but with different
+	 * memory addresses
+	 * 
+	 * @param sp New space
+	 * @param a Tensor to copy
+	 */
+	Vector(const Space& sp, const Tensor& a) ;
+	Vector(const Space& sp, const Vector& a) ;       ///< Copy constructor
+
     // Mutators / assignment
     // ---------------------
     public:

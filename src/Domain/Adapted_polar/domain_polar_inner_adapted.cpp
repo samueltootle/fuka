@@ -86,6 +86,24 @@ Domain_polar_shell_inner_adapted::Domain_polar_shell_inner_adapted (const Domain
     normal_cart = new Term_eq (*so.normal_cart) ;
 }
 
+// Constructor by copy
+Domain_polar_shell_inner_adapted::Domain_polar_shell_inner_adapted (const Space& sp, const Domain_polar_shell_inner_adapted& so) : 
+	Domain(so, true), sp(sp),
+		  outer_radius (so.outer_radius), center(so.center) {
+
+  inner_radius = new Val_domain (this, *so.inner_radius) ;
+	
+  inner_radius_term_eq = 0x0 ;
+  rad_term_eq = 0x0 ;
+  der_rad_term_eq = 0x0 ;
+  dt_rad_term_eq = 0x0 ;
+  normal_spher = 0x0 ;
+  normal_cart = 0x0 ;
+  
+  do_coloc() ;
+  inner_radius->coef();
+}
+
 Domain_polar_shell_inner_adapted::Domain_polar_shell_inner_adapted (const Space& sss, int num, FILE* fd) : Domain(num, fd), sp(sss), center(fd) {
 	fread_be (&outer_radius, sizeof(double), 1, fd) ;
         inner_radius = new Val_domain(this, fd) ;
@@ -800,6 +818,42 @@ int Domain_polar_shell_inner_adapted::give_place_var (char* p) const {
     if (strcmp(p,"T ")==0)
 	res = 1 ;
     return res ;
+}
+
+double Domain_polar_shell_inner_adapted::integ (const Val_domain& so, int bound) const {
+	double res = 0 ;
+	Val_domain rrso (mult_r(mult_r(mult_sin_theta(so)))) ;
+
+	int baset = (*so.base.bases_1d[1]) (0) ;
+	if (baset != COS_EVEN) {
+		// Odd function
+		return res ;
+	}
+	else {
+		// For now only at infinity
+		if (bound!=OUTER_BC) {
+		  cerr << "Domain_polar_shell_inner_adapted::integ only defined for outer boundary" << endl ;
+		  abort() ;
+		}
+
+		//Loop on theta :
+		Index pos (get_nbr_coefs()) ;
+		for (int j=0 ; j<nbr_coefs(1) ; j++) {
+			pos.set(1) = j ;
+			res += 2./(2*double(j)+1) * val_boundary(bound, rrso, pos) ;
+			// double fact_tet = 2./double(1-4*j*j) ;
+			// // Loop on r :
+			// for (int i=0 ; i<nbr_coefs(0) ; i++) {
+			// 	pos.set(0) = i ;
+			// 	res += fact_tet*(*auxi.cf)(pos) ;
+			// }
+		}
+		return res*2*M_PI ;
+	}
+}
+
+Val_domain Domain_polar_shell_inner_adapted::dt (const Val_domain& so) const {
+  return (so.der_var(2)) ;
 }
 }
 

@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.12)  # Ensure the policy exists
+cmake_policy(SET CMP0074 NEW)        # Use the new behavior
 project(Kadath_release)
-
 if (NOT CMAKE_BUILD_TYPE)
     message(STATUS "No build type selected, default to Release")
     set(CMAKE_BUILD_TYPE "Release")
@@ -20,6 +20,21 @@ else(PAR_VERSION)
 endif(PAR_VERSION)
 
 set(CMAKE_MODULE_PATH $ENV{HOME_KADATH}/build_release)
+
+option(GRHAYL_EOS "Use GRHaYL EOS library" OFF)
+if(GRHAYL_EOS)
+	# Need to include the FindGRHAYL.cmake file
+	set(CMAKE_MODULE_PATH $ENV{HOME_KADATH}/Cmake)
+	include(FindGRHAYL)
+
+	find_package(GRHAYL REQUIRED)
+	add_definitions(-DWITH_GRHAYL_EOS)
+	message("GRHAYL_INCLUDES: " ${GRHAYL_INCLUDES})
+	include_directories (${GRHAYL_INCLUDES})
+
+	# Reset back to the default module path to avoid errors
+	set(CMAKE_MODULE_PATH $ENV{HOME_KADATH}/build_release)
+endif(GRHAYL_EOS)
 
 if(PAR_VERSION)
 	file(COPY $ENV{HOME_KADATH}/src_par/do_newton.cpp DESTINATION $ENV{HOME_KADATH}/src/System_of_eqs/)
@@ -46,9 +61,9 @@ endif()
 #need to use C++17
 add_definitions(-std=c++17)
 if ("$ENV{KAD_ARCH}" STREQUAL "")
-  set(CMAKE_CXX_FLAGS_RELEASE "-g -O3 -std=c++17")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -g -O3 -std=c++17")
 else()
-  set(CMAKE_CXX_FLAGS_RELEASE "-g -O3 -march=$ENV{KAD_ARCH} -std=c++17")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -g -O3 -march=$ENV{KAD_ARCH} -std=c++17")
 endif()
 
 add_library(kadath ${KADATH_SOURCES})

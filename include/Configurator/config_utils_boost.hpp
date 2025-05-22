@@ -17,23 +17,23 @@
 */
 
 #pragma once
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/foreach.hpp>
+#include <boost/optional.hpp>
+#include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ptree_fwd.hpp>
-#include <boost/property_tree/info_parser.hpp>
-#include <boost/foreach.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/optional.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
-#include "config_enums.hpp"
-#include <stdexcept>
-#include <variant>
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <typeinfo>
-#include <type_traits>
-#include <sstream>
 #include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <typeinfo>
+#include <variant>
+#include "config_enums.hpp"
 namespace pt = boost::property_tree;
 
 /** @defgroup Configurator_Utils
@@ -58,7 +58,7 @@ namespace FUKA_Config_Utils {
   * @param[input] idx: index of parameter - used only for error deduction
   * @return bool
   */
-template<typename map_t, typename T>
+template <typename map_t, typename T>
 bool check_for_nan(const map_t& map, const T& var, const int idx);
 
 /**
@@ -71,7 +71,7 @@ bool check_for_nan(const map_t& map, const T& var, const int idx);
   * @param[input] node: node string branch should come from
   * @return branch
   */
-template<typename tree_t>
+template <typename tree_t>
 tree_t read_branch(const tree_t& tree, std::string node);
 
 /**
@@ -88,8 +88,11 @@ tree_t read_branch(const tree_t& tree, std::string node);
   * @param[input]  tree: tree to read branch from
   * @param[input]  rsuffix: whether we need to remove suffix (e.g. NS1 -> NS) 
   */
-template<typename ary_t, typename map_t, typename tree_t>
-void get_branch_nodes(const map_t& storage_map, ary_t& storage, const tree_t& branch, bool rsuffix = false);
+template <typename ary_t, typename map_t, typename tree_t>
+void get_branch_nodes(const map_t& storage_map,
+                      ary_t& storage,
+                      const tree_t& branch,
+                      bool rsuffix = false);
 
 /**
   * read_keys
@@ -105,8 +108,10 @@ void get_branch_nodes(const map_t& storage_map, ary_t& storage, const tree_t& br
   * @param[output] storage array: to store read-in keys into
   * @param[input]  tree: tree to read branch from
   */
-template<typename ary_t, typename map_t, typename tree_t>
-void read_keys(const map_t& storage_map, ary_t& storage, const tree_t& tree) noexcept;
+template <typename ary_t, typename map_t, typename tree_t>
+void read_keys(const map_t& storage_map,
+               ary_t& storage,
+               const tree_t& tree) noexcept;
 
 /**
   * print_params
@@ -121,7 +126,9 @@ void read_keys(const map_t& storage_map, ary_t& storage, const tree_t& tree) noe
   * @param[output] storage array: to store read-in keys into
   */
 template <typename map_t, typename ary_t>
-void print_params(const map_t& storage_map, const ary_t& storage, std::ostream& out=std::cout);
+void print_params(const map_t& storage_map,
+                  const ary_t& storage,
+                  std::ostream& out = std::cout);
 
 /**
   * build_branch
@@ -137,7 +144,9 @@ void print_params(const map_t& storage_map, const ary_t& storage, std::ostream& 
   * @return       branch branch built from non-nan/false storage values
   */
 template <typename tree_t, typename map_t, typename ary_t>
-tree_t build_branch(const map_t& storage_map, const ary_t& storage, const bool inc_off=false);
+tree_t build_branch(const map_t& storage_map,
+                    const ary_t& storage,
+                    const bool inc_off = false);
 
 /**
   * get_last_enabled_no_throw
@@ -152,7 +161,7 @@ tree_t build_branch(const map_t& storage_map, const ary_t& storage, const bool i
   * @return       std::tuple tuple of index and associated mapped string
   */
 template <typename ary_t, typename map_t>
-std::tuple<std::string, int> get_last_enabled(map_t enum_map, ary_t toggle); 
+std::tuple<std::string, int> get_last_enabled(map_t enum_map, ary_t toggle);
 
 /**
   * get_last_enabled
@@ -167,7 +176,7 @@ std::tuple<std::string, int> get_last_enabled(map_t enum_map, ary_t toggle);
   * @return       std::tuple tuple of index and associated mapped string
   */
 template <typename ary_t, typename map_t>
-std::tuple<std::string, int> get_last_enabled(map_t enum_map, ary_t toggle); 
+std::tuple<std::string, int> get_last_enabled(map_t enum_map, ary_t toggle);
 
 /**
  * append_map
@@ -186,39 +195,45 @@ std::tuple<std::string, int> get_last_enabled(map_t enum_map, ary_t toggle);
  * @return map: possibly an appended version of partial_map.
  */
 template <typename map_t, typename boolary_t>
-map_t append_map (const map_t& full_map, const map_t& partial_map, const boolary_t& storage);
-
+map_t append_map(const map_t& full_map,
+                 const map_t& partial_map,
+                 const boolary_t& storage);
 
 template <class tree_t>
-auto find_leaf(tree_t const & tree, std::string key) {
-  
+auto find_leaf(tree_t const& tree, std::string key) {
+
   std::string branch_name{};
 
-  auto search_branch = [&](auto& branch) -> std::tuple<std::string, std::string> {
-    for(auto const & node : branch) {
-      if(node.second.empty())
-        if(node.first == key) {
+  auto search_branch =
+      [&](auto& branch) -> std::tuple<std::string, std::string> {
+    for (auto const& node : branch) {
+      if (node.second.empty())
+        if (node.first == key) {
           return std::make_tuple(node.first, node.second.data());
         }
     }
     return {};
   };
-  std::function<std::tuple<std::string,std::string,std::string>(tree_t const &)> recursive_search;
-  recursive_search = [&](auto& branch) -> std::tuple<std::string,std::string,std::string> {
+  std::function<std::tuple<std::string, std::string, std::string>(
+      tree_t const&)>
+      recursive_search;
+  recursive_search =
+      [&](auto& branch) -> std::tuple<std::string, std::string, std::string> {
     auto tmp = search_branch(branch);
 
-    if(!std::get<0>(tmp).empty()) {  
-      #ifdef DEBUG
-      std::cout << branch_name << ", " << std::get<0>(tmp) << "," << std::get<1>(tmp) << std::endl;
-      #endif
+    if (!std::get<0>(tmp).empty()) {
+#ifdef DEBUG
+      std::cout << branch_name << ", " << std::get<0>(tmp) << ","
+                << std::get<1>(tmp) << std::endl;
+#endif
       return std::make_tuple(branch_name, std::get<0>(tmp), std::get<1>(tmp));
     }
-    for(auto const & node : branch) {
-      if(!node.second.empty()) {
+    for (auto const& node : branch) {
+      if (!node.second.empty()) {
         branch_name = node.first;
         tree_t t_branch = read_branch(branch, branch_name);
         auto tmp_tuple = recursive_search(t_branch);
-        if(!std::get<0>(tmp_tuple).empty()) {
+        if (!std::get<0>(tmp_tuple).empty()) {
           return tmp_tuple;
         }
       }
@@ -226,11 +241,36 @@ auto find_leaf(tree_t const & tree, std::string key) {
     return {};
   };
   auto res = recursive_search(tree);
-  
+
   return res;
 }
+
+/**
+ * @brief Checks if all storage elements are std::nan.  Works
+ * for fundamental and variant types
+ * 
+ * @tparam ary_t Template argument for storage array
+ * @param storage storage array
+ * @return true if all elements are std::nan
+ * @return false 
+ */
+template <class ary_t>
+constexpr inline bool is_storage_all_nan(ary_t& storage);
+
+/**
+ * @brief Recursively add branch data and update the data
+ * path
+ * 
+ * @tparam tree_t Boost tree type by default
+ * @param tree Tree to add data to
+ * @param branch Branch to read data from
+ * @param path base path to add data to
+ */
+template <typename tree_t>
+void add_branch_data(tree_t& tree, tree_t& branch, std::string path = "");
 
 /** @} end config_utils group */
 
 #include "config_utils_boost_imp.cpp"
-}}
+}  // namespace FUKA_Config_Utils
+}  // namespace Kadath

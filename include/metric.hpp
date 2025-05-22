@@ -273,7 +273,6 @@ class Metric_flat : public Metric {
 	* @return : the result as a \c Term_eq.
 	*/
 	Term_eq derive_partial_mtz (int tder, char indder, const Term_eq& so) const ;
-	/**
 
 	/**
 	* Computes the flat covariant derivative, in orthonormal spherical coordinates.

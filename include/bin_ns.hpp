@@ -36,8 +36,10 @@ class Space_bin_ns : public Space {
 
      protected :
   	int n_shells_outer{0} ; ///< Number of outer shells.
-    int n_shells1{0}; ///< Number of shells around the first nucleus.
-    int n_shells2{0}; ///< Number of shells around the second nucleus.
+	int n_inner_shells1{0}; ///< Number of shells between NS1 nucleus and outer adapted shell.
+	int n_inner_shells2{0}; ///< Number of shells between NS2 nucleus and outer adapted shell.
+    int n_shells1{0}; ///< Number of shells beyond outer adapted shell
+    int n_shells2{0}; ///< Number of shells beyond outer adapted shell
 
      public:
     int NS1{0}; ///< Starting index of the first spheres.
@@ -112,9 +114,10 @@ class Space_bin_ns : public Space {
 	Space_bin_ns (int ttype, double dist, double rinstar1, double rstar1, double routstar1,
 			double rinstar2, double rstar2, double routstar2, double rext, int nr, int nshells1 = 0, int nshells2 = 0) ;
 
-  Space_bin_ns (int ttype, double dist, const std::vector<double>& NS1_bounds, const std::vector<double>& NS2_bounds,
-                            const std::vector<double>& outer_bounds, int nr);
+  	Space_bin_ns (int ttype, double dist, const std::vector<double>& NS1_bounds, const std::vector<double>& NS2_bounds,
+                            const std::vector<double>& outer_bounds, int nr, const int n_inner_shellsNS1 = 0, const int n_inner_shellsNS2 = 0);
 
+	Space_bin_ns (const Space_bin_ns &) ; ///< Constructor from existing space.
 	Space_bin_ns (FILE*, bool old = false) ; ///< Constructor from a file for old data.
 
  	virtual ~Space_bin_ns() ; ///< Destructor
@@ -270,7 +273,7 @@ class Space_bin_ns : public Space {
 	* @param eq : the string describing the equation (should contain something like integvolume(f)=b)
 	*/
 	void add_eq_int_outer_sphere_two (System_of_eqs& sys, const char* nom) ;
-  
+
   int const & get_n_shells_outer() const { return n_shells_outer; }
 } ;
 }

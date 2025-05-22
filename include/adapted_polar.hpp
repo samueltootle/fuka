@@ -104,6 +104,7 @@ class Domain_polar_shell_inner_adapted : public Domain {
   */
   Domain_polar_shell_inner_adapted (const Space& sp, int num, int ttype, const Val_domain& rin, double rout, const Point& cr, const Dim_array& nbr) ;
   Domain_polar_shell_inner_adapted (const Domain_polar_shell_inner_adapted & so) ; ///< Copy constructor.
+  Domain_polar_shell_inner_adapted (const Space& sp, const Domain_polar_shell_inner_adapted & so) ; ///< Copy constructor. New space
   /**
   * Constructor from a file
   * @param sp [input] : the associated \c Space.
@@ -180,6 +181,10 @@ class Domain_polar_shell_inner_adapted : public Domain {
      virtual Val_domain laplacian (const Val_domain&, int) const ;
      virtual Val_domain laplacian2 (const Val_domain&, int) const ;
      virtual Val_domain der_r (const Val_domain&) const ;
+     virtual Val_domain dt (const Val_domain&) const ; 
+     virtual double integrale (const Val_domain&) const ;
+     virtual double integ_volume (const Val_domain&) const ;
+     virtual double integ (const Val_domain& so, int bound) const;
 
 
      virtual double val_boundary (int, const Val_domain&, const Index&) const ;
@@ -381,6 +386,7 @@ class Domain_polar_shell_outer_adapted : public Domain {
   */
   Domain_polar_shell_outer_adapted (const Space& sp, int num, int ttype, double rin, const Val_domain& rout, const Point& cr, const Dim_array& nbr) ;
   Domain_polar_shell_outer_adapted (const Domain_polar_shell_outer_adapted & so) ; ///< Copy constructor.
+  Domain_polar_shell_outer_adapted (const Space& sp, const Domain_polar_shell_outer_adapted & so) ; ///< Copy constructor, new space.
  /**
   * Constructor from a file
   * @param sp [input] : the associated \c Space.
@@ -463,6 +469,9 @@ class Domain_polar_shell_outer_adapted : public Domain {
      virtual Val_domain laplacian (const Val_domain&, int) const ;
      virtual Val_domain laplacian2 (const Val_domain&, int) const ;
      virtual Val_domain der_r (const Val_domain&) const ;
+     virtual Val_domain dt (const Val_domain&) const ; 
+     virtual double integrale (const Val_domain&) const ;
+     virtual double integ_volume (const Val_domain&) const ;
 
     /**
       * Computes the flat gradient of a field, in orthonormal spherical coordinates.
@@ -609,6 +618,7 @@ class Space_polar_adapted : public Space {
 	* @param bounds [input] : radii of the various shells (and also determines the total number of domains).
 	*/
 	Space_polar_adapted (int ttype, const Point& cr, const Dim_array& nbr, const Array<double>& bounds) ;
+     Space_polar_adapted (const Space_polar_adapted& sp) ; ///< Constructor from a file
 	Space_polar_adapted (FILE*) ; ///< Constructor from a file
 	virtual ~Space_polar_adapted() ; ///< Destructor
 	virtual void save(FILE*) const ;
@@ -645,7 +655,8 @@ class Space_polar_adapted : public Space {
 	* @param pused : pointer on the indexes of the components to be considered. Not used of nused = -1 .
 	*/
 	void add_eq_matter (System_of_eqs& syst, const char* eq, const char* rac, const char* rac_der, int nused=-1, Array<int>** pused=0x0) const ;
-
+     void add_eq_int_inf (System_of_eqs& sys, const char* nom);
+     void add_eq_int_volume (System_of_eqs& syst, int nz, const char* eq) ;
 } ;
 }
 #endif

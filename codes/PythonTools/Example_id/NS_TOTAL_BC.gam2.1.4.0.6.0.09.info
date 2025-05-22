@@ -1,0 +1,50 @@
+ns
+{
+    chi 0.59999999999999998
+    dim 3
+    hc 1.1750884081206943
+    madm 1.3999999999999999
+    mb 1.4891971912203705
+    n_inner_shells 0
+    nc 0.00087544204060347125
+    nshells 0
+    omega 0.019916374225924082
+    ql_madm 1.3999999999999999
+    qpig 12.566370614359172
+    res 9
+    rin 4.0561392048253966
+    rmid 8.1122784096507932
+    rout 16.224556819301586
+    velx 0
+    vely 0
+    eosfile gam2.polytrope
+    eostype Cold_PWPoly
+}
+fields
+{
+    conf on
+    lapse on
+    logh on
+    shift on
+}
+stages
+{
+    norot_bc off
+    total_bc on
+}
+sequence_controls
+{
+    centralized_cos off
+    checkpoint off
+    corot_binary off
+    fixed_lapse off
+    resolve off
+    sequences off
+    use_pn off
+}
+sequence_settings
+{
+    initial_resolution 9
+    solver_max_iterations 15
+    solver_precision 1e-08
+}

@@ -4,6 +4,7 @@
 #include <Configurator/config_binary.hpp>
 #include <exporter_utilities.hpp>
 #include <cmath>
+#include "EOS/FUKA_EOS_Utilities.hh"
 
 using namespace Kadath;
 using namespace export_utils;
@@ -18,9 +19,10 @@ std::array<std::vector<double>,NUM_OUT> KadathExportBHNS(int const npoints,
 
   kadath_config_boost<BIN_INFO> bconfig(filename);
 
-  // get const EOS information - used for initializing EOS later
-  const double h_cut = bconfig.eos<double>(HCUT, BCO1);
-  const std::string eos_file = bconfig.eos<std::string>(EOSFILE, BCO1);
+  using namespace Kadath::FUKA_EOS;
+  EOS_initialize::init(bconfig, NODES::BCO1);
+
+  // get const EOS information
   const std::string eos_type = bconfig.eos<std::string>(EOSTYPE, BCO1);
 
   /* file containing KADATH fields must have same name as config file
@@ -71,31 +73,7 @@ std::array<std::vector<double>,NUM_OUT> KadathExportBHNS(int const npoints,
   fmet.set_system(syst, "f");
 
   Param p;
-  // add EOS user defined OPEs based on EOS type
-  if(eos_type == "Cold_Table") {
-    using namespace Kadath::Margherita;
-    using eos_t = Kadath::Margherita::Cold_Table;
-    
-    const int interp_pts = (bconfig.eos<int>(INTERP_PTS, BCO1) == 0) ? \
-                            2000 : bconfig.eos<int>(INTERP_PTS, BCO1);
-
-    EOS<Cold_Table, PRESSURE>::init(eos_file);
-
-    EOS<eos_t,PRESSURE>::init(eos_file, h_cut, interp_pts);
-    syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
-    syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
-    syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
-  }
-
-  if(eos_type == "Cold_PWPoly") {
-    using namespace Kadath::Margherita;
-    using eos_t = Kadath::Margherita::Cold_PWPoly;
-
-    EOS<eos_t,PRESSURE>::init(eos_file, h_cut);
-    syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
-    syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
-    syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
-  } // end adding EOS OPEs
+  EOS_Function_Dispatcher::dispatch<set_eos_ope_struct>(bconfig, eos_type, syst, p);
 
   syst.add_cst("4piG", bconfig(QPIG));
   syst.add_cst("PI", M_PI);
@@ -287,19 +265,19 @@ std::array<std::vector<double>,NUM_OUT> KadathExportBHNS(int const npoints,
     }
     else {
       if(eos_type == "Cold_Table") {
-        using namespace Kadath::Margherita;
+        using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
 
-        out[RHO][i]   = EOS<Cold_Table, DENSITY>::get(h);
-        out[EPS][i]   = EOS<Cold_Table, EPSILON>::get(h);
-        out[PRESS][i] = EOS<Cold_Table, PRESSURE>::get(h);
+        out[RHO][i]   = EOS<eos_t, DENSITY>::get(h);
+        out[EPS][i]   = EOS<eos_t, EPSILON>::get(h);
+        out[PRESS][i] = EOS<eos_t, PRESSURE>::get(h);
       }
 
       if(eos_type == "Cold_PWPoly") {
-        using namespace Kadath::Margherita;
+        using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>;
 
-        out[RHO][i] = EOS<Cold_PWPoly, DENSITY>::get(h);
-        out[EPS][i] = EOS<Cold_PWPoly, EPSILON>::get(h);
-        out[PRESS][i] = EOS<Cold_PWPoly, PRESSURE>::get(h);
+        out[RHO][i] = EOS<eos_t, DENSITY>::get(h);
+        out[EPS][i] = EOS<eos_t, EPSILON>::get(h);
+        out[PRESS][i] = EOS<eos_t, PRESSURE>::get(h);
       }
     }
 

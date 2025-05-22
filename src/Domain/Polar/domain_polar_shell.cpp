@@ -39,7 +39,8 @@ Domain_polar_shell::Domain_polar_shell (int num, int ttype, double rint, double 
 Domain_polar_shell::Domain_polar_shell (const Domain_polar_shell& so) : Domain(so), alpha(so.alpha), 
 						beta(so.beta), center(so.center){}
 
-
+Domain_polar_shell::Domain_polar_shell (const Domain_polar_shell& so, bool import) : Domain(so, import), alpha(so.alpha), 
+						beta(so.beta), center(so.center){}
 
 Domain_polar_shell::Domain_polar_shell (int num, FILE* fd) : Domain(num, fd), center(fd) {
 	fread_be (&alpha, sizeof(double), 1, fd) ;

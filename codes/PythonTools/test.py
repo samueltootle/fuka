@@ -5,6 +5,7 @@ from matplotlib import ticker, cm
 
 pyFUKA_libspath = os.getenv('HOME_KADATH')+'/codes/PythonTools/lib/'
 sys.path.append(pyFUKA_libspath)
+from fuka_plot_tools.setup_utils import get_reader
 def test_bns():
   from fukaID_readers.bns import bns_reader
 
@@ -34,3 +35,7 @@ def test_ns():
 
   ns = ns_reader('Example_id/converged_NS_TOTAL_BC.togashi.2.23.-0.4.0.11.dat')
   return ns
+
+f="<ID>.dat"
+#readerISO = get_reader(f, ns_iso_diffrot=True, ns_iso_uniformrot=False)
+#print(readerISO.vars)

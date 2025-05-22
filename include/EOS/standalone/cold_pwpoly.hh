@@ -61,7 +61,7 @@ class Cold_PWPoly {
   static inline double gamma_cold_eps_tab__rho(double &eps_tabL, double &rho,
                                                error_t &error);
 
-  static constexpr int max_num_pieces = 8;
+  static constexpr int max_num_pieces = 15;
 
   static std::array<double, max_num_pieces> k_tab;
   static std::array<double, max_num_pieces> gamma_tab;

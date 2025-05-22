@@ -65,15 +65,12 @@ class python_reader_t {
   // the space on which everything is defined
   space_t space;
 
-  // in case of matter content the EOS
-  template<eos_var_t var> using eos = EOS<Margherita::Cold_Table,var>;
-
   public:
   boost::python::dict vars;
   boost::python::dict config;
 
   // general construcor, filling the dicts
-  python_reader_t(std::string const & filename) 
+  python_reader_t(std::string const & filename)
     : file(fopen(filename.c_str(), "r")), space(file) {
     for(auto q : vars_t::vars) {
       switch(q.second) {
@@ -147,7 +144,7 @@ class python_reader_t {
           } while(ind.inc());
           values.append(comps);
         }
-      } 
+      }
       else {
         if(tensor.get_valence() == 0)
           values.append(tensor(ind).val_point_bound(abs_coords,bound));
@@ -163,9 +160,15 @@ class python_reader_t {
     return values;
   }
 
+};
+
+template<class eos_t>
+struct PygetEOSValues {
   // point-wise EOS exporter interface for python
-  boost::python::list getEOSValues(boost::python::list const & coord_list) {
-    auto logh_values = getFieldValues("logh", coord_list);
+  // boost::python::list getEOSValues(boost::python::list const & coord_list) {
+  template<class reader_t>
+  boost::python::list operator()(boost::python::list const & coord_list, reader_t * this_reader) {
+    auto logh_values = this_reader->getFieldValues("logh", coord_list);
 
     // list of EOS values to return
     boost::python::list values;
@@ -175,17 +178,15 @@ class python_reader_t {
 
       boost::python::list eos_tuple;
 
-      eos_tuple.append(eos<DENSITY>::get(h));
-      eos_tuple.append(eos<EPSILON>::get(h));
-      eos_tuple.append(eos<PRESSURE>::get(h));
+      eos_tuple.append(EOS<eos_t, DENSITY>::get(h));
+      eos_tuple.append(EOS<eos_t, EPSILON>::get(h));
+      eos_tuple.append(EOS<eos_t, PRESSURE>::get(h));
 
       values.append(eos_tuple);
     }
 
     return values;
   }
-
-
 };
 
 template<typename space_t>
@@ -209,7 +210,7 @@ void constructPythonReader(std::string reader_name) {
   reader.def("getFieldValues", &reader_t::getFieldValues);
   reader.def("getEOSValues", &reader_t::getEOSValues);
   reader.def_readonly("vars", &reader_t::vars);
-  reader.def_readonly("config", &reader_t::config);  
+  reader.def_readonly("config", &reader_t::config);
 }
 
 

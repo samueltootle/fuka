@@ -204,6 +204,36 @@ Tensor::Tensor (const Tensor& source, bool copy) :
       parameters = 0x0 ;
 }
 
+// THIS IS VERY DANGEROUS
+// This assumes the spaces are identical, but different objects
+// This also assumes the bases are identical in all domains
+Tensor::Tensor (const Space& sp, const Tensor& source) :
+    espace(sp), ndom(source.ndom), ndim(source.ndim), valence(source.valence), basis(sp, source.get_basis().get_basis(0)),
+    type_indice(source.type_indice), n_comp (source.n_comp) {
+
+    cmp = MemoryMapper::get_memory<Scalar*>(n_comp);
+    for (int i=0 ; i<n_comp ; i++)
+	cmp[i] = new Scalar(sp, *source.cmp[i]) ;
+
+    name_indice = (valence==0) ? 0x0 : MemoryMapper::get_memory<char>(valence) ;
+    name_affected = false ;
+    if ((source.name_affected)) {
+        name_affected = true ;
+        for (int i=0 ; i<valence ; i++)
+            name_indice[i] = source.name_indice[i] ;
+	}
+
+    // Storage methods :
+    give_place_array = source.give_place_array ;
+    give_place_index = source.give_place_index ;
+    give_indices = source.give_indices ;
+
+    if (source.parameters!=0x0)
+      parameters = new Param_tensor(*source.parameters) ;
+    else
+      parameters = 0x0 ;
+}
+
 //  Constructor for a scalar field: to be used by the derived
 //  class {\tt Scalar}
 //-----------------------------------------------------------

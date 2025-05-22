@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#source ../envs/env
+#if [ $? -ne 0 ]
+#  then
+#    exit 1
+#fi
+
+mkdir -p build
+cd build
+rm -fr ./*
+
+cmake -DCMAKE_C_COMPILER=$KAD_CC -DCMAKE_CXX_COMPILER=$KAD_CXX -DPAR_VERSION=ON -DCMAKE_BUILD_TYPE=Release -DGRHAYL_EOS=ON  ..
+#cmake -DCMAKE_C_COMPILER=$KAD_CC -DCMAKE_CXX_COMPILER=$KAD_CXX -DPAR_VERSION=OFF -DCMAKE_BUILD_TYPE=Release ..
+
+make -j$KAD_NUMC
