@@ -241,7 +241,8 @@ struct reader_output {
 
     double conf_eq = conf(space.ADAPTEDNS)(pos_eq);
     double Circumferential_R =
-        conf_eq * conf_eq * space.get_domain(space.ADAPTEDNS)->get_radius()(pos_eq);
+        conf_eq * conf_eq *
+        space.get_domain(space.ADAPTEDNS)->get_radius()(pos_eq);
     double& CR = Circumferential_R;
     // END NS Quantities
 

@@ -378,8 +378,7 @@ void reader_2d_diffrot(config_t bconfig) {
             << FORMAT << std::scientific << "Central h = " << hc << std::endl
             << FORMAT << std::scientific << "Central log(h) = " << loghc
             << std::endl
-            << FORMAT << std::scientific << "Central Pressure = " << pc
-            << "\n"
+            << FORMAT << std::scientific << "Central Pressure = " << pc << "\n"
             << FORMAT << "Beta: " << T_integral / W_be << "\n\n";
   // << FORMAT << std::scientific << "Central dlog(h)/dx = " << central_dHdx << std::endl
   // << FORMAT << std::scientific << "Central Euler Constant = "<< central_euler << std::endl

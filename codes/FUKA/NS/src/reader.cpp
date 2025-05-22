@@ -201,14 +201,14 @@ struct reader_3d {
                         syst.give_val_def("intH")()(1).integ_volume();
 
     double T_integral = syst.give_val_def("intT")()(0).integ_volume() +
-    syst.give_val_def("intT")()(1).integ_volume();
+                        syst.give_val_def("intT")()(1).integ_volume();
     T_integral *= 0.5;
 
     double J_vintegral = syst.give_val_def("vintJ")()(0).integ_volume() +
-    syst.give_val_def("vintJ")()(1).integ_volume();
+                         syst.give_val_def("vintJ")()(1).integ_volume();
 
     double eps_integral = syst.give_val_def("inteps")()(0).integ_volume() +
-    syst.give_val_def("inteps")()(1).integ_volume();
+                          syst.give_val_def("inteps")()(1).integ_volume();
 
     double W_be = T_integral + eps_integral + baryonic_mass - Madm;
     double BETA = T_integral / W_be;
