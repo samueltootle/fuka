@@ -1,4 +1,5 @@
 #include "Solvers/bh_3d_xcts/bh_exporter.hpp"
+
 namespace Kadath::FUKA_Solvers {
 #ifdef DEFAULT_KAD_MEM
 CFMS_BH_Exporter::CFMS_BH_Exporter(CFMS_BH_Exporter const& r) {
@@ -15,13 +16,14 @@ CFMS_BH_Exporter::CFMS_BH_Exporter(CFMS_BH_Exporter const& r) {
 
   export_ready = false;
 
-    populate_quants();
-    std::copy(r.quant_vals_origin.begin(), r.quant_vals_origin.end(), quant_vals_origin.begin());
-    export_ready = true;
-    // For testing only
-    // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
-    // std::cout << "copy\n";
-  }
+  populate_quants();
+  std::copy(r.quant_vals_origin.begin(), r.quant_vals_origin.end(),
+            quant_vals_origin.begin());
+  export_ready = true;
+  // For testing only
+  // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
+  // std::cout << "copy\n";
+}
 
 CFMS_BH_Exporter& CFMS_BH_Exporter::operator=(const CFMS_BH_Exporter& b) {
   if (this == &b)
@@ -86,65 +88,88 @@ void CFMS_BH_Exporter::populate_quants() {
   quants[XCTS_VARS::XCTS_BETA2] = std::cref((*shift)(2));
   quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
-  export_utils::add_tensor_refs(
-      quants,
-      {XCTS_VARS::XCTS_A11, XCTS_VARS::XCTS_A12, XCTS_VARS::XCTS_A13,
-       XCTS_VARS::XCTS_A22, XCTS_VARS::XCTS_A23, XCTS_VARS::XCTS_A33},
-      *A);
+  export_utils::add_tensor_refs(quants,
+                                {XCTS_VARS::XCTS_A11, XCTS_VARS::XCTS_A12,
+                                 XCTS_VARS::XCTS_A13, XCTS_VARS::XCTS_A22,
+                                 XCTS_VARS::XCTS_A23, XCTS_VARS::XCTS_A33},
+                                *A);
   export_ready = true;
 }
 
-  CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise_subset(double const & x, double const & y, double const & z,
-    std::vector<CFMS_BH_Exporter::XCTS_VARS> slice, double const interpolation_offset, int const interp_order, double const delta_r_rel) {
+CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise_subset(
+    double const& x,
+    double const& y,
+    double const& z,
+    std::vector<CFMS_BH_Exporter::XCTS_VARS> slice,
+    double const interpolation_offset,
+    int const interp_order,
+    double const delta_r_rel) {
 
-    quant_vals.fill(0);
+  quant_vals.fill(0);
 
-    // interpolation_factor determines which region we interpolate from.
-    // When we fill the nucleus, we fill starting at 0.85 * r_ah after prefilling is complete
-    // otherwise interpolation_factor is 1 (e.g. the excision radius)
-    double interpolation_factor = (export_ready) ? 0.85 : 1. ;
-    double rbh = interpolation_factor * bco_utils::get_radius(space->get_domain(2), INNER_BC);
+  // interpolation_factor determines which region we interpolate from.
+  // When we fill the nucleus, we fill starting at 0.85 * r_ah after prefilling is complete
+  // otherwise interpolation_factor is 1 (e.g. the excision radius)
+  double interpolation_factor = (export_ready) ? 0.85 : 1.;
+  double rbh = interpolation_factor *
+               bco_utils::get_radius(space->get_domain(2), INNER_BC);
 
   double r2yz = y * y + z * z;
 
   double r = std::sqrt(x * x + r2yz);
 
-    double const bh_ori = 0.0;
+  double const bh_ori = 0.0;
 
-    if (r <= (1. + interpolation_offset) * rbh) {
-      if(export_ready) {
-        export_utils::spherical_turduck_fit_origin__all_gfs(quants, quant_vals, quant_vals_origin, slice, x, y, z, rbh, r,
-          interp_order, delta_r_rel, interpolation_offset, bh_ori
-        );
-      } else {
-        export_utils::spherical_turduck__all_gfs(quants, quant_vals, slice, x, y, z, rbh, r,
-          interp_order, delta_r_rel, interpolation_offset, bh_ori
-        );
-      }
+  if (r <= (1. + interpolation_offset) * rbh) {
+    if (export_ready) {
+      export_utils::spherical_turduck_fit_origin__all_gfs(
+          quants, quant_vals, quant_vals_origin, slice, x, y, z, rbh, r,
+          interp_order, delta_r_rel, interpolation_offset, bh_ori);
     } else {
-      Point abs_coords(ndim);
-      abs_coords.set(1) = x;
-      abs_coords.set(2) = y;
-      abs_coords.set(3) = z;
-
-      for (const auto k : slice) {
-        quant_vals[k] = quants[k].get().val_point(abs_coords);
-      }
+      export_utils::spherical_turduck__all_gfs(quants, quant_vals, slice, x, y,
+                                               z, rbh, r, interp_order,
+                                               delta_r_rel,
+                                               interpolation_offset, bh_ori);
     }
-    return quant_vals;
+  } else {
+    Point abs_coords(ndim);
+    abs_coords.set(1) = x;
+    abs_coords.set(2) = y;
+    abs_coords.set(3) = z;
+
+    for (const auto k : slice) {
+      quant_vals[k] = quants[k].get().val_point(abs_coords);
+    }
   }
+  return quant_vals;
+}
 
-  CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise(double const & x, double const & y, double const & z,
-    double const interpolation_offset, int const interp_order, double const delta_r_rel) {
+CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise(
+    double const& x,
+    double const& y,
+    double const& z,
+    double const interpolation_offset,
+    int const interp_order,
+    double const delta_r_rel) {
 
-    return interpolate_pointwise_subset(x, y, z, xcts_all_indicies, interpolation_offset, interp_order, delta_r_rel);
-  }
+  return interpolate_pointwise_subset(x, y, z, xcts_all_indicies,
+                                      interpolation_offset, interp_order,
+                                      delta_r_rel);
+}
 
-  CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise__solution_gfs(double const & x, double const & y, double const & z,
-    double const interpolation_offset, int const interp_order, double const delta_r_rel) {
+CFMS_BH_Exporter::interp_ary_t
+CFMS_BH_Exporter::interpolate_pointwise__solution_gfs(
+    double const& x,
+    double const& y,
+    double const& z,
+    double const interpolation_offset,
+    int const interp_order,
+    double const delta_r_rel) {
 
-    return interpolate_pointwise_subset(x, y, z, xcts_solution_indicies, interpolation_offset, interp_order, delta_r_rel);
-  }
+  return interpolate_pointwise_subset(x, y, z, xcts_solution_indicies,
+                                      interpolation_offset, interp_order,
+                                      delta_r_rel);
+}
 
 CFMS_BH_Exporter::output_ary_t CFMS_BH_Exporter::export_pointwise(
     double const& x,

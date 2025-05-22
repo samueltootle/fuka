@@ -1,5 +1,6 @@
 #include <EOS/FUKA_EOS_Utilities.hh>
 #include "Solvers/ns_3d_xcts/ns_exporter.hpp"
+
 namespace Kadath::FUKA_Solvers {
 #ifdef DEFAULT_KAD_MEM
 CFMS_NS_Exporter::CFMS_NS_Exporter(CFMS_NS_Exporter const& r) {
@@ -151,11 +152,11 @@ void CFMS_NS_Exporter::populate_quants() {
   quants[XCTS_VARS::XCTS_BETA2] = std::cref((*shift)(2));
   quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
-  export_utils::add_tensor_refs(
-      quants,
-      {XCTS_VARS::XCTS_A11, XCTS_VARS::XCTS_A12, XCTS_VARS::XCTS_A13,
-       XCTS_VARS::XCTS_A22, XCTS_VARS::XCTS_A23, XCTS_VARS::XCTS_A33},
-      *A);
+  export_utils::add_tensor_refs(quants,
+                                {XCTS_VARS::XCTS_A11, XCTS_VARS::XCTS_A12,
+                                 XCTS_VARS::XCTS_A13, XCTS_VARS::XCTS_A22,
+                                 XCTS_VARS::XCTS_A23, XCTS_VARS::XCTS_A33},
+                                *A);
 
   // Fluid related quantities
   quants[XCTS_VARS::XCTS_H] = std::cref(*logh);

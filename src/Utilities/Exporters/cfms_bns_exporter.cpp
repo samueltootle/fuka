@@ -1,4 +1,6 @@
+#include <Configurator/config_binary.hpp>
 #include "Solvers/bns_xcts/bns_exporter.hpp"
+
 namespace Kadath::FUKA_Solvers {
 #ifdef DEFAULT_KAD_MEM
 CFMS_BNS_Exporter::CFMS_BNS_Exporter(CFMS_BNS_Exporter const& r) {
@@ -61,10 +63,11 @@ void CFMS_BNS_Exporter::initialize_eos() {
 }
 
 void CFMS_BNS_Exporter::load_solution_from_file() {
+  using namespace Kadath::FUKA_Config;
   std::string spacein{bconfig->space_filename()};
   FILE* ff1 = fopen(spacein.c_str(), "r");
 
-  space.reset(new space_t{ff1});
+  space.reset(new space_t{ff1, bconfig->control(CONTROLS::OLD_ID)});
   conformal_factor.reset(new Scalar(*space.get(), ff1));
   lapse.reset(new Scalar(*space.get(), ff1));
   shift.reset(new Vector(*space.get(), ff1));
@@ -156,11 +159,11 @@ void CFMS_BNS_Exporter::populate_quants() {
   quants[XCTS_VARS::XCTS_BETA2] = std::cref((*shift)(2));
   quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
-  export_utils::add_tensor_refs(
-      quants,
-      {XCTS_VARS::XCTS_A11, XCTS_VARS::XCTS_A12, XCTS_VARS::XCTS_A13,
-       XCTS_VARS::XCTS_A22, XCTS_VARS::XCTS_A23, XCTS_VARS::XCTS_A33},
-      *A);
+  export_utils::add_tensor_refs(quants,
+                                {XCTS_VARS::XCTS_A11, XCTS_VARS::XCTS_A12,
+                                 XCTS_VARS::XCTS_A13, XCTS_VARS::XCTS_A22,
+                                 XCTS_VARS::XCTS_A23, XCTS_VARS::XCTS_A33},
+                                *A);
 
   // Fluid related quantities
   quants[XCTS_VARS::XCTS_H] = std::cref(*logh);

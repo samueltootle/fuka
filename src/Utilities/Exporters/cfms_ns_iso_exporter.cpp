@@ -1,4 +1,5 @@
 #include "Solvers/ns_isotropic/ns_isotropic_exporter.hpp"
+
 namespace Kadath::FUKA_Solvers {
 #ifdef DEFAULT_KAD_MEM
 CFMS_NS_ISO_Exporter::CFMS_NS_ISO_Exporter(CFMS_NS_ISO_Exporter const& r) {

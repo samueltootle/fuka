@@ -1,4 +1,5 @@
 #include "Solvers/bbh_xcts/bbh_exporter.hpp"
+
 namespace Kadath::FUKA_Solvers {
 #ifdef DEFAULT_KAD_MEM
 CFMS_BBH_Exporter::CFMS_BBH_Exporter(CFMS_BBH_Exporter const& r) {
@@ -84,11 +85,11 @@ void CFMS_BBH_Exporter::populate_quants() {
   quants[XCTS_VARS::XCTS_BETA2] = std::cref((*shift)(2));
   quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
-  export_utils::add_tensor_refs(
-      quants,
-      {XCTS_VARS::XCTS_A11, XCTS_VARS::XCTS_A12, XCTS_VARS::XCTS_A13,
-       XCTS_VARS::XCTS_A22, XCTS_VARS::XCTS_A23, XCTS_VARS::XCTS_A33},
-      *A);
+  export_utils::add_tensor_refs(quants,
+                                {XCTS_VARS::XCTS_A11, XCTS_VARS::XCTS_A12,
+                                 XCTS_VARS::XCTS_A13, XCTS_VARS::XCTS_A22,
+                                 XCTS_VARS::XCTS_A23, XCTS_VARS::XCTS_A33},
+                                *A);
   export_ready = true;
 }
 
@@ -141,9 +142,10 @@ CFMS_BBH_Exporter::interp_ary_t CFMS_BBH_Exporter::interpolate_pointwise(
     double phi = std::atan2(y, xs);
 
     // Where the filling takes places
-    export_utils::spherical_turduck(
-        quants, quant_vals, interp_order, delta_r_rel, interpolation_offset,
-        ah_r, extrap_r, theta, phi, BH_INNER_ADAPTED_IDX, bh_ori);
+    export_utils::spherical_turduck(quants, quant_vals, interp_order,
+                                    delta_r_rel, interpolation_offset, ah_r,
+                                    extrap_r, theta, phi, BH_INNER_ADAPTED_IDX,
+                                    bh_ori);
   };
 
   if (r_minus <= (1. + interpolation_offset) * rm) {

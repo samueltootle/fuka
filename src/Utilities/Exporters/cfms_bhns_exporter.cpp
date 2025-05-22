@@ -1,4 +1,5 @@
 #include "Solvers/bhns_xcts/bhns_exporter.hpp"
+
 namespace Kadath::FUKA_Solvers {
 #ifdef DEFAULT_KAD_MEM
 CFMS_BHNS_Exporter::CFMS_BHNS_Exporter(CFMS_BHNS_Exporter const& r) {
@@ -153,11 +154,11 @@ void CFMS_BHNS_Exporter::populate_quants() {
   quants[XCTS_VARS::XCTS_BETA2] = std::cref((*shift)(2));
   quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
-  export_utils::add_tensor_refs(
-      quants,
-      {XCTS_VARS::XCTS_A11, XCTS_VARS::XCTS_A12, XCTS_VARS::XCTS_A13,
-       XCTS_VARS::XCTS_A22, XCTS_VARS::XCTS_A23, XCTS_VARS::XCTS_A33},
-      *A);
+  export_utils::add_tensor_refs(quants,
+                                {XCTS_VARS::XCTS_A11, XCTS_VARS::XCTS_A12,
+                                 XCTS_VARS::XCTS_A13, XCTS_VARS::XCTS_A22,
+                                 XCTS_VARS::XCTS_A23, XCTS_VARS::XCTS_A33},
+                                *A);
 
   // Fluid related quantities
   quants[XCTS_VARS::XCTS_H] = std::cref(*logh);
@@ -175,8 +176,9 @@ CFMS_BHNS_Exporter::interp_ary_t CFMS_BHNS_Exporter::interpolate_pointwise(
     int const interp_order,
     double const delta_r_rel) {
   double const xBH = Kadath::bco_utils::get_center(*space, space->BH);
-  double const rBH = Kadath::bco_utils::get_radius(
-      space->get_domain(space->ADAPTEDBH + 1), INNER_BC);
+  double const rBH =
+      Kadath::bco_utils::get_radius(space->get_domain(space->ADAPTEDBH + 1),
+                                    INNER_BC);
 
   double const& xcom_shift = (*bconfig)(Kadath::FUKA_Config::BIN_PARAMS::COM);
   double const& ycom_shift = (*bconfig)(Kadath::FUKA_Config::BIN_PARAMS::COMY);
@@ -208,9 +210,10 @@ CFMS_BHNS_Exporter::interp_ary_t CFMS_BHNS_Exporter::interpolate_pointwise(
     double phi = std::atan2(y, xs);
 
     // Where the filling takes places
-    export_utils::spherical_turduck(
-        quants, quant_vals, interp_order, delta_r_rel, interpolation_offset,
-        ah_r, extrap_r, theta, phi, BH_INNER_ADAPTED_IDX, bh_ori);
+    export_utils::spherical_turduck(quants, quant_vals, interp_order,
+                                    delta_r_rel, interpolation_offset, ah_r,
+                                    extrap_r, theta, phi, BH_INNER_ADAPTED_IDX,
+                                    bh_ori);
   };
   if (rel_rBH <= (1. + interpolation_offset) * rBH) {
     interp_f(rBH, rel_rBH, xBH, space->ADAPTEDBH + 1);
@@ -227,6 +230,7 @@ CFMS_BHNS_Exporter::interp_ary_t CFMS_BHNS_Exporter::interpolate_pointwise(
 
   return quant_vals;
 }
+
 CFMS_BHNS_Exporter::output_ary_t CFMS_BHNS_Exporter::export_pointwise(
     double const& x,
     double const& y,
