@@ -198,23 +198,11 @@ const std::map<std::string, CONTROLS> MCONTROLS = {
   {"use_pn", USE_PN},            ///< Use PN eccentricity parameters - replaces ADOT and ECC_OMEGA
   {"sequences", SEQUENCES},      ///< Enable sequence generation - placeholder
   {"checkpoint", CHECKPOINT},    ///< Disable to only output after each solver stage is successful
-  // {"use_fixed_r", USE_FIXED_R},  ///< Solve BCO based on FIXED_R instead of Mirr, MADM, MB, etc.
-  // {"fixed_mb", MB_FIXING},      ///< For an isolated NS, fix using Baryonic mass
-  // {"delete_shift", DELETE_SHIFT},///< at the start of the solver, choose to delete the shift
   {"corot_binary", COROT_BIN},   ///< control whether a binary is purely corotating
-
-  // Control whether codes such as increase resolution make updates from the config file
-  // variables or directly from the numerical space
-  //{"use_config_vars", USE_CONFIG_VARS},
-  // {"fixed_bin_omega", FIXED_GOMEGA}, ///< Fix binary orbital frequency
-  // {"update_initial", UPDATE_INIT}, ///< historical: add initial section to config
-  // {"use_boosted_co", USE_BOOSTED_CO}, ///< use boosted compact objects to construct binary initial guess
-  //{"iterative_chi", ITERATIVE_CHI},
   {"fixed_lapse", USE_FIXED_LAPSE}, ///< Use fixed lapse BC on black holes
   {"resolve", RESOLVE}, ///<Force resolve of ID even if a checkpoint exists
-  // {"initial_regrid", REGRID}, ///< Regrid before solving from a previous solution
   {"centralized_cos", SAVE_COS},///< Save CO solutions to a central location for reuse
-  // {"co_use_shells", CO_USE_SHELLS}, ///< Isolated Compact objects use defined shells (binary solvers)
+  {"old_initial_data", OLD_ID}, ///< Import using an old ID format
 };
 
 const std::map<std::string, SEQ_SETTINGS> MSEQ_SETTINGS = {
@@ -233,8 +221,8 @@ const std::map<std::string, CONTROLS> MMIN_CONTROLS = {
   {"checkpoint", CHECKPOINT},    ///< Disable to only output after each solver stage is successful
   {"corot_binary", COROT_BIN},   ///< control whether a binary is purely corotating
   {"fixed_lapse", USE_FIXED_LAPSE}, ///< Use fixed lapse BC on black holes
-  {"resolve", RESOLVE}, ///<Force resolve of ID even if a checkpoint exists
   {"centralized_cos", SAVE_COS},///< Save CO solutions to a central location for reuse
+  {"old_initial_data", OLD_ID}, ///< Import using an old ID format
 };
 
 const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS = {

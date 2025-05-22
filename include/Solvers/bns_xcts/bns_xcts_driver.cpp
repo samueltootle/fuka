@@ -38,7 +38,7 @@ struct launch_bns_solver {
                 << "\n";
       std::_Exit(EXIT_FAILURE);
     }
-    Space_bin_ns space(ff1);
+    Space_bin_ns space(ff1, bconfig.control(CONTROLS::OLD_ID));
     Scalar conf(space, ff1);
     Scalar lapse(space, ff1);
     Vector shift(space, ff1);
