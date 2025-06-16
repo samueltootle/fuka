@@ -1133,6 +1133,10 @@ inline int next_resolution(int const res) {
     std::stringstream msg;
     msg << "Resolution " << res << " not found in approved list.\n";
     std::__throw_runtime_error(msg.str().c_str());
+  } else if (*res_it == ress.back()) {
+    std::stringstream msg;
+    msg << "Resolution cannot be increased beyond "<< ress.back() << " .\n";
+    std::__throw_runtime_error(msg.str().c_str());
   }
   res_it++;
   return *res_it;
