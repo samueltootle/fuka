@@ -64,10 +64,6 @@ inline void populate_Margherita_polytrope(std::string polytrope_file) {
     Cold_PWPoly::gamma_tab[i] = parser.gamma_tab[i];
     Cold_PWPoly::rho_tab[i] = parser.rho_tab[i];
   }
-  Cold_PWPoly::rho_tab[0] = std::max(
-    Cold_PWPoly::rho_tab[0],
-    Cold_PWPoly::rhomin
-  );
 }
 
 inline void Margherita_setup_polytrope(std::string polytrope_file) {
