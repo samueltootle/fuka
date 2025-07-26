@@ -27,8 +27,9 @@ Included are the Frankfurt initial data solvers and utilities based on the Kadat
 highly asymmetric binaries at very close and very large separations.
 4. FUKA Python readers have been refactored to use the new EOS backends.
     * New readers have been added to support new ID solutions
-5. The BNS grid has been refactored to allow for external spherical shells. **Support for this new feature breaks support for old ID solutions**
-    * **Old ID solutions can be read-in by adding `old_initial_data on` in the `sequence_controls` section of the INFO file.**
+5. The BNS grid has been refactored to allow for external spherical shells. **Support for this new feature breaks support for old ID solutions to a degree**
+    * **Old ID solutions are assumed by default**
+    * **New solutions are distinguished based on the control `new_initial_data on` in the `sequence_controls` section of the INFO file.**
 
 ### New Features
 * A new solver that computes solutions of isolated neutron stars in quasi-isotropic coordinates is now available, see [NS_isotropic](./codes/FUKA/NS_isotropic/)
