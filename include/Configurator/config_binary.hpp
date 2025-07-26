@@ -395,6 +395,7 @@ class BIN_INFO {
     bconfig.control(CONTROLS::SEQUENCES) = true;
     bconfig.control(CONTROLS::USE_BOOSTED_CO) = true;
     bconfig.control(CONTROLS::FIXED_GOMEGA) = true;
+    bconfig.control(CONTROLS::NEW_ID) = true;
 
     bconfig.set_stage(STAGES::TOTAL_BC) = true;
     bconfig.set_stage(STAGES::ECC_RED) = true;
@@ -443,6 +444,7 @@ class BIN_INFO {
     bconfig.set_stage(STAGES::ECC_RED) = true;
 
     bconfig.control(CONTROLS::SAVE_COS) = false;
+    bconfig.control(CONTROLS::NEW_ID) = true;
   }
 };
 

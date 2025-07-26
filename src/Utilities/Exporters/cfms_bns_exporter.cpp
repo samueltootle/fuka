@@ -67,7 +67,7 @@ void CFMS_BNS_Exporter::load_solution_from_file() {
   std::string spacein{bconfig->space_filename()};
   FILE* ff1 = fopen(spacein.c_str(), "r");
 
-  space.reset(new space_t{ff1, bconfig->control(CONTROLS::OLD_ID)});
+  space.reset(new space_t{ff1, !bconfig->control(CONTROLS::NEW_ID)});
   conformal_factor.reset(new Scalar(*space.get(), ff1));
   lapse.reset(new Scalar(*space.get(), ff1));
   shift.reset(new Vector(*space.get(), ff1));

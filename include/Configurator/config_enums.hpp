@@ -164,7 +164,7 @@ enum CONTROLS {
   REGRID,
   SAVE_COS,
   CO_USE_SHELLS,
-  OLD_ID,
+  NEW_ID,
   NUM_CONTROLS
 };
 

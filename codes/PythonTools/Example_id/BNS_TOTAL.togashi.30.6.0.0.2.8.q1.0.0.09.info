@@ -79,7 +79,7 @@ sequence_controls
     checkpoint off
     corot_binary off
     fixed_lapse off
-    old_initial_data on
+    new_initial_data on
     resolve off
     sequences off
     use_pn off
