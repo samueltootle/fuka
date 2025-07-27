@@ -128,6 +128,10 @@ class ns_reader_t : public Kadath::python_reader_t<space_t, ns_vars_t> {
       double Madm = boost::python::extract<double>(this_reader->vars["Madm"]);
       FUKA_Syst_tools::syst_vars_NS(this_reader->vars, syst, 2, Madm,
                                     matter_Domains);
+      FUKA_Syst_tools::syst_add_resolution_list(space, this_reader->vars);
+      this_reader->vars["nc"] =
+          EOS<eos_t, DENSITY>::get(bconfig(BCO_PARAMS::HC));
+      this_reader->vars["hc"] = bconfig(BCO_PARAMS::HC);
     }
   };
 

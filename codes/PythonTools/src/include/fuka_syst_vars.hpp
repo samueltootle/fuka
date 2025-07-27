@@ -95,12 +95,13 @@ void syst_add_resolution_list(space_t& space, dict_t& vars) {
 #include <boost/python.hpp>
   boost::python::list all_res;
   auto ndom = space.get_nbr_domains();
-
   for (auto d = 0; d < ndom; ++d) {
     boost::python::list dom_res;
     auto npts(space.get_domain(d)->get_nbr_points());
-    dom_res.append(npts(0));
-    dom_res.append(npts(1));
+    auto ndim = npts.get_ndim();
+    for (int i = 0; i < ndim; ++i) {
+      dom_res.append(npts(i));
+    }
     all_res.append(dom_res);
   }
   vars["domain_resolutions"] = all_res;
