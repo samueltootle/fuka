@@ -60,7 +60,8 @@ inline void syst_init_defs(System_of_eqs& syst) {
   syst.add_def(ndom - 1, "intPy = A_i^j * ey_j * einf^i / 8 / PI");
   syst.add_def(ndom - 1, "intPz = A_i^j * ez_j * einf^i / 8 / PI");
 
-  syst.add_def(ndom - 1, "intMadm = -dr(P) / 2 / PI");
+  syst.add_def(ndom - 1, "intMadm = - einf^i * D_i P / 4piG * 2");
+  syst.add_def(ndom - 1, "intMadmalt = -dr(P) / 2 / PI");
   syst.add_def(ndom - 1, "intMk =  dr(N) / 4 / PI");
 
   // Irreducible mass integrand
