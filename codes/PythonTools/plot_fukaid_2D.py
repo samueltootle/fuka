@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 import numpy as np, pickle, sys, matplotlib as mpl, pickle, os
 import matplotlib.pyplot as plt, matplotlib.colors as colors
 from matplotlib import ticker, cm
@@ -11,14 +11,14 @@ from fuka_plot_tools.setup_utils import LabelSize, TickSize, CbarLabelSize, gen_
   get_quiver_vars, parse_var, var_name, extract_data, extract_data_isotropic, extract_path_filename, get_reader_args
 
 def plot_2d(
-  x_coords, 
-  y_coords, 
+  x_coords,
+  y_coords,
   data,
   axs=None,
   plotz=False, **kwargs):
-  
+
   X, Y = np.meshgrid(x_coords, y_coords)
-  
+
   cs = axs.pcolor(X, Y, data, **kwargs)
 
   axs.set_xlabel(r"$x [{\rm M}_\odot]$",size=LabelSize)
@@ -44,16 +44,16 @@ if __name__ == "__main__":
   args = get_args()
   f, ispickle = check_ID_filename(args.filename)
   print("Reading from file: {}".format(f))
-  
+
   # setup norm
   if args.vmin is not None and args.vmax is not None:
-    norm = colors.Normalize(vmin=args.vmin, vmax = args.vmax, clip=False) 
-  else: 
+    norm = colors.Normalize(vmin=args.vmin, vmax = args.vmax, clip=False)
+  else:
     norm = None
 
   pltvars  = args.vars if type(args.vars) is list else [args.vars]
   pltqvars = args.qvars if args.qvars is None else [args.qvars]
-  
+
   if not pltqvars is None and len(pltqvars) > 1:
     raise ValueError("Quiver Vars: Quiver only works with one qvar")
   elif not pltqvars is None:
@@ -71,14 +71,14 @@ if __name__ == "__main__":
     qx_coords = np.linspace(x1, x2, num=args.qpts)
 
     plotf = lambda data, **kwargs: plot_2d(
-      x_coords, 
-      y_coords, 
+      x_coords,
+      y_coords,
       data,
       norm=norm,
       **kwargs)
 
-  # Setup matplotlib 
-  # If a pickle file is used, we assume the 
+  # Setup matplotlib
+  # If a pickle file is used, we assume the
   # user has setup the plot command in
   # the same way the data was extracted
   plt.close('all')
@@ -93,38 +93,38 @@ if __name__ == "__main__":
   fig = plt.figure()
   norm = colors.Normalize(vmin=args.vmin, vmax = args.vmax, clip=False)
   axs = [] # store axes as created
-    
+
   if not ispickle:
     # Setup ID python reader
     reader = get_reader_args(args, f)
-    
-    for i, v in enumerate(pltvars):    
+
+    for i, v in enumerate(pltvars):
       inv, sq, plotz, var = parse_var(v)
 
       print("Extracting data: {} with {}-points".format(var_name(var), args.npts))
-      
+
       # extract data for each var
       if not args.isotropic:
         data = extract_data(
-          reader, 
-          var, 
-          x_coords, 
-          y_coords, 
+          reader,
+          var,
+          x_coords,
+          y_coords,
           plotz=plotz,
           square = sq,
           inverse = inv,
           logscale=args.log)
       else:
         data = extract_data_isotropic(
-            reader, 
-            var, 
-            x_coords, 
-            y_coords, 
+            reader,
+            var,
+            x_coords,
+            y_coords,
             plotz=plotz,
             square = sq,
             inverse = inv,
             logscale=args.log)
-        
+
       print("Plotting data: {} with {}-shape".format(var_name(var), data.shape))
 
       # dump data to pickle file
@@ -136,25 +136,25 @@ if __name__ == "__main__":
         with open(pdumpf,'wb') as handle:
           pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
         print("Data dumped to {}".format(pdumpf))
-      
+
       cbarlabel = gen_cbarlabel(var_name(var),inv,sq,args.log)
       #print("Plot index: {}".format(1+i))
       ax = fig.add_subplot(nrows, len(pltvars), 1+i)
-      
+
       if len(pltvars) != 1 or args.annotate:
         ax.text(
           0.05,
           0.95,
           cbarlabel,
-          verticalalignment='top', 
+          verticalalignment='top',
           horizontalalignment='left',
           transform=ax.transAxes,
           fontsize=15,
           color='w')
         cbarlabel = None
       cs = plotf(
-        data, 
-        axs=ax, 
+        data,
+        axs=ax,
         plotz=plotz,
       )
       if i > 0:
@@ -168,9 +168,9 @@ if __name__ == "__main__":
     # or the pickle should be able to store multiple datasets
     if len(pltvars) > 1:
       raise ValueError("Too many variables for a pickle file")
-    
+
     inv, sq, plotz, var = parse_var(pltvars[0])
-    
+
     cbarlabel = gen_cbarlabel(var_name(var),inv,sq,args.log)
     with open(f, 'rb') as handle:
       data = pickle.load(handle)
@@ -181,14 +181,14 @@ if __name__ == "__main__":
           0.05,
           0.95,
           cbarlabel,
-          verticalalignment='top', 
+          verticalalignment='top',
           horizontalalignment='left',
           transform=axs[0].transAxes,
           fontsize=15,
           color='w')
         cbarlabel = None
     cs = plotf(data,axs=axs[0],plotz=plotz)
-  
+
   # Plot colorbar
   if "top" in cbar_location or "bottom" in cbar_location:
     orientation = 'horizontal'
@@ -197,7 +197,7 @@ if __name__ == "__main__":
   else:
     orientation = 'vertical'
     cbarpad = 20
-    
+
   if args.cbar:
     font_color = 'w' if args.clean else 'k'
     if len(pltvars) > 1:
@@ -223,7 +223,7 @@ if __name__ == "__main__":
         orientation=orientation, extend='both',
         ticks=np.linspace(norm.vmin, norm.vmax, num=5)
       )
-    if orientation == 'vertical':  
+    if orientation == 'vertical':
       cbar.set_label(cbarlabel, labelpad=cbarpad, rotation=270, color=font_color, size=CbarLabelSize)
     else:
       cbar.set_label(cbarlabel, labelpad=cbarpad, color=font_color, size=CbarLabelSize)
@@ -242,13 +242,13 @@ if __name__ == "__main__":
       for i, v in enumerate(pltqvars):
         inv, sq, plotz, var = parse_var(v)
         print("Extracting Quiver Data: {} with {}-points".format(var_name(var), args.qpts))
-        
+
         # extract data for each var
         data = extract_data(
-          reader, 
-          var, 
-          qx_coords, 
-          qy_coords, 
+          reader,
+          var,
+          qx_coords,
+          qy_coords,
           plotz=plotz)
         vec_data.append(data)
       print("Plotting Quiver data.")
@@ -256,7 +256,7 @@ if __name__ == "__main__":
       vecy = vec_data[1]
       for ax in axs:
         plot_2d_quiver(qx_coords, qy_coords, vecx, vecy,axs=ax, cmap=args.qcmap)
-  
+
   # Misc axes formatting and output
   output_filename = "fig-2D.png"
   if args.clean:
@@ -272,7 +272,7 @@ if __name__ == "__main__":
       cbar.set_ticklabels(ticks,color=font_color)
       cbar.update_ticks()
 
-      # set colorbar edgecolor 
+      # set colorbar edgecolor
       cbar.outline.set_edgecolor(font_color)
     plt.savefig(output_filename, dpi=300, bbox_inches="tight", pad_inches=0, facecolor='black')
     print("Plot saved to {}".format(output_filename))

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 import numpy as np, pickle, sys, matplotlib as mpl, pickle, os
 import matplotlib.pyplot as plt, matplotlib.colors as colors
 from matplotlib import ticker, cm
@@ -20,11 +20,11 @@ if __name__ == "__main__":
   args = get_args()
   f, ispickle = check_ID_filename(args.filename)
   print("Reading from file: {}".format(f))
-  
+
   # setup norm
   if args.vmin is not None and args.vmax is not None:
-    norm = colors.Normalize(vmin=args.vmin, vmax = args.vmax, clip=False) 
-  else: 
+    norm = colors.Normalize(vmin=args.vmin, vmax = args.vmax, clip=False)
+  else:
     norm = None
 
   pltvars = args.vars if type(args.vars) is list else [args.vars]
@@ -32,14 +32,14 @@ if __name__ == "__main__":
   ext = args.extent
   if len(ext) < 2:
     raise ValueError("Extent: not enough information")
-  
+
   x1, x2 = ext[0:2]
-  
+
   x_coords = np.linspace(x1, x2, num=args.npts)
   y_coords = np.array([0.]) if len(ext) == 2 else np.array(ext[2:])
-  
-  # Setup matplotlib 
-  # If a pickle file is used, we assume the 
+
+  # Setup matplotlib
+  # If a pickle file is used, we assume the
   # user has setup the plot command in
   # the same way the data was extracted
   plt.close('all')
@@ -53,34 +53,36 @@ if __name__ == "__main__":
   if not ispickle:
     # Setup ID python reader
     reader = get_reader_args(args, f)
-    
-    for i, v in enumerate(pltvars):    
+
+    for i, v in enumerate(pltvars):
       inv, sq, plotz, var = parse_var(v)
 
       print("Plotting: {} with {}-points".format(var_name(var), args.npts))
-      
+
       for y in y_coords:
         # extract data for each var
         if not args.isotropic:
           data = extract_data(
-            reader, 
-            var, 
-            x_coords, 
-            [y], 
+            reader,
+            var,
+            x_coords,
+            [y],
             plotz=plotz,
             square = sq,
             inverse = inv,
-            logscale=args.log)
+            logscale=args.log,
+            absolute=args.abs)
         else:
           data = extract_data_isotropic(
-            reader, 
-            var, 
-            x_coords, 
-            [y], 
+            reader,
+            var,
+            x_coords,
+            [y],
             plotz=plotz,
             square = sq,
             inverse = inv,
-            logscale=args.log)
+            logscale=args.log,
+            absolute=args.abs)
         print("Plotting data with shape {}".format(data.shape))
 
         # dump data to pickle file
@@ -93,13 +95,13 @@ if __name__ == "__main__":
           print("Data dumped to {}".format(pdumpf))
         cbarlabel = gen_cbarlabel(var_name(var),inv,sq,args.log)
         axs.plot(x_coords, data,label=cbarlabel)
-      
+
   else:
     # FIXME this should ideally work for multiple pickle files
     # or the pickle should be able to store multiple datasets
     if len(pltvars) > 1:
       raise ValueError("Too many variables for a pickle file")
-    
+
     inv, sq, plotz, var = parse_var(pltvars[0])
     print(var_name(var))
     cbarlabel = gen_cbarlabel(var_name(var),inv,sq,args.log)
@@ -107,7 +109,7 @@ if __name__ == "__main__":
       data = pickle.load(handle)
     cbarlabel = gen_cbarlabel(var_name(var),inv,sq,args.log)
     axs.plot(x_coords, data,label=cbarlabel)
-  
+
   axs.set_xlabel(r"$x [{\rm M}_\odot]$",size=LabelSize)
   axs.set_ylabel(r"$\mathcal{X}$",size=LabelSize)
   axs.legend(fontsize=LabelSize)

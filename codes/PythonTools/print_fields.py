@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 import sys, os
 
 pyFUKA_libspath = os.getenv('HOME_KADATH')+'/codes/PythonTools/lib/'
