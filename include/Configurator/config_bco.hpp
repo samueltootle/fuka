@@ -741,12 +741,10 @@ class BCO_ISO_NS_INFO : public BCO_NS_INFO {
     // Resolution of the initial setup
     bconfig.set(BCO_PARAMS::BCO_RES) = 9;
 
-    // Initial omega
-    bconfig.set(BCO_PARAMS::OMEGA) = 0;
+    // Initial dimensionless spin
+    bconfig.set(BCO_PARAMS::CHI) = 0;
 
-    // Currently only HC is reliable...
     bconfig.set(BCO_PARAMS::MADM) = 1.4;
-    bconfig.set(BCO_PARAMS::HC) = 1.26;
     // end   - set NS parameters
 
     // start - set NS stages in config file
