@@ -20,8 +20,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "mpi.h"
-// #include "FUKA_Solvers/NS_XCTS.hpp"
-// #include "Solvers/ns_3d_xcts/ns_3d_xcts_driver.hpp"
 #include "FUKA_Solvers/NS_XCTS_driver.cpp"
 #include "Solvers/sequences/ns_sequence.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
@@ -59,12 +57,15 @@ int main(int argc, char** argv) {
         bconfig.set_minimal_defaults();
         bconfig.set_stage(STAGES::TOTAL_BC) = false;
         bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
+        bconfig.set_stage(STAGES::DIFF_ROT) = true;
+        initialize_diffrot(bconfig);
         bconfig.write_minimal_config();
       } else {
         bconfig.set_defaults();
         bconfig.set_stage(STAGES::TOTAL_BC) = false;
         bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
         bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
+        initialize_diffrot(bconfig);
         bconfig.write_config();
       }
     }

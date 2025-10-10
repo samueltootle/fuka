@@ -26,6 +26,7 @@
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"
 #include "Solvers/solver_startup.hpp"
+#include "FUKA_Solvers/utilities.hpp"
 #include "mpi.h"
 
 using namespace Kadath::FUKA_Config;
@@ -57,10 +58,12 @@ int main(int argc, char** argv) {
       // Generate <example name>.info and terminate
       if (InitSolver::minimal_config) {
         bconfig.set_minimal_defaults();
+        initialize_diffrot(bconfig);
         bconfig.write_minimal_config();
       } else {
         bconfig.set_defaults();
         bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
+        initialize_diffrot(bconfig);
         bconfig.write_config();
       }
     }
