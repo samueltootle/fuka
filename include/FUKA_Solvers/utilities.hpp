@@ -76,4 +76,13 @@ inline void initialize_EOS(solver_t& solver) {
 
   ::Kadath::FUKA_EOS::EOS_initialize::init(bconfig);
 }
+
+template <class bconfig_t>
+inline void initialize_diffrot(bconfig_t& bconfig) {
+  using namespace Kadath::FUKA_Config;
+  using namespace Kadath::FUKA_Solvers;
+  bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_LAW) = "keh";
+  bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_ARATIO) = 1e6;
+  bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_RRATIO) = 1.0;
+}
 }  // namespace Kadath::FUKA_Solvers
