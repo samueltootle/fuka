@@ -29,7 +29,7 @@ def generate_publication_lists(publication_id_list: list) -> list:
         refurl = None
         if 'dois' in metadata:
             DOI = metadata['dois'][0]['value']
-            refurl = rf"[DOI:{DOI}](doi.org/{DOI})"
+            refurl = rf"[DOI:{DOI}](https://doi.org/{DOI})"
         elif 'arxiv_eprints' in metadata:
             arxiv_id = metadata['arxiv_eprints'][0]['value']
             refurl = rf"[arxiv:{arxiv_id}](https://arxiv.org/abs//{arxiv_id})"
