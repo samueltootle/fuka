@@ -25,6 +25,7 @@
 #include "standalone/cold_table_implementation.hh"
 #ifdef WITH_GRHAYL_EOS
 #include <grhayl/ghl.h>
+#include <grhayl/ghl_eos_functions_declaration.h>
 #include "ghl_eos_helpers/ghl_hybrid_helpers.hpp"
 #include "ghl_eos_helpers/ghl_tabulated_helpers.hpp"
 #endif
@@ -219,6 +220,13 @@ struct FUKA_EOS_Wrapper {
     dedp = rhoh / (dpdrho * rho);
     return rho;
   }
+
+#ifdef WITH_GRHAYL_EOS
+  ~FUKA_EOS_Wrapper() {
+    free(ghl_eos_params->table_logrho);
+    ghl_tabulated_free_beq_quantities(ghl_eos_params.get());
+  }
+#endif
 };
 #ifdef WITH_GRHAYL_EOS
 template <class FUKA_eos_t, FUKA_eos_t eos>

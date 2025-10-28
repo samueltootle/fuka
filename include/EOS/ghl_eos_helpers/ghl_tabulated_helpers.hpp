@@ -82,6 +82,12 @@ inline auto populate_ghl_tabulated(std::string table_par_file) {
 inline auto ghl_setup_table(std::string table_par_file) {
   auto eos_params = populate_ghl_tabulated(table_par_file);
 
+  // Immediately free unneeded arrays
+  free(eos_params->table_all);
+  free(eos_params->table_logT);
+  free(eos_params->table_Y_e);
+  free(eos_params->table_eps);
+
   return eos_params;
 }
 
