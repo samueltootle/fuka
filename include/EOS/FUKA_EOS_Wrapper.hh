@@ -25,7 +25,7 @@
 #include "standalone/cold_table_implementation.hh"
 #ifdef WITH_GRHAYL_EOS
 #include <grhayl/ghl.h>
-#include <grhayl/ghl_eos_functions_declaration.h>
+#include <grhayl/ghl_eos_functions.h>
 #include "ghl_eos_helpers/ghl_hybrid_helpers.hpp"
 #include "ghl_eos_helpers/ghl_tabulated_helpers.hpp"
 #endif
