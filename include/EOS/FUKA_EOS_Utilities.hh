@@ -29,7 +29,7 @@
 #include "system_of_eqs.hpp"
 
 #ifdef WITH_GRHAYL_EOS
-#include <grhayl/ghl.h>
+#include <ghl/ghl.h>
 #include "ghl_eos_helpers/ghl_hybrid_helpers.hpp"
 #endif
 

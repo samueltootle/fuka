@@ -1,6 +1,6 @@
 #pragma once
 #ifdef WITH_GRHAYL_EOS
-#include <grhayl/ghl.h>
+#include <ghl/ghl.h>
 #include <array>
 #include <cmath>
 #include <string>

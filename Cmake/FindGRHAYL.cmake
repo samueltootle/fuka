@@ -28,7 +28,7 @@ find_package(PkgConfig)
 
 # #Determine from PKG
 if( PKG_CONFIG_FOUND AND NOT GRHAYL_ROOT )
-  pkg_check_modules( PKG_GRHAYL QUIET "grhayl" )
+  pkg_check_modules( PKG_GRHAYL QUIET "ghl" )
 endif()
 
 #Check whether to search static or dynamic libs
@@ -44,7 +44,7 @@ if( GRHAYL_ROOT )
   #find libs
   find_library(
     GRHAYL_LIB
-    NAMES "grhayl"
+    NAMES "ghl"
     PATHS ${GRHAYL_ROOT}
     PATH_SUFFIXES "lib" "lib64"
     NO_DEFAULT_PATH
@@ -53,7 +53,7 @@ else()
 
   find_library(
     GRHAYL_LIB
-    NAMES "grhayl"
+    NAMES "ghl"
     PATHS ${PKG_GRHAYL_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
   )
 endif( GRHAYL_ROOT )

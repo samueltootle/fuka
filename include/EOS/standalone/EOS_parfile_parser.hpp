@@ -6,7 +6,7 @@
 #include "cold_pwpoly.hh"
 #include "margherita.hh"
 #ifdef WITH_GRHAYL_EOS
-#include <grhayl/ghl.h>
+#include <ghl/ghl.h>
 #define FUKA_MAX_EOS_PARAMS \
   MAX(MAX_EOS_PARAMS, Kadath::Margherita::Cold_PWPoly::max_num_pieces)
 #else
