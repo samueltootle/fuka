@@ -37,7 +37,12 @@ public:\
     optimal_access_type<type> get_##identifier () const {return identifier;}\
     type & set_##identifier () {return identifier;}
 
-
+#define internal_variable_simple(type,identifier) \
+protected:\
+    type identifier;\
+public:\
+    type const & get_##identifier () const {return identifier;}\
+    type & set_##identifier () {return identifier;}
 
 /****************************************************************************************
  * A simple argument parser.
