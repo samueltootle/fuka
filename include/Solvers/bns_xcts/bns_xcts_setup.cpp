@@ -103,7 +103,7 @@ struct bns_setup_boosted_3d {
     nsspacein = NS2config.space_filename();
 
     FILE* ff2 = fopen(nsspacein.c_str(), "r");
-    Space_spheric_adapted spacein2(ff1);
+    Space_spheric_adapted spacein2(ff2);
     Scalar confin2(spacein2, ff2);
     Scalar lapsein2(spacein2, ff2);
     Vector shiftin2(spacein2, ff2);
