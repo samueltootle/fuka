@@ -147,10 +147,10 @@ void Initialize_Solver<config_t>::init_solver(int argc, char** argv) {
   // Redirect rank > 0 stdout and stderr to /dev/null
   if (Initialize_Solver::rank > 0) {
     fflush(stderr);
-    freopen("/dev/null", "w", stderr);
+    FILE* _dummyerr = freopen("/dev/null", "w", stderr);
 
     fflush(stdout);
-    freopen("/dev/null", "w", stdout);
+    FILE* _dummystdout = freopen("/dev/null", "w", stdout);
   }
 }
 
