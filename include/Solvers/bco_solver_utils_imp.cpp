@@ -32,6 +32,8 @@
 #include "sequences/parameter_sequence.hpp"
 #include "sequences/sequence_utilities.hpp"
 #include "solvers.hpp"
+#include "FUKA_Solvers/utilities/simple_calculations.hpp"
+#include "FUKA_Solvers/utilities/scalar_calculations.hpp"
 
 /**
  * \addtogroup Solver_utils
@@ -150,79 +152,6 @@ std::string solve_BH_from_binary(config_t& bconfig, const size_t bco) {
   return bhconfig.config_filename_abs();
 }
 
-inline void check_dist(double dist,
-                       double M1,
-                       double M2,
-                       double garbage_factor) {
-  auto M = M1 + M2;
-  auto const garbage_dist = garbage_factor * M;
-  auto const recommended_dist = 8. * M;
-  if (dist <= garbage_dist) {
-    std::cerr << "Distance is set to (" << dist
-              << ") which may not give results. \nSet to (" << recommended_dist
-              << ") for something reasonable.\n";
-    std::_Exit(EXIT_FAILURE);
-  }
-}
-
-template <class space_t, class metric_t>
-Scalar compute_ddrPsi(space_t& space,
-                      Scalar& conf,
-                      metric_t metric,
-                      std::vector<int> excluded_doms,
-                      int bound_dom = -1) {
-  std::string const def_drP{"drP = dr(P)"};
-  std::string const def_drdrP{"ddrP = dr(drP)"};
-  auto ndom{space.get_nbr_domains()};
-  System_of_eqs syst(space);
-  metric.set_system(syst, "f");
-  syst.add_cst("P", conf);
-
-  if (excluded_doms.size() == 0) {
-    syst.add_def(def_drP.c_str());
-    syst.add_def(def_drdrP.c_str());
-  } else {
-    auto last_dom = (bound_dom == -1) ? ndom : bound_dom;
-    for (auto dom = 0; dom < last_dom; ++dom) {
-      auto res = std::find(excluded_doms.begin(), excluded_doms.end(), dom);
-      if (res == std::end(excluded_doms)) {
-        syst.add_def(dom, def_drP.c_str());
-        syst.add_def(dom, def_drdrP.c_str());
-      }
-    }
-  }
-  Scalar field(syst.give_val_def("ddrP"));
-  field.std_base();
-  return field;
-}
-
-template <class space_t, class metric_t>
-Scalar compute_drPsi(space_t& space,
-                     Scalar& conf,
-                     metric_t metric,
-                     std::vector<int> excluded_doms,
-                     int bound_dom = -1) {
-  std::string const def_drP{"drP = dr(P)"};
-  auto ndom{space.get_nbr_domains()};
-  System_of_eqs syst(space);
-  metric.set_system(syst, "f");
-  syst.add_cst("P", conf);
-
-  if (excluded_doms.size() == 0) {
-    syst.add_def(def_drP.c_str());
-  } else {
-    auto last_dom = (bound_dom == -1) ? ndom : bound_dom;
-    for (auto dom = 0; dom < last_dom; ++dom) {
-      auto res = std::find(excluded_doms.begin(), excluded_doms.end(), dom);
-      if (res == std::end(excluded_doms)) {
-        syst.add_def(dom, def_drP.c_str());
-      }
-    }
-  }
-  Scalar field(syst.give_val_def("drP"));
-  field.std_base();
-  return field;
-}
 
 template <typename config_t>
 std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig,

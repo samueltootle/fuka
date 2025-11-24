@@ -50,16 +50,6 @@ using namespace ::Kadath::FUKA_Config_Utils;
 namespace Kadath {
 namespace FUKA_Solvers {
 
-/**
- * @brief Get the global path to saved compact object solutions (COs)
- *
- * @return std::string
- */
-inline std::string get_cos_path() {
-  const std::string home_kadath{std::getenv("HOME_KADATH")};
-  std::string central_abs{home_kadath + "/COs/"};
-  return central_abs;
-}
 
 #define FORMAT std::setw(13) << std::left << std::showpos
 const int RELOAD_FILE = 2;

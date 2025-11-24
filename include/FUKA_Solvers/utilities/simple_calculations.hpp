@@ -20,14 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <functional>
-#include <memory>
-#include <string>
-#include <vector>
-#include "Configurator/config_bco.hpp"
-#include "Configurator/config_binary.hpp"
-#include "EOS/standalone/tov.hh"
-#include "bco_utilities.hpp"
+
 
 /**
  * \addtogroup Solver_utils
@@ -36,37 +29,22 @@
 
 namespace Kadath {
 namespace FUKA_Solvers {
-
 /**
- * solve_NS_from_binary
+ * check_dist
  *
- * -Solve TOV solution based on binary Configurator input
- * -Update configurator based on TOV solution
+ * Check to ensure separation distance is reasonable
  *
- * @tparam config_t: binary config type
- * @param[input] bconfig: binary Configurator file
- * @param[return] TOV solution filename
+ * @param[input] dist: separation distance
+ * @param[input] M1: Gravitational Mass of object 1
+ * @param[input] M2: Gravitational Mass of object 2
+ * @param[input] garbage_factor: factor used to set garbage distance
  */
-
-template <typename config_t>
-std::string solve_NS_from_binary(config_t& bconfig, const size_t bco);
-
-/**
- * solve_BH_from_binary
- *
- * -Solve BH solution based on binary Configurator input
- * -Update configurator based on BH solution
- *
- * @tparam config_t: binary config type
- * @param[input] bconfig: binary Configurator file
- * @param[return] TOV solution filename
- */
-
-template <typename config_t>
-std::string solve_BH_from_binary(config_t& bconfig, const size_t bco);
-
+inline void check_dist(double dist,
+                       double M1,
+                       double M2,
+                       double garbage_factor = 2.5);
 /** @}*/
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
 
-#include "bco_solver_utils_imp.cpp"
+#include "simple_calculations.cpp"
