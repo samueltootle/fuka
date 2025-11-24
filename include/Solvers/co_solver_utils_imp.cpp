@@ -2,13 +2,12 @@
 #include "EOS/FUKA_EOS_Utilities.hh"
 #include "bco_utilities.hpp"
 #include "coord_fields.hpp"
-#include "ns_3d_xcts/ns_3d_xcts_solver.hpp"
 
 /**
  * \addtogroup Solver_utils
  * \ingroup FUKA
  * @{*/
-
+using namespace Kadath::FUKA_Config;
 namespace Kadath {
 namespace FUKA_Solvers {
 
