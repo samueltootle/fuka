@@ -45,11 +45,11 @@ namespace FUKA_EOS {
  */
 template <class eos_t>
 struct set_eos_ope_struct {
-  void operator()(System_of_eqs& syst, Param& p) {
-    syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
-    syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
-    syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
-  }
+    void operator()(System_of_eqs& syst, Param& p) {
+        syst.add_ope("eps", &EOS<eos_t, EPSILON>::action, &p);
+        syst.add_ope("press", &EOS<eos_t, PRESSURE>::action, &p);
+        syst.add_ope("rho", &EOS<eos_t, DENSITY>::action, &p);
+    }
 };
 
 /**
@@ -59,7 +59,7 @@ struct set_eos_ope_struct {
  */
 template <class T>
 struct functor_wrapper {
-  /**
+    /**
    * @brief Functor that calls a templated Functor F with optional arguments
    * Args...
    *
@@ -67,10 +67,10 @@ struct functor_wrapper {
    * @tparam Args... type(s) of optional parameter pack of Functor arguments
    * @param args optional parameter pack of Functor arguments
    */
-  template <template <typename> class F, typename... Args>
-  auto operator()(Args&&... args) const {
-    return F<T>()(std::forward<Args>(args)...);
-  }
+    template <template <typename> class F, typename... Args>
+    auto operator()(Args&&... args) const {
+        return F<T>()(std::forward<Args>(args)...);
+    }
 };
 
 using namespace Kadath::FUKA_Config;
@@ -80,7 +80,7 @@ using namespace Kadath::FUKA_Config;
  * EOS'
  */
 struct EOS_Function_Dispatcher {
-  /**
+    /**
    * @brief Launches a templated Functor that requires knowledge of the
    * EOS type (module) being used to reduce code duplication.
    *
@@ -89,99 +89,93 @@ struct EOS_Function_Dispatcher {
    * arguments
    * @param args optional parameter pack of Functor arguments
    */
-  template <template <typename> class F, class config_t, typename... Args>
-  static inline auto dispatch(config_t& bconfig,
-                              const std::string eos_type,
-                              Args&&... args) {
-    if (eos_type == "Cold_PWPoly") {
-      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>;
-      functor_wrapper<eos_t> wrapper;
-      return wrapper.template operator()<F>(std::forward<Args>(args)...);
-    } else if (eos_type == "Cold_Table") {
-      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
-      functor_wrapper<eos_t> wrapper;
-      return wrapper.template operator()<F>(std::forward<Args>(args)...);
-    }
+    template <template <typename> class F, class config_t, typename... Args>
+    static inline auto dispatch(config_t& bconfig, const std::string eos_type, Args&&... args) {
+        if (eos_type == "Cold_PWPoly") {
+            using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>;
+            functor_wrapper<eos_t> wrapper;
+            return wrapper.template operator()<F>(std::forward<Args>(args)...);
+        } else if (eos_type == "Cold_Table") {
+            using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
+            functor_wrapper<eos_t> wrapper;
+            return wrapper.template operator()<F>(std::forward<Args>(args)...);
+        }
 #ifdef WITH_GRHAYL_EOS
-    else if (eos_type == "grhayl_eos_tabulated") {
-      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_tabulated>;
-      functor_wrapper<eos_t> wrapper;
-      return wrapper.template operator()<F>(std::forward<Args>(args)...);
-    } else if (eos_type == "grhayl_eos_hybrid") {
-      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_hybrid>;
-      functor_wrapper<eos_t> wrapper;
-      return wrapper.template operator()<F>(std::forward<Args>(args)...);
-    }
+        else if (eos_type == "grhayl_eos_tabulated") {
+            using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_tabulated>;
+            functor_wrapper<eos_t> wrapper;
+            return wrapper.template operator()<F>(std::forward<Args>(args)...);
+        } else if (eos_type == "grhayl_eos_hybrid") {
+            using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_hybrid>;
+            functor_wrapper<eos_t> wrapper;
+            return wrapper.template operator()<F>(std::forward<Args>(args)...);
+        }
 #endif
-    throw std::invalid_argument(
-        "\nCannot dispatch kernel. Invalid EOS type:" + eos_type + "\n");
-  }
+        throw std::invalid_argument("\nCannot dispatch kernel. Invalid EOS type:" + eos_type +
+                                    "\n");
+    }
 };
 
 // Simple struct to simplify EOS initialization and remove code duplication.
 struct EOS_initialize {
-  template <class config_t, class... BCO_t>
-  static inline auto init(config_t& bconfig, BCO_t... bco) {
-    using namespace ::Kadath::FUKA_Config;
-    using namespace ::Kadath::FUKA_EOS;
-    using namespace ::Kadath::Margherita;
+    template <class config_t, class... BCO_t>
+    static inline auto init(config_t& bconfig, BCO_t... bco) {
+        using namespace ::Kadath::FUKA_Config;
+        using namespace ::Kadath::FUKA_EOS;
+        using namespace ::Kadath::Margherita;
 
-    const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT, bco...);
-    std::string filename =
-        bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE, bco...);
-    const std::string eos_type =
-        bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE, bco...);
+        const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT, bco...);
+        std::string filename = bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE, bco...);
+        const std::string eos_type = bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE, bco...);
 
-    auto get_default_path = [&]() {
-      std::string default_path{"./"};
-      const std::string kadath_environment_var{"HOME_KADATH"};
-      if (std::getenv(kadath_environment_var.c_str())) {
-        std::string const home_kadath{
-            std::getenv(kadath_environment_var.c_str())};
-        default_path = home_kadath + "/eos/";
-      }
-      return default_path;
-    };
-    std::string const default_path{get_default_path()};
+        auto get_default_path = [&]() {
+            std::string default_path{"./"};
+            const std::string kadath_environment_var{"HOME_KADATH"};
+            if (std::getenv(kadath_environment_var.c_str())) {
+                std::string const home_kadath{std::getenv(kadath_environment_var.c_str())};
+                default_path = home_kadath + "/eos/";
+            }
+            return default_path;
+        };
+        std::string const default_path{get_default_path()};
 
-    // if no path is given, we set the default EOS diretory to look for the
-    // relevant table/polytrope
-    if (filename.rfind("/") == std::string::npos) {
-      filename = default_path + filename;
-    }
+        // if no path is given, we set the default EOS diretory to look for the
+        // relevant table/polytrope
+        if (filename.rfind("/") == std::string::npos) {
+            filename = default_path + filename;
+        }
 
-    if (eos_type == "Cold_PWPoly") {
-      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>;
-      return Margherita_setup_polytrope(filename);
-    } else if (eos_type == "Cold_Table") {
-      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
-      const int interp_pts =
-          (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...) == 0)
-              ? 2000
-              : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...);
+        if (eos_type == "Cold_PWPoly") {
+            using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>;
+            return Margherita_setup_polytrope(filename);
+        } else if (eos_type == "Cold_Table") {
+            using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
+            const int interp_pts = (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...) == 0)
+                                       ? 2000
+                                       : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...);
 
-      setup_Cold_Table(filename, interp_pts, h_cut);
-      return;
-    }
+            setup_Cold_Table(filename, interp_pts, h_cut);
+            return;
+        }
 #ifdef WITH_GRHAYL_EOS
-    else if (eos_type == "grhayl_eos_tabulated") {
-      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_tabulated>;
+        else if (eos_type == "grhayl_eos_tabulated") {
+            using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_tabulated>;
 
-      using namespace ::Kadath::GHL_EOS;
-      auto eos_params = ghl_setup_table(filename);
-      eos_t::ghl_eos_params = std::move(eos_params);
-      return;
-    } else if (eos_type == "grhayl_eos_hybrid") {
-      using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_hybrid>;
-      using namespace ::Kadath::GHL_EOS;
-      auto eos_params = populate_ghl_polytrope(filename);
-      eos_t::ghl_eos_params = std::move(eos_params);
-      return;
-    }
+            using namespace ::Kadath::GHL_EOS;
+            auto eos_params = ghl_setup_table(filename);
+            eos_t::ghl_eos_params = std::move(eos_params);
+            return;
+        } else if (eos_type == "grhayl_eos_hybrid") {
+            using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, ghl_eos_hybrid>;
+            using namespace ::Kadath::GHL_EOS;
+            auto eos_params = populate_ghl_polytrope(filename);
+            eos_t::ghl_eos_params = std::move(eos_params);
+            return;
+        }
 #endif
-    throw std::invalid_argument(
-        "\nCannot initialize EOS. Invalid EOS type: " + eos_type + "\n");
-  }
+        throw std::invalid_argument("\nCannot initialize EOS. Invalid EOS type: " + eos_type +
+                                    "\n");
+    }
 };
 }  // namespace FUKA_EOS
 }  // namespace Kadath
