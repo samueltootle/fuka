@@ -390,10 +390,13 @@ struct CFMS_NS_ISO_Exporter
         {{ 0.0, Asq * rsq, 0.0 }},
         {{ 0.0, 0.0      , Bsq * rsq * sin(theta) * sin(theta) }}
       }};
+      
+      double const KDD_rphi  = -gammaDD_Sph[2][2] / 2.0 / N * domega_dr;
+      double const KDD_thphi = -gammaDD_Sph[2][2] / 2.0 / N * domega_dt;
       export_utils::basis_transform_spherical_tofrom_cart::matrix_t KDD_Sph = {{
-        {{ 0.0, 0.0, -gammaDD_Sph[2][2] / 2.0 / N * domega_dr }},
-        {{ 0.0, 0.0, -gammaDD_Sph[2][2] / 2.0 / N * domega_dt }},
-        {{ 0.0, 0.0, 0.0}}
+        {{ 0.0     , 0.0      , KDD_rphi }},
+        {{ 0.0     , 0.0      , KDD_thphi}},
+        {{ KDD_rphi, KDD_thphi, 0.0      }}
       }};
       // clang-format on
 
