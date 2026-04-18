@@ -408,7 +408,7 @@ void bns_xcts_solver<eos_t, config_t, space_t>::update_config_quantities(
     auto loghc = bco_utils::get_boundary_val(nuc_dom, logh, INNER_BC);
     bconfig.set(BCO_PARAMS::HC, BCO) = std::exp(loghc);
     bconfig.set(BCO_PARAMS::NC, BCO) =
-        EOS<eos_t, DENSITY>::get(bconfig(BCO_PARAMS::HC));
+        EOS<eos_t, DENSITY>::get(bconfig(BCO_PARAMS::HC, BCO));
 
     // Update Quasi-local gravitational mass
     double ql_mass = 0.;

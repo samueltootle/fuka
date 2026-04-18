@@ -207,7 +207,7 @@ CFMS_BHNS_Exporter::interp_ary_t CFMS_BHNS_Exporter::interpolate_pointwise(
     double theta = std::acos(z / extrap_r);
 
     // atan2 is needed here
-    double phi = std::atan2(y, xs);
+    double phi = std::atan2(y_shifted, xs);
 
     // Where the filling takes places
     export_utils::spherical_turduck(quants, quant_vals, interp_order,
