@@ -21,7 +21,6 @@
  */
 #pragma once
 
-
 /**
  * \addtogroup Solver_utils
  * \ingroup FUKA
@@ -39,12 +38,9 @@ namespace FUKA_Solvers {
  * @param[input] M2: Gravitational Mass of object 2
  * @param[input] garbage_factor: factor used to set garbage distance
  */
-inline void check_dist(double dist,
-                       double M1,
-                       double M2,
-                       double garbage_factor = 2.5);
+inline void check_dist(double dist, double M1, double M2, double garbage_factor = 2.5);
 /** @}*/
-}  // namespace FUKA_Solvers
-}  // namespace Kadath
+}    // namespace FUKA_Solvers
+}    // namespace Kadath
 
 #include "simple_calculations.cpp"

@@ -38,4 +38,4 @@ inline void initialize_binary_inspiral_config(config_t& bconfig, double const M1
     bconfig.reset(BIN_PARAMS::ADOT);
 }
 
-}  // namespace Kadath::FUKA_Solvers
+}    // namespace Kadath::FUKA_Solvers
