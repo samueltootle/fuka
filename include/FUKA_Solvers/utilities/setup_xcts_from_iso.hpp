@@ -62,4 +62,4 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig, ns_sequence const& 
 
     return ns_iso_sol_config.config_filename_abs();
 }
-}    // namespace Kadath::FUKA_Solvers
+}  // namespace Kadath::FUKA_Solvers

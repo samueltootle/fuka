@@ -21,4 +21,4 @@ inline std::string get_cos_path() {
     std::string central_abs{home_kadath + "/COs/"};
     return central_abs;
 }
-}    // namespace Kadath::FUKA_Solvers
+}  // namespace Kadath::FUKA_Solvers

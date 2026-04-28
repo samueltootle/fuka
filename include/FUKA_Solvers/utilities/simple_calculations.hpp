@@ -40,7 +40,7 @@ namespace FUKA_Solvers {
  */
 inline void check_dist(double dist, double M1, double M2, double garbage_factor = 2.5);
 /** @}*/
-}    // namespace FUKA_Solvers
-}    // namespace Kadath
+}  // namespace FUKA_Solvers
+}  // namespace Kadath
 
 #include "simple_calculations.cpp"

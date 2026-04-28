@@ -11,4 +11,4 @@ inline void check_dist(double dist, double M1, double M2, double garbage_factor)
         std::_Exit(EXIT_FAILURE);
     }
 }
-}    // namespace Kadath::FUKA_Solvers
+}  // namespace Kadath::FUKA_Solvers

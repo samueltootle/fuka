@@ -59,4 +59,4 @@ Scalar compute_ddrPsi(space_t& space,
     field.std_base();
     return field;
 }
-}    // namespace Kadath::FUKA_Solvers
+}  // namespace Kadath::FUKA_Solvers
