@@ -1,7 +1,5 @@
 #include "NS_XCTS.hpp"
-#include "Solvers/bco_solver_utils.hpp"
-#include "Solvers/co_solver_utils.hpp"
-#include "name_tools.hpp"
+#include "FUKA_Solvers/utilities/setup_xcts_from_iso.hpp"
 
 /**
  * \addtogroup NS_XCTS
