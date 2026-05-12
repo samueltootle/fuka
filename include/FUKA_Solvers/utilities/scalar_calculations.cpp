@@ -6,7 +6,7 @@ Scalar compute_drPsi(space_t& space,
                      Scalar& conf,
                      metric_t metric,
                      std::vector<int> excluded_doms,
-                     int bound_dom = -1) {
+                     int bound_dom) {
     std::string const def_drP{"drP = dr(P)"};
     auto ndom{space.get_nbr_domains()};
     System_of_eqs syst(space);
@@ -34,7 +34,7 @@ Scalar compute_ddrPsi(space_t& space,
                       Scalar& conf,
                       metric_t metric,
                       std::vector<int> excluded_doms,
-                      int bound_dom = -1) {
+                      int bound_dom) {
     std::string const def_drP{"drP = dr(P)"};
     std::string const def_drdrP{"ddrP = dr(drP)"};
     auto ndom{space.get_nbr_domains()};
