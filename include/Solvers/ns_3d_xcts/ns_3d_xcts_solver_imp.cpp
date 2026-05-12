@@ -4,6 +4,7 @@
 #include "bco_utilities.hpp"
 #include "mpi.h"
 #include "ns_3d_xcts_regrid.hpp"
+#include "FUKA_Solvers/utilities/format_settings.hpp"
 
 /**
  * \addtogroup NS_XCTS

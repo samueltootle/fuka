@@ -2,6 +2,7 @@
 #include "Solvers/solvers.hpp"
 #include "bco_utilities.hpp"
 #include "mpi.h"
+#include "FUKA_Solvers/utilities/format_settings.hpp"
 
 /**
  * \addtogroup NS_XCTS

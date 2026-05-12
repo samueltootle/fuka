@@ -25,6 +25,7 @@
 #include "bco_utilities.hpp"
 #include "kadath.hpp"
 #include "mpi.h"
+#include "FUKA_Solvers/utilities/format_settings.hpp"
 
 /**
  * \addtogroup BHNS_XCTS

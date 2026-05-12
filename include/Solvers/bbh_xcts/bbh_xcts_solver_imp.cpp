@@ -27,6 +27,7 @@
 #include "Solvers/bh_3d_xcts/bh_3d_xcts_solver.hpp"
 #include "bco_utilities.hpp"
 #include "mpi.h"
+#include "FUKA_Solvers/utilities/format_settings.hpp"
 
 /**
  * \addtogroup BBH_XCTS

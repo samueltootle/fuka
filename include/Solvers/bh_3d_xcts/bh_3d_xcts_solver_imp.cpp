@@ -24,6 +24,7 @@
 #include "bh_3d_xcts_regrid.hpp"
 #include "bh_3d_xcts_solver.hpp"
 #include "mpi.h"
+#include "FUKA_Solvers/utilities/format_settings.hpp"
 
 /**
  * \addtogroup BH_XCTS

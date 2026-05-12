@@ -3,6 +3,7 @@
 #include "bco_utilities.hpp"
 #include "mpi.h"
 #include "name_tools.hpp"
+#include "FUKA_Solvers/utilities/format_settings.hpp"
 
 /**
  * \addtogroup NS_XCTS
