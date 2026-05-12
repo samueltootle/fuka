@@ -452,6 +452,7 @@ void update_fields (CoordFields<space_t> const & cf_generator,
     syst = std::unique_ptr<System_of_eqs>(syst_);
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xc1, xc2, syst);
   syst.release();
+  syst.reset();
 }
 
 template<typename space_t>
@@ -465,6 +466,7 @@ void update_fields (CoordFields<space_t> const & cf_generator,
     syst = std::unique_ptr<System_of_eqs>(syst_);
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xc1, xc2, syst);
   syst.release();
+  syst.reset();
 }
 
 template<typename space_t>
@@ -477,6 +479,7 @@ void update_fields_co (CoordFields<space_t> const & cf_generator,
     syst = std::unique_ptr<System_of_eqs>(syst_);
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xo, 0., syst);
   syst.release();
+  syst.reset();
 }
 
 template<typename space_t>
@@ -489,6 +492,7 @@ void update_fields_co (CoordFields<space_t> const & cf_generator,
     syst = std::unique_ptr<System_of_eqs>(syst_);
   update_fields(cf_generator, coord_vectors, coord_scalars, xo, xo, 0., syst);
   syst.release();
+  syst.reset();
 }
 
 template<typename space_t>
