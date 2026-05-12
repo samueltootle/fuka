@@ -22,7 +22,6 @@
 #pragma once
 #include <array>
 #include <string>
-#include "bns_xcts_solver.hpp"
 #include "mpi.h"
 #if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
 #include <experimental/filesystem>
