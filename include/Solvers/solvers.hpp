@@ -51,7 +51,6 @@ namespace Kadath {
 namespace FUKA_Solvers {
 
 
-#define FORMAT std::setw(13) << std::left << std::showpos
 const int RELOAD_FILE = 2;
 const int RUN_BOOST = 3;
 
