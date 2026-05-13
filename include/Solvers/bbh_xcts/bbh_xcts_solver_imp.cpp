@@ -24,7 +24,6 @@
 #include <string>
 #include <utility>
 #include "FUKA_Solvers/utilities/format_settings.hpp"
-#include "Solvers/bco_solver_utils.hpp"
 #include "Solvers/bh_3d_xcts/bh_3d_xcts_solver.hpp"
 #include "bco_utilities.hpp"
 #include "mpi.h"

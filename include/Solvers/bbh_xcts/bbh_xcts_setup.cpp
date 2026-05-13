@@ -1,6 +1,8 @@
 #pragma once
 #include <array>
 #include <string>
+#include "FUKA_Solvers/utilities/compact_object_drivers/solve_BH_for_binary.hpp"
+#include "FUKA_Solvers/utilities/simple_calculations.hpp"
 #include "bbh_xcts_solver.hpp"
 #include "mpi.h"
 
@@ -62,7 +64,7 @@ void bbh_xcts_setup_space(config_t& bconfig) {
     std::array<std::string, 2> filenames;
 
     for (int i = 0; i < 2; ++i)
-        filenames[i] = solve_BH_from_binary(bconfig, bcos[i]);
+        filenames[i] = solve_BH_for_binary(bconfig, bcos[i]);
 
     if (rank == 0)
         bbh_xcts_superimposed_import(bconfig, filenames);

@@ -24,7 +24,7 @@
 #include <math.h>
 #include <sstream>
 #include "Configurator/config_binary.hpp"
-#include "Solvers/bco_solver_utils.hpp"
+#include "FUKA_Solvers/utilities/scalar_calculations.hpp"
 #include "bco_utilities.hpp"
 #include "kadath.hpp"
 
@@ -36,6 +36,7 @@
 namespace Kadath {
 namespace FUKA_Solvers {
 namespace bco_u = ::Kadath::bco_utils;
+using namespace Kadath::FUKA_Config;
 using config_t = kadath_config_boost<BIN_INFO>;
 
 inline void update_bin_config(config_t& bconfig,
