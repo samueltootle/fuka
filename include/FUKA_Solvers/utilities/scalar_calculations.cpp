@@ -1,5 +1,5 @@
 #pragma once
-
+#include "kadath.hpp"
 namespace Kadath::FUKA_Solvers {
 template <class space_t, class metric_t>
 Scalar compute_drPsi(space_t& space,
@@ -18,7 +18,8 @@ Scalar compute_drPsi(space_t& space,
     } else {
         auto last_dom = (bound_dom == -1) ? ndom : bound_dom;
         for (auto dom = 0; dom < last_dom; ++dom) {
-            auto res = std::find(excluded_doms.begin(), excluded_doms.end(), dom);
+            auto res =
+                std::find(excluded_doms.begin(), excluded_doms.end(), dom);
             if (res == std::end(excluded_doms)) {
                 syst.add_def(dom, def_drP.c_str());
             }
@@ -48,7 +49,8 @@ Scalar compute_ddrPsi(space_t& space,
     } else {
         auto last_dom = (bound_dom == -1) ? ndom : bound_dom;
         for (auto dom = 0; dom < last_dom; ++dom) {
-            auto res = std::find(excluded_doms.begin(), excluded_doms.end(), dom);
+            auto res =
+                std::find(excluded_doms.begin(), excluded_doms.end(), dom);
             if (res == std::end(excluded_doms)) {
                 syst.add_def(dom, def_drP.c_str());
                 syst.add_def(dom, def_drdrP.c_str());
