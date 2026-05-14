@@ -24,7 +24,7 @@
 #include "Solvers/bns_xcts/bns_xcts_setup.hpp"
 #include "Solvers/bns_xcts/bns_xcts_solver.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
-#include "Solvers/solver_startup.hpp"
+#include "FUKA_Solvers/utilities/solver_startup.hpp"
 #include "mpi.h"
 using namespace Kadath::FUKA_EOS;
 using namespace Kadath::FUKA_Config;

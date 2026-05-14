@@ -25,7 +25,7 @@
 #include "Solvers/sequences/ns_sequence.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"
-#include "Solvers/solver_startup.hpp"
+#include "FUKA_Solvers/utilities/solver_startup.hpp"
 #include "FUKA_Solvers/utilities.hpp"
 #include "mpi.h"
 

@@ -23,7 +23,7 @@
 #include "Solvers/bbh_xcts/bbh_xcts_setup.hpp"
 #include "Solvers/bbh_xcts/bbh_xcts_solver.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
-#include "Solvers/solver_startup.hpp"
+#include "FUKA_Solvers/utilities/solver_startup.hpp"
 #include "kadath_bin_bh.hpp"
 #include "mpi.h"
 

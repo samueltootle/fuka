@@ -3,7 +3,7 @@
  * This file is part of the KADATH library and published under
  * https://arxiv.org/abs/2103.09911
  *
- * Author: 
+ * Author:
  * Samuel D. Tootle <tootle@itp.uni-frankfurt.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
  */
 #include "Solvers/bh_3d_xcts/bh_3d_xcts_driver.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
-#include "Solvers/solver_startup.hpp"
+#include "FUKA_Solvers/utilities/solver_startup.hpp"
 #include "mpi.h"
 
 using namespace Kadath::FUKA_Config;
