@@ -20,7 +20,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "Solvers/co_solver_utils.hpp"
+#include "FUKA_Solvers/utilities/compact_object_initializers/setup_2dns_isotropic.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"
 #include "ns_isotropic_uniform_rot_regrid.hpp"
