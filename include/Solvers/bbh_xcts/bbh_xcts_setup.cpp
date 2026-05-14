@@ -158,8 +158,8 @@ inline void bbh_xcts_setup_boosted_3d(
 
     // for out_bounds.size > 1 - add equi-distant shells
     for (int e = 0; e < out_bounds.size(); ++e)
-        out_bounds[e] =
-            bconfig(BIN_PARAMS::REXT) + e * 0.25 * bconfig(BIN_PARAMS::REXT);
+        out_bounds[e] = bconfig(BIN_PARAMS::REXT) +
+                        e * 0.25 * bconfig(BIN_PARAMS::REXT);
     // end setup domain boundaries
 
     // create space containing the domain decomposition
