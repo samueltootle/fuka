@@ -26,7 +26,7 @@
 #include <memory>
 #include <sstream>
 #include "Configurator/config_bco.hpp"
-#include "Solvers/co_solver_utils.hpp"
+#include "FUKA_Solvers/utilities/format_settings.hpp"
 #include "bco_utilities.hpp"
 #include "kadath_adapted_bh.hpp"
 

@@ -20,7 +20,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "FUKA_Solvers/utilities/format_settings.hpp"
-#include "Solvers/co_solver_utils.hpp"
 #include "bco_utilities.hpp"
 #include "bh_3d_xcts_regrid.hpp"
 #include "bh_3d_xcts_solver.hpp"
