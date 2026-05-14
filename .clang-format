@@ -87,4 +87,6 @@ StatementMacros:
   - internal_variable
 #AllowAllParametersOfDeclarationOnNextLine: true
 PenaltyBreakBeforeFirstCallParameter: 100
+# Prefer wrapping call arguments before splitting around assignments.
+PenaltyBreakAssignment: 20
 #PenaltyBreakOpenParenthesis: 100
