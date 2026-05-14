@@ -1,3 +1,4 @@
+#pragma once
 #include "bco_utilities.hpp"
 #include "coord_fields.hpp"
 #include "kadath_adapted_bh.hpp"
