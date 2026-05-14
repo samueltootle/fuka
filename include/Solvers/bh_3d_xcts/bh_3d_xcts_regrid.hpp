@@ -27,6 +27,7 @@
 #include <sstream>
 #include "Configurator/config_bco.hpp"
 #include "FUKA_Solvers/utilities/format_settings.hpp"
+#include "FUKA_Solvers/utilities/compact_object_initializers/setup_3d_BH_xcts.hpp"
 #include "bco_utilities.hpp"
 #include "kadath_adapted_bh.hpp"
 
