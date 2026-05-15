@@ -2,9 +2,19 @@
 #include "FUKA_Solvers/NS_XCTS/NS_XCTS_driver.hpp"
 #include "FUKA_Solvers/utilities/fuka_path_tools.hpp"
 
+/**
+ * @brief Takes Binary config and computes the desired isolated NS
+ * solution and boosts it to prepare for import into the binary
+ * numerical space.
+ *
+ * @tparam config_t: binary config type
+ * @param bconfig: binary Configurator file
+ * @param bco: Configurator index of NS parameters
+ *
+ */
 namespace Kadath::FUKA_Solvers {
 template <typename config_t>
-std::string solve_NS_for_binary(config_t& bconfig, const size_t bco) {
+std::string solve_NS_for_binary_v2(config_t& bconfig, const size_t bco) {
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     std::string output_path = (bconfig.control(CONTROLS::SAVE_COS))
