@@ -1,5 +1,6 @@
 #pragma once
 #include "kadath.hpp"
+
 namespace Kadath::FUKA_Solvers {
 template <class space_t, class metric_t>
 Scalar compute_drPsi(space_t& space,

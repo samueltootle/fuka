@@ -1,5 +1,5 @@
 #pragma once
-#include "Solvers/ns_3d_xcts/ns_3d_xcts_solver.hpp"
+#include "Solvers/ns_3d_xcts/ns_3d_xcts_driver.hpp"
 #include "FUKA_Solvers/utilities/fuka_path_tools.hpp"
 
 

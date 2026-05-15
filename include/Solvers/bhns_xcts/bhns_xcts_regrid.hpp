@@ -24,10 +24,10 @@
 #include <math.h>
 #include <sstream>
 #include "Configurator/config_binary.hpp"
-#include "Solvers/bco_solver_utils.hpp"
 #include "Solvers/fuka_syst/fuka_syst.hpp"
 #include "bco_utilities.hpp"
 #include "kadath.hpp"
+#include "FUKA_Solvers/utilities/scalar_calculations.hpp"
 
 /**
  * \addtogroup BHNS_XCTS
