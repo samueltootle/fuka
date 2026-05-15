@@ -3,6 +3,10 @@
  * \ingroup FUKA
  * @{*/
 #include "EOS/FUKA_EOS_Utilities.hh"
+#include "FUKA_Solvers/utilities/compact_object_drivers/solve_BH_for_binary.hpp"
+#include "FUKA_Solvers/utilities/compact_object_drivers/solve_NS_for_binary_v1.hpp"
+#include "FUKA_Solvers/utilities/scalar_calculations.hpp"
+#include "FUKA_Solvers/utilities/simple_calculations.hpp"
 using namespace ::Kadath::FUKA_Config;
 
 namespace Kadath {
@@ -56,8 +60,8 @@ void bhns_xcts_setup_space(config_t& bconfig) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     std::array<std::string, 2> filenames;
 
-    filenames[0] = solve_NS_from_binary(bconfig, NODES::BCO1);
-    filenames[1] = solve_BH_from_binary(bconfig, NODES::BCO2);
+    filenames[0] = solve_NS_for_binary_v1(bconfig, NODES::BCO1);
+    filenames[1] = solve_BH_for_binary(bconfig, NODES::BCO2);
 
     // debugging only
     for (auto& f : filenames)
