@@ -42,8 +42,8 @@ constexpr double psi = 1.55;
 constexpr double psisq = psi * psi;
 constexpr double invpsisq = 1. / psisq;
 
-static constexpr double shell_factor =
-    std::log(1.855) / (100.0 * std::log(2.0));
+static constexpr double shell_factor = std::log(1.855) /
+                                       (100.0 * std::log(2.0));
 
 #define EQUI -11
 #define INNER_EQUI -12
@@ -85,14 +85,14 @@ void save_to_file(std::stringstream& base_fname,
                   space_t& space,
                   config_t& bconfig,
                   fields_t&... fields) {
-  bconfig.set_filename(base_fname.str());
-  bconfig.write_config();
-  std::string kadath_filename = bconfig.space_filename();
-  FILE* ff = fopen(kadath_filename.c_str(), "w");
-  space.save(ff);
+    bconfig.set_filename(base_fname.str());
+    bconfig.write_config();
+    std::string kadath_filename = bconfig.space_filename();
+    FILE* ff = fopen(kadath_filename.c_str(), "w");
+    space.save(ff);
 
-  (fields.save(ff), ...);
-  fclose(ff);
+    (fields.save(ff), ...);
+    fclose(ff);
 }
 
 /**
@@ -112,14 +112,14 @@ void save_to_file(std::stringstream& base_fname,
  */
 template <typename space_t, typename config_t, typename... fields_t>
 void save_to_file(space_t& space, config_t& bconfig, fields_t&... fields) {
-  bconfig.write_config();
+    bconfig.write_config();
 
-  std::string kadath_filename = bconfig.space_filename();
-  FILE* ff = fopen(kadath_filename.c_str(), "w");
-  space.save(ff);
+    std::string kadath_filename = bconfig.space_filename();
+    FILE* ff = fopen(kadath_filename.c_str(), "w");
+    space.save(ff);
 
-  (fields.save(ff), ...);
-  fclose(ff);
+    (fields.save(ff), ...);
+    fclose(ff);
 }
 
 /**
@@ -135,30 +135,31 @@ void save_to_file(space_t& space, config_t& bconfig, fields_t&... fields) {
  * @return a radius of the domain.   */
 template <typename dom_t>
 double get_radius(const dom_t* dom, const int bound) {
-  auto const npts = dom->get_nbr_points();
-  Index pos(npts);
-  auto dim = pos.get_ndim();
-  switch (bound) {
-    case INNER_BC:
-      break;
-    case OUTER_BC:
-      pos.set(0) = npts(0) - 1;
-      pos.set(1) = npts(1) - 1;
-      if (dim == 3)
-        pos.set(2) = npts(2) - 1;
-      break;
-    case EQUI:
-      pos.set(0) = npts(0) - 1;
-      pos.set(1) = npts(1) - 1;
-      break;
-    case INNER_EQUI:
-      pos.set(1) = npts(1) - 1;
-      break;
-    default:
-      std::cout << "Unknown bound sent to get_radius: " << bound << std::endl;
-      break;
-  }
-  return dom->get_radius()(pos);
+    auto const npts = dom->get_nbr_points();
+    Index pos(npts);
+    auto dim = pos.get_ndim();
+    switch (bound) {
+        case INNER_BC:
+            break;
+        case OUTER_BC:
+            pos.set(0) = npts(0) - 1;
+            pos.set(1) = npts(1) - 1;
+            if (dim == 3)
+                pos.set(2) = npts(2) - 1;
+            break;
+        case EQUI:
+            pos.set(0) = npts(0) - 1;
+            pos.set(1) = npts(1) - 1;
+            break;
+        case INNER_EQUI:
+            pos.set(1) = npts(1) - 1;
+            break;
+        default:
+            std::cout << "Unknown bound sent to get_radius: " << bound
+                      << std::endl;
+            break;
+    }
+    return dom->get_radius()(pos);
 }
 
 /**
@@ -174,44 +175,44 @@ double get_radius(const dom_t* dom, const int bound) {
 inline std::array<double, 2> get_field_min_max(const Scalar& field,
                                                const int dom,
                                                const int bound = OUTER_BC) {
-  const int npts_r = field.get_domain(dom)->get_nbr_points()(0);
-  const int dim = field.get_domain(dom)->get_ndim();
+    const int npts_r = field.get_domain(dom)->get_nbr_points()(0);
+    const int dim = field.get_domain(dom)->get_ndim();
 
-  // position index to loop over
-  Index pos(field.get_domain(dom)->get_nbr_points());
-  // position index to update with a fixed radial boundary
-  Index bpos(field.get_domain(dom)->get_nbr_points());
+    // position index to loop over
+    Index pos(field.get_domain(dom)->get_nbr_points());
+    // position index to update with a fixed radial boundary
+    Index bpos(field.get_domain(dom)->get_nbr_points());
 
-  int r_bound = 0;
-  switch (bound) {
-    case INNER_BC:
-      break;
-    case OUTER_BC:
-      r_bound = npts_r - 1;
-      break;
-    default:
-      std::cout << "Unknown bound sent to get_field_min_max: " << bound
-                << std::endl;
-      break;
-  }
+    int r_bound = 0;
+    switch (bound) {
+        case INNER_BC:
+            break;
+        case OUTER_BC:
+            r_bound = npts_r - 1;
+            break;
+        default:
+            std::cout << "Unknown bound sent to get_field_min_max: " << bound
+                      << std::endl;
+            break;
+    }
 
-  double fmax = field(dom)(pos);
-  double fmin = field(dom)(pos);
+    double fmax = field(dom)(pos);
+    double fmin = field(dom)(pos);
 
-  // FIXME this currently loops over theta and phi multiple times, but the syntax is straightforward.
-  do {
-    bpos.set(0) = r_bound;
-    bpos.set(1) = pos(1);
-    if (dim == 3)
-      bpos.set(2) = pos(2);
-    double f = field(dom)(bpos);
+    // FIXME this currently loops over theta and phi multiple times, but the syntax is straightforward.
+    do {
+        bpos.set(0) = r_bound;
+        bpos.set(1) = pos(1);
+        if (dim == 3)
+            bpos.set(2) = pos(2);
+        double f = field(dom)(bpos);
 
-    if (f > fmax)
-      fmax = f;
-    if (f < fmin)
-      fmin = f;
-  } while (pos.inc());
-  return std::array<double, 2>{fmin, fmax};
+        if (f > fmax)
+            fmax = f;
+        if (f < fmin)
+            fmin = f;
+    } while (pos.inc());
+    return std::array<double, 2>{fmin, fmax};
 }
 
 /**
@@ -226,23 +227,23 @@ inline std::array<double, 2> get_field_min_max(const Scalar& field,
  */
 template <typename space_t>
 std::array<double, 2> get_rmin_rmax(const space_t& space, const int dom) {
-  const int npts_r = space.get_domain(dom)->get_nbr_points()(0);
-  Index pos(space.get_domain(dom)->get_nbr_points());
-  pos.set_start();
-  pos.set(0) = npts_r - 1;
-
-  double rmax = space.get_domain(dom)->get_radius()(pos);
-  double rmin = space.get_domain(dom)->get_radius()(pos);
-  do {
+    const int npts_r = space.get_domain(dom)->get_nbr_points()(0);
+    Index pos(space.get_domain(dom)->get_nbr_points());
+    pos.set_start();
     pos.set(0) = npts_r - 1;
-    double r = space.get_domain(dom)->get_radius()(pos);
 
-    if (r > rmax)
-      rmax = r;
-    if (r < rmin)
-      rmin = r;
-  } while (pos.inc());
-  return std::array<double, 2>{rmin, rmax};
+    double rmax = space.get_domain(dom)->get_radius()(pos);
+    double rmin = space.get_domain(dom)->get_radius()(pos);
+    do {
+        pos.set(0) = npts_r - 1;
+        double r = space.get_domain(dom)->get_radius()(pos);
+
+        if (r > rmax)
+            rmax = r;
+        if (r < rmin)
+            rmin = r;
+    } while (pos.inc());
+    return std::array<double, 2>{rmin, rmax};
 }
 
 /**
@@ -273,12 +274,12 @@ void update_adapted_field(Scalar& res,
                           const int to_dom,
                           const dom_t* dom,
                           const int bound) {
-  Tensor* ptr = &res;
-  Array<int> doms(2);
-  doms.set(0) = from_dom;
-  doms.set(1) = to_dom;
-  Scalar import = dom->import(to_dom, bound, 1, doms, &ptr);
-  ptr->set().set_domain(to_dom) = import(to_dom);
+    Tensor* ptr = &res;
+    Array<int> doms(2);
+    doms.set(0) = from_dom;
+    doms.set(1) = to_dom;
+    Scalar import = dom->import(to_dom, bound, 1, doms, &ptr);
+    ptr->set().set_domain(to_dom) = import(to_dom);
 }
 
 /**
@@ -294,62 +295,62 @@ template <typename adapted_t>
 void interp_adapted_mapping(const adapted_t* new_shell,
                             const int old_outer_adapted_dom,
                             const Scalar& old_radius_field) {
-  Val_domain new_mapping = new_shell->get_radius();
-  int const ndim = new_shell->get_ndim();
+    Val_domain new_mapping = new_shell->get_radius();
+    int const ndim = new_shell->get_ndim();
 
-  //Need to normalize by the constant radius at the INNER_BC of the outer_adapted shell in the old space
-  auto old_shell =
-      old_radius_field.get_space().get_domain(old_outer_adapted_dom);
-  int const old_ndim = old_shell->get_ndim();
-  double rinner = get_radius(old_shell, INNER_BC);
+    //Need to normalize by the constant radius at the INNER_BC of the outer_adapted shell in the old space
+    auto old_shell =
+        old_radius_field.get_space().get_domain(old_outer_adapted_dom);
+    int const old_ndim = old_shell->get_ndim();
+    double rinner = get_radius(old_shell, INNER_BC);
 
-  Index new_pos(new_shell->get_nbr_points());
-  double xc_new = new_shell->get_center()(1);
-  double xc_old = old_shell->get_center()(1);
-  do {
+    Index new_pos(new_shell->get_nbr_points());
+    double xc_new = new_shell->get_center()(1);
+    double xc_old = old_shell->get_center()(1);
+    do {
 
-    auto interp_val = [&](auto const x, auto const y, auto const z) {
-      Kadath::Point absol(old_ndim);
-      switch (old_ndim) {
-        case 2: {
-          auto rsq_xy = x * x + y * y;
-          auto r_xy = std::sqrt(rsq_xy);
-          absol.set(1) = r_xy + xc_old;
-          absol.set(2) = z;
-          break;
+        auto interp_val = [&](auto const x, auto const y, auto const z) {
+            Kadath::Point absol(old_ndim);
+            switch (old_ndim) {
+                case 2: {
+                    auto rsq_xy = x * x + y * y;
+                    auto r_xy = std::sqrt(rsq_xy);
+                    absol.set(1) = r_xy + xc_old;
+                    absol.set(2) = z;
+                    break;
+                }
+                case 3:
+                    absol.set(1) = x + xc_old;
+                    absol.set(2) = y;
+                    absol.set(3) = z;
+                    break;
+            }
+            return old_radius_field.val_point(absol);
+        };
+        double x, y, z;
+
+        if (ndim == 3) {
+            x = new_shell->get_cart(1)(new_pos) - xc_new;
+            y = new_shell->get_cart(2)(new_pos);
+            z = new_shell->get_cart(3)(new_pos);
+        } else {
+            x = new_shell->get_cart(1)(new_pos) - xc_new;
+            y = 0;  // phi symmetry
+            z = new_shell->get_cart(2)(new_pos);
         }
-        case 3:
-          absol.set(1) = x + xc_old;
-          absol.set(2) = y;
-          absol.set(3) = z;
-          break;
-      }
-      return old_radius_field.val_point(absol);
-    };
-    double x, y, z;
+        double rsq = x * x + y * y + z * z;
+        double r = std::sqrt(rsq);
 
-    if (ndim == 3) {
-      x = new_shell->get_cart(1)(new_pos) - xc_new;
-      y = new_shell->get_cart(2)(new_pos);
-      z = new_shell->get_cart(3)(new_pos);
-    } else {
-      x = new_shell->get_cart(1)(new_pos) - xc_new;
-      y = 0;  // phi symmetry
-      z = new_shell->get_cart(2)(new_pos);
-    }
-    double rsq = x * x + y * y + z * z;
-    double r = std::sqrt(rsq);
+        x /= r / rinner;
+        y /= r / rinner;
+        z /= r / rinner;
 
-    x /= r / rinner;
-    y /= r / rinner;
-    z /= r / rinner;
+        new_mapping.set(new_pos) = interp_val(x, y, z);
 
-    new_mapping.set(new_pos) = interp_val(x, y, z);
+    } while (new_pos.inc());
 
-  } while (new_pos.inc());
-
-  new_mapping.std_base();
-  new_shell->set_mapping(new_mapping);
+    new_mapping.std_base();
+    new_shell->set_mapping(new_mapping);
 }
 
 /**
@@ -364,8 +365,8 @@ void interp_adapted_mapping(const adapted_t* new_shell,
  */
 template <typename space_t>
 double get_center(const space_t& space, const int dom) {
-  Index pos(space.get_domain(dom)->get_nbr_points());
-  return space.get_domain(dom)->get_cart(1)(pos);
+    Index pos(space.get_domain(dom)->get_nbr_points());
+    return space.get_domain(dom)->get_cart(1)(pos);
 }
 
 /**
@@ -383,33 +384,33 @@ double get_center(const space_t& space, const int dom) {
 inline double get_boundary_val(const int dom,
                                const Scalar& field,
                                const int bound = INNER_BC) {
-  auto this_domain = field(dom).get_domain();
-  auto npts = this_domain->get_nbr_points();
-  Index pos(npts);
-  auto dim = pos.get_ndim();
+    auto this_domain = field(dom).get_domain();
+    auto npts = this_domain->get_nbr_points();
+    Index pos(npts);
+    auto dim = pos.get_ndim();
 
-  switch (bound) {
-    case INNER_BC:
-      break;
-    case OUTER_BC:
-      pos.set(0) = npts(0) - 1;
-      pos.set(1) = npts(1) - 1;
-      if (dim == 3)
-        pos.set(2) = npts(2) - 1;
-      break;
-    case EQUI:
-      pos.set(0) = npts(0) - 1;
-      pos.set(1) = npts(1) - 1;
-      break;
-    case INNER_EQUI:
-      pos.set(1) = npts(1) - 1;
-      break;
-    default:
-      std::cout << "Unknown bound sent to get_boundary_val: " << bound
-                << std::endl;
-      break;
-  }
-  return field(dom)(pos);
+    switch (bound) {
+        case INNER_BC:
+            break;
+        case OUTER_BC:
+            pos.set(0) = npts(0) - 1;
+            pos.set(1) = npts(1) - 1;
+            if (dim == 3)
+                pos.set(2) = npts(2) - 1;
+            break;
+        case EQUI:
+            pos.set(0) = npts(0) - 1;
+            pos.set(1) = npts(1) - 1;
+            break;
+        case INNER_EQUI:
+            pos.set(1) = npts(1) - 1;
+            break;
+        default:
+            std::cout << "Unknown bound sent to get_boundary_val: " << bound
+                      << std::endl;
+            break;
+    }
+    return field(dom)(pos);
 }
 
 /**
@@ -428,7 +429,7 @@ void set_radius(const int& dom,
                 const space_t& space,
                 config_t& bconfig,
                 const idx_t... idxs) {
-  bconfig.set(idxs...) = get_radius(space.get_domain(dom), OUTER_BC);
+    bconfig.set(idxs...) = get_radius(space.get_domain(dom), OUTER_BC);
 }
 
 /**
@@ -443,35 +444,35 @@ void set_radius(const int& dom,
  */
 template <typename ary_t, typename config_t, typename... idx_t>
 void set_NS_bounds(ary_t& bounds, config_t& bconfig, idx_t... bco) {
-  //sizes
-  const int size = bounds.size();
-  const int ninshells = (!std::isnan(bconfig.set(NINSHELLS, bco...)))
-                            ? bconfig(NINSHELLS, bco...)
+    //sizes
+    const int size = bounds.size();
+    const int ninshells = (!std::isnan(bconfig.set(NINSHELLS, bco...)))
+                              ? bconfig(NINSHELLS, bco...)
+                              : 0;
+    const int nshells = (!std::isnan(bconfig.set(NSHELLS, bco...)))
+                            ? bconfig(NSHELLS, bco...)
                             : 0;
-  const int nshells = (!std::isnan(bconfig.set(NSHELLS, bco...)))
-                          ? bconfig(NSHELLS, bco...)
-                          : 0;
 
-  //indexes
-  const int rin = 0;
-  const int rout = size - 1;
-  const int r = rin + ninshells + 1;
+    //indexes
+    const int rin = 0;
+    const int rout = size - 1;
+    const int r = rin + ninshells + 1;
 
-  bounds[rin] = bconfig(RIN, bco...);
-  bounds[r] = bconfig(RMID, bco...);
-  bounds[rout] = bconfig(ROUT, bco...);
+    bounds[rin] = bconfig(RIN, bco...);
+    bounds[r] = bconfig(RMID, bco...);
+    bounds[rout] = bconfig(ROUT, bco...);
 
-  double lower = bounds[rin] + (bounds[r] - bounds[rin]) * 0.8;
-  double delta_r = (bounds[r] - lower) / (ninshells + 1.);
+    double lower = bounds[rin] + (bounds[r] - bounds[rin]) * 0.8;
+    double delta_r = (bounds[r] - lower) / (ninshells + 1.);
 
-  for (int shell = rin + 1; shell <= ninshells; ++shell) {
-    bounds[shell] = delta_r * shell + lower;
-  }
+    for (int shell = rin + 1; shell <= ninshells; ++shell) {
+        bounds[shell] = delta_r * shell + lower;
+    }
 
-  delta_r = (bounds[rout] - bounds[r]) / (nshells + 1.);
-  for (int i = 1, shell = r + 1; i <= nshells; ++shell, ++i) {
-    bounds[shell] = bounds[r] + delta_r * i;
-  }
+    delta_r = (bounds[rout] - bounds[r]) / (nshells + 1.);
+    for (int i = 1, shell = r + 1; i <= nshells; ++shell, ++i) {
+        bounds[shell] = bounds[r] + delta_r * i;
+    }
 }
 
 /**
@@ -486,27 +487,27 @@ void set_NS_bounds(ary_t& bounds, config_t& bconfig, idx_t... bco) {
 template <typename ary_t, typename config_t>
 void set_isolated_BH_bounds(ary_t& bounds, config_t& bconfig) {
 
-  // Configurator index of companion compact object
-  const int size = bounds.size();
+    // Configurator index of companion compact object
+    const int size = bounds.size();
 
-  //indexes
-  const int rin = 0;
-  const int r = rin + 1;
-  int rout = size - 1;
+    //indexes
+    const int rin = 0;
+    const int r = rin + 1;
+    int rout = size - 1;
 
-  bounds[rin] = bconfig(RIN);
-  bounds[r] = bconfig(RMID);
+    bounds[rin] = bconfig(RIN);
+    bounds[r] = bconfig(RMID);
 
-  double delrBH = bconfig(ROUT) - bconfig(RMID);
+    double delrBH = bconfig(ROUT) - bconfig(RMID);
 
-  const int shells = bconfig(NSHELLS);
-  double delr = delrBH / (bconfig(NSHELLS) + 1);
+    const int shells = bconfig(NSHELLS);
+    double delr = delrBH / (bconfig(NSHELLS) + 1);
 
-  for (int i = 0, b = r + 1; i < shells; ++b, ++i)
-    bounds[b] = bounds[r] + delr * (i + 1);
-  //    bounds[b] = bounds[r] + bconfig(ROUT) / M_PI * atan((i + 1)/bconfig(NSHELLS));
+    for (int i = 0, b = r + 1; i < shells; ++b, ++i)
+        bounds[b] = bounds[r] + delr * (i + 1);
+    //    bounds[b] = bounds[r] + bconfig(ROUT) / M_PI * atan((i + 1)/bconfig(NSHELLS));
 
-  bounds[rout] = bconfig(ROUT);
+    bounds[rout] = bconfig(ROUT);
 }
 
 /**
@@ -526,74 +527,74 @@ void set_BH_bounds(ary_t& bounds,
                    const int bco,
                    const bool adapt_shells = false) {
 
-  // Configurator index of companion compact object
-  const int bco2 = (bco == BCO1) ? BCO2 : BCO1;
-  const int size = bounds.size();
+    // Configurator index of companion compact object
+    const int bco2 = (bco == BCO1) ? BCO2 : BCO1;
+    const int size = bounds.size();
 
-  //indexes
-  const int rin = 0;
-  const int r = rin + 1;
-  int rout = size - 1;
+    //indexes
+    const int rin = 0;
+    const int r = rin + 1;
+    int rout = size - 1;
 
-  bounds[rin] = bconfig(RIN, bco);
-  bounds[r] = bconfig(RMID, bco);
-  bounds[rout] = bconfig(ROUT, bco);
+    bounds[rin] = bconfig(RIN, bco);
+    bounds[r] = bconfig(RMID, bco);
+    bounds[rout] = bconfig(ROUT, bco);
 
-  const int shells = bconfig(NSHELLS, bco);
-  double sum = 0.;
-  ary_t new_ary;
-  new_ary.push_back(bounds[rin]);
-  new_ary.push_back(bounds[r]);
+    const int shells = bconfig(NSHELLS, bco);
+    double sum = 0.;
+    ary_t new_ary;
+    new_ary.push_back(bounds[rin]);
+    new_ary.push_back(bounds[r]);
 
-  // fixme - need to recall how this limit was obtained
-  const double limit = bconfig(ROUT, bco) * invpsisq;
+    // fixme - need to recall how this limit was obtained
+    const double limit = bconfig(ROUT, bco) * invpsisq;
 
-  // needed to determine proper shall spacing to not have problems in kadath import?
-  const double scale_fact = bco_utils::gold_ratio;
+    // needed to determine proper shall spacing to not have problems in kadath import?
+    const double scale_fact = bco_utils::gold_ratio;
 
-  // y_intercept of new_bound == the location of the first shell
-  const double y_intercept = 2. * scale_fact * bounds[r];
+    // y_intercept of new_bound == the location of the first shell
+    const double y_intercept = 2. * scale_fact * bounds[r];
 
-  // the intercept_fac ensures the y_intercept is just that
-  const double intercept_fac = -scale_fact * std::log(y_intercept);
+    // the intercept_fac ensures the y_intercept is just that
+    const double intercept_fac = -scale_fact * std::log(y_intercept);
 
-  // relation that provides shell locations
-  auto new_bound = [&](int n) {
-    return std::exp((n - intercept_fac) / scale_fact);
-  };
+    // relation that provides shell locations
+    auto new_bound = [&](int n) {
+        return std::exp((n - intercept_fac) / scale_fact);
+    };
 
-  // define new shells bounds
-  int N = 0;
-  double next_bound = new_bound(N);
-  while (next_bound < limit && next_bound < bconfig(ROUT, bco)) {
-    new_ary.push_back(next_bound);
-    N++;
-    next_bound = new_bound(N);
-  }
-  // in case NSHELLS are put in by hand - we add additional ones based on a
-  // naive even distribution
-  if (new_ary.size() - 2 < bconfig(NSHELLS, bco)) {
-    // determine how many shells have already been defined
-    auto current_shells = new_ary.size() - 2;
-    // how many shells still need to defined
-    auto remaining_shells = shells - current_shells;
+    // define new shells bounds
+    int N = 0;
+    double next_bound = new_bound(N);
+    while (next_bound < limit && next_bound < bconfig(ROUT, bco)) {
+        new_ary.push_back(next_bound);
+        N++;
+        next_bound = new_bound(N);
+    }
+    // in case NSHELLS are put in by hand - we add additional ones based on a
+    // naive even distribution
+    if (new_ary.size() - 2 < bconfig(NSHELLS, bco)) {
+        // determine how many shells have already been defined
+        auto current_shells = new_ary.size() - 2;
+        // how many shells still need to defined
+        auto remaining_shells = shells - current_shells;
 
-    // radius of the last defined shell
-    auto last_shell_r = new_ary.back();
-    // radial distance between last shell and ROUT
-    double delrBH = bconfig(ROUT, bco) - last_shell_r;
-    // determine the equal spacing between reminaing shells
-    double delr = delrBH / (remaining_shells + 1);
+        // radius of the last defined shell
+        auto last_shell_r = new_ary.back();
+        // radial distance between last shell and ROUT
+        double delrBH = bconfig(ROUT, bco) - last_shell_r;
+        // determine the equal spacing between reminaing shells
+        double delr = delrBH / (remaining_shells + 1);
 
-    for (int i = 0; i < remaining_shells; ++i)
-      new_ary.push_back(last_shell_r + delr * (i + 1));
-  }
-  // define the bound corresponding to ROUT
-  new_ary.push_back(bounds[rout]);
-  // update the number of shells in the event shells have been automatically
-  // added
-  bconfig(NSHELLS, bco) = new_ary.size() - 3;
-  bounds = std::move(new_ary);
+        for (int i = 0; i < remaining_shells; ++i)
+            new_ary.push_back(last_shell_r + delr * (i + 1));
+    }
+    // define the bound corresponding to ROUT
+    new_ary.push_back(bounds[rout]);
+    // update the number of shells in the event shells have been automatically
+    // added
+    bconfig(NSHELLS, bco) = new_ary.size() - 3;
+    bounds = std::move(new_ary);
 }
 
 /**
@@ -617,50 +618,50 @@ T gen_shell_bound_radius(Scalar& field,
                          T xc = 0.,
                          T threshold = 0.9,
                          T fac = 1.) {
-  auto reldiff = [](auto ref, auto cmp) {
-    return 1. - cmp / ref;
-  };
+    auto reldiff = [](auto ref, auto cmp) {
+        return 1. - cmp / ref;
+    };
 
-  // Setup points relative to coordinate center
-  Kadath::Point pt_r0(3);
-  pt_r0.set(1) = xc + r0;
+    // Setup points relative to coordinate center
+    Kadath::Point pt_r0(3);
+    pt_r0.set(1) = xc + r0;
 
-  Kadath::Point pt_r1(3);
-  pt_r1.set(1) = xc + r1;
-  // end point setup
+    Kadath::Point pt_r1(3);
+    pt_r1.set(1) = xc + r1;
+    // end point setup
 
-  // relative difference of ddrP at both radii
-  auto ddrP_rel_diff =
-      std::abs(reldiff(field.val_point(pt_r0), field.val_point(pt_r1)));
+    // relative difference of ddrP at both radii
+    auto ddrP_rel_diff =
+        std::abs(reldiff(field.val_point(pt_r0), field.val_point(pt_r1)));
 
-  // relative difference to the desired threshold
-  auto relth = std::abs(reldiff(threshold, ddrP_rel_diff));
+    // relative difference to the desired threshold
+    auto relth = std::abs(reldiff(threshold, ddrP_rel_diff));
 
 #ifdef DEBUG
-  std::cout << "r0: " << r0 << "\t ddrP0: " << field.val_point(pt_r0)
-            << "\t P: " << pt_r0 << '\n'
-            << "r1: " << r1 << "\t ddrP1: " << field.val_point(pt_r1)
-            << "\t ddrP_rel_diff: " << ddrP_rel_diff << "\t P: " << pt_r1
-            << '\n'
-            << "\t relth: " << relth << "\t r1 / r0: " << r1 / r0 << '\n';
-  std::cout << pt_r0 << "," << pt_r1 << '\n';
+    std::cout << "r0: " << r0 << "\t ddrP0: " << field.val_point(pt_r0)
+              << "\t P: " << pt_r0 << '\n'
+              << "r1: " << r1 << "\t ddrP1: " << field.val_point(pt_r1)
+              << "\t ddrP_rel_diff: " << ddrP_rel_diff << "\t P: " << pt_r1
+              << '\n'
+              << "\t relth: " << relth << "\t r1 / r0: " << r1 / r0 << '\n';
+    std::cout << pt_r0 << "," << pt_r1 << '\n';
 #endif
 
-  auto dr = r1 - r0;
+    auto dr = r1 - r0;
 
-  if (ddrP_rel_diff > threshold) {
-    auto new_fac = 0.5 * fac;
-    r1 = r0 + dr * new_fac;
-    r1 = gen_shell_bound_radius(field, r0, r1, xc, threshold, new_fac);
-  } else {
-    // If the radii are far enough apart we found a good radius
-    if (r1 / r0 > bco_utils::gold_ratio)
-      return r1;
-    else {
-      return r0 * bco_utils::gold_ratio;
+    if (ddrP_rel_diff > threshold) {
+        auto new_fac = 0.5 * fac;
+        r1 = r0 + dr * new_fac;
+        r1 = gen_shell_bound_radius(field, r0, r1, xc, threshold, new_fac);
+    } else {
+        // If the radii are far enough apart we found a good radius
+        if (r1 / r0 > bco_utils::gold_ratio)
+            return r1;
+        else {
+            return r0 * bco_utils::gold_ratio;
+        }
     }
-  }
-  return r1;
+    return r1;
 }
 
 /**
@@ -684,70 +685,71 @@ std::vector<double> set_arb_bounds(config_t& bconfig,
                                    const int adapted_dom_sol,
                                    const double threshold = 0.95) {
 
-  // Generate a new vector for bounds
-  // FIXME: this ignores shells inside of NS'
-  std::vector<double> bounds;
-  bounds.push_back(bconfig(RIN, bco));
-  bounds.push_back(bconfig(RMID, bco));
+    // Generate a new vector for bounds
+    // FIXME: this ignores shells inside of NS'
+    std::vector<double> bounds;
+    bounds.push_back(bconfig(RIN, bco));
+    bounds.push_back(bconfig(RMID, bco));
 
-  auto adapted_dom(ddrconf_sol.get_space().get_domain(adapted_dom_sol));
+    auto adapted_dom(ddrconf_sol.get_space().get_domain(adapted_dom_sol));
 
-  // Coordinate centered point
-  Kadath::Point pt(adapted_dom->get_center());
-  double xc{pt(1)};
+    // Coordinate centered point
+    Kadath::Point pt(adapted_dom->get_center());
+    double xc{pt(1)};
 
-  // Initial radii starting at the inner adapted radius on the
-  // equitorial plane since this should be the largest radius
-  auto r0{get_radius(adapted_dom, INNER_EQUI)};
-  // We only add shells out to ROUT
-  auto r1{bconfig(ROUT, bco)};
-  auto Rout{r1};
+    // Initial radii starting at the inner adapted radius on the
+    // equitorial plane since this should be the largest radius
+    auto r0{get_radius(adapted_dom, INNER_EQUI)};
+    // We only add shells out to ROUT
+    auto r1{bconfig(ROUT, bco)};
+    auto Rout{r1};
 
-  // some upper bound that should never be hit!
-  auto max_shells = std::ceil((Rout - r0) / (3. * r0));
-  for (auto i = 0; i < max_shells; ++i) {
+    // some upper bound that should never be hit!
+    auto max_shells = std::ceil((Rout - r0) / (3. * r0));
+    for (auto i = 0; i < max_shells; ++i) {
 
-    pt.set(1) = xc + r0;
+        pt.set(1) = xc + r0;
 
-    // stop looking for shells once \partial_r^2 \Psi
-    // is roughly flat
-    // FIXME:? this will fail at local extrema!
-    if (ddrconf_sol.val_point(pt) < 0.01)
-      break;
+        // stop looking for shells once \partial_r^2 \Psi
+        // is roughly flat
+        // FIXME:? this will fail at local extrema!
+        if (ddrconf_sol.val_point(pt) < 0.01)
+            break;
 
-    // get new shell boundary outer radius
-    r1 = gen_shell_bound_radius(ddrconf_sol, r0, r1, xc, threshold);
+        // get new shell boundary outer radius
+        r1 = gen_shell_bound_radius(ddrconf_sol, r0, r1, xc, threshold);
 
-    // check for minimum spacing between last shell boundary
-    // and Rout
-    if (Rout / r1 > bco_utils::gold_ratio) {
+        // check for minimum spacing between last shell boundary
+        // and Rout
+        if (Rout / r1 > bco_utils::gold_ratio) {
 #ifdef DEBUG
-      cout << "Rout/r1: " << Rout / r1 << ", Success.\n";
+            cout << "Rout/r1: " << Rout / r1 << ", Success.\n";
 #endif
-      bounds.push_back(r1);
-    } else {
+            bounds.push_back(r1);
+        } else {
 #ifdef DEBUG
-      cout << "Rout/r1: " << Rout / r1 << ", failed.\n";
+            cout << "Rout/r1: " << Rout / r1 << ", failed.\n";
 #endif
-      break;
-    }
+            break;
+        }
 
-    // update variables for finding next shell
-    r0 = r1;
-    r1 = Rout;
-    if (i == max_shells - 1) {
-      std::cerr << "Max iterations hit in setting CO bounds. Something went "
+        // update variables for finding next shell
+        r0 = r1;
+        r1 = Rout;
+        if (i == max_shells - 1) {
+            std::cerr
+                << "Max iterations hit in setting CO bounds. Something went "
                    "very wrong!\n";
-      std::cerr << "r0: " << r0 << '\n'
-                << "r1: " << r1 << '\n'
-                << "max_shells: " << (Rout - r0) / (3. * r0) << '\n';
-      std::_Exit(EXIT_FAILURE);
+            std::cerr << "r0: " << r0 << '\n'
+                      << "r1: " << r1 << '\n'
+                      << "max_shells: " << (Rout - r0) / (3. * r0) << '\n';
+            std::_Exit(EXIT_FAILURE);
+        }
     }
-  }
-  // Add ROUT as the last bound
-  bounds.push_back(Rout);
-  bconfig(NSHELLS, bco) = bounds.size() - 3;
-  return bounds;
+    // Add ROUT as the last bound
+    bounds.push_back(Rout);
+    bconfig(NSHELLS, bco) = bounds.size() - 3;
+    return bounds;
 }
 
 /**
@@ -768,86 +770,88 @@ std::vector<double> set_arb_boundsv3(config_t& bconfig,
                                      Scalar& field,
                                      const int adapted_dom_sol,
                                      idx_t... BCOidx) {
-  auto reldiff = [](auto ref, auto cmp) {
-    return 1. - cmp / ref;
-  };
+    auto reldiff = [](auto ref, auto cmp) {
+        return 1. - cmp / ref;
+    };
 
-  // Generate a new vector for bounds
-  // FIXME: this ignores shells inside of NS'
-  std::vector<double> bounds;
-  bounds.push_back(bconfig(RIN, BCOidx...));
-  bounds.push_back(bconfig(RMID, BCOidx...));
+    // Generate a new vector for bounds
+    // FIXME: this ignores shells inside of NS'
+    std::vector<double> bounds;
+    bounds.push_back(bconfig(RIN, BCOidx...));
+    bounds.push_back(bconfig(RMID, BCOidx...));
 
-  auto adapted_dom(field.get_space().get_domain(adapted_dom_sol));
+    auto adapted_dom(field.get_space().get_domain(adapted_dom_sol));
 
-  // Coordinate centered point
-  Kadath::Point center_pt(adapted_dom->get_center());
-  double xc{center_pt(1)};
+    // Coordinate centered point
+    Kadath::Point center_pt(adapted_dom->get_center());
+    double xc{center_pt(1)};
 
-  // Initial radii starting at the inner adapted radius on the
-  // equitorial plane since this should be the largest radius
-  double r_init{get_radius(adapted_dom, INNER_EQUI)};
-  double field_init{get_boundary_val(adapted_dom_sol, field)};
+    // Initial radii starting at the inner adapted radius on the
+    // equitorial plane since this should be the largest radius
+    double r_init{get_radius(adapted_dom, INNER_EQUI)};
+    double field_init{get_boundary_val(adapted_dom_sol, field)};
 
-  // FIXME need a threashold here to ensure exp doesn't get unbounded
-  double scale_fac = 2.0 - std::exp(field_init);
+    // FIXME need a threashold here to ensure exp doesn't get unbounded
+    double scale_fac = 2.0 - std::exp(field_init);
 
-  double min_spacing_fac =
-      (std::isnan(bconfig.set(BCO_PARAMS::MIN_SHELL_DR, BCOidx...)))
-          ? 1.855
-          : bconfig(BCO_PARAMS::MIN_SHELL_DR, BCOidx...);
-  double r0 = r_init * scale_fac * min_spacing_fac;
+    double min_spacing_fac =
+        (std::isnan(bconfig.set(BCO_PARAMS::MIN_SHELL_DR, BCOidx...)))
+            ? 1.855
+            : bconfig(BCO_PARAMS::MIN_SHELL_DR, BCOidx...);
+    double r0 = r_init * scale_fac * min_spacing_fac;
 
-  // We only add shells out to ROUT
-  auto Rout{bconfig(ROUT, BCOidx...)};
-  if (Rout / r0 > min_spacing_fac) {
-    bounds.push_back(r0);
+    // We only add shells out to ROUT
+    auto Rout{bconfig(ROUT, BCOidx...)};
+    if (Rout / r0 > min_spacing_fac) {
+        bounds.push_back(r0);
 
-    // Setup points relative to coordinate center
-    double r1{r0};
-    Kadath::Point pt_r1(center_pt);
-    pt_r1.set(1) = xc + r1;
-    double field_r1 = field.val_point(pt_r1);
-    // end point setup
+        // Setup points relative to coordinate center
+        double r1{r0};
+        Kadath::Point pt_r1(center_pt);
+        pt_r1.set(1) = xc + r1;
+        double field_r1 = field.val_point(pt_r1);
+        // end point setup
 
-    // some upper bound that should never be hit!
-    auto max_shells =
-        std::ceil((Rout - r_init) / (bco_utils::gold_ratio * r_init));
+        // some upper bound that should never be hit!
+        auto max_shells =
+            std::ceil((Rout - r_init) / (bco_utils::gold_ratio * r_init));
 
-    for (auto i = 1; i < max_shells; ++i) {
-      r0 = r1;
-      double field_r0 = field_r1;
+        for (auto i = 1; i < max_shells; ++i) {
+            r0 = r1;
+            double field_r0 = field_r1;
 
-      //r1  = r0 * pow(min_spacing_fac, i);
-      scale_fac = 2.0 - std::exp(field_r0);
-      r1 = r0 * scale_fac * min_spacing_fac;
-      pt_r1.set(1) = xc + r1;
+            //r1  = r0 * pow(min_spacing_fac, i);
+            scale_fac = 2.0 - std::exp(field_r0);
+            r1 = r0 * scale_fac * min_spacing_fac;
+            pt_r1.set(1) = xc + r1;
 
-      field_r1 = field.val_point(pt_r1);
+            field_r1 = field.val_point(pt_r1);
 
-      // stop looking for shells once \partial_r^2 \Psi
-      // is roughly flat
-      // Note: this will fail at local extrema!
-      if (std::fabs(field_r1) <= 1e-5 || (Rout / r1 < bco_utils::gold_ratio)) {
-        // cout << field_r1 << ", " << r1 << ", " << Rout / r1 << endl;
-        break;
-      }
+            // stop looking for shells once \partial_r^2 \Psi
+            // is roughly flat
+            // Note: this will fail at local extrema!
+            if (std::fabs(field_r1) <= 1e-5 ||
+                (Rout / r1 < bco_utils::gold_ratio)) {
+                // cout << field_r1 << ", " << r1 << ", " << Rout / r1 << endl;
+                break;
+            }
 
-      bounds.push_back(r1);
+            bounds.push_back(r1);
 
-      if (i == max_shells - 1) {
-        std::cerr << "Max iterations hit in setting CO bounds. Something went "
-                     "very wrong!\n";
-        std::cerr << "r0: " << r0 << '\n'
-                  << "r1: " << r1 << '\n'
-                  << "max_shells: " << max_shells << '\n';
-      }
+            if (i == max_shells - 1) {
+                std::cerr << "Max iterations hit in setting CO bounds. "
+                             "Something went "
+                             "very wrong!\n";
+                std::cerr << "r0: " << r0 << '\n'
+                          << "r1: " << r1 << '\n'
+                          << "max_shells: " << max_shells << '\n';
+            }
+        }
     }
-  }
-  // Add ROUT as the last bound
-  bounds.push_back(Rout);
-  bconfig(NSHELLS, BCOidx...) = bounds.size() - 3;
-  return bounds;
+    // Add ROUT as the last bound
+    bounds.push_back(Rout);
+    bconfig(NSHELLS, BCOidx...) = bounds.size() - 3;
+    return bounds;
 }
 
 /**
@@ -862,11 +866,11 @@ std::vector<double> set_arb_boundsv3(config_t& bconfig,
  */
 template <typename ary_t>
 void print_bounds(std::string name, const ary_t& bary) {
-  std::cout << name << ": ";
-  for (auto& e : bary) {
-    std::cout << e << " ";
-  }
-  std::cout << std::endl;
+    std::cout << name << ": ";
+    for (auto& e : bary) {
+        std::cout << e << " ";
+    }
+    std::cout << std::endl;
 }
 
 /**
@@ -878,7 +882,7 @@ void print_bounds(std::string name, const ary_t& bary) {
  * @param[input]  mch: Christodoulou mass of the BH
  */
 inline double mirr_from_mch(const double chi, const double mch) {
-  return std::sqrt((1 + sqrt(1 - chi * chi)) / 2.) * mch;
+    return std::sqrt((1 + sqrt(1 - chi * chi)) / 2.) * mch;
 }
 
 /**
@@ -897,13 +901,13 @@ double syst_mch(System_of_eqs& syst,
                 const space_t& space,
                 const std::string eq,
                 const int dom) {
-  Val_domain integS(syst.give_val_def(eq.c_str())()(dom));
-  double S = space.get_domain(dom)->integ(integS, INNER_BC);
+    Val_domain integS(syst.give_val_def(eq.c_str())()(dom));
+    double S = space.get_domain(dom)->integ(integS, INNER_BC);
 
-  Val_domain integMsq(syst.give_val_def("intMsq")()(dom));
-  double Mirrsq = space.get_domain(dom)->integ(integMsq, INNER_BC);
-  double Mirr = std::sqrt(Mirrsq);
-  return std::sqrt(Mirrsq + S * S / 4. / Mirrsq);
+    Val_domain integMsq(syst.give_val_def("intMsq")()(dom));
+    double Mirrsq = space.get_domain(dom)->integ(integMsq, INNER_BC);
+    double Mirr = std::sqrt(Mirrsq);
+    return std::sqrt(Mirrsq + S * S / 4. / Mirrsq);
 }
 
 /**
@@ -918,9 +922,9 @@ double syst_mch(System_of_eqs& syst,
 inline double com_estimate(const double distance,
                            const double M1,
                            const double M2) {
-  double half_dist = distance / 2.;
-  double mass_sum = M1 + M2;
-  return half_dist * (M1 - M2) / mass_sum;
+    double half_dist = distance / 2.;
+    double mass_sum = M1 + M2;
+    return half_dist * (M1 - M2) / mass_sum;
 }
 
 /**
@@ -942,14 +946,14 @@ void update_config_NS_radii(space_t& space,
                             const size_t dom,
                             Idx... idx) {
 
-  auto [r_min, r_max] = bco_utils::get_rmin_rmax(space, dom);
-  bconfig.set(RIN, idx...) = 0.5 * r_min;
-  bconfig.set(RMID, idx...) = r_max;
-  bconfig.set(ROUT, idx...) = gold_ratio * r_max;
+    auto [r_min, r_max] = bco_utils::get_rmin_rmax(space, dom);
+    bconfig.set(RIN, idx...) = 0.5 * r_min;
+    bconfig.set(RMID, idx...) = r_max;
+    bconfig.set(ROUT, idx...) = gold_ratio * r_max;
 
-  if (std::isnan(bconfig.set(BCO_PARAMS::MIN_SHELL_DR, idx...))) {
-    bconfig.set(BCO_PARAMS::MIN_SHELL_DR, idx...) = 1.855;
-  }
+    if (std::isnan(bconfig.set(BCO_PARAMS::MIN_SHELL_DR, idx...))) {
+        bconfig.set(BCO_PARAMS::MIN_SHELL_DR, idx...) = 1.855;
+    }
 }
 
 /**
@@ -973,18 +977,18 @@ void update_config_BH_radii(space_t& space,
                             const Scalar& conf,
                             Idx... idx) {
 
-  auto [rmin, trmax] = bco_utils::get_rmin_rmax(space, dom);
+    auto [rmin, trmax] = bco_utils::get_rmin_rmax(space, dom);
 
-  // estimate how small the inner radius should be based on relation
-  // between conformal factor and numerical radius.
-  // see https://arxiv.org/pdf/0805.4192, eq(64)
-  double conf_inner = bco_utils::get_boundary_val(dom + 1, conf, INNER_BC);
-  double conf_i_sq = conf_inner * conf_inner;
-  double est_r_div2 = bconfig(MCH, idx...) / conf_i_sq;
-  bconfig.set(RIN, idx...) = est_r_div2;
+    // estimate how small the inner radius should be based on relation
+    // between conformal factor and numerical radius.
+    // see https://arxiv.org/pdf/0805.4192, eq(64)
+    double conf_inner = bco_utils::get_boundary_val(dom + 1, conf, INNER_BC);
+    double conf_i_sq = conf_inner * conf_inner;
+    double est_r_div2 = bconfig(MCH, idx...) / conf_i_sq;
+    bconfig.set(RIN, idx...) = est_r_div2;
 
-  // update config RMID based on AH Surface radius
-  bco_utils::set_radius(dom, space, bconfig, RMID, idx...);
+    // update config RMID based on AH Surface radius
+    bco_utils::set_radius(dom, space, bconfig, RMID, idx...);
 }
 
 /**
@@ -1000,10 +1004,10 @@ void update_config_BH_radii(space_t& space,
  */
 template <typename config_t>
 double set_decay(config_t& bconfig, const size_t bco) {
-  if (std::isnan(bconfig.set(DECAY, bco)))
-    bconfig.set(DECAY, bco) = bconfig(DIST) / 2.;
-  const double weight4 = std::pow(bconfig(DECAY, bco), 4.);
-  return 1. / weight4;
+    if (std::isnan(bconfig.set(DECAY, bco)))
+        bconfig.set(DECAY, bco) = bconfig(DIST) / 2.;
+    const double weight4 = std::pow(bconfig(DECAY, bco), 4.);
+    return 1. / weight4;
 }
 
 /**
@@ -1019,11 +1023,11 @@ double set_decay(config_t& bconfig, const size_t bco) {
  */
 template <typename config_t, typename... coIdx>
 double compute_kerr_mirr(config_t& bconfig, coIdx... bco) {
-  // S := CHI * MCH^2
-  const double MCHsq = bconfig(MCH, bco...) * bconfig(MCH, bco...);
-  const double S = bconfig(CHI, bco...) * MCHsq;
-  const double Mirrsq = (MCHsq + std::sqrt(MCHsq * MCHsq - S * S)) / 2;
-  return std::sqrt(Mirrsq);
+    // S := CHI * MCH^2
+    const double MCHsq = bconfig(MCH, bco...) * bconfig(MCH, bco...);
+    const double S = bconfig(CHI, bco...) * MCHsq;
+    const double Mirrsq = (MCHsq + std::sqrt(MCHsq * MCHsq - S * S)) / 2;
+    return std::sqrt(Mirrsq);
 }
 
 /**
@@ -1037,27 +1041,27 @@ double compute_kerr_mirr(config_t& bconfig, coIdx... bco) {
  * @return: returns a Scalar field
  */
 inline Scalar get_bound_filled_field(Scalar const& field, int const bound) {
-  int const ndom = field.get_nbr_domains();
-  Scalar out(field, false);
-  for (auto d = 0; d < ndom; ++d) {
-    auto npts = field(d).get_conf().get_dimensions();
-    Index pos(npts);
-    Index pos_b(pos);
-    switch (bound) {
-      case INNER_BC:
-        break;
-      case OUTER_BC:
-        pos_b.set(1) = npts(1) - 1;
-        break;
+    int const ndom = field.get_nbr_domains();
+    Scalar out(field, false);
+    for (auto d = 0; d < ndom; ++d) {
+        auto npts = field(d).get_conf().get_dimensions();
+        Index pos(npts);
+        Index pos_b(pos);
+        switch (bound) {
+            case INNER_BC:
+                break;
+            case OUTER_BC:
+                pos_b.set(1) = npts(1) - 1;
+                break;
+        }
+        do {
+            pos_b.set(2) = pos(2);
+            pos_b.set(3) = pos(3);
+            out.set_domain(d).set(pos) = field(d)(pos_b);
+        } while (pos.inc());
+        out.set_domain(d).set_base() = field(d).get_base();
     }
-    do {
-      pos_b.set(2) = pos(2);
-      pos_b.set(3) = pos(3);
-      out.set_domain(d).set(pos) = field(d)(pos_b);
-    } while (pos.inc());
-    out.set_domain(d).set_base() = field(d).get_base();
-  }
-  return out;
+    return out;
 }
 
 /**
@@ -1074,14 +1078,14 @@ inline Scalar get_bound_filled_field(Scalar const& field, int const bound) {
 inline Scalar get_bound_filled_field_from_one_dom(Scalar const& field,
                                                   int const bound,
                                                   int const dom) {
-  auto bound_field(get_bound_filled_field(field, bound));
-  int const ndom = field.get_nbr_domains();
-  Scalar out(bound_field);
-  for (auto d = 0; d < ndom; ++d) {
-    out.set_domain(d) = bound_field(dom);
-    out.set_domain(d).set_base() = bound_field(dom).get_base();
-  }
-  return out;
+    auto bound_field(get_bound_filled_field(field, bound));
+    int const ndom = field.get_nbr_domains();
+    Scalar out(bound_field);
+    for (auto d = 0; d < ndom; ++d) {
+        out.set_domain(d) = bound_field(dom);
+        out.set_domain(d).set_base() = bound_field(dom).get_base();
+    }
+    return out;
 }
 
 /**
@@ -1095,9 +1099,9 @@ inline Scalar get_bound_filled_field_from_one_dom(Scalar const& field,
  */
 template <class space_t>
 void print_bounds_from_space(space_t const& space, int bound = OUTER_BC) {
-  for (int i = 0; i < space.get_nbr_domains(); ++i)
-    std::cout << bco_utils::get_radius(space.get_domain(i), bound) << " ";
-  std::cout << std::endl;
+    for (int i = 0; i < space.get_nbr_domains(); ++i)
+        std::cout << bco_utils::get_radius(space.get_domain(i), bound) << " ";
+    std::cout << std::endl;
 };
 
 /**
@@ -1111,12 +1115,13 @@ void print_bounds_from_space(space_t const& space, int bound = OUTER_BC) {
  */
 template <class space_t>
 void print_constant_space_resolution(space_t const& space) {
-  auto dom = space.get_domain(0);
-  auto ndim = dom->get_ndim();
-  std::array<std::string, 3> directions{"r", "theta", "phi"};
-  for (auto i = 0; i < ndim; ++i)
-    std::cout << dom->get_nbr_points()(i) << " (" << directions[i] << ")     ";
-  std::cout << "\n";
+    auto dom = space.get_domain(0);
+    auto ndim = dom->get_ndim();
+    std::array<std::string, 3> directions{"r", "theta", "phi"};
+    for (auto i = 0; i < ndim; ++i)
+        std::cout << dom->get_nbr_points()(i) << " (" << directions[i]
+                  << ")     ";
+    std::cout << "\n";
 };
 
 /**
@@ -1126,20 +1131,22 @@ void print_constant_space_resolution(space_t const& space) {
  * @return int Next resolution
  */
 inline int next_resolution(int const res) {
-  std::vector<int> ress{9, 11, 13, 17, 21, 25, 33};
-  auto res_it = std::find_if(ress.begin(), ress.end(),
-                             [&res](auto& n) { return n == res; });
-  if (res_it == ress.end()) {
-    std::stringstream msg;
-    msg << "Resolution " << res << " not found in approved list.\n";
-    std::__throw_runtime_error(msg.str().c_str());
-  } else if (*res_it == ress.back()) {
-    std::stringstream msg;
-    msg << "Resolution cannot be increased beyond "<< ress.back() << " .\n";
-    std::__throw_runtime_error(msg.str().c_str());
-  }
-  res_it++;
-  return *res_it;
+    std::vector<int> ress{9, 11, 13, 17, 21, 25, 33};
+    auto res_it = std::find_if(ress.begin(), ress.end(), [&res](auto& n) {
+        return n == res;
+    });
+    if (res_it == ress.end()) {
+        std::stringstream msg;
+        msg << "Resolution " << res << " not found in approved list.\n";
+        std::__throw_runtime_error(msg.str().c_str());
+    } else if (*res_it == ress.back()) {
+        std::stringstream msg;
+        msg << "Resolution cannot be increased beyond " << ress.back()
+            << " .\n";
+        std::__throw_runtime_error(msg.str().c_str());
+    }
+    res_it++;
+    return *res_it;
 }
 
 /** @}*/
