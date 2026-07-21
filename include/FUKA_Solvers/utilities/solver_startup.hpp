@@ -21,7 +21,15 @@
  */
 #pragma once
 #include <cstdio>
+#include <iostream>
 #include <string>
+#if defined __cpp_lib_filesystem && __cpp_lib_filesystem < 201703L
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 namespace Kadath {
 namespace FUKA_Solvers {
@@ -38,18 +46,18 @@ namespace FUKA_Solvers {
  */
 template <class config_t>
 class Initialize_Solver {
-  // static member variables
- public:
-  static std::string outputdir;
-  static std::string input_configname;
-  static bool example_setup;
-  static bool setup_first;
-  static bool minimal_config;
-  static config_t bconfig;
-  static int rank;
+    // static member variables
+   public:
+    static std::string outputdir;
+    static std::string input_configname;
+    static bool example_setup;
+    static bool setup_first;
+    static bool minimal_config;
+    static config_t bconfig;
+    static int rank;
 
- public:
-  static void init_solver(int argc, char** argv);
+   public:
+    static void init_solver(int argc, char** argv);
 };
 
 // static member initialization
@@ -78,79 +86,90 @@ int Initialize_Solver<config_t>::rank = 0;
 
 template <class config_t>
 void Initialize_Solver<config_t>::init_solver(int argc, char** argv) {
-  // Necessary to get default construction
-  Initialize_Solver<config_t>::bconfig = config_t();
-  if (argc < 2) {
-    if (Initialize_Solver::rank == 0) {
-      std::cout << "INFO config file missing - generating a minimal setup"
-                << std::endl
-                << "Modify as needed before rerunning `solve "
-                << Initialize_Solver::input_configname << " <outputdir>`\n"
-                << "For a full setup, rerun with `solve full`\n";
-    }
-    Initialize_Solver::example_setup = Initialize_Solver::setup_first = true;
-  }
-
-  // if the input config is called something other than the default filename
-  // check if we have a dat file associated with it.  If not, create a dat
-  // file based on the info file before solving.
-  else if (Initialize_Solver::input_configname != std::string{argv[1]}) {
-    std::string arg1 = std::string{argv[1]};
-    if (arg1 == "full") {
-      Initialize_Solver<config_t>::minimal_config = false;
-      if (Initialize_Solver::rank == 0) {
-        std::cout << "INFO config file missing - generating a full setup"
-                  << std::endl
-                  << "Modify as needed before rerunning `solve "
-                  << Initialize_Solver::input_configname << " <outputdir>`\n";
-      }
-      Initialize_Solver::example_setup = Initialize_Solver::setup_first = true;
-    } else {
-      Initialize_Solver::input_configname = arg1;
-      Initialize_Solver::bconfig.set_filename(
-          Initialize_Solver::input_configname);
-
-      std::string input_setupname = Initialize_Solver::bconfig.space_filename();
-      std::string file_path = Initialize_Solver::bconfig.config_outputdir();
-
-      if (fs::exists(Initialize_Solver::input_configname) &&
-          fs::exists(input_setupname)) {
-        if (Initialize_Solver::rank == 0)
-          std::cout << "Solving based on previous solution: "
-                    << Initialize_Solver::input_configname << std::endl;
-      } else if (fs::exists(Initialize_Solver::input_configname) &&
-                 !fs::exists(input_setupname)) {
+    // Necessary to get default construction
+    Initialize_Solver<config_t>::bconfig = config_t();
+    if (argc < 2) {
         if (Initialize_Solver::rank == 0) {
-          std::cout << "No dat file associated with : "
-                    << Initialize_Solver::input_configname << std::endl;
-          std::cout << "Creating a setup based on config file..." << std::endl;
+            std::cout << "INFO config file missing - generating a minimal setup"
+                      << std::endl
+                      << "Modify as needed before rerunning `solve "
+                      << Initialize_Solver::input_configname
+                      << " <outputdir>`\n"
+                      << "For a full setup, rerun with `solve full`\n";
         }
-        Initialize_Solver::setup_first = true;
-      } else {
-        if (Initialize_Solver::rank == 0)
-          std::cerr << "Config file input is invalid.  Check for typos."
-                    << std::endl;
-        std::_Exit(EXIT_FAILURE);
-      }
+        Initialize_Solver::example_setup = Initialize_Solver::setup_first =
+            true;
     }
-  } else {
-    // if the default <example name>.info file is used, we always start over.
-    Initialize_Solver::setup_first = true;
-  }
 
-  if (argc > 2)
-    Initialize_Solver::outputdir = std::string{argv[2]};
+    // if the input config is called something other than the default filename
+    // check if we have a dat file associated with it.  If not, create a dat
+    // file based on the info file before solving.
+    else if (Initialize_Solver::input_configname != std::string{argv[1]}) {
+        std::string arg1 = std::string{argv[1]};
+        if (arg1 == "full") {
+            Initialize_Solver<config_t>::minimal_config = false;
+            if (Initialize_Solver::rank == 0) {
+                std::cout
+                    << "INFO config file missing - generating a full setup"
+                    << std::endl
+                    << "Modify as needed before rerunning `solve "
+                    << Initialize_Solver::input_configname << " <outputdir>`\n";
+            }
+            Initialize_Solver::example_setup = Initialize_Solver::setup_first =
+                true;
+        } else {
+            Initialize_Solver::input_configname = arg1;
+            Initialize_Solver::bconfig.set_filename(
+                Initialize_Solver::input_configname);
 
-  Initialize_Solver::bconfig.set_filename(Initialize_Solver::input_configname);
+            std::string input_setupname =
+                Initialize_Solver::bconfig.space_filename();
+            std::string file_path =
+                Initialize_Solver::bconfig.config_outputdir();
 
-  // Redirect rank > 0 stdout and stderr to /dev/null
-  if (Initialize_Solver::rank > 0) {
-    fflush(stderr);
-    FILE* _dummyerr = freopen("/dev/null", "w", stderr);
+            if (fs::exists(Initialize_Solver::input_configname) &&
+                fs::exists(input_setupname)) {
+                if (Initialize_Solver::rank == 0)
+                    std::cout << "Solving based on previous solution: "
+                              << Initialize_Solver::input_configname
+                              << std::endl;
+            } else if (fs::exists(Initialize_Solver::input_configname) &&
+                       !fs::exists(input_setupname)) {
+                if (Initialize_Solver::rank == 0) {
+                    std::cout << "No dat file associated with : "
+                              << Initialize_Solver::input_configname
+                              << std::endl;
+                    std::cout << "Creating a setup based on config file..."
+                              << std::endl;
+                }
+                Initialize_Solver::setup_first = true;
+            } else {
+                if (Initialize_Solver::rank == 0)
+                    std::cerr
+                        << "Config file input is invalid.  Check for typos."
+                        << std::endl;
+                std::_Exit(EXIT_FAILURE);
+            }
+        }
+    } else {
+        // if the default <example name>.info file is used, we always start over.
+        Initialize_Solver::setup_first = true;
+    }
 
-    fflush(stdout);
-    FILE* _dummystdout = freopen("/dev/null", "w", stdout);
-  }
+    if (argc > 2)
+        Initialize_Solver::outputdir = std::string{argv[2]};
+
+    Initialize_Solver::bconfig.set_filename(
+        Initialize_Solver::input_configname);
+
+    // Redirect rank > 0 stdout and stderr to /dev/null
+    if (Initialize_Solver::rank > 0) {
+        fflush(stderr);
+        FILE* _dummyerr = freopen("/dev/null", "w", stderr);
+
+        fflush(stdout);
+        FILE* _dummystdout = freopen("/dev/null", "w", stdout);
+    }
 }
 
 /** @}*/
