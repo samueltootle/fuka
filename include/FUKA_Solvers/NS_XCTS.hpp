@@ -32,177 +32,177 @@ namespace Kadath::FUKA_Solvers {
 using namespace ::Kadath::FUKA_Config;
 
 struct NS_XCTS_BASE {
-  using base_space_t = Space_spheric_adapted;
-  using base_config_t = Kadath::FUKA_Config::kadath_config_boost<
-      Kadath::FUKA_Config::BCO_NS_INFO>;
+    using base_space_t = Space_spheric_adapted;
+    using base_config_t = Kadath::FUKA_Config::kadath_config_boost<
+        Kadath::FUKA_Config::BCO_NS_INFO>;
 
-  ptr_data_member(base_space_t, space, unique);
-  ptr_data_member(base_config_t, bconfig, unique);
+    ptr_data_member(base_space_t, space, unique);
+    ptr_data_member(base_config_t, bconfig, unique);
 
-  using cfgen_t = CoordFields<base_space_t>;
-  using cfary_t = std::array<std::optional<Vector>, NUM_VECTORS>;
+    using cfgen_t = CoordFields<base_space_t>;
+    using cfary_t = std::array<std::optional<Vector>, NUM_VECTORS>;
 
- protected:
-  internal_variable(int, rank)
-  internal_variable(int, verbosity)
-  internal_variable(int, ndom)
-  internal_variable(std::string, outputdir)
-  internal_variable(int, last_stage_idx)
-  internal_variable(std::string, stagename)
-  STAGES solver_stage{STAGES::NUM_STAGES};
+   protected:
+    internal_variable(int, rank)
+    internal_variable(int, verbosity)
+    internal_variable(int, ndom)
+    internal_variable(std::string, outputdir)
+    internal_variable(int, last_stage_idx)
+    internal_variable(std::string, stagename)
+    STAGES solver_stage{STAGES::NUM_STAGES};
 
-  // EOS Parameters - Perhaps this should be a container?
-  internal_variable(double, h_cut);
-  internal_variable(std::string, eos_file);
-  internal_variable(std::string, eos_type);
+    // EOS Parameters - Perhaps this should be a container?
+    internal_variable(double, h_cut);
+    internal_variable(std::string, eos_file);
+    internal_variable(std::string, eos_type);
 
-  // Support containers
-  ptr_data_member(Base_tensor, basis, unique);
-  ptr_data_member(Metric_flat, fmet, unique);
-  ptr_data_member(System_of_eqs, syst, unique);
-  ptr_data_member(cfgen_t, cfields, unique);
-  ptr_data_member(cfary_t, coord_vectors, unique);
+    // Support containers
+    ptr_data_member(Base_tensor, basis, unique);
+    ptr_data_member(Metric_flat, fmet, unique);
+    ptr_data_member(System_of_eqs, syst, unique);
+    ptr_data_member(cfgen_t, cfields, unique);
+    ptr_data_member(cfary_t, coord_vectors, unique);
 
-  // Sequence containers
-  ptr_data_member(ns_sequence const, seq, unique);
-  ptr_data_member(Parameter_sequence<BCO_PARAMS>, resolution, unique);
+    // Sequence containers
+    ptr_data_member(ns_sequence const, seq, unique);
+    ptr_data_member(Parameter_sequence<BCO_PARAMS>, resolution, unique);
 
-  // Variable fields - i.e. Solution
-  ptr_data_member(Scalar, conformal_factor, unique);
-  ptr_data_member(Scalar, lapse, unique);
-  ptr_data_member(Vector, shift, unique);
-  ptr_data_member(Scalar, logh, unique);
-  ptr_data_member(Scalar, diff_omega, unique);
+    // Variable fields - i.e. Solution
+    ptr_data_member(Scalar, conformal_factor, unique);
+    ptr_data_member(Scalar, lapse, unique);
+    ptr_data_member(Vector, shift, unique);
+    ptr_data_member(Scalar, logh, unique);
+    ptr_data_member(Scalar, diff_omega, unique);
 
-  virtual ~NS_XCTS_BASE() { bconfig.release(); };
+    virtual ~NS_XCTS_BASE() { bconfig.release(); };
 
-  NS_XCTS_BASE();
-  NS_XCTS_BASE(base_config_t* config_,
-               ns_sequence const& seq_,
-               Parameter_sequence<BCO_PARAMS> const& res_,
-               std::string outputdir_,
-               int const rank_ = 0);
-  void save_to_file() const;
-  bool increment_resolution();
-  bool increment_seq();
-  int do_newton();
-  void regrid();
+    NS_XCTS_BASE();
+    NS_XCTS_BASE(base_config_t* config_,
+                 ns_sequence const& seq_,
+                 Parameter_sequence<BCO_PARAMS> const& res_,
+                 std::string outputdir_,
+                 int const rank_ = 0);
+    void save_to_file() const;
+    bool increment_resolution();
+    bool increment_seq();
+    int do_newton();
+    void regrid();
 
-  virtual std::string converged_filename(const std::string stage) const = 0;
+    virtual std::string converged_filename(const std::string stage) const = 0;
 
- protected:
-  void load_solution_from_file();
-  void initialize_support_containers();
-  virtual void reset_all_ptrs();
-  virtual void update_config_quantities() = 0;
-  virtual void print_diagnostics(const int ite, const double conv) const = 0;
+   protected:
+    void load_solution_from_file();
+    void initialize_support_containers();
+    virtual void reset_all_ptrs();
+    virtual void update_config_quantities() = 0;
+    virtual void print_diagnostics(const int ite, const double conv) const = 0;
 
- public:
-  /**
+   public:
+    /**
    * @brief Consistent interface for writing a checkpoint
    *
    * @param termination_chkpt Toggle writing to stdout for termination
    */
-  void checkpoint(bool termination_chkpt = false) const {
-    // Backup activated stages
-    auto const final_stages{bconfig->return_stages()};
+    void checkpoint(bool termination_chkpt = false) const {
+        // Backup activated stages
+        auto const final_stages{bconfig->return_stages()};
 
-    // Clear stages and only set the current stage as active
-    auto& stages = bconfig->return_stages();
-    stages.fill(false);
-    stages[this->solver_stage] = true;
+        // Clear stages and only set the current stage as active
+        auto& stages = bconfig->return_stages();
+        stages.fill(false);
+        stages[this->solver_stage] = true;
 
-    // Save to file
-    save_to_file();
+        // Save to file
+        save_to_file();
 
-    // Reset to original stages
-    stages = final_stages;
+        // Reset to original stages
+        stages = final_stages;
 
-    if (termination_chkpt) {
-      std::stringstream ss;
-      ss << "***Writing early termination chkpt " << bconfig->config_filename()
-         << "***\n";
-      throw std::runtime_error(ss.str().c_str());
+        if (termination_chkpt) {
+            std::stringstream ss;
+            ss << "***Writing early termination chkpt "
+               << bconfig->config_filename() << "***\n";
+            throw std::runtime_error(ss.str().c_str());
+        }
     }
-  }
 };
 
 template <class eos_t>
 struct NS_XCTS_NOROT : NS_XCTS_BASE {
- private:
-  void syst_init();
-  void print_diagnostics(const int ite, const double conv) const override;
-  void update_config_quantities() override;
+   private:
+    void syst_init();
+    void print_diagnostics(const int ite, const double conv) const override;
+    void update_config_quantities() override;
 
- public:
-  void setup_syst();
-  std::string converged_filename(const std::string stage) const override;
+   public:
+    void setup_syst();
+    std::string converged_filename(const std::string stage) const override;
 
-  NS_XCTS_NOROT() = default;
-  NS_XCTS_NOROT(std::string filename);
-  NS_XCTS_NOROT(base_config_t* config_,
-                ns_sequence const& seq_,
-                Parameter_sequence<BCO_PARAMS> const& res_,
-                std::string outputdir_,
-                int const rank_ = 0);
+    NS_XCTS_NOROT() = default;
+    NS_XCTS_NOROT(std::string filename);
+    NS_XCTS_NOROT(base_config_t* config_,
+                  ns_sequence const& seq_,
+                  Parameter_sequence<BCO_PARAMS> const& res_,
+                  std::string outputdir_,
+                  int const rank_ = 0);
 };
 
 template <class eos_t>
 struct NS_XCTS_UNIFORM_ROT : NS_XCTS_BASE {
- private:
-  void syst_init();
-  void print_diagnostics(const int ite, const double conv) const override;
-  void update_config_quantities() override;
-  void initialize_spinup();
-  ptr_data_member(Parameter_sequence<BCO_PARAMS>, spinup, unique);
+   private:
+    void syst_init();
+    void print_diagnostics(const int ite, const double conv) const override;
+    void update_config_quantities() override;
+    void initialize_spinup();
+    ptr_data_member(Parameter_sequence<BCO_PARAMS>, spinup, unique);
 
- public:
-  void setup_syst();
-  bool increment_spin();
-  std::string converged_filename(const std::string stage) const;
+   public:
+    void setup_syst();
+    bool increment_spin();
+    std::string converged_filename(const std::string stage) const;
 
-  NS_XCTS_UNIFORM_ROT() = default;
-  NS_XCTS_UNIFORM_ROT(base_config_t* config_,
-                      ns_sequence const& seq_,
-                      Parameter_sequence<BCO_PARAMS> const& res_,
-                      std::string outputdir_,
-                      int const rank_ = 0);
+    NS_XCTS_UNIFORM_ROT() = default;
+    NS_XCTS_UNIFORM_ROT(base_config_t* config_,
+                        ns_sequence const& seq_,
+                        Parameter_sequence<BCO_PARAMS> const& res_,
+                        std::string outputdir_,
+                        int const rank_ = 0);
 };
 
 template <class eos_t>
 struct NS_XCTS_DIFF_ROT : NS_XCTS_BASE {
- private:
-  void syst_init();
-  void print_diagnostics(const int ite, const double conv) const override;
-  void update_config_quantities() override;
-  void initialize_spinup();
-  void initialize_diffrot_params();
+   private:
+    void syst_init();
+    void print_diagnostics(const int ite, const double conv) const override;
+    void update_config_quantities() override;
+    void initialize_spinup();
+    void initialize_diffrot_params();
 
-  /// Variables needed for DIFFROT solver
-  using diffparams_t = std::array<double, DIFFROT_PARAMS::NUM_DIFFROT_PARAMS>;
-  internal_variable(diffparams_t, diffrot_params);
-  ptr_data_member(Parameter_sequence<DIFFROT_PARAMS>, spinup, unique);
-  ptr_data_member(Kadath::Scalar, ones, unique);
-  ptr_data_member(Kadath::Index, pos_origin, unique);
-  ptr_data_member(Kadath::Index, pos_eq, unique);
-  ptr_data_member(Kadath::Index, pos_pole, unique);
-  internal_variable(double, diffA);
-  internal_variable(double, axis_ratio);
-  internal_variable(std::string, law);
+    /// Variables needed for DIFFROT solver
+    using diffparams_t = std::array<double, DIFFROT_PARAMS::NUM_DIFFROT_PARAMS>;
+    internal_variable(diffparams_t, diffrot_params);
+    ptr_data_member(Parameter_sequence<DIFFROT_PARAMS>, spinup, unique);
+    ptr_data_member(Kadath::Scalar, ones, unique);
+    ptr_data_member(Kadath::Index, pos_origin, unique);
+    ptr_data_member(Kadath::Index, pos_eq, unique);
+    ptr_data_member(Kadath::Index, pos_pole, unique);
+    internal_variable(double, diffA);
+    internal_variable(double, axis_ratio);
+    internal_variable(std::string, law);
 
- public:
-  void setup_syst();
-  bool increment_spin();
-  std::string converged_filename(const std::string stage) const;
+   public:
+    void setup_syst();
+    bool increment_spin();
+    std::string converged_filename(const std::string stage) const;
 
-  NS_XCTS_DIFF_ROT() = default;
-  NS_XCTS_DIFF_ROT(base_config_t* config_,
-                   ns_sequence const& seq_,
-                   Parameter_sequence<BCO_PARAMS> const& res_,
-                   std::string outputdir_,
-                   int const rank_ = 0);
+    NS_XCTS_DIFF_ROT() = default;
+    NS_XCTS_DIFF_ROT(base_config_t* config_,
+                     ns_sequence const& seq_,
+                     Parameter_sequence<BCO_PARAMS> const& res_,
+                     std::string outputdir_,
+                     int const rank_ = 0);
 
-  void reset_all_ptrs() override;
+    void reset_all_ptrs() override;
 };
 
 /** @}*/

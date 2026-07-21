@@ -1,5 +1,5 @@
 #include "Solvers/fuka_syst/fuka_syst_setup.hpp"
-#include "utilities.hpp"
+#include "utilities/solver_utilities.hpp"
 
 namespace Kadath::FUKA_Solvers {
 // NOROT Routines
