@@ -22,7 +22,6 @@
 #pragma once
 #include <cstdio>
 #include <string>
-#include "Solvers/solvers.hpp"
 
 namespace Kadath {
 namespace FUKA_Solvers {
