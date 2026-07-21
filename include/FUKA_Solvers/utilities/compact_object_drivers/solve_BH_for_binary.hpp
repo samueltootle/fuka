@@ -38,9 +38,14 @@ std::string solve_BH_for_binary(config_t& bconfig, const size_t bco) {
         bhconfig.set_stage(STAGES::BIN_BOOST) = true;
 
     const int nshells = bconfig(NSHELLS, bco);
-    bhconfig(BCO_PARAMS::NSHELLS) = (bconfig.control(CONTROLS::CO_USE_SHELLS)) ? nshells : 0;
+    bhconfig(BCO_PARAMS::NSHELLS) =
+        (bconfig.control(CONTROLS::CO_USE_SHELLS)) ? nshells : 0;
 
-    int err = bh_3d_xcts_binary_boost_driver(bhconfig, resolution, output_path, bconfig, bco);
+    int err = bh_3d_xcts_binary_boost_driver(bhconfig,
+                                             resolution,
+                                             output_path,
+                                             bconfig,
+                                             bco);
     MPI_Barrier(MPI_COMM_WORLD);
 
     // update binary parameters

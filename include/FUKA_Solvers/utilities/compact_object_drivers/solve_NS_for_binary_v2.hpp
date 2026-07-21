@@ -57,9 +57,14 @@ std::string solve_NS_for_binary_v2(config_t& bconfig, const size_t bco) {
     const int nshells = bconfig(BCO_PARAMS::NSHELLS, bco);
 
     nsconfig(BCO_PARAMS::NINSHELLS) = 0;
-    nsconfig(BCO_PARAMS::NSHELLS) = (bconfig.control(CONTROLS::CO_USE_SHELLS)) ? nshells : 0;
+    nsconfig(BCO_PARAMS::NSHELLS) =
+        (bconfig.control(CONTROLS::CO_USE_SHELLS)) ? nshells : 0;
 
-    int err = NS_XCTS_binary_boost_driver(nsconfig, resolution, output_path, bconfig, bco);
+    int err = NS_XCTS_binary_boost_driver(nsconfig,
+                                          resolution,
+                                          output_path,
+                                          bconfig,
+                                          bco);
     MPI_Barrier(MPI_COMM_WORLD);
 
     // update binary parameters

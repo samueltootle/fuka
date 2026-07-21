@@ -1,6 +1,7 @@
 #pragma once
-#include<memory>
-#include<cmath>
+#include <cmath>
+#include <memory>
+
 template <typename tov_t>
 auto setup_interpolator_from_TOV(tov_t& tov) {
     const size_t max_iter = tov.state.size();

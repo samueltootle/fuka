@@ -16,8 +16,8 @@ namespace Kadath::FUKA_Solvers {
 
 template <typename tov_t, typename config_t>
 static void write_ns_init_setup_tofile__xcts(Space_spheric_adapted& space,
-                                     config_t& bconfig,
-                                     tov_t& tov) {
+                                             config_t& bconfig,
+                                             tov_t& tov) {
     using eos_t = typename tov_t::eos_t;
 
     enum ltpQ { LAPSE = 0, RHO, CONF };
@@ -112,5 +112,6 @@ struct setup_3dns_xcts_functor {
         write_ns_init_setup_tofile__xcts(space, bconfig, *tov);
     }
 };
+
 /** @}*/
 }  // namespace Kadath::FUKA_Solvers

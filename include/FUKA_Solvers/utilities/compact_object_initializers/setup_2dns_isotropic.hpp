@@ -11,6 +11,7 @@
  * @{*/
 namespace Kadath::FUKA_Solvers {
 using namespace Kadath::FUKA_Config;
+
 /**
  * @brief Write the initial guess to file
  * for a 2D Neutron star in
@@ -163,5 +164,6 @@ struct setup_2dns_isotropic_functor {
         write_2dns_isotropic_init_setup_tofile(space, bconfig, *tov);
     }
 };
+
 /** @}*/
 }  // namespace Kadath::FUKA_Solvers

@@ -8,7 +8,8 @@ namespace Kadath::FUKA_Solvers {
 using namespace Kadath::FUKA_EOS;
 
 template <typename config_t>
-std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig, ns_sequence const& seq) {
+std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig,
+                                          ns_sequence const& seq) {
     int rank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     std::string output_path = (bconfig.control(CONTROLS::SAVE_COS))
@@ -34,7 +35,8 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig, ns_sequence const& 
     for (int i = 0; i < STAGES::NUM_STAGES; ++i) {
         nsconfig.set_stage(i) = bconfig.set_stage(i);
     }
-    nsconfig.set_stage(STAGES::UNIFORM_ROT) = bconfig.set_stage(STAGES::TOTAL_BC);
+    nsconfig.set_stage(STAGES::UNIFORM_ROT) =
+        bconfig.set_stage(STAGES::TOTAL_BC);
     nsconfig.set_stage(STAGES::TOTAL_BC) = false;
 
     // Tells the NS driver to initialize the numerical space and fields
@@ -48,13 +50,17 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig, ns_sequence const& 
     nsconfig.set_filename("initns");
     nsconfig.set_outputdir(output_path);
 
-    auto ns_iso_sol_config = ns_isotropic_sequence(nsconfig, seq, resolution, output_path);
+    auto ns_iso_sol_config =
+        ns_isotropic_sequence(nsconfig, seq, resolution, output_path);
 
     const std::string eos_type = bconfig.template eos<std::string>(EOSTYPE);
     nsconfig.control(CONTROLS::SEQUENCES) = false;
     if (rank == 0) {
-        EOS_Function_Dispatcher::dispatch<NS_ISO_to_XCTS_convert>(ns_iso_sol_config, eos_type,
-                                                                  ns_iso_sol_config, output_path);
+        EOS_Function_Dispatcher::dispatch<NS_ISO_to_XCTS_convert>(
+            ns_iso_sol_config,
+            eos_type,
+            ns_iso_sol_config,
+            output_path);
     }
     ns_iso_sol_config.set_filename("initns_xcts.info");
     ns_iso_sol_config.set_outputdir(output_path);

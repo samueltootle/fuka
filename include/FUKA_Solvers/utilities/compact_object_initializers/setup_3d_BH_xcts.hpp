@@ -13,7 +13,7 @@ namespace Kadath::FUKA_Solvers {
 
 template <typename config_t>
 static void write_bh_init_setup_tofile_XCTS(Space_adapted_bh& space,
-                                     config_t& bconfig) {
+                                            config_t& bconfig) {
     Base_tensor basis(space, CARTESIAN_BASIS);
 
     // setup fields
@@ -65,10 +65,10 @@ void setup_3d_BH_xcts(config_t& bconfig) {
     // Estimate Radius of BH based on Schwarzschild radius and an
     // estimate for Psi on the horizon based on prev. BH solutions
     if (!bconfig.control(CONTROLS::USE_CONFIG_VARS)) {
-        bconfig.set(BCO_PARAMS::RIN) =
-            bconfig(BCO_PARAMS::MCH) * Kadath::bco_utils::invpsisq;
-        bconfig.set(BCO_PARAMS::RMID) =
-            2 * bconfig(BCO_PARAMS::MCH) * Kadath::bco_utils::invpsisq;
+        bconfig.set(BCO_PARAMS::RIN) = bconfig(BCO_PARAMS::MCH) *
+                                       Kadath::bco_utils::invpsisq;
+        bconfig.set(BCO_PARAMS::RMID) = 2 * bconfig(BCO_PARAMS::MCH) *
+                                        Kadath::bco_utils::invpsisq;
         bconfig.set(BCO_PARAMS::ROUT) = 4 * bconfig(BCO_PARAMS::RMID);
     }
     Kadath::bco_utils::set_isolated_BH_bounds(bounds, bconfig);

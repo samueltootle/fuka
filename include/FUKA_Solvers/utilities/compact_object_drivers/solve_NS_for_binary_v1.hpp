@@ -1,10 +1,8 @@
 #pragma once
-#include "Solvers/ns_3d_xcts/ns_3d_xcts_driver.hpp"
 #include "FUKA_Solvers/utilities/fuka_path_tools.hpp"
+#include "Solvers/ns_3d_xcts/ns_3d_xcts_driver.hpp"
 
-
-
- /**
+/**
  * \addtogroup Solver_utils
  * \ingroup FUKA
  * @{*/
@@ -59,7 +57,8 @@ std::string solve_NS_for_binary_v1(config_t& bconfig, const size_t bco) {
     const int nshells = bconfig(BCO_PARAMS::NSHELLS, bco);
 
     nsconfig(BCO_PARAMS::NINSHELLS) = 0;
-    nsconfig(BCO_PARAMS::NSHELLS) = (bconfig.control(CONTROLS::CO_USE_SHELLS)) ? nshells : 0;
+    nsconfig(BCO_PARAMS::NSHELLS) =
+        (bconfig.control(CONTROLS::CO_USE_SHELLS)) ? nshells : 0;
 
     int err = ns_3d_xcts_binary_boost_driver(nsconfig,
                                              resolution,
@@ -77,5 +76,6 @@ std::string solve_NS_for_binary_v1(config_t& bconfig, const size_t bco) {
 
     return nsconfig.config_filename_abs();
 }
+
 /** @}*/
 }  // namespace Kadath::FUKA_Solvers

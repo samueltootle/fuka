@@ -1,10 +1,11 @@
 #pragma once
-#include <memory>
 #include <cmath>
+#include <memory>
 #include "Configurator/config_bco.hpp"
 #include "EOS/standalone/tov.hh"
 #include "bco_utilities.hpp"
 using namespace Kadath::FUKA_Config;
+
 namespace Kadath::FUKA_Solvers {
 
 /**
@@ -42,8 +43,8 @@ auto setup_ns_config_from_TOV(config_t& bconfig, size_t mass_fixing_idx) {
         throw std::runtime_error(msg.c_str());
     }
 
-    bconfig.set(BCO_PARAMS::NC) =
-        (nc_mass_fixing) ? bconfig(BCO_PARAMS::NC) : tov->rhoc;
+    bconfig.set(BCO_PARAMS::NC) = (nc_mass_fixing) ? bconfig(BCO_PARAMS::NC)
+                                                   : tov->rhoc;
     bconfig.set(BCO_PARAMS::HC) =
         (hc_mass_fixing) ? bconfig(BCO_PARAMS::HC)
                          : EOS<eos_t, eos_var_t::PRESSURE>::h_cold__rho(
@@ -55,9 +56,9 @@ auto setup_ns_config_from_TOV(config_t& bconfig, size_t mass_fixing_idx) {
     // update surface radius estimate
     bconfig.set(BCO_PARAMS::RMID) = tov->radius;
     bconfig.set(BCO_PARAMS::RIN) = 0.5 * bconfig(BCO_PARAMS::RMID);
-    bconfig.set(BCO_PARAMS::ROUT) =
-        bco_utils::gold_ratio * bconfig(BCO_PARAMS::RMID);
+    bconfig.set(BCO_PARAMS::ROUT) = bco_utils::gold_ratio *
+                                    bconfig(BCO_PARAMS::RMID);
 
     return tov;
 }
-}
+}  // namespace Kadath::FUKA_Solvers
