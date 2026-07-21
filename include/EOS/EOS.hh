@@ -101,7 +101,8 @@ class EOS {
             } else if constexpr (var == DHDRHO) {
                 res.set(pos) = 0.0;  //-1.0 / rho / rho * dpdrho * drho;
             } else
-                std::cerr << "Ill-defined variable in EOS class, please check." << std::endl;
+                std::cerr << "Ill-defined variable in EOS class, please check."
+                          << std::endl;
         } while (pos.inc());
 
         res.set_base() = so.get_base();
@@ -143,7 +144,8 @@ class EOS {
             else if constexpr (var == DHDRHO) {
                 res.set(pos) = 1. / h * eos::dpress_cold_drho__rho(rho);
             } else
-                std::cerr << "Ill-defined variable in EOS class, please check." << std::endl;
+                std::cerr << "Ill-defined variable in EOS class, please check."
+                          << std::endl;
         } while (pos.inc());
 
         res.set_base() = so.get_base();
@@ -203,7 +205,8 @@ class EOS {
 
         int dom = term.get_dom();
         if (target.get_type_data() != TERM_T) {
-            std::cerr << "EOS only defined with respect for a tensor" << std::endl;
+            std::cerr << "EOS only defined with respect for a tensor"
+                      << std::endl;
             std::_Exit(EXIT_FAILURE);
         }
 
@@ -226,7 +229,8 @@ class EOS {
             if (value.check_if_zero())
                 result_var.set_domain(dom).set_zero();
             else
-                result_var.set_domain(dom) = EOS::term_by_term_variation(dom, value_var, value);
+                result_var.set_domain(dom) =
+                    EOS::term_by_term_variation(dom, value_var, value);
 
             return Term_eq(dom, result, result_var);
         } else {

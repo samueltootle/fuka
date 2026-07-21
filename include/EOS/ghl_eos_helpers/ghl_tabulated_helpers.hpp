@@ -13,7 +13,8 @@ namespace GHL_EOS {
 /**
  * Update GRHaYL beta equilibrium table to be more useful for elliptic solvers.
  */
-inline void ghl_modify_beta_equ_table(std::unique_ptr<ghl_eos_parameters>& eos) {
+inline void ghl_modify_beta_equ_table(
+    std::unique_ptr<ghl_eos_parameters>& eos) {
     // This needs more testing regarding its utility
     return;
 
@@ -66,10 +67,18 @@ inline auto populate_ghl_tabulated(std::string table_par_file) {
 
     parse_3d_EOS_par_file parser;
     parser(table_par_file);
-    ghl_initialize_tabulated_eos_functions_and_params(parser.table_abspath.c_str(), parser.rho_atm,
-                                                      parser.rho_min, parser.rho_max, parser.Ye_atm,
-                                                      parser.Ye_min, parser.Ye_max, parser.T_atm,
-                                                      parser.T_min, parser.T_max, &eos);
+    ghl_initialize_tabulated_eos_functions_and_params(
+        parser.table_abspath.c_str(),
+        parser.rho_atm,
+        parser.rho_min,
+        parser.rho_max,
+        parser.Ye_atm,
+        parser.Ye_min,
+        parser.Ye_max,
+        parser.T_atm,
+        parser.T_min,
+        parser.T_max,
+        &eos);
     ghl_tabulated_compute_Ye_P_eps_of_rho_beq_constant_T(parser.T_beta, &eos);
     eos_params = std::make_unique<ghl_eos_parameters>(eos);
 
@@ -90,8 +99,9 @@ inline auto ghl_setup_table(std::string table_par_file) {
     return eos_params;
 }
 
-inline double ghl_tabulated_rho__h_cold(std::unique_ptr<ghl_eos_parameters>& ghl_eos_params,
-                                        double& h_in) {
+inline double ghl_tabulated_rho__h_cold(
+    std::unique_ptr<ghl_eos_parameters>& ghl_eos_params,
+    double& h_in) {
     // GRHayL will throw an error rather than enforce table bounds
     // so we enforce them here instead.
     size_t const N = ghl_eos_params->N_rho;
@@ -111,23 +121,28 @@ inline double ghl_tabulated_rho__h_cold(std::unique_ptr<ghl_eos_parameters>& ghl
     // in Margherita::Cold_Table
     const auto func = [&](const double& lrho) {
         double const rho = std::exp(lrho);
-        double const eps = ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rho);
-        double const press = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rho);
+        double const eps =
+            ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rho);
+        double const press =
+            ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rho);
 
         return h_in - (1. + eps + press / std::exp(lrho));
     };
 
     // Note the root bounds are quite sensitive given GRHaYL will simply error out
     // rather than enforcing table bounds.
-    auto lrho = zero_brent<>(log(ghl_eos_params->rho_min * 1.001), log(ghl_eos_params->rho_max),
-                             1.0e-13, func);
+    auto lrho = zero_brent<>(log(ghl_eos_params->rho_min * 1.001),
+                             log(ghl_eos_params->rho_max),
+                             1.0e-13,
+                             func);
     return std::exp(lrho);
 }
 
 // GRHaYL will error out rather than enforce table bounds.
 // Therefore we check them here to avoid errors.
-inline double ghl_tabulated_check_rho(std::unique_ptr<ghl_eos_parameters>& ghl_eos_params,
-                                      const double rho_in) {
+inline double ghl_tabulated_check_rho(
+    std::unique_ptr<ghl_eos_parameters>& ghl_eos_params,
+    const double rho_in) {
 
     // Enforce lower bound
     double lrho = std::max(std::log(rho_in), ghl_eos_params->table_logrho[0]);
@@ -141,8 +156,9 @@ inline double ghl_tabulated_check_rho(std::unique_ptr<ghl_eos_parameters>& ghl_e
 
 // GRHaYL will error out rather than enforce table bounds.
 // Therefore we check them here to avoid errors.
-inline double ghl_tabulated_check_press(std::unique_ptr<ghl_eos_parameters>& ghl_eos_params,
-                                        const double P_in) {
+inline double ghl_tabulated_check_press(
+    std::unique_ptr<ghl_eos_parameters>& ghl_eos_params,
+    const double P_in) {
 
     // Enforce lower bound
     double lpress = std::max(std::log(P_in), ghl_eos_params->lp_of_lr[0]);

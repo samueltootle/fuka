@@ -52,7 +52,8 @@ struct FUKA_EOS_Wrapper {
         if constexpr (eos == margherita_pwp) {
             double press = P_in;
             Kadath::Margherita::Cold_PWPoly::error_t error;
-            rho = Kadath::Margherita::Cold_PWPoly::rho__press_cold(press, error);
+            rho =
+                Kadath::Margherita::Cold_PWPoly::rho__press_cold(press, error);
         } else if constexpr (eos == margherita_1d) {
             double press = P_in;
             Kadath::Margherita::Cold_Table::error_t error;
@@ -60,10 +61,14 @@ struct FUKA_EOS_Wrapper {
         }
 #ifdef WITH_GRHAYL_EOS
         else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
-            rho = ghl_hybrid_compute_rho_cold_from_P_cold(ghl_eos_params.get(), P_in);
+            rho = ghl_hybrid_compute_rho_cold_from_P_cold(ghl_eos_params.get(),
+                                                          P_in);
         } else if constexpr (eos == ghl_eos_tabulated) {
-            double P_bounded = Kadath::GHL_EOS::ghl_tabulated_check_press(ghl_eos_params, P_in);
-            rho = ghl_tabulated_compute_rho_from_P(ghl_eos_params.get(), P_bounded);
+            double P_bounded =
+                Kadath::GHL_EOS::ghl_tabulated_check_press(ghl_eos_params,
+                                                           P_in);
+            rho = ghl_tabulated_compute_rho_from_P(ghl_eos_params.get(),
+                                                   P_bounded);
         }
 #endif
         return rho;
@@ -75,18 +80,28 @@ struct FUKA_EOS_Wrapper {
         if constexpr (eos == margherita_pwp) {
             double press;
             Kadath::Margherita::Cold_PWPoly::error_t error;
-            press = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(eps, rho, error);
+            press = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(
+                eps,
+                rho,
+                error);
         } else if constexpr (eos == margherita_1d) {
             double press;
             Kadath::Margherita::Cold_Table::error_t error;
-            press = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps, rho, error);
+            press =
+                Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps,
+                                                                         rho,
+                                                                         error);
         }
 #ifdef WITH_GRHAYL_EOS
         else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
             double P;
-            ghl_hybrid_compute_P_cold_and_eps_cold(ghl_eos_params.get(), rhoB_in, &P, &eps);
+            ghl_hybrid_compute_P_cold_and_eps_cold(ghl_eos_params.get(),
+                                                   rhoB_in,
+                                                   &P,
+                                                   &eps);
         } else if constexpr (eos == ghl_eos_tabulated) {
-            rho = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params, rhoB_in);
+            rho = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params,
+                                                           rhoB_in);
             eps = ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rho);
         }
 #endif
@@ -98,21 +113,33 @@ struct FUKA_EOS_Wrapper {
         double rho = rhoB_in;
         if constexpr (eos == margherita_pwp) {
             Kadath::Margherita::Cold_PWPoly::error_t error;
-            dpress_cold_drho = Kadath::Margherita::Cold_PWPoly::dpress_cold_drho__rho(rho, error);
+            dpress_cold_drho =
+                Kadath::Margherita::Cold_PWPoly::dpress_cold_drho__rho(rho,
+                                                                       error);
         } else if constexpr (eos == margherita_1d) {
             Kadath::Margherita::Cold_Table::error_t error;
-            dpress_cold_drho = Kadath::Margherita::Cold_Table::dpress_cold_drho__rho(rho, error);
+            dpress_cold_drho =
+                Kadath::Margherita::Cold_Table::dpress_cold_drho__rho(rho,
+                                                                      error);
         }
 #ifdef WITH_GRHAYL_EOS
         else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
             double K, Gamma, eps, press_cold;
-            ghl_hybrid_get_K_and_Gamma(ghl_eos_params.get(), rhoB_in, &K, &Gamma);
+            ghl_hybrid_get_K_and_Gamma(ghl_eos_params.get(),
+                                       rhoB_in,
+                                       &K,
+                                       &Gamma);
 
-            ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rhoB_in, &press_cold);
+            ghl_hybrid_compute_P_cold(ghl_eos_params.get(),
+                                      rhoB_in,
+                                      &press_cold);
             dpress_cold_drho = Gamma * press_cold / rhoB_in;
         } else if constexpr (eos == ghl_eos_tabulated) {
-            rho = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params, rhoB_in);
-            dpress_cold_drho = ghl_tabulated_compute_dP_drho_from_rho(ghl_eos_params.get(), rho);
+            rho = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params,
+                                                           rhoB_in);
+            dpress_cold_drho =
+                ghl_tabulated_compute_dP_drho_from_rho(ghl_eos_params.get(),
+                                                       rho);
         }
 #endif
         return dpress_cold_drho;
@@ -134,17 +161,23 @@ struct FUKA_EOS_Wrapper {
         if constexpr (eos == margherita_pwp) {
             double eps;
             Kadath::Margherita::Cold_PWPoly::error_t error;
-            P = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(eps, rho, error);
+            P = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(
+                eps,
+                rho,
+                error);
         } else if constexpr (eos == margherita_1d) {
             double eps;
             Kadath::Margherita::Cold_Table::error_t error;
-            P = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps, rho, error);
+            P = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps,
+                                                                         rho,
+                                                                         error);
         }
 #ifdef WITH_GRHAYL_EOS
         else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
             ghl_hybrid_compute_P_cold(ghl_eos_params.get(), rhoB_in, &P);
         } else if constexpr (eos == ghl_eos_tabulated) {
-            rho = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params, rhoB_in);
+            rho = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params,
+                                                           rhoB_in);
             P = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rho);
         }
 #endif
@@ -152,22 +185,34 @@ struct FUKA_EOS_Wrapper {
     }
 
     // Wrapper to make API consistent without modifying Margherita
-    static inline double press_cold_eps_cold__rho(double& eps_cold, double& rhoB_in) {
+    static inline double press_cold_eps_cold__rho(double& eps_cold,
+                                                  double& rhoB_in) {
         double P;
         if constexpr (eos == margherita_pwp) {
             Kadath::Margherita::Cold_PWPoly::error_t error;
-            P = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(eps_cold, rhoB_in, error);
+            P = Kadath::Margherita::Cold_PWPoly::press_cold_eps_cold__rho(
+                eps_cold,
+                rhoB_in,
+                error);
         } else if constexpr (eos == margherita_1d) {
             Kadath::Margherita::Cold_Table::error_t error;
-            P = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(eps_cold, rhoB_in, error);
+            P = Kadath::Margherita::Cold_Table::press_cold_eps_cold__rho(
+                eps_cold,
+                rhoB_in,
+                error);
         }
 #ifdef WITH_GRHAYL_EOS
         else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
-            ghl_hybrid_compute_P_cold_and_eps_cold(ghl_eos_params.get(), rhoB_in, &P, &eps_cold);
+            ghl_hybrid_compute_P_cold_and_eps_cold(ghl_eos_params.get(),
+                                                   rhoB_in,
+                                                   &P,
+                                                   &eps_cold);
         } else if constexpr (eos == ghl_eos_tabulated) {
-            rhoB_in = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params, rhoB_in);
+            rhoB_in = Kadath::GHL_EOS::ghl_tabulated_check_rho(ghl_eos_params,
+                                                               rhoB_in);
             P = ghl_tabulated_compute_P_from_rho(ghl_eos_params.get(), rhoB_in);
-            eps_cold = ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(), rhoB_in);
+            eps_cold = ghl_tabulated_compute_eps_from_rho(ghl_eos_params.get(),
+                                                          rhoB_in);
         }
 #endif
         return P;
@@ -186,13 +231,16 @@ struct FUKA_EOS_Wrapper {
         else if constexpr (eos == ghl_eos_simple || eos == ghl_eos_hybrid) {
             rho = Kadath::GHL_EOS::ghl_hybrid_rho__h_cold(ghl_eos_params, h_in);
         } else if constexpr (eos == ghl_eos_tabulated) {
-            rho = Kadath::GHL_EOS::ghl_tabulated_rho__h_cold(ghl_eos_params, h_in);
+            rho = Kadath::GHL_EOS::ghl_tabulated_rho__h_cold(ghl_eos_params,
+                                                             h_in);
         }
 #endif
         return rho;
     }
 
-    static inline double rho_energy_dedp__P_cold(double& rhoE, double& dedp, double& P_in) {
+    static inline double rho_energy_dedp__P_cold(double& rhoE,
+                                                 double& dedp,
+                                                 double& P_in) {
         double rho = rho__press_cold(P_in);
         rhoE = rho_energy__rho_cold(rho);
         auto const rhoh = rhoE + P_in;
@@ -210,7 +258,8 @@ struct FUKA_EOS_Wrapper {
 };
 #ifdef WITH_GRHAYL_EOS
 template <class FUKA_eos_t, FUKA_eos_t eos>
-std::unique_ptr<ghl_eos_parameters> FUKA_EOS_Wrapper<FUKA_eos_t, eos>::ghl_eos_params = nullptr;
+std::unique_ptr<ghl_eos_parameters>
+    FUKA_EOS_Wrapper<FUKA_eos_t, eos>::ghl_eos_params = nullptr;
 #endif
 }  // namespace FUKA_EOS
 }  // namespace Kadath

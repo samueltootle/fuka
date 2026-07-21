@@ -7,7 +7,8 @@
 #include "margherita.hh"
 #ifdef WITH_GRHAYL_EOS
 #include <ghl/ghl.h>
-#define FUKA_MAX_EOS_PARAMS MAX(MAX_EOS_PARAMS, Kadath::Margherita::Cold_PWPoly::max_num_pieces)
+#define FUKA_MAX_EOS_PARAMS \
+    MAX(MAX_EOS_PARAMS, Kadath::Margherita::Cold_PWPoly::max_num_pieces)
 #else
 #define FUKA_MAX_EOS_PARAMS Kadath::Margherita::Cold_PWPoly::max_num_pieces
 #endif
@@ -40,7 +41,8 @@ class parse_polytrope_file {
                     rho_unit = 1.0 * RHOGF;
                     K_unit = pow(INVRHOGF, gam0m1);
                 } else {
-                    std::cerr << "Unit system, " << Units << ", not recognised!\n";
+                    std::cerr << "Unit system, " << Units
+                              << ", not recognised!\n";
                     std::_Exit(EXIT_FAILURE);
                 }
             }
@@ -91,8 +93,8 @@ class parse_polytrope_file {
             //Can't use foreach since array is static length
             for (int i = 0; i < num_pieces; ++i) {
                 if (!(f >> ary[i])) {
-                    std::cerr << "Not enough vars in " << descr << " for " << num_pieces
-                              << "pieces.\n";
+                    std::cerr << "Not enough vars in " << descr << " for "
+                              << num_pieces << "pieces.\n";
                     std::_Exit(EXIT_FAILURE);
                 }
             }

@@ -91,7 +91,9 @@ struct EOS_Function_Dispatcher {
    * @param args optional parameter pack of Functor arguments
    */
     template <template <typename> class F, class config_t, typename... Args>
-    static inline auto dispatch(config_t& bconfig, const std::string eos_type, Args&&... args) {
+    static inline auto dispatch(config_t& bconfig,
+                                const std::string eos_type,
+                                Args&&... args) {
         if (eos_type == "Cold_PWPoly") {
             using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>;
             functor_wrapper<eos_t> wrapper;
@@ -112,8 +114,8 @@ struct EOS_Function_Dispatcher {
             return wrapper.template operator()<F>(std::forward<Args>(args)...);
         }
 #endif
-        throw std::invalid_argument("\nCannot dispatch kernel. Invalid EOS type:" + eos_type +
-                                    "\n");
+        throw std::invalid_argument(
+            "\nCannot dispatch kernel. Invalid EOS type:" + eos_type + "\n");
     }
 };
 
@@ -125,15 +127,19 @@ struct EOS_initialize {
         using namespace ::Kadath::FUKA_EOS;
         using namespace ::Kadath::Margherita;
 
-        const double h_cut = bconfig.template eos<double>(EOS_PARAMS::HCUT, bco...);
-        std::string filename = bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE, bco...);
-        const std::string eos_type = bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE, bco...);
+        const double h_cut =
+            bconfig.template eos<double>(EOS_PARAMS::HCUT, bco...);
+        std::string filename =
+            bconfig.template eos<std::string>(EOS_PARAMS::EOSFILE, bco...);
+        const std::string eos_type =
+            bconfig.template eos<std::string>(EOS_PARAMS::EOSTYPE, bco...);
 
         auto get_default_path = [&]() {
             std::string default_path{"./"};
             const std::string kadath_environment_var{"HOME_KADATH"};
             if (std::getenv(kadath_environment_var.c_str())) {
-                std::string const home_kadath{std::getenv(kadath_environment_var.c_str())};
+                std::string const home_kadath{
+                    std::getenv(kadath_environment_var.c_str())};
                 default_path = home_kadath + "/eos/";
             }
             return default_path;
@@ -151,9 +157,10 @@ struct EOS_initialize {
             return Margherita_setup_polytrope(filename);
         } else if (eos_type == "Cold_Table") {
             using eos_t = FUKA_EOS_Wrapper<fuka_eos_t, margherita_1d>;
-            const int interp_pts = (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...) == 0)
-                                       ? 2000
-                                       : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...);
+            const int interp_pts =
+                (bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...) == 0)
+                    ? 2000
+                    : bconfig.template eos<int>(EOS_PARAMS::INTERP_PTS, bco...);
 
             setup_Cold_Table(filename, interp_pts, h_cut);
             return;
@@ -174,8 +181,8 @@ struct EOS_initialize {
             return;
         }
 #endif
-        throw std::invalid_argument("\nCannot initialize EOS. Invalid EOS type: " + eos_type +
-                                    "\n");
+        throw std::invalid_argument(
+            "\nCannot initialize EOS. Invalid EOS type: " + eos_type + "\n");
     }
 };
 }  // namespace FUKA_EOS
