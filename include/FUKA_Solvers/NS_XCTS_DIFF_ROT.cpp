@@ -1,3 +1,4 @@
+#include "FUKA_Solvers/utilities/format_settings.hpp"
 #include "Solvers/fuka_syst/fuka_syst_setup.hpp"
 #include "utilities/solver_utilities.hpp"
 
@@ -322,8 +323,6 @@ void NS_XCTS_DIFF_ROT<eos_t>::print_diagnostics(const int ite,
     Val_domain integJ(syst->give_val_def("intJ")()(ndom - 1));
     double J = space->get_domain(ndom - 1)->integ(integJ, OUTER_BC);
 
-// output to standard output
-#define FORMAT std::setw(13) << std::left << std::showpos
     std::ios_base::fmtflags f(std::cout.flags());
     std::cout << "=======================================" << std::endl
               << FORMAT << "Iter: " << ite << std::endl
