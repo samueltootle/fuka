@@ -202,47 +202,49 @@ map_t append_map(const map_t& full_map,
 template <class tree_t>
 auto find_leaf(tree_t const& tree, std::string key) {
 
-  std::string branch_name{};
+    std::string branch_name{};
 
-  auto search_branch =
-      [&](auto& branch) -> std::tuple<std::string, std::string> {
-    for (auto const& node : branch) {
-      if (node.second.empty())
-        if (node.first == key) {
-          return std::make_tuple(node.first, node.second.data());
+    auto search_branch =
+        [&](auto& branch) -> std::tuple<std::string, std::string> {
+        for (auto const& node : branch) {
+            if (node.second.empty())
+                if (node.first == key) {
+                    return std::make_tuple(node.first, node.second.data());
+                }
         }
-    }
-    return {};
-  };
-  std::function<std::tuple<std::string, std::string, std::string>(
-      tree_t const&)>
-      recursive_search;
-  recursive_search =
-      [&](auto& branch) -> std::tuple<std::string, std::string, std::string> {
-    auto tmp = search_branch(branch);
+        return {};
+    };
+    std::function<std::tuple<std::string, std::string, std::string>(
+        tree_t const&)>
+        recursive_search;
+    recursive_search =
+        [&](auto& branch) -> std::tuple<std::string, std::string, std::string> {
+        auto tmp = search_branch(branch);
 
-    if (!std::get<0>(tmp).empty()) {
+        if (!std::get<0>(tmp).empty()) {
 #ifdef DEBUG
-      std::cout << branch_name << ", " << std::get<0>(tmp) << ","
-                << std::get<1>(tmp) << std::endl;
+            std::cout << branch_name << ", " << std::get<0>(tmp) << ","
+                      << std::get<1>(tmp) << std::endl;
 #endif
-      return std::make_tuple(branch_name, std::get<0>(tmp), std::get<1>(tmp));
-    }
-    for (auto const& node : branch) {
-      if (!node.second.empty()) {
-        branch_name = node.first;
-        tree_t t_branch = read_branch(branch, branch_name);
-        auto tmp_tuple = recursive_search(t_branch);
-        if (!std::get<0>(tmp_tuple).empty()) {
-          return tmp_tuple;
+            return std::make_tuple(branch_name,
+                                   std::get<0>(tmp),
+                                   std::get<1>(tmp));
         }
-      }
-    }
-    return {};
-  };
-  auto res = recursive_search(tree);
+        for (auto const& node : branch) {
+            if (!node.second.empty()) {
+                branch_name = node.first;
+                tree_t t_branch = read_branch(branch, branch_name);
+                auto tmp_tuple = recursive_search(t_branch);
+                if (!std::get<0>(tmp_tuple).empty()) {
+                    return tmp_tuple;
+                }
+            }
+        }
+        return {};
+    };
+    auto res = recursive_search(tree);
 
-  return res;
+    return res;
 }
 
 /**
