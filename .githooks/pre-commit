@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source $HOME_KADATH/.venv/bin/activate
+
+# Limit to files inside these dirs
+DIR_REGEX='^(src|include|lib/foo)/'
+
+# Get staged files (Added/Copied/Modified/Renamed), filter by dir + extension
+mapfile -d '' FILES < <(
+  git diff --cached --name-only --diff-filter=ACMR -z \
+  | grep -zE "$DIR_REGEX.*\.(c|cc|cpp|h|hh|hpp)$" || true
+)
+
+# Nothing to do
+(( ${#FILES[@]} == 0 )) && exit 0
+
+# Format and restage
+printf '%s\0' "${FILES[@]}" | xargs -0 clang-format -i
+git add -- "${FILES[@]}"
