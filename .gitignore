@@ -1,6 +1,8 @@
 doc/*
 *~
 build_*/**/*
+**/build*/*
+**/bin/*
 !build*/CMakeLists.txt
 !build*/compile
 ./lib
@@ -11,8 +13,13 @@ src/System_of_eqs/do_newton.cpp
 *.pyc
 *venv*/
 codes/**
+!codes/**/
 !codes/**/*.cpp
 !codes/**/*.h
-!codes/**/CMakeLists.txt
 !codes/**/*.hpp
+!codes/**/CMakeLists.txt
 !codes/**/*.py
+
+# keep build output ignored
+codes/**/build/**
+codes/**/CMakeFiles/**
