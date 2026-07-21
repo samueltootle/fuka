@@ -4,8 +4,9 @@
 #include "Configurator/configurator_boost.hpp"
 #include "EOS/FUKA_EOS_Utilities.hh"
 
-namespace Kadath::FUKA_Solvers {
+using namespace Kadath::FUKA_Config;
 
+namespace Kadath::FUKA_Solvers {
 /**
  * @brief Extract EOS name from the Config object
  *
@@ -70,19 +71,19 @@ inline void set_eos_ope(System_of_eqs& syst, Param& p) {
     syst.add_ope("dHdlnrho", &EOS<eos_t, DHDRHO>::action, &p);
 }
 
-template <class solver_t>
-inline void initialize_EOS(solver_t& solver) {
+template <class solver_t, typename... idx_t>
+inline void initialize_EOS(solver_t& solver, idx_t... BCOidx) {
     auto& bconfig = *(solver.get_bconfig());
 
-    ::Kadath::FUKA_EOS::EOS_initialize::init(bconfig);
+    ::Kadath::FUKA_EOS::EOS_initialize::init(bconfig, BCOidx...);
 }
 
-template <class bconfig_t>
-inline void initialize_diffrot(bconfig_t& bconfig) {
+template <class bconfig_t, typename... idx_t>
+inline void initialize_diffrot(bconfig_t& bconfig, idx_t... BCOidx) {
     using namespace Kadath::FUKA_Config;
     using namespace Kadath::FUKA_Solvers;
-    bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_LAW) = "keh";
-    bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_ARATIO) = 1e6;
-    bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_RRATIO) = 1.0;
+    bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_LAW, BCOidx...) = "keh";
+    bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_ARATIO, BCOidx...) = 1e6;
+    bconfig.set_diffrot(DIFFROT_PARAMS::DIFF_RRATIO, BCOidx...) = 1.0;
 }
 }  // namespace Kadath::FUKA_Solvers
