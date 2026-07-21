@@ -36,153 +36,156 @@ namespace FUKA_Solvers {
 
 template <typename config_t>
 int ns_3d_xcts_regrid(config_t& bconfig, std::string outputfile) {
-  using space_t = Space_spheric_adapted;
-  int exit_status = 0;
+    using space_t = Space_spheric_adapted;
+    int exit_status = 0;
 
-  std::string kadath_filename = bconfig.space_filename();
+    std::string kadath_filename = bconfig.space_filename();
 
-  if (!fs::exists(kadath_filename)) {
-    std::cerr << "File: " << kadath_filename << " not found.\n\n";
-    std::_Exit(EXIT_FAILURE);
-  }
+    if (!fs::exists(kadath_filename)) {
+        std::cerr << "File: " << kadath_filename << " not found.\n\n";
+        std::_Exit(EXIT_FAILURE);
+    }
 
-  FILE* ff1 = fopen(kadath_filename.c_str(), "r");
-  space_t old_space(ff1);
-  Scalar old_conf(old_space, ff1);
-  Scalar old_lapse(old_space, ff1);
-  Vector old_shift(old_space, ff1);
-  Scalar old_logh(old_space, ff1);
-  fclose(ff1);
+    FILE* ff1 = fopen(kadath_filename.c_str(), "r");
+    space_t old_space(ff1);
+    Scalar old_conf(old_space, ff1);
+    Scalar old_lapse(old_space, ff1);
+    Vector old_shift(old_space, ff1);
+    Scalar old_logh(old_space, ff1);
+    fclose(ff1);
 
-  std::cout << "Resolution of old space: "
-            << old_space.get_domain(0)->get_nbr_points()(0) << " (r), "
-            << old_space.get_domain(0)->get_nbr_points()(1) << " (theta), "
-            << old_space.get_domain(0)->get_nbr_points()(2) << " (phi)"
-            << std::endl;
-
-  int ndim = 3;
-
-  // get the adapted domain and cast it to its correct type to be able to call
-  // its member functions
-  const Domain_shell_outer_adapted* old_outer_adapted =
-      dynamic_cast<const Domain_shell_outer_adapted*>(old_space.get_domain(1));
-
-  // setup a scalar field representing the old radius
-  Scalar old_space_radius(old_space);
-  old_space_radius = 0.;
-
-  // get the radius from each domain
-  for (int i = 0; i < old_space.get_nbr_domains(); ++i)
-    old_space_radius.set_domain(i) = old_space.get_domain(i)->get_radius();
-  // get the adapted radius of the adapted domain
-  old_space_radius.set_domain(1) = old_outer_adapted->get_outer_radius();
-
-  // define a standard decomposition, compatible with the parity of this field
-  old_space_radius.std_base();
-  // end setup old radius field
-
-  // get the minimal and maximal radius from the adapted domain
-  auto [r_min, r_max] = Kadath::bco_utils::get_rmin_rmax(old_space, 1);
-
-  std::cout << "Rmin/max: " << r_min << " " << r_max << std::endl;
-
-  // set new resolutions in each spatial dimension
-  Dim_array res(ndim);
-  res.set(0) = bconfig(BCO_RES);
-  res.set(1) = res(0);
-  res.set(2) = res(0) - 1;
-
-  // FIXME not sure if it's only about oddness...
-  if (res(0) % 2 == 0 || res(2) % 2 != 0) {
-    std::cout << "New Resolution is invalid.  Must be odd (9,11,13,etc)"
+    std::cout << "Resolution of old space: "
+              << old_space.get_domain(0)->get_nbr_points()(0) << " (r), "
+              << old_space.get_domain(0)->get_nbr_points()(1) << " (theta), "
+              << old_space.get_domain(0)->get_nbr_points()(2) << " (phi)"
               << std::endl;
-    std::_Exit(EXIT_FAILURE);
-  }
 
-  std::cout << "Resolution of new space: " << res(0) << " (r), " << res(1)
-            << " (theta), " << res(2) << " (phi)" << std::endl;
+    int ndim = 3;
 
-  // get the type of the colocation points
-  int type_coloc = old_space.get_type_base();
+    // get the adapted domain and cast it to its correct type to be able to call
+    // its member functions
+    const Domain_shell_outer_adapted* old_outer_adapted =
+        dynamic_cast<const Domain_shell_outer_adapted*>(
+            old_space.get_domain(1));
 
-  // ignore domain radii scaling from config if needed
-  if (!bconfig.control(USE_CONFIG_VARS)) {
-    bconfig.set(RIN) = 0.5 * r_min;
-    bconfig.set(ROUT) = 1.5 * r_max;
-    bconfig.set(RMID) = r_max;
-  }
-  // end update config
+    // setup a scalar field representing the old radius
+    Scalar old_space_radius(old_space);
+    old_space_radius = 0.;
 
-  // setup radius bounds of the domains
+    // get the radius from each domain
+    for (int i = 0; i < old_space.get_nbr_domains(); ++i)
+        old_space_radius.set_domain(i) = old_space.get_domain(i)->get_radius();
+    // get the adapted radius of the adapted domain
+    old_space_radius.set_domain(1) = old_outer_adapted->get_outer_radius();
 
-  int ndom = 4 + bconfig(NSHELLS);
-  std::vector<double> bounds(ndom - 1);
-  Kadath::bco_utils::set_NS_bounds(bounds, bconfig);
+    // define a standard decomposition, compatible with the parity of this field
+    old_space_radius.std_base();
+    // end setup old radius field
 
-  Kadath::bco_utils::print_bounds("New bounds: ", bounds);
+    // get the minimal and maximal radius from the adapted domain
+    auto [r_min, r_max] = Kadath::bco_utils::get_rmin_rmax(old_space, 1);
 
-  // get origin of nucleus domain
-  Point center = old_space.get_domain(0)->get_center();
+    std::cout << "Rmin/max: " << r_min << " " << r_max << std::endl;
 
-  // initialize space with new resolution and domain decomposition
-  Space_spheric_adapted space(type_coloc, center, res, bounds);
-  Base_tensor basis(space, CARTESIAN_BASIS);
+    // set new resolutions in each spatial dimension
+    Dim_array res(ndim);
+    res.set(0) = bconfig(BCO_RES);
+    res.set(1) = res(0);
+    res.set(2) = res(0) - 1;
 
-  // get adapted domains to update the radius
-  const Domain_shell_outer_adapted* new_outer_adapted =
-      dynamic_cast<const Domain_shell_outer_adapted*>(space.get_domain(1));
-  const Domain_shell_inner_adapted* new_inner_adapted =
-      dynamic_cast<const Domain_shell_inner_adapted*>(space.get_domain(2));
+    // FIXME not sure if it's only about oddness...
+    if (res(0) % 2 == 0 || res(2) % 2 != 0) {
+        std::cout << "New Resolution is invalid.  Must be odd (9,11,13,etc)"
+                  << std::endl;
+        std::_Exit(EXIT_FAILURE);
+    }
 
-  // update adapted domain mapping
-  Kadath::bco_utils::interp_adapted_mapping(new_outer_adapted, 1,
-                                            old_space_radius);
-  Kadath::bco_utils::interp_adapted_mapping(new_inner_adapted, 1,
-                                            old_space_radius);
+    std::cout << "Resolution of new space: " << res(0) << " (r), " << res(1)
+              << " (theta), " << res(2) << " (phi)" << std::endl;
 
-  // setup new fields
-  // initialize to one or zero first
-  Scalar conf(space);
-  conf = 1.;
-  conf.std_base();
+    // get the type of the colocation points
+    int type_coloc = old_space.get_type_base();
 
-  Scalar lapse(space);
-  lapse = 1.;
-  lapse.std_base();
+    // ignore domain radii scaling from config if needed
+    if (!bconfig.control(USE_CONFIG_VARS)) {
+        bconfig.set(RIN) = 0.5 * r_min;
+        bconfig.set(ROUT) = 1.5 * r_max;
+        bconfig.set(RMID) = r_max;
+    }
+    // end update config
 
-  Vector shift(space, CON, basis);
-  for (int i = 1; i <= 3; i++)
-    shift.set(i).annule_hard();
-  shift.std_base();
+    // setup radius bounds of the domains
 
-  Scalar logh(space);
-  logh.annule_hard();
-  logh.std_base();
+    int ndom = 4 + bconfig(NSHELLS);
+    std::vector<double> bounds(ndom - 1);
+    Kadath::bco_utils::set_NS_bounds(bounds, bconfig);
 
-  // end setup new fields
+    Kadath::bco_utils::print_bounds("New bounds: ", bounds);
 
-  // import data from fields in the old space
-  conf.import(old_conf);
-  lapse.import(old_lapse);
-  logh.import(old_logh);
+    // get origin of nucleus domain
+    Point center = old_space.get_domain(0)->get_center();
 
-  shift.set(1).import(old_shift.set(1));
-  shift.set(2).import(old_shift.set(2));
-  shift.set(3).import(old_shift.set(3));
+    // initialize space with new resolution and domain decomposition
+    Space_spheric_adapted space(type_coloc, center, res, bounds);
+    Base_tensor basis(space, CARTESIAN_BASIS);
 
-  // end import old fields
+    // get adapted domains to update the radius
+    const Domain_shell_outer_adapted* new_outer_adapted =
+        dynamic_cast<const Domain_shell_outer_adapted*>(space.get_domain(1));
+    const Domain_shell_inner_adapted* new_inner_adapted =
+        dynamic_cast<const Domain_shell_inner_adapted*>(space.get_domain(2));
 
-  // enforce spectral decomposition compatible with the parities
-  lapse.std_base();
-  conf.std_base();
-  logh.std_base();
-  shift.std_base();
+    // update adapted domain mapping
+    Kadath::bco_utils::interp_adapted_mapping(new_outer_adapted,
+                                              1,
+                                              old_space_radius);
+    Kadath::bco_utils::interp_adapted_mapping(new_inner_adapted,
+                                              1,
+                                              old_space_radius);
 
-  // output data
-  bconfig.set_filename(outputfile);
-  Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh);
+    // setup new fields
+    // initialize to one or zero first
+    Scalar conf(space);
+    conf = 1.;
+    conf.std_base();
 
-  return EXIT_SUCCESS;
+    Scalar lapse(space);
+    lapse = 1.;
+    lapse.std_base();
+
+    Vector shift(space, CON, basis);
+    for (int i = 1; i <= 3; i++)
+        shift.set(i).annule_hard();
+    shift.std_base();
+
+    Scalar logh(space);
+    logh.annule_hard();
+    logh.std_base();
+
+    // end setup new fields
+
+    // import data from fields in the old space
+    conf.import(old_conf);
+    lapse.import(old_lapse);
+    logh.import(old_logh);
+
+    shift.set(1).import(old_shift.set(1));
+    shift.set(2).import(old_shift.set(2));
+    shift.set(3).import(old_shift.set(3));
+
+    // end import old fields
+
+    // enforce spectral decomposition compatible with the parities
+    lapse.std_base();
+    conf.std_base();
+    logh.std_base();
+    shift.std_base();
+
+    // output data
+    bconfig.set_filename(outputfile);
+    Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh);
+
+    return EXIT_SUCCESS;
 }
 
 /** @}*/

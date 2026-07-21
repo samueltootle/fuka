@@ -45,40 +45,43 @@ std::ostream& operator<<(std::ostream& out,
  *
  */
 struct Parameter_sequence_base {
- protected:
-  /// Config parameter string (P)
-  std::string parameter_str{};
-  /// Config parameter value (V)
-  double parameter_val{std::nan("1")};
-  /// Sequence initial value (P_init)
-  double seqinit{std::nan("1")};
-  /// Sequence final value (P_final)
-  double seqfinal{std::nan("1")};
+   protected:
+    /// Config parameter string (P)
+    std::string parameter_str{};
+    /// Config parameter value (V)
+    double parameter_val{std::nan("1")};
+    /// Sequence initial value (P_init)
+    double seqinit{std::nan("1")};
+    /// Sequence final value (P_final)
+    double seqfinal{std::nan("1")};
 
- public:
-  Parameter_sequence_base() = default;
-  Parameter_sequence_base(Parameter_sequence_base const&) = default;
+   public:
+    Parameter_sequence_base() = default;
+    Parameter_sequence_base(Parameter_sequence_base const&) = default;
 
-  Parameter_sequence_base(std::string _str) : parameter_str(_str) {}
+    Parameter_sequence_base(std::string _str) : parameter_str(_str) {}
 
-  /// Determine if a sequence has been initialized
-  bool is_set() const { return !std::isnan(seqinit) && !std::isnan(seqfinal); }
+    /// Determine if a sequence has been initialized
+    bool is_set() const {
+        return !std::isnan(seqinit) && !std::isnan(seqfinal);
+    }
 
-  bool is_varying() const {
-    return !std::isnan(seqinit) && !std::isnan(seqfinal) && seqinit != seqfinal;
-  }
+    bool is_varying() const {
+        return !std::isnan(seqinit) && !std::isnan(seqfinal) &&
+               seqinit != seqfinal;
+    }
 
-  /// Determine if a default value is initialized
-  bool is_default_set() const { return !std::isnan(parameter_val); }
+    /// Determine if a default value is initialized
+    bool is_default_set() const { return !std::isnan(parameter_val); }
 
-  /// Getters
-  double const& init() const { return seqinit; }
+    /// Getters
+    double const& init() const { return seqinit; }
 
-  double const& final() const { return seqfinal; }
+    double const& final() const { return seqfinal; }
 
-  double const& default_val() const { return parameter_val; }
+    double const& default_val() const { return parameter_val; }
 
-  std::string const& str() const { return parameter_str; }
+    std::string const& str() const { return parameter_str; }
 };
 
 /**
@@ -88,88 +91,88 @@ struct Parameter_sequence_base {
  */
 template <class... Ts>
 struct Parameter_sequence : public Parameter_sequence_base {
- protected:
-  /// Config indices for the intended parameter to sequence
-  std::tuple<Ts...> parameter_indices;
-  /// Conditional function to determine loop criteria
-  std::function<bool(double const&, double const&)> conditional;
-  /// Number of solutions in sequence
-  int N{1};
+   protected:
+    /// Config indices for the intended parameter to sequence
+    std::tuple<Ts...> parameter_indices;
+    /// Conditional function to determine loop criteria
+    std::function<bool(double const&, double const&)> conditional;
+    /// Number of solutions in sequence
+    int N{1};
 
- public:
-  Parameter_sequence() = default;
-  Parameter_sequence(Parameter_sequence const&) = default;
+   public:
+    Parameter_sequence() = default;
+    Parameter_sequence(Parameter_sequence const&) = default;
 
-  /**
+    /**
    * @brief Construct a new Parameter_sequence object from a string and tuple
    * objects
    *
    * @param _str Input parameter string
    * @param _t Tuple containing Config indicies for the desired parameter
    */
-  Parameter_sequence(std::string _str, std::tuple<Ts...> _t)
-      : Parameter_sequence_base(_str), parameter_indices(_t) {}
+    Parameter_sequence(std::string _str, std::tuple<Ts...> _t)
+        : Parameter_sequence_base(_str), parameter_indices(_t) {}
 
-  /**
+    /**
    * @brief Construct a new Parameter_sequence object from a string and a pack
    * of indices
    *
    * @param _str Input parameter string
    * @param _ts Parameter pack consisting of the desired Config indices
    */
-  Parameter_sequence(std::string _str, Ts... _ts)
-      : Parameter_sequence_base(_str),
-        parameter_indices(std::make_tuple(_ts...)) {}
+    Parameter_sequence(std::string _str, Ts... _ts)
+        : Parameter_sequence_base(_str),
+          parameter_indices(std::make_tuple(_ts...)) {}
 
-  /**
+    /**
    * @brief Set default, initial, and final values
    *
    * @param _val Default value - ignored if is_set()
    * @param _init Initial value
    * @param _final Final value
    */
-  void set(const double _val, const double _init, const double _final) {
-    parameter_val = _val;
-    seqinit = _init;
-    seqfinal = _final;
+    void set(const double _val, const double _init, const double _final) {
+        parameter_val = _val;
+        seqinit = _init;
+        seqfinal = _final;
 
-    /// Determine the conditional based on whether the
-    /// sequence needs to increase or decrease
-    if (is_set()) {
-      parameter_val = seqinit;
-      if (seqinit < seqfinal)
-        conditional = std::less_equal<double>{};
-      else
-        conditional = std::greater_equal<double>{};
+        /// Determine the conditional based on whether the
+        /// sequence needs to increase or decrease
+        if (is_set()) {
+            parameter_val = seqinit;
+            if (seqinit < seqfinal)
+                conditional = std::less_equal<double>{};
+            else
+                conditional = std::greater_equal<double>{};
+        }
     }
-  }
 
-  /// Set number of sequences
-  void set_N(int _N) {
-    assert(N > 0);
-    N = _N;
-  }
+    /// Set number of sequences
+    void set_N(int _N) {
+        assert(N > 0);
+        N = _N;
+    }
 
-  /// Compute sequence step_size
-  double step_size() const {
-    if (is_set())
-      return (seqfinal - seqinit) / N;
-    return std::nan("1");
-  }
+    /// Compute sequence step_size
+    double step_size() const {
+        if (is_set())
+            return (seqfinal - seqinit) / N;
+        return std::nan("1");
+    }
 
-  /// Getters
-  int const& iterations() const { return N; }
+    /// Getters
+    int const& iterations() const { return N; }
 
-  std::tuple<Ts...> const& get_indices() const { return parameter_indices; }
+    std::tuple<Ts...> const& get_indices() const { return parameter_indices; }
 
-  /// Evaluate conditional to determine, e.g. if a loop should end
-  bool loop_condition(double const& val) const {
-    return conditional(val, seqfinal);
-  }
+    /// Evaluate conditional to determine, e.g. if a loop should end
+    bool loop_condition(double const& val) const {
+        return conditional(val, seqfinal);
+    }
 
-  /// Formatted output
-  friend std::ostream& operator<< <Ts...>(std::ostream&,
-                                          const Parameter_sequence<Ts...>&);
+    /// Formatted output
+    friend std::ostream& operator<< <Ts...>(std::ostream&,
+                                            const Parameter_sequence<Ts...>&);
 };
 
 /**
@@ -180,44 +183,44 @@ struct Parameter_sequence : public Parameter_sequence_base {
  */
 template <int ndom, class... Ts>
 struct Resolution_sequence : public Parameter_sequence_base {
-  using Pary_t = std::array<int, 3>;
-  using Cary_t = std::array<Pary_t, ndom>;
+    using Pary_t = std::array<int, 3>;
+    using Cary_t = std::array<Pary_t, ndom>;
 
- protected:
-  std::tuple<Ts...> parameter_indices;
-  Cary_t resolution;
+   protected:
+    std::tuple<Ts...> parameter_indices;
+    Cary_t resolution;
 
- public:
-  Resolution_sequence() = default;
+   public:
+    Resolution_sequence() = default;
 
-  /**
+    /**
    * @brief Construct a new Parameter_sequence object from a string and tuple
    * objects
    *
    * @param _str Input parameter string
    * @param _t Tuple containing Config indicies for the desired parameter
    */
-  Resolution_sequence(std::string _str, std::tuple<Ts...> _t)
-      : Parameter_sequence_base(_str), parameter_indices(_t) {}
+    Resolution_sequence(std::string _str, std::tuple<Ts...> _t)
+        : Parameter_sequence_base(_str), parameter_indices(_t) {}
 
-  /**
+    /**
    * @brief Construct a new Parameter_sequence object from a string and a pack
    * of indices
    *
    * @param _str Input parameter string
    * @param _ts Parameter pack consisting of the desired Config indices
    */
-  Resolution_sequence(std::string _str, Ts... _ts)
-      : Parameter_sequence_base(_str),
-        parameter_indices(std::make_tuple(_ts...)) {}
+    Resolution_sequence(std::string _str, Ts... _ts)
+        : Parameter_sequence_base(_str),
+          parameter_indices(std::make_tuple(_ts...)) {}
 
-  /// Getter
-  std::tuple<Ts...> const& get_indices() const { return parameter_indices; }
+    /// Getter
+    std::tuple<Ts...> const& get_indices() const { return parameter_indices; }
 
-  /// Formatted output
-  friend std::ostream& operator<< <ndom, Ts...>(
-      std::ostream&,
-      const Resolution_sequence<ndom, Ts...>&);
+    /// Formatted output
+    friend std::ostream& operator<< <ndom, Ts...>(
+        std::ostream&,
+        const Resolution_sequence<ndom, Ts...>&);
 };
 
 /** @}*/

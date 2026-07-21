@@ -37,73 +37,78 @@ template <class eos_t,
           typename config_t,
           typename space_t = Space_spheric_adapted>
 class ns_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
- public:
-  using typename XCTS_Solver<config_t, space_t>::base_config_t;
-  using typename XCTS_Solver<config_t, space_t>::base_space_t;
+   public:
+    using typename XCTS_Solver<config_t, space_t>::base_config_t;
+    using typename XCTS_Solver<config_t, space_t>::base_space_t;
 
- private:
-  Scalar& conf;
-  Scalar& lapse;
-  Scalar& logh;
-  Vector& shift;
-  Metric_flat fmet;
-  std::unique_ptr<ns_sequence const> seq;
+   private:
+    Scalar& conf;
+    Scalar& lapse;
+    Scalar& logh;
+    Vector& shift;
+    Metric_flat fmet;
+    std::unique_ptr<ns_sequence const> seq;
 
-  /// Specify base class members used to avoid this->
-  using XCTS_Solver<config_t, space_t>::space;
-  using XCTS_Solver<config_t, space_t>::bconfig;
-  using XCTS_Solver<config_t, space_t>::basis;
-  using XCTS_Solver<config_t, space_t>::cfields;
-  using XCTS_Solver<config_t, space_t>::coord_vectors;
-  using XCTS_Solver<config_t, space_t>::ndom;
-  using XCTS_Solver<config_t, space_t>::check_max_iter_exceeded;
-  using XCTS_Solver<config_t, space_t>::solution_exists;
-  using XCTS_Solver<config_t, space_t>::extract_eos_name;
-  using XCTS_Solver<config_t, space_t>::checkpoint;
-  using XCTS_Solver<config_t, space_t>::solver_stage;
+    /// Specify base class members used to avoid this->
+    using XCTS_Solver<config_t, space_t>::space;
+    using XCTS_Solver<config_t, space_t>::bconfig;
+    using XCTS_Solver<config_t, space_t>::basis;
+    using XCTS_Solver<config_t, space_t>::cfields;
+    using XCTS_Solver<config_t, space_t>::coord_vectors;
+    using XCTS_Solver<config_t, space_t>::ndom;
+    using XCTS_Solver<config_t, space_t>::check_max_iter_exceeded;
+    using XCTS_Solver<config_t, space_t>::solution_exists;
+    using XCTS_Solver<config_t, space_t>::extract_eos_name;
+    using XCTS_Solver<config_t, space_t>::checkpoint;
+    using XCTS_Solver<config_t, space_t>::solver_stage;
 
- public:
-  /// solver is not trivially constructable since Kadath containers are not
-  /// trivially constructable
-  ns_3d_xcts_solver() = delete;
+   public:
+    /// solver is not trivially constructable since Kadath containers are not
+    /// trivially constructable
+    ns_3d_xcts_solver() = delete;
 
-  ns_3d_xcts_solver(config_t& config_in,
-                    space_t& space_in,
-                    Base_tensor& base_in,
-                    Scalar& conf_in,
-                    Scalar& lapse_in,
-                    Scalar& logh_in,
-                    Vector& shift_in);
+    ns_3d_xcts_solver(config_t& config_in,
+                      space_t& space_in,
+                      Base_tensor& base_in,
+                      Scalar& conf_in,
+                      Scalar& lapse_in,
+                      Scalar& logh_in,
+                      Vector& shift_in);
 
-  /// syst always requires the same initialization for the stages
-  void syst_init(System_of_eqs& syst);
+    /// syst always requires the same initialization for the stages
+    void syst_init(System_of_eqs& syst);
 
-  /// diagnostics at runtime
-  void print_diagnostics_norot(const System_of_eqs& syst,
-                               const int ite,
-                               const double conv) const;
-  void print_diagnostics(const System_of_eqs& syst,
-                         const int ite = 0,
-                         const double conv = 0) const override;
+    /// diagnostics at runtime
+    void print_diagnostics_norot(const System_of_eqs& syst,
+                                 const int ite,
+                                 const double conv) const;
+    void print_diagnostics(const System_of_eqs& syst,
+                           const int ite = 0,
+                           const double conv = 0) const override;
 
-  std::string converged_filename(const std::string stage = "") const override;
+    std::string converged_filename(const std::string stage = "") const override;
 
-  void save_to_file() const override {
-    Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh);
-  }
+    void save_to_file() const override {
+        Kadath::bco_utils::save_to_file(space,
+                                        bconfig,
+                                        conf,
+                                        lapse,
+                                        shift,
+                                        logh);
+    }
 
-  /// solver driver
-  int solve();
+    /// solver driver
+    int solve();
 
-  /// solver driver
-  int solve(ns_sequence const* sequence_in);
+    /// solver driver
+    int solve(ns_sequence const* sequence_in);
 
-  /// solver stages
-  int norot_stage(bool fixed = false);
-  int uniform_rot_stage();
-  int keh_stage();
+    /// solver stages
+    int norot_stage(bool fixed = false);
+    int uniform_rot_stage();
+    int keh_stage();
 
-  /**
+    /**
    * binary_boost_stage
    *
    * based on an input binary Configurator file, we boost the NS accordingly
@@ -112,11 +117,11 @@ class ns_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
    * @param[input] bco: index of BCO - needed to determine coordinate shift
    * based on BCO location in binary space
    */
-  int binary_boost_stage(kadath_config_boost<BIN_INFO>& binconfig,
-                         const size_t bco);
+    int binary_boost_stage(kadath_config_boost<BIN_INFO>& binconfig,
+                           const size_t bco);
 
-  // Update bconfig(HC) and bconfig(NC)
-  void update_config_quantities(System_of_eqs& syst);
+    // Update bconfig(HC) and bconfig(NC)
+    void update_config_quantities(System_of_eqs& syst);
 };
 
 /** @}*/
