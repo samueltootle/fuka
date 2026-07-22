@@ -115,41 +115,42 @@ T get_excision_r(space_t const& space,
                  T const& phi_,
                  int const dom_,
                  T const xshift_) {
-  // Generate cartesian point based on (r,t,p)
-  auto p = point_spherical(r, theta_, phi_, xshift_);
+    // Generate cartesian point based on (r,t,p)
+    auto p = point_spherical(r, theta_, phi_, xshift_);
 
-  // bool to ascertain if the point is inside the excision region
-  auto is_in_excision = [&](auto start, auto stop) -> bool {
-    bool result = false;
-    for (auto d = start; d < stop; ++d)
-      result = result || space.get_domain(d)->is_in(p);
-    return result;
-  };
+    // bool to ascertain if the point is inside the excision region
+    auto is_in_excision = [&](auto start, auto stop) -> bool {
+        bool result = false;
+        for (auto d = start; d < stop; ++d)
+            result = result || space.get_domain(d)->is_in(p);
+        return result;
+    };
 
-  size_t cnt{0};
-  constexpr size_t max_iter = 1000;
-  // Excision region consists of two domains, hence, dom_ - 2
-  while (is_in_excision(dom_ - 2, dom_)) {
-    r *= 1.01;
-    p = point_spherical(r, theta_, phi_, xshift_);
-    cnt++;
+    size_t cnt{0};
+    constexpr size_t max_iter = 1000;
+    // Excision region consists of two domains, hence, dom_ - 2
+    while (is_in_excision(dom_ - 2, dom_)) {
+        r *= 1.01;
+        p = point_spherical(r, theta_, phi_, xshift_);
+        cnt++;
 
-    // FIXME in some cases this is not very efficient - fails for max_iter = 100
-    // usually at the pole
-    if (cnt > max_iter) {
-      cerr << p << "not found by radius increase. inc failed at " << r << ".\n";
-      std::_Exit(EXIT_FAILURE);
+        // FIXME in some cases this is not very efficient - fails for max_iter = 100
+        // usually at the pole
+        if (cnt > max_iter) {
+            cerr << p << "not found by radius increase. inc failed at " << r
+                 << ".\n";
+            std::_Exit(EXIT_FAILURE);
+        }
+    };
+
+    // the point should lay in the domain just outside the excision surface
+    // if it's not, there must be a problem.
+    if (!space.get_domain(dom_)->is_in(p)) {
+        cerr << p << " not in dom " << dom_ << endl;
+        std::_Exit(EXIT_FAILURE);
     }
-  };
 
-  // the point should lay in the domain just outside the excision surface
-  // if it's not, there must be a problem.
-  if (!space.get_domain(dom_)->is_in(p)) {
-    cerr << p << " not in dom " << dom_ << endl;
-    std::_Exit(EXIT_FAILURE);
-  }
-
-  return r;
+    return r;
 }
 
 /**
@@ -184,33 +185,33 @@ T interpolate_radial(space_t const& space,
                      const int dom_,
                      T const xshift_) {
 
-  // build vector of radial points
-  std::vector<T> r_points(order_);
-  for (int j = 0; j < order_; j++) {
-    r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
-  }
+    // build vector of radial points
+    std::vector<T> r_points(order_);
+    for (int j = 0; j < order_; j++) {
+        r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
+    }
 
-  // build vector of points to interpolate
-  std::vector<T> vals(order_);
-  for (int j = 0; j < order_; j++) {
-    auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
-    vals[j] = field_in.val_point(p);
-  }
+    // build vector of points to interpolate
+    std::vector<T> vals(order_);
+    for (int j = 0; j < order_; j++) {
+        auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
+        vals[j] = field_in.val_point(p);
+    }
 
-  return lagrange_gen_k(order_, r_, r_points.data(), vals.data());
+    return lagrange_gen_k(order_, r_, r_points.data(), vals.data());
 }
 
 template <class qarray_t>
 void add_tensor_refs(qarray_t& quants,
                      std::vector<int>&& ary_indicies,
                      Kadath::Tensor& field) {
-  auto c = 0;
-  for (auto i : ary_indicies) {
-    auto tidx = export_utils::R2TensorSymmetricIndices[c];
-    Kadath::Array<int> ind(field.indices(tidx));
-    quants[i] = std::cref(field(ind));
-    c++;
-  }
+    auto c = 0;
+    for (auto i : ary_indicies) {
+        auto tidx = export_utils::R2TensorSymmetricIndices[c];
+        Kadath::Array<int> ind(field.indices(tidx));
+        quants[i] = std::cref(field(ind));
+        c++;
+    }
 }
 
 /**
@@ -246,37 +247,38 @@ void spherical_turduck(fields_ary_t& quants,
                        const int dom_,
                        T const xshift_) {
 
-  //auto& space = quants[0].get().get_space();
-  T const ah_r = r_bound_;
-  // export_utils::get_excision_r(space,
-  //   r_bound_, theta_, phi_, dom_, xshift_);
+    //auto& space = quants[0].get().get_space();
+    T const ah_r = r_bound_;
+    // export_utils::get_excision_r(space,
+    //   r_bound_, theta_, phi_, dom_, xshift_);
 
-  std::vector<T> r_points(order_);
-  for (int j = 0; j < order_; j++) {
-    r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
-  }
-
-  for (size_t k = 0; k < N; ++k) {
-    std::vector<T> vals(order_);
-
-    // Avoid computations if fluid quantities are encountered
-    // Necessary only for BHNS
-    if constexpr (N == NUM_QUANTS) {
-      if (k == H) {
-        quant_vals[k] = 0;
-        continue;
-      } else if (k == UX || k == UY || k == UZ) {
-        quant_vals[k] = 0;
-        continue;
-      }
-    }
+    std::vector<T> r_points(order_);
     for (int j = 0; j < order_; j++) {
-      auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
-      vals[j] = quants[k].get().val_point(p);
+        r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
     }
 
-    quant_vals[k] = lagrange_gen_k(order_, r_, r_points.data(), vals.data());
-  }
+    for (size_t k = 0; k < N; ++k) {
+        std::vector<T> vals(order_);
+
+        // Avoid computations if fluid quantities are encountered
+        // Necessary only for BHNS
+        if constexpr (N == NUM_QUANTS) {
+            if (k == H) {
+                quant_vals[k] = 0;
+                continue;
+            } else if (k == UX || k == UY || k == UZ) {
+                quant_vals[k] = 0;
+                continue;
+            }
+        }
+        for (int j = 0; j < order_; j++) {
+            auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
+            vals[j] = quants[k].get().val_point(p);
+        }
+
+        quant_vals[k] =
+            lagrange_gen_k(order_, r_, r_points.data(), vals.data());
+    }
 }
 
 /**
@@ -315,37 +317,38 @@ void spherical_turduck_fit_origin(fields_ary_t& quants,
                                   const int dom_,
                                   T const xshift_) {
 
-  //auto& space = quants[0].get().get_space();
-  T const ah_r = r_bound_;
+    //auto& space = quants[0].get().get_space();
+    T const ah_r = r_bound_;
 
-  std::vector<T> r_points(order_);
-  r_points[0] = 0.;
-  for (int j = 1; j < order_; j++) {
-    r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
-  }
-
-  for (size_t k = 0; k < N; ++k) {
-    std::vector<T> vals(order_);
-    vals[0] = quant_vals_origin[k];
-
-    // Avoid computations if fluid quantities are encountered
-    // Necessary only for BHNS
-    if constexpr (N == NUM_QUANTS) {
-      if (k == H) {
-        quant_vals[k] = 0;
-        continue;
-      } else if (k == UX || k == UY || k == UZ) {
-        quant_vals[k] = 0;
-        continue;
-      }
-    }
+    std::vector<T> r_points(order_);
+    r_points[0] = 0.;
     for (int j = 1; j < order_; j++) {
-      auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
-      vals[j] = quants[k].get().val_point(p);
+        r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
     }
 
-    quant_vals[k] = lagrange_gen_k(order_, r_, r_points.data(), vals.data());
-  }
+    for (size_t k = 0; k < N; ++k) {
+        std::vector<T> vals(order_);
+        vals[0] = quant_vals_origin[k];
+
+        // Avoid computations if fluid quantities are encountered
+        // Necessary only for BHNS
+        if constexpr (N == NUM_QUANTS) {
+            if (k == H) {
+                quant_vals[k] = 0;
+                continue;
+            } else if (k == UX || k == UY || k == UZ) {
+                quant_vals[k] = 0;
+                continue;
+            }
+        }
+        for (int j = 1; j < order_; j++) {
+            auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
+            vals[j] = quants[k].get().val_point(p);
+        }
+
+        quant_vals[k] =
+            lagrange_gen_k(order_, r_, r_points.data(), vals.data());
+    }
 }
 
 /**
@@ -376,14 +379,14 @@ void spherical_turduck__gf(fields_ary_t& quants,
                            int const gf,
                            double const xshift_) {
 
-  std::vector<double> vals(order_);
+    std::vector<double> vals(order_);
 
-  for (int j = 0; j < order_; j++) {
-    auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
-    vals[j] = quants[gf].get().val_point(p);
-  }
+    for (int j = 0; j < order_; j++) {
+        auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
+        vals[j] = quants[gf].get().val_point(p);
+    }
 
-  quant_vals[gf] = lagrange_gen_k(order_, r_, r_points.data(), vals.data());
+    quant_vals[gf] = lagrange_gen_k(order_, r_, r_points.data(), vals.data());
 }
 
 /**
@@ -417,24 +420,31 @@ void spherical_turduck__all_gfs(fields_ary_t& quants,
                                 double const offset_,
                                 double const bh_ori) {
 
-  // Avoid division by "0"
-  extrap_r = (extrap_r <= 1e-12) ? 1e-12 : extrap_r;
-  double x_shifted = (x == 0.) ? 1e-14 : x;
-  double theta = std::acos(z / extrap_r);
+    // Avoid division by "0"
+    extrap_r = (extrap_r <= 1e-12) ? 1e-12 : extrap_r;
+    double x_shifted = (x == 0.) ? 1e-14 : x;
+    double theta = std::acos(z / extrap_r);
 
-  // atan2 is needed here
-  double phi = std::atan2(y, (x_shifted - bh_ori));
+    // atan2 is needed here
+    double phi = std::atan2(y, (x_shifted - bh_ori));
 
-  std::vector<double> r_points(order_);
-  for (int j = 0; j < order_; j++) {
-    r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
-  }
+    std::vector<double> r_points(order_);
+    for (int j = 0; j < order_; j++) {
+        r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
+    }
 
-  for (auto& gf : slice) {
-    // Where the filling takes places
-    export_utils::spherical_turduck__gf(quants, quant_vals, order_, r_points,
-                                        extrap_r, theta, phi, gf, bh_ori);
-  }
+    for (auto& gf : slice) {
+        // Where the filling takes places
+        export_utils::spherical_turduck__gf(quants,
+                                            quant_vals,
+                                            order_,
+                                            r_points,
+                                            extrap_r,
+                                            theta,
+                                            phi,
+                                            gf,
+                                            bh_ori);
+    }
 }
 
 /**
@@ -467,15 +477,15 @@ void spherical_turduck_fit_origin__gf(fields_ary_t& quants,
                                       int const gf,
                                       double const xshift_) {
 
-  std::vector<double> vals(order_);
-  vals[0] = quant_vals_origin[gf];
+    std::vector<double> vals(order_);
+    vals[0] = quant_vals_origin[gf];
 
-  for (int j = 1; j < order_; j++) {
-    auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
-    vals[j] = quants[gf].get().val_point(p);
-  }
+    for (int j = 1; j < order_; j++) {
+        auto p = point_spherical(r_points[j], theta_, phi_, xshift_);
+        vals[j] = quants[gf].get().val_point(p);
+    }
 
-  quant_vals[gf] = lagrange_gen_k(order_, r_, r_points.data(), vals.data());
+    quant_vals[gf] = lagrange_gen_k(order_, r_, r_points.data(), vals.data());
 }
 
 /**
@@ -510,264 +520,276 @@ void spherical_turduck_fit_origin__all_gfs(fields_ary_t& quants,
                                            double const offset_,
                                            double const bh_ori) {
 
-  // Avoid division by "0"
-  extrap_r = (extrap_r <= 1e-12) ? 1e-12 : extrap_r;
-  double x_shifted = (x == 0.) ? 1e-14 : x;
-  double theta = std::acos(z / extrap_r);
+    // Avoid division by "0"
+    extrap_r = (extrap_r <= 1e-12) ? 1e-12 : extrap_r;
+    double x_shifted = (x == 0.) ? 1e-14 : x;
+    double theta = std::acos(z / extrap_r);
 
-  // atan2 is needed here
-  double phi = std::atan2(y, (x_shifted - bh_ori));
+    // atan2 is needed here
+    double phi = std::atan2(y, (x_shifted - bh_ori));
 
-  std::vector<double> r_points(order_);
-  r_points[0] = 0.;
-  for (int j = 1; j < order_; j++) {
-    r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
-  }
+    std::vector<double> r_points(order_);
+    r_points[0] = 0.;
+    for (int j = 1; j < order_; j++) {
+        r_points[j] = (1. + offset_) * (1. + j * dr_) * ah_r;
+    }
 
-  for (auto& gf : slice) {
-    export_utils::spherical_turduck_fit_origin__gf(quants, quant_vals,
-                                                   quant_vals_origin, order_,
-                                                   r_points, extrap_r, theta,
-                                                   phi, gf, bh_ori);
-  }
+    for (auto& gf : slice) {
+        export_utils::spherical_turduck_fit_origin__gf(quants,
+                                                       quant_vals,
+                                                       quant_vals_origin,
+                                                       order_,
+                                                       r_points,
+                                                       extrap_r,
+                                                       theta,
+                                                       phi,
+                                                       gf,
+                                                       bh_ori);
+    }
 }
 
 template <class bh_exporter_t>
 void partial_fill_excision(bh_exporter_t& bh_exporter,
                            const int dom_to_fill,
                            const int src_dom) {
-  using namespace Kadath;
+    using namespace Kadath;
 
-  // We set this to false to ensure that bh_exporter.interpolate_pointwise will not fit to origin
-  bh_exporter.set__export_ready(false);
+    // We set this to false to ensure that bh_exporter.interpolate_pointwise will not fit to origin
+    bh_exporter.set__export_ready(false);
 
-  auto dom = bh_exporter.get_space()->get_domain(dom_to_fill);
-  auto npts = dom->get_nbr_points();
+    auto dom = bh_exporter.get_space()->get_domain(dom_to_fill);
+    auto npts = dom->get_nbr_points();
 
-  Index pos(npts);
-  Val_domain xx = dom->get_cart(1);
-  Val_domain yy = dom->get_cart(2);
-  Val_domain zz = dom->get_cart(3);
+    Index pos(npts);
+    Val_domain xx = dom->get_cart(1);
+    Val_domain yy = dom->get_cart(2);
+    Val_domain zz = dom->get_cart(3);
 
-  auto& lapse = bh_exporter.get_lapse();
-  auto& conf = bh_exporter.get_conformal_factor();
-  auto& shift = bh_exporter.get_shift();
+    auto& lapse = bh_exporter.get_lapse();
+    auto& conf = bh_exporter.get_conformal_factor();
+    auto& shift = bh_exporter.get_shift();
 
-  do {
-    if (pos(0) < npts(0) - 1) {
-      double x = xx(pos);
-      double y = yy(pos);
-      double z = zz(pos);
-      bh_exporter.interpolate_pointwise__solution_gfs(x, y, z);
-      auto qv = bh_exporter.get__quant_vals();
-      conf->set_domain(dom_to_fill).set(pos) =
-          qv[bh_exporter_t::XCTS_VARS::XCTS_PSI];
-      lapse->set_domain(dom_to_fill).set(pos) =
-          qv[bh_exporter_t::XCTS_VARS::XCTS_ALPHA];
+    do {
+        if (pos(0) < npts(0) - 1) {
+            double x = xx(pos);
+            double y = yy(pos);
+            double z = zz(pos);
+            bh_exporter.interpolate_pointwise__solution_gfs(x, y, z);
+            auto qv = bh_exporter.get__quant_vals();
+            conf->set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_PSI];
+            lapse->set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_ALPHA];
 
-      shift->set(1).set_domain(dom_to_fill).set(pos) =
-          qv[bh_exporter_t::XCTS_VARS::XCTS_BETA1];
-      shift->set(2).set_domain(dom_to_fill).set(pos) =
-          qv[bh_exporter_t::XCTS_VARS::XCTS_BETA2];
-      shift->set(3).set_domain(dom_to_fill).set(pos) =
-          qv[bh_exporter_t::XCTS_VARS::XCTS_BETA3];
-    } else {
-      Index bcpos(pos);
-      bcpos.set(0) = 0;
-      conf->set_domain(dom_to_fill).set(pos) = conf->set_domain(src_dom)(bcpos);
-      lapse->set_domain(dom_to_fill).set(pos) =
-          lapse->set_domain(src_dom)(bcpos);
-      for (int i = 1; i <= 3; ++i) {
-        shift->set(i).set_domain(dom_to_fill).set(pos) =
-            shift->set(i).set_domain(src_dom)(bcpos);
-      }
-    }
-  } while (pos.inc());
+            shift->set(1).set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_BETA1];
+            shift->set(2).set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_BETA2];
+            shift->set(3).set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_BETA3];
+        } else {
+            Index bcpos(pos);
+            bcpos.set(0) = 0;
+            conf->set_domain(dom_to_fill).set(pos) =
+                conf->set_domain(src_dom)(bcpos);
+            lapse->set_domain(dom_to_fill).set(pos) =
+                lapse->set_domain(src_dom)(bcpos);
+            for (int i = 1; i <= 3; ++i) {
+                shift->set(i).set_domain(dom_to_fill).set(pos) =
+                    shift->set(i).set_domain(src_dom)(bcpos);
+            }
+        }
+    } while (pos.inc());
 
-  conf->std_base();
-  lapse->std_base();
-  shift->std_base();
+    conf->std_base();
+    lapse->std_base();
+    shift->std_base();
 }
 
 std::string throw_no_multithreaded_support_error(std::string not_implemented);
 
 struct basis_transform_spherical_tofrom_cart {
-  static constexpr int dim = 3;
-  using vector_t = std::array<double, dim>;
-  using matrix_t = std::array<vector_t, dim>;
+    static constexpr int dim = 3;
+    using vector_t = std::array<double, dim>;
+    using matrix_t = std::array<vector_t, dim>;
 
- private:
-  matrix_t Jac_dSph_dCart;
-  matrix_t Jac_dCart_dSph;
+   private:
+    matrix_t Jac_dSph_dCart;
+    matrix_t Jac_dCart_dSph;
 
-  static constexpr double eps_ = 1e-12;  // guard for coordinate singularities
-  double r_{0.};
-  double theta_{0.};
-  double phi_{0.};
+    static constexpr double eps_ = 1e-12;  // guard for coordinate singularities
+    double r_{0.};
+    double theta_{0.};
+    double phi_{0.};
 
-  void set__Jacobians() {
-    using std::cos;
-    using std::sin;
-    const double sint = sin(theta_);
-    const double cost = cos(theta_);
-    const double sinp = sin(phi_);
-    const double cosp = cos(phi_);
+    void set__Jacobians() {
+        using std::cos;
+        using std::sin;
+        const double sint = sin(theta_);
+        const double cost = cos(theta_);
+        const double sinp = sin(phi_);
+        const double cosp = cos(phi_);
 
-    const double rsq = r_ * r_;
-    const double rsint = r_ * sint;
-    const double rsint_sq = rsint * rsint;
+        const double rsq = r_ * r_;
+        const double rsint = r_ * sint;
+        const double rsint_sq = rsint * rsint;
 
-    const double div_r = 1. / r_;
-    const double div_rsint = 1. / rsint;
+        const double div_r = 1. / r_;
+        const double div_rsint = 1. / rsint;
 
-    // dr^i/dx^i'
-    Jac_dSph_dCart[0][0] = sint * cosp;
-    Jac_dSph_dCart[0][1] = sint * sinp;
-    Jac_dSph_dCart[0][2] = cost;
+        // dr^i/dx^i'
+        Jac_dSph_dCart[0][0] = sint * cosp;
+        Jac_dSph_dCart[0][1] = sint * sinp;
+        Jac_dSph_dCart[0][2] = cost;
 
-    // dtheta^i/dx^i'
-    Jac_dSph_dCart[1][0] = cost * cosp * div_r;
-    Jac_dSph_dCart[1][1] = cost * sinp * div_r;
-    Jac_dSph_dCart[1][2] = -sint * div_r;
+        // dtheta^i/dx^i'
+        Jac_dSph_dCart[1][0] = cost * cosp * div_r;
+        Jac_dSph_dCart[1][1] = cost * sinp * div_r;
+        Jac_dSph_dCart[1][2] = -sint * div_r;
 
-    // dphi^i/dx^i'
-    Jac_dSph_dCart[2][0] = -sinp * div_rsint;
-    Jac_dSph_dCart[2][1] = cosp * div_rsint;
-    Jac_dSph_dCart[2][2] = 0.0;
+        // dphi^i/dx^i'
+        Jac_dSph_dCart[2][0] = -sinp * div_rsint;
+        Jac_dSph_dCart[2][1] = cosp * div_rsint;
+        Jac_dSph_dCart[2][2] = 0.0;
 
-    // dx^i/dx^i'
-    Jac_dCart_dSph[0][0] = Jac_dSph_dCart[0][0];
-    Jac_dCart_dSph[0][1] = Jac_dSph_dCart[1][0] * rsq;
-    Jac_dCart_dSph[0][2] = Jac_dSph_dCart[2][0] * rsint * rsint;
+        // dx^i/dx^i'
+        Jac_dCart_dSph[0][0] = Jac_dSph_dCart[0][0];
+        Jac_dCart_dSph[0][1] = Jac_dSph_dCart[1][0] * rsq;
+        Jac_dCart_dSph[0][2] = Jac_dSph_dCart[2][0] * rsint * rsint;
 
-    // dy^i/dx^i'
-    Jac_dCart_dSph[1][0] = Jac_dSph_dCart[0][1];
-    Jac_dCart_dSph[1][1] = Jac_dSph_dCart[1][1] * rsq;
-    Jac_dCart_dSph[1][2] = Jac_dSph_dCart[2][1] * rsint_sq;
+        // dy^i/dx^i'
+        Jac_dCart_dSph[1][0] = Jac_dSph_dCart[0][1];
+        Jac_dCart_dSph[1][1] = Jac_dSph_dCart[1][1] * rsq;
+        Jac_dCart_dSph[1][2] = Jac_dSph_dCart[2][1] * rsint_sq;
 
-    // dz^i/dx^i'
-    Jac_dCart_dSph[2][0] = Jac_dSph_dCart[0][2];
-    Jac_dCart_dSph[2][1] = Jac_dSph_dCart[1][2] * rsq;
-    Jac_dCart_dSph[2][2] = 0.0;
-  }
-
- public:
-  void set__cart(const double x, const double y, const double z) {
-    using std::sqrt;
-    const double rsq = x * x + y * y + z * z;
-    r_ = sqrt(rsq);
-    if (std::fabs(r_) < eps_) {
-      r_ = eps_;
-      theta_ = eps_;
-      phi_ = 0.0;
-    } else if (std::fabs(x) < eps_ && std::fabs(y) < eps_) {
-      theta_ = eps_;
-      phi_ = 0.0;
-    } else {
-      theta_ = acos(z / r_);  // theta (angle from Z to xy plane)
-      phi_ = atan2(y, x);     // phi (angle from x to y axis)
+        // dz^i/dx^i'
+        Jac_dCart_dSph[2][0] = Jac_dSph_dCart[0][2];
+        Jac_dCart_dSph[2][1] = Jac_dSph_dCart[1][2] * rsq;
+        Jac_dCart_dSph[2][2] = 0.0;
     }
-    set__Jacobians();
-  }
 
-  void set__sph(const double r, const double theta, const double phi) {
-    r_ = r;
-    theta_ = theta;
-    phi_ = phi;
-    set__Jacobians();
-  }
-
-  basis_transform_spherical_tofrom_cart() = default;
-
-  vector_t vectorU__sph_to_cart(const vector_t& V__sph) const {
-    vector_t res_vectorU;
-    for (int iCart = 0; iCart < dim; ++iCart) {
-      res_vectorU[iCart] = 0.;
-      for (int iSph = 0; iSph < dim; ++iSph) {
-        res_vectorU[iCart] += Jac_dCart_dSph[iCart][iSph] * V__sph[iSph];
-      }
-    }
-    return res_vectorU;
-  }
-
-  vector_t vectorD__sph_to_cart(const vector_t& V__sph) const {
-    vector_t res_vectorD;
-    for (int iCart = 0; iCart < dim; ++iCart) {
-      res_vectorD[iCart] = 0.;
-      for (int iSph = 0; iSph < dim; ++iSph) {
-        res_vectorD[iCart] += Jac_dSph_dCart[iSph][iCart] * V__sph[iSph];
-      }
-    }
-    return res_vectorD;
-  }
-
-  matrix_t matrixDD__sph_to_cart(const matrix_t& MDD__sph) const {
-    matrix_t res_matrixDD;
-    for (auto& col : res_matrixDD)
-      col.fill(0);
-
-    for (int iCart = 0; iCart < dim; ++iCart) {
-      for (int jCart = 0; jCart < dim; ++jCart) {
-        for (int iSph = 0; iSph < dim; ++iSph) {
-          for (int jSph = 0; jSph < dim; ++jSph) {
-            res_matrixDD[iCart][jCart] +=
-                Jac_dSph_dCart[iSph][iCart] * MDD__sph[iSph][jSph] *
-                Jac_dSph_dCart[jSph][jCart];
-          }
+   public:
+    void set__cart(const double x, const double y, const double z) {
+        using std::sqrt;
+        const double rsq = x * x + y * y + z * z;
+        r_ = sqrt(rsq);
+        if (std::fabs(r_) < eps_) {
+            r_ = eps_;
+            theta_ = eps_;
+            phi_ = 0.0;
+        } else if (std::fabs(x) < eps_ && std::fabs(y) < eps_) {
+            theta_ = eps_;
+            phi_ = 0.0;
+        } else {
+            theta_ = acos(z / r_);  // theta (angle from Z to xy plane)
+            phi_ = atan2(y, x);     // phi (angle from x to y axis)
         }
-      }
+        set__Jacobians();
     }
-    return res_matrixDD;
-  }
 
-  vector_t vectorD__cart_to_sph(const vector_t& V__sph) const {
-    vector_t res_vectorD;
-    for (int iSph = 0; iSph < dim; ++iSph) {
-      res_vectorD[iSph] = 0.;
-      for (int iCart = 0; iCart < dim; ++iCart) {
-        res_vectorD[iSph] += Jac_dCart_dSph[iCart][iSph] * V__sph[iCart];
-      }
+    void set__sph(const double r, const double theta, const double phi) {
+        r_ = r;
+        theta_ = theta;
+        phi_ = phi;
+        set__Jacobians();
     }
-    return res_vectorD;
-  }
 
-  matrix_t matrixDD__cart_to_sph(const matrix_t& MDD__cart) const {
-    matrix_t res_matrixDD;
-    for (auto& col : res_matrixDD)
-      col.fill(0);
+    basis_transform_spherical_tofrom_cart() = default;
 
-    for (int iSph = 0; iSph < dim; ++iSph) {
-      for (int jSph = 0; jSph < dim; ++jSph) {
+    vector_t vectorU__sph_to_cart(const vector_t& V__sph) const {
+        vector_t res_vectorU;
         for (int iCart = 0; iCart < dim; ++iCart) {
-          for (int jCart = 0; jCart < dim; ++jCart) {
-            res_matrixDD[iSph][jSph] +=
-                Jac_dCart_dSph[iCart][iSph] * MDD__cart[iCart][jCart] *
-                Jac_dCart_dSph[jCart][jSph];
-          }
+            res_vectorU[iCart] = 0.;
+            for (int iSph = 0; iSph < dim; ++iSph) {
+                res_vectorU[iCart] += Jac_dCart_dSph[iCart][iSph] *
+                                      V__sph[iSph];
+            }
         }
-      }
+        return res_vectorU;
     }
-    return res_matrixDD;
-  }
 
-  vector_t vectorU__cart_to_sph(const vector_t& V__cart) const {
-    vector_t res_vectorU;
-    for (int iSph = 0; iSph < dim; ++iSph) {
-      res_vectorU[iSph] = 0.;
-      for (int iCart = 0; iCart < dim; ++iCart) {
-        res_vectorU[iSph] += Jac_dSph_dCart[iSph][iCart] * V__cart[iCart];
-      }
+    vector_t vectorD__sph_to_cart(const vector_t& V__sph) const {
+        vector_t res_vectorD;
+        for (int iCart = 0; iCart < dim; ++iCart) {
+            res_vectorD[iCart] = 0.;
+            for (int iSph = 0; iSph < dim; ++iSph) {
+                res_vectorD[iCart] += Jac_dSph_dCart[iSph][iCart] *
+                                      V__sph[iSph];
+            }
+        }
+        return res_vectorD;
     }
-    return res_vectorU;
-  }
 
-  double get_r() const { return r_; }
+    matrix_t matrixDD__sph_to_cart(const matrix_t& MDD__sph) const {
+        matrix_t res_matrixDD;
+        for (auto& col : res_matrixDD)
+            col.fill(0);
 
-  double get_theta() const { return theta_; }
+        for (int iCart = 0; iCart < dim; ++iCart) {
+            for (int jCart = 0; jCart < dim; ++jCart) {
+                for (int iSph = 0; iSph < dim; ++iSph) {
+                    for (int jSph = 0; jSph < dim; ++jSph) {
+                        res_matrixDD[iCart][jCart] +=
+                            Jac_dSph_dCart[iSph][iCart] * MDD__sph[iSph][jSph] *
+                            Jac_dSph_dCart[jSph][jCart];
+                    }
+                }
+            }
+        }
+        return res_matrixDD;
+    }
 
-  double get_phi() const { return phi_; }
+    vector_t vectorD__cart_to_sph(const vector_t& V__sph) const {
+        vector_t res_vectorD;
+        for (int iSph = 0; iSph < dim; ++iSph) {
+            res_vectorD[iSph] = 0.;
+            for (int iCart = 0; iCart < dim; ++iCart) {
+                res_vectorD[iSph] += Jac_dCart_dSph[iCart][iSph] *
+                                     V__sph[iCart];
+            }
+        }
+        return res_vectorD;
+    }
 
-  double get_r_sq() const { return r_ * r_; }
+    matrix_t matrixDD__cart_to_sph(const matrix_t& MDD__cart) const {
+        matrix_t res_matrixDD;
+        for (auto& col : res_matrixDD)
+            col.fill(0);
+
+        for (int iSph = 0; iSph < dim; ++iSph) {
+            for (int jSph = 0; jSph < dim; ++jSph) {
+                for (int iCart = 0; iCart < dim; ++iCart) {
+                    for (int jCart = 0; jCart < dim; ++jCart) {
+                        res_matrixDD[iSph][jSph] +=
+                            Jac_dCart_dSph[iCart][iSph] *
+                            MDD__cart[iCart][jCart] *
+                            Jac_dCart_dSph[jCart][jSph];
+                    }
+                }
+            }
+        }
+        return res_matrixDD;
+    }
+
+    vector_t vectorU__cart_to_sph(const vector_t& V__cart) const {
+        vector_t res_vectorU;
+        for (int iSph = 0; iSph < dim; ++iSph) {
+            res_vectorU[iSph] = 0.;
+            for (int iCart = 0; iCart < dim; ++iCart) {
+                res_vectorU[iSph] += Jac_dSph_dCart[iSph][iCart] *
+                                     V__cart[iCart];
+            }
+        }
+        return res_vectorU;
+    }
+
+    double get_r() const { return r_; }
+
+    double get_theta() const { return theta_; }
+
+    double get_phi() const { return phi_; }
+
+    double get_r_sq() const { return r_ * r_; }
 };
 
 /** @}*/
