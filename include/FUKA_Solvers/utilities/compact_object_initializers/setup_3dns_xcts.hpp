@@ -104,6 +104,8 @@ struct setup_3dns_xcts_functor {
             setup_ns_config_from_TOV<eos_t>(bconfig, mass_fixing_idx);
         std::vector<double> bounds(ndom - 1);
 
+        bconfig.set(BCO_PARAMS::ROUT) = 2.0 * bconfig(BCO_PARAMS::RMID);
+
         Kadath::bco_utils::set_NS_bounds(bounds, bconfig);
 
         // generate a full single star space including compactification to infinity
