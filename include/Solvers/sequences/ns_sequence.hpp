@@ -49,6 +49,8 @@ class ns_sequence : public seq_t {
 
     ns_sequence(seq_t const& seq) : seq_t(seq) {}
 
+    ns_sequence(ns_sequence const& seq) = default;
+
     // Getters
     double const& mass_val() const { return mass_fixing_val; }
 
