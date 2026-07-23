@@ -149,7 +149,7 @@ enum CONTROLS {
     USE_FIXED_R,
     SEQUENCES,
     CHECKPOINT,
-    MB_FIXING,
+    MB_FIXING,  //deprecate
     DELETE_SHIFT,
     COROT_BIN,
     USE_CONFIG_VARS,
@@ -165,6 +165,7 @@ enum CONTROLS {
     SAVE_COS,
     CO_USE_SHELLS,
     NEW_ID,
+    USE_ISO_SOLVER,
     NUM_CONTROLS
 };
 

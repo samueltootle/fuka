@@ -199,6 +199,7 @@ const std::map<std::string, CONTROLS> MCONTROLS = {
     {"resolve", RESOLVE},  ///<Force resolve of ID even if a checkpoint exists
     {"centralized_cos", SAVE_COS},  ///< Save CO solutions to a central location
     {"new_initial_data", NEW_ID},   ///< Import using a new ID format
+    {"use_iso_solver", USE_ISO_SOLVER},  ///< Use the ISO solver for NSs
 };
 
 const std::map<std::string, SEQ_SETTINGS> MSEQ_SETTINGS = {
@@ -218,7 +219,8 @@ const std::map<std::string, CONTROLS> MMIN_CONTROLS = {
     {"corot_binary", COROT_BIN},  ///< Toggle binary is purely corotating
     {"fixed_lapse", USE_FIXED_LAPSE},  ///< Use fixed lapse BC on black holes
     {"centralized_cos", SAVE_COS},  ///< Save CO solutions to a central location
-    {"new_initial_data", NEW_ID},   ///< Import using an old ID format
+    {"use_iso_solver", USE_ISO_SOLVER},  ///< Use the ISO solver for NSs
+    {"new_initial_data", NEW_ID},        ///< Import using an old ID format
 };
 
 const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS = {
