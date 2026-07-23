@@ -10,15 +10,18 @@ generate_submission() {
 
     if [ -z "$6" ]; then
         walltime="24:00:00"
+    else
+        walltime="$6"
     fi
 
     if [ -z "$7" ]; then
         echo "Error: Email address is required for job notifications."
         exit 1
+    else
+        email="$7"
     fi
 
     cat <<EOF > $outputfile
-
 #!/bin/bash
 # Job Name and Files (also --job-name)
 #SBATCH -J $job_name
