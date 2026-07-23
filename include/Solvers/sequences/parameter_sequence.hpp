@@ -141,9 +141,9 @@ struct Parameter_sequence : public Parameter_sequence_base {
         if (is_set()) {
             parameter_val = seqinit;
             if (seqinit < seqfinal)
-                conditional = std::less_equal<double>{};
+                conditional = std::less<double>{};
             else
-                conditional = std::greater_equal<double>{};
+                conditional = std::greater<double>{};
         }
     }
 
