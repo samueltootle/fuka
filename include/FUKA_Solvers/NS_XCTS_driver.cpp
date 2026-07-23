@@ -264,16 +264,34 @@ int ns_xcts_seq_driver(NS_XCTS_BASE::base_config_t& seqconfig,
             throw std::runtime_error(ss.str().c_str());
         }
     }
-    // Get non-rotating solution for the given mass or TOV mass if
-    // bconfig.control(CONTROLS::ITERATIVE_M)
-    ns_xcts_solver_driver(bconfig, seq, resolution, outputdir);
 
     // Update config such that the next solving round uses
     // the final ADM mass and spin if applicable
     if (bconfig.control(CONTROLS::ITERATIVE_M)) {
+        // Only obtain the iterative solution at the initial_resolution
+        auto const res_init{resolution.init()};
+        Parameter_sequence tmp_res("res", BCO_PARAMS::BCO_RES);
+        tmp_res.set(res_init, res_init, res_init);
+
+        // Disable the sequence until we get the initial result
+        ns_sequence tmp_seq(seq);
+        tmp_seq.set(seq.default_val(), std::nan("1"), std::nan("1"));
+
+        ns_xcts_solver_driver(bconfig, tmp_seq, tmp_res, outputdir);
+
+        // Update config such that the next solving round uses
+        // the final ADM mass and spin
         bconfig(BCO_PARAMS::MADM) = final_MADM;
+        bconfig.control(CONTROLS::SEQUENCES) = false;
+
+        // Ensure only the final stage is used
+        // e.g. avoid NOROT stage
+        stage_enabled.fill(false);
+        stage_enabled[last_stage_idx] = true;
     }
-    bconfig.control(CONTROLS::SEQUENCES) = false;
+    // Get non-rotating solution for the given mass or TOV mass if
+    // bconfig.control(CONTROLS::ITERATIVE_M)
+    ns_xcts_solver_driver(bconfig, seq, resolution, outputdir);
 
     seqconfig = bconfig;
 
@@ -313,7 +331,8 @@ inline int ns_xcts_driver(NS_XCTS_BASE::base_config_t& bconfig,
     auto resolution_indices = resolution.get_indices();
     bconfig.set(resolution_indices) = resolution.init();
 
-    if (bconfig.control(CONTROLS::SEQUENCES)) {
+    if (bconfig.control(CONTROLS::SEQUENCES) &&
+        bconfig.control(CONTROLS::USE_ISO_SOLVER)) {
         std::string initial_guess_filename =
             solve_NS_ISO_from_XCTS_config(bconfig, seq);
         bconfig = NS_XCTS_BASE::base_config_t(initial_guess_filename);
