@@ -151,7 +151,6 @@ void NS_XCTS_UNIFORM_ROT<eos_t>::setup_syst() {
             syst->add_def(d,
                           "eqbet^i = D_j D^j bet^i + D^i D_j bet^j / 3. - 2. * "
                           "A^ij * D_j Ntilde");
-            break;
         }
     }
 

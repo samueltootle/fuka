@@ -98,7 +98,6 @@ void NS_XCTS_NOROT<eos_t>::setup_syst() {
 
             syst->add_def(d, "eqP = D^i D_i P");
             syst->add_def(d, "eqNP = D^i D_i NP");
-            break;
         }
     }
 
