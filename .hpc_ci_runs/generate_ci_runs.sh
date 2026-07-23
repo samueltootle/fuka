@@ -16,7 +16,7 @@ FUKA_SOLVER_DIR="${HOME_KADATH}/codes/FUKA"
 source "$SLURM_TEMPLATE"
 
 update_root() {
-    local root="EMAIL"
+    local root="$1"
     local param="$2"
     local val="$3"
     local filename="$4"
@@ -24,7 +24,7 @@ update_root() {
 }
 
 update_bin_param() {
-    local param="EMAIL"
+    local param="$1"
     local val="$2"
     local co=$3
     local filename="$4"
@@ -44,7 +44,7 @@ generate_bh_ci_runs() {
         "bh_first_run" \
         "200" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 
     cd ..
 
@@ -64,7 +64,7 @@ generate_bh_ci_runs() {
         "bh_second_run" \
         "200" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 }
 
 generate_ns_ci_runs() {
@@ -80,7 +80,7 @@ generate_ns_ci_runs() {
         "ns_first_run" \
         "200" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 
     cd ..
 
@@ -100,7 +100,7 @@ generate_ns_ci_runs() {
         "ns_second_run" \
         "200" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 }
 
 generate_bbh_ci_runs() {
@@ -116,7 +116,7 @@ generate_bbh_ci_runs() {
         "bbh_first_run" \
         "400" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 
     cd ..
 
@@ -141,7 +141,7 @@ generate_bbh_ci_runs() {
         "bbh_second_run" \
         "400" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 }
 
 generate_bns_ci_runs() {
@@ -157,7 +157,7 @@ generate_bns_ci_runs() {
         "bns_first_run" \
         "400" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 
     cd ..
 
@@ -183,7 +183,7 @@ generate_bns_ci_runs() {
         "bns_second_run" \
         "400" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 }
 
 generate_bhns_ci_runs() {
@@ -199,7 +199,7 @@ generate_bhns_ci_runs() {
         "bhns_first_run" \
         "400" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 
     cd ..
 
@@ -225,7 +225,7 @@ generate_bhns_ci_runs() {
         "bhns_second_run" \
         "400" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 }
 
 generate_ns_diffrot_ci_runs() {
@@ -242,7 +242,7 @@ generate_ns_diffrot_ci_runs() {
         "ns_diffrot_first_run" \
         "200" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 
     cd ..
 
@@ -265,7 +265,7 @@ generate_ns_diffrot_ci_runs() {
         "ns_diffrot_second_run" \
         "200" \
         "24:00:00" \
-        "EMAIL"
+        "$1"
 }
 
 generate_ns_isotropic_ci_runs() {
@@ -282,7 +282,7 @@ generate_ns_isotropic_ci_runs() {
         "ns_isotropic_first_run" \
         "20" \
         "01:00:00" \
-        "EMAIL"
+        "$1"
 
     cd ..
 
@@ -292,7 +292,7 @@ generate_ns_isotropic_ci_runs() {
     $FUKA_SOLVER_DIR/NS_isotropic/bin/Release/solve
 
     update_root "ns" "chi" "0.1" "initial_2dns.info"
-    update_root "ns" "madm" "2.3" "initial_2dns.info"
+    update_root "ns" "madm" "1.4" "initial_2dns.info"
     update_root "ns" "res" "13" "initial_2dns.info"
 
     update_root "ns" "A_ratio" "1" "initial_2dns.info"
@@ -307,20 +307,19 @@ generate_ns_isotropic_ci_runs() {
         "ns_isotropic_second_run" \
         "20" \
         "01:00:00" \
-        "EMAIL"
+        "$1"
 }
 
 EMAIL=$1
-generate_bh_ci_runs EMAIL
-generate_ns_ci_runs EMAIL
-generate_ns_diffrot_ci_runs EMAIL
-generate_ns_isotropic_ci_runs EMAIL
-generate_bbh_ci_runs EMAIL
-generate_bns_ci_runs EMAIL
-generate_bhns_ci_runs EMAIL
+generate_bh_ci_runs $EMAIL
+generate_ns_ci_runs $EMAIL
+generate_ns_diffrot_ci_runs $EMAIL
+generate_ns_isotropic_ci_runs $EMAIL
+generate_bbh_ci_runs $EMAIL
+generate_bns_ci_runs $EMAIL
+generate_bhns_ci_runs $EMAIL
 
-cd $HOME_KADATH/.hpc_ci_runs/CIs
-cat <<EOF > launch_all.sh
+cat <<EOF > $HOME_KADATH/.hpc_ci_runs/launch_all.sh
 
 #!/bin/bash
 RUNS=( \$(find $HOME_KADATH/.hpc_ci_runs/CIs -name submission.sh) )
@@ -330,5 +329,3 @@ for run in \${RUNS[@]}; do
     cd -
 done
 EOF
-
-cd -
