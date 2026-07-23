@@ -23,3 +23,5 @@ codes/**
 # keep build output ignored
 codes/**/build/**
 codes/**/CMakeFiles/**
+
+**/CIs
