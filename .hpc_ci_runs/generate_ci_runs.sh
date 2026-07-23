@@ -318,3 +318,17 @@ generate_ns_isotropic_ci_runs EMAIL
 generate_bbh_ci_runs EMAIL
 generate_bns_ci_runs EMAIL
 generate_bhns_ci_runs EMAIL
+
+cd $HOME_KADATH/.hpc_ci_runs/CIs
+cat <<EOF > launch_all.sh
+
+#!/bin/bash
+RUNS=( \$(find $HOME_KADATH/.hpc_ci_runs/CIs -name submission.sh) )
+for run in \${RUNS[@]}; do
+    cd \$(dirname \$run)
+    sbatch submission.sh
+    cd -
+done
+EOF
+
+cd -
