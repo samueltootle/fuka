@@ -7,6 +7,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ -z "$HOME_KADATH/.venv" ]]; then
+  echo "Error: Virtual environment not found. Please run .local_dev_scripts/dev_setup.sh first."
+  exit 1
+fi
+
 source $HOME_KADATH/.venv/bin/activate
 
 # Directories to format recursively
