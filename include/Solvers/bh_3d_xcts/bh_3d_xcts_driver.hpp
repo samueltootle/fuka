@@ -1,5 +1,5 @@
 #pragma once
-#include "Solvers/co_solver_utils.hpp"
+#include "FUKA_Solvers/utilities/compact_object_initializers/setup_3d_BH_xcts.hpp"
 #include "Solvers/sequences/parameter_sequence.hpp"
 #include "Solvers/sequences/sequence_utilities.hpp"
 #include "bh_3d_xcts_solver.hpp"

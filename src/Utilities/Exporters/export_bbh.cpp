@@ -1,181 +1,196 @@
-#include <kadath_bin_bh.hpp>
-#include <coord_fields.hpp>
 #include <Configurator/config_binary.hpp>
-#include <exporter_utilities.hpp>
 #include <bco_utilities.hpp>
 #include <cmath>
+#include <coord_fields.hpp>
+#include <exporter_utilities.hpp>
+#include <kadath_bin_bh.hpp>
 
 using namespace Kadath;
 using namespace export_utils;
 using namespace Kadath::FUKA_Config;
 using namespace Kadath::FUKA_Config_Utils;
 
-std::array<std::vector<double>,NUM_VOUT> KadathExportBBH(int const npoints,
-                                                        double const * xx, double const * yy, double const * zz,
-                                                        char const * fn,
-                                                        double const interpolation_offset, int const interp_order,
-                                                        double const delta_r_rel) {
-  std::string info_file(fn);
-  kadath_config_boost<BIN_INFO> bconfig(info_file);
-  std::string kadath_fields = bconfig.space_filename();
+std::array<std::vector<double>, NUM_VOUT> KadathExportBBH(
+    int const npoints,
+    double const* xx,
+    double const* yy,
+    double const* zz,
+    char const* fn,
+    double const interpolation_offset,
+    int const interp_order,
+    double const delta_r_rel) {
+    std::string info_file(fn);
+    kadath_config_boost<BIN_INFO> bconfig(info_file);
+    std::string kadath_fields = bconfig.space_filename();
 
-  FILE *fich = fopen(kadath_fields.c_str(), "r");
-  Space_bin_bh space(fich);
+    FILE* fich = fopen(kadath_fields.c_str(), "r");
+    Space_bin_bh space(fich);
 
-  Scalar conf(space, fich);
-  Scalar lapse(space, fich);
-  Vector shift(space, fich);
+    Scalar conf(space, fich);
+    Scalar lapse(space, fich);
+    Vector shift(space, fich);
 
-  fclose(fich);
-  
-  int ndom = space.get_nbr_domains();
+    fclose(fich);
 
-  std::vector<std::reference_wrapper<const Scalar>> quants;
-  for (int i = 0; i < NUM_VQUANTS; ++i)
-    quants.push_back(std::cref(conf));
-  quants[PSI] = std::cref(conf);
-  quants[ALP] = std::cref(lapse);
+    int ndom = space.get_nbr_domains();
 
-  // reconstruct traceless extrinsic curvature
-  Base_tensor base(shift.get_basis());
-  Metric_flat fmet(space, base);
-  System_of_eqs syst(space);
-  fmet.set_system(syst, "f");
+    std::vector<std::reference_wrapper<const Scalar>> quants;
+    for (int i = 0; i < NUM_VQUANTS; ++i)
+        quants.push_back(std::cref(conf));
+    quants[PSI] = std::cref(conf);
+    quants[ALP] = std::cref(lapse);
 
-  syst.add_cst("N", lapse);
-  syst.add_cst("bet", shift);
-  syst.add_def(
-      "A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
+    // reconstruct traceless extrinsic curvature
+    Base_tensor base(shift.get_basis());
+    Metric_flat fmet(space, base);
+    System_of_eqs syst(space);
+    fmet.set_system(syst, "f");
 
-  quants[BETX] = std::cref(shift(1));
-  quants[BETY] = std::cref(shift(2));
-  quants[BETZ] = std::cref(shift(3));
+    syst.add_cst("N", lapse);
+    syst.add_cst("bet", shift);
+    syst.add_def(
+        "A_ij = (D_i bet_j + D_j bet_i - 2. / 3.* D^k bet_k * f_ij) /2. / N");
 
-  Tensor A(syst.give_val_def("A"));
-  Index ind(A);
+    quants[BETX] = std::cref(shift(1));
+    quants[BETY] = std::cref(shift(2));
+    quants[BETZ] = std::cref(shift(3));
 
-  quants[AXX] = std::cref(A(ind));
-  ind.inc();
-  quants[AXY] = std::cref(A(ind));
-  ind.inc();
-  quants[AXZ] = std::cref(A(ind));
-  ind.inc();
-  ind.inc();
-  quants[AYY] = std::cref(A(ind));
-  ind.inc();
-  quants[AYZ] = std::cref(A(ind));
-  ind.inc();
-  ind.inc();
-  ind.inc();
-  quants[AZZ] = std::cref(A(ind));
+    Tensor A(syst.give_val_def("A"));
+    Index ind(A);
 
- 	double xm = Kadath::bco_utils::get_center(space,space.BH1);
- 	double xp = Kadath::bco_utils::get_center(space,space.BH2);
+    quants[AXX] = std::cref(A(ind));
+    ind.inc();
+    quants[AXY] = std::cref(A(ind));
+    ind.inc();
+    quants[AXZ] = std::cref(A(ind));
+    ind.inc();
+    ind.inc();
+    quants[AYY] = std::cref(A(ind));
+    ind.inc();
+    quants[AYZ] = std::cref(A(ind));
+    ind.inc();
+    ind.inc();
+    ind.inc();
+    quants[AZZ] = std::cref(A(ind));
 
-  double rm = Kadath::bco_utils::get_radius(space.get_domain(space.BH1 + 2),INNER_BC);
-  double rp = Kadath::bco_utils::get_radius(space.get_domain(space.BH2 + 2),INNER_BC);
+    double xm = Kadath::bco_utils::get_center(space, space.BH1);
+    double xp = Kadath::bco_utils::get_center(space, space.BH2);
 
-  std::array<std::vector<double>,NUM_VOUT> out;
-  for(auto& v : out)
-    v.resize(npoints);
- 
-  for (int i = 0; i < npoints; ++i) {
-    std::vector<double> quant_vals(NUM_VQUANTS);
+    double rm = Kadath::bco_utils::get_radius(space.get_domain(space.BH1 + 2),
+                                              INNER_BC);
+    double rp = Kadath::bco_utils::get_radius(space.get_domain(space.BH2 + 2),
+                                              INNER_BC);
 
-    // get number of dimensions and construct index
-    int ndim = 3;
-    double x_shifted = xx[i] - bconfig(COM); //shifting carpet [0,0] to the initial center of mass
-    double y_shifted = yy[i] - bconfig(COMY); //shifting carpet [0,0] to the initial center of mass
-    double xxm = x_shifted - xm;
-    double xxp = x_shifted - xp;
+    std::array<std::vector<double>, NUM_VOUT> out;
+    for (auto& v : out)
+        v.resize(npoints);
 
-    double r2yz = y_shifted * y_shifted + zz[i] * zz[i];
+    for (int i = 0; i < npoints; ++i) {
+        std::vector<double> quant_vals(NUM_VQUANTS);
 
-    double r_minus = std::sqrt(xxm * xxm + r2yz);
-    double r_plus  = std::sqrt(xxp * xxp + r2yz);
+        // get number of dimensions and construct index
+        int ndim = 3;
+        double x_shifted =
+            xx[i] -
+            bconfig(COM);  //shifting carpet [0,0] to the initial center of mass
+        double y_shifted =
+            yy[i] -
+            bconfig(
+                COMY);  //shifting carpet [0,0] to the initial center of mass
+        double xxm = x_shifted - xm;
+        double xxp = x_shifted - xp;
 
-    // lambda function for interpolation inside BH.
-    auto interp_f = [&](auto& ah_r, auto& extrap_r, auto& bh_ori) {
-      // ensure we don't divide by zero
-      if(extrap_r == 0.) extrap_r = 1e-14;
-      double xs = x_shifted - bh_ori;
-      if(xs == 0.) xs = 1e-14;
+        double r2yz = y_shifted * y_shifted + zz[i] * zz[i];
 
-      double theta = std::acos(zz[i] / extrap_r);
-      double phi = std::atan2(y_shifted, xs); // atan2 is needed here
+        double r_minus = std::sqrt(xxm * xxm + r2yz);
+        double r_plus = std::sqrt(xxp * xxp + r2yz);
 
-      std::vector<double> r_points(interp_order);
-      for (int j = 0; j < interp_order; j++) {
-        r_points[j] = (1. + interpolation_offset) * (1. + j * delta_r_rel) * ah_r;
-      }
+        // lambda function for interpolation inside BH.
+        auto interp_f = [&](auto& ah_r, auto& extrap_r, auto& bh_ori) {
+            // ensure we don't divide by zero
+            if (extrap_r == 0.)
+                extrap_r = 1e-14;
+            double xs = x_shifted - bh_ori;
+            if (xs == 0.)
+                xs = 1e-14;
 
-      //std::vector<double> psi6(interp_order);
+            double theta = std::acos(zz[i] / extrap_r);
+            double phi = std::atan2(y_shifted, xs);  // atan2 is needed here
 
-      for (int k = 0; k < NUM_VQUANTS; ++k) {
-        std::vector<double> vals(interp_order);
+            std::vector<double> r_points(interp_order);
+            for (int j = 0; j < interp_order; j++) {
+                r_points[j] = (1. + interpolation_offset) *
+                              (1. + j * delta_r_rel) * ah_r;
+            }
 
-        for (int j = 0; j < interp_order; j++) {
-          vals[j] = quants[k].get().val_point(
-              point_spherical(r_points[j], theta, phi, bh_ori));
+            //std::vector<double> psi6(interp_order);
+
+            for (int k = 0; k < NUM_VQUANTS; ++k) {
+                std::vector<double> vals(interp_order);
+
+                for (int j = 0; j < interp_order; j++) {
+                    vals[j] = quants[k].get().val_point(
+                        point_spherical(r_points[j], theta, phi, bh_ori));
+                }
+
+                quant_vals[k] = lagrange_gen_k(interp_order,
+                                               extrap_r,
+                                               r_points.data(),
+                                               vals.data());
+            }
+        };
+
+        if (r_minus <= (1. + interpolation_offset) * rm) {
+            interp_f(rm, r_minus, xm);
+        } else if (r_plus <= (1. + interpolation_offset) * rp) {
+            interp_f(rp, r_plus, xp);
+        } else {
+            // construct Kadath point
+            Point abs_coords(ndim);
+            abs_coords.set(1) = x_shifted;
+            abs_coords.set(2) = y_shifted;
+            abs_coords.set(3) = zz[i];
+
+            for (int k = 0; k < NUM_VQUANTS; ++k) {
+                quant_vals[k] = quants[k].get().val_point(abs_coords);
+            }
         }
 
-        quant_vals[k] =
-            lagrange_gen_k(interp_order, extrap_r, r_points.data(), vals.data());
-      }
-    };
+        auto const psi = quant_vals[PSI];
+        auto const psi2 = psi * psi;
+        auto const psi4 = psi2 * psi2;
 
-    if (r_minus <= (1. + interpolation_offset) * rm) {
-      interp_f(rm, r_minus, xm);
-    }
-    else if(r_plus <= (1. + interpolation_offset) * rp) {
-      interp_f(rp, r_plus, xp);
-    } else {
-      // construct Kadath point
-      Point abs_coords(ndim);
-      abs_coords.set(1) = x_shifted;
-      abs_coords.set(2) = y_shifted;
-      abs_coords.set(3) = zz[i];
+        out[ALPHA][i] = quant_vals[ALP];
 
-      for (int k = 0; k < NUM_VQUANTS; ++k) {
-        quant_vals[k] = quants[k].get().val_point(abs_coords);
-      }
-    }
+        out[BETAX][i] = quant_vals[BETX];
+        out[BETAY][i] = quant_vals[BETY];
+        out[BETAZ][i] = quant_vals[BETZ];
 
-    auto const psi = quant_vals[PSI];
-    auto const psi2 = psi * psi;
-    auto const psi4 = psi2 * psi2;
+        double g[3][3];
+        g[0][0] = psi4;
+        g[0][1] = 0.0;
+        g[0][2] = 0.0;
+        g[1][1] = psi4;
+        g[1][2] = 0.0;
+        g[2][2] = psi4;
+        g[1][0] = g[0][1];
+        g[2][0] = g[0][2];
+        g[2][1] = g[1][2];
 
-    out[ALPHA][i] = quant_vals[ALP];
+        out[GXX][i] = g[0][0];
+        out[GXY][i] = g[0][1];
+        out[GXZ][i] = g[0][2];
+        out[GYY][i] = g[1][1];
+        out[GYZ][i] = g[1][2];
+        out[GZZ][i] = g[2][2];
 
-    out[BETAX][i] = quant_vals[BETX];
-    out[BETAY][i] = quant_vals[BETY];
-    out[BETAZ][i] = quant_vals[BETZ];
+        out[KXX][i] = quant_vals[AXX] * psi4;
+        out[KXY][i] = quant_vals[AXY] * psi4;
+        out[KXZ][i] = quant_vals[AXZ] * psi4;
+        out[KYY][i] = quant_vals[AYY] * psi4;
+        out[KYZ][i] = quant_vals[AYZ] * psi4;
+        out[KZZ][i] = quant_vals[AZZ] * psi4;
+    }  // for i
 
-    double g[3][3];
-    g[0][0] = psi4;
-    g[0][1] = 0.0;
-    g[0][2] = 0.0;
-    g[1][1] = psi4;
-    g[1][2] = 0.0;
-    g[2][2] = psi4;
-    g[1][0] = g[0][1];
-    g[2][0] = g[0][2];
-    g[2][1] = g[1][2];
-
-    out[GXX][i] = g[0][0];
-    out[GXY][i] = g[0][1];
-    out[GXZ][i] = g[0][2];
-    out[GYY][i] = g[1][1];
-    out[GYZ][i] = g[1][2];
-    out[GZZ][i] = g[2][2];
-
-    out[KXX][i] = quant_vals[AXX] * psi4;
-    out[KXY][i] = quant_vals[AXY] * psi4;
-    out[KXZ][i] = quant_vals[AXZ] * psi4;
-    out[KYY][i] = quant_vals[AYY] * psi4;
-    out[KYZ][i] = quant_vals[AYZ] * psi4;
-    out[KZZ][i] = quant_vals[AZZ] * psi4;
-  } // for i
-
-  return out;
+    return out;
 }

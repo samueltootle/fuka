@@ -35,62 +35,66 @@ template <class eos_t,
           typename config_t,
           typename space_t = Space_polar_adapted>
 class ns_isotropic_norot_solver : public Solver<config_t, space_t> {
- public:
-  using typename Solver<config_t, space_t>::base_config_t;
-  using typename Solver<config_t, space_t>::base_space_t;
+   public:
+    using typename Solver<config_t, space_t>::base_config_t;
+    using typename Solver<config_t, space_t>::base_space_t;
 
- private:
-  Scalar& nu;
-  Scalar& lap_Aterm;
-  Scalar& logh;
-  Scalar& lap_Bterm;
-  std::unique_ptr<ns_sequence const> seq;
+   private:
+    Scalar& nu;
+    Scalar& lap_Aterm;
+    Scalar& logh;
+    Scalar& lap_Bterm;
+    std::unique_ptr<ns_sequence const> seq;
 
-  /// Specify base class members used to avoid this->
-  using Solver<config_t, space_t>::space;
-  using Solver<config_t, space_t>::bconfig;
-  using Solver<config_t, space_t>::ndom;
-  using Solver<config_t, space_t>::check_max_iter_exceeded;
-  using Solver<config_t, space_t>::solution_exists;
-  using Solver<config_t, space_t>::extract_eos_name;
-  using Solver<config_t, space_t>::checkpoint;
-  using Solver<config_t, space_t>::solver_stage;
+    /// Specify base class members used to avoid this->
+    using Solver<config_t, space_t>::space;
+    using Solver<config_t, space_t>::bconfig;
+    using Solver<config_t, space_t>::ndom;
+    using Solver<config_t, space_t>::check_max_iter_exceeded;
+    using Solver<config_t, space_t>::solution_exists;
+    using Solver<config_t, space_t>::extract_eos_name;
+    using Solver<config_t, space_t>::checkpoint;
+    using Solver<config_t, space_t>::solver_stage;
 
- public:
-  /// solver is not trivially constructable since Kadath containers are not
-  /// trivially constructable
-  ns_isotropic_norot_solver() = delete;
+   public:
+    /// solver is not trivially constructable since Kadath containers are not
+    /// trivially constructable
+    ns_isotropic_norot_solver() = delete;
 
-  ns_isotropic_norot_solver(config_t& config_in,
-                            space_t& space_in,
-                            Scalar& nu_in,
-                            Scalar& lap_Aterm_in,
-                            Scalar& logh_in,
-                            Scalar& lap_Bterm_in);
+    ns_isotropic_norot_solver(config_t& config_in,
+                              space_t& space_in,
+                              Scalar& nu_in,
+                              Scalar& lap_Aterm_in,
+                              Scalar& logh_in,
+                              Scalar& lap_Bterm_in);
 
-  /// syst always requires the same initialization for the stages
-  void syst_init(System_of_eqs& syst);
+    /// syst always requires the same initialization for the stages
+    void syst_init(System_of_eqs& syst);
 
-  /// diagnostics at runtime
-  void print_diagnostics(const System_of_eqs& syst,
-                         const int ite = 0,
-                         const double conv = 0) const override;
+    /// diagnostics at runtime
+    void print_diagnostics(const System_of_eqs& syst,
+                           const int ite = 0,
+                           const double conv = 0) const override;
 
-  std::string converged_filename(const std::string stage = "") const override;
+    std::string converged_filename(const std::string stage = "") const override;
 
-  void save_to_file() const override {
-    Kadath::bco_utils::save_to_file(space, bconfig, lap_Aterm, nu, logh,
-                                    lap_Bterm);
-  }
+    void save_to_file() const override {
+        Kadath::bco_utils::save_to_file(space,
+                                        bconfig,
+                                        lap_Aterm,
+                                        nu,
+                                        logh,
+                                        lap_Bterm);
+    }
 
-  /// solver driver
-  int solve();
-  int solve(ns_sequence const* sequence_in);
+    /// solver driver
+    int solve();
+    int solve(ns_sequence const* sequence_in);
 
-  /// solver stages
-  int norot_stage(bool fixed = false);
+    /// solver stages
+    int norot_stage(bool fixed = false);
 
-  void update_config_quantities(System_of_eqs& syst);
+    void update_config_quantities(System_of_eqs& syst);
 };
 
 /** @}*/

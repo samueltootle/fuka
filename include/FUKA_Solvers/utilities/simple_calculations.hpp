@@ -20,14 +20,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <functional>
-#include <memory>
-#include <string>
-#include <vector>
-#include "Configurator/config_bco.hpp"
-#include "Configurator/config_binary.hpp"
-#include "EOS/standalone/tov.hh"
-#include "bco_utilities.hpp"
 
 /**
  * \addtogroup Solver_utils
@@ -36,35 +28,6 @@
 
 namespace Kadath {
 namespace FUKA_Solvers {
-
-/**
- * solve_NS_from_binary
- *
- * -Solve TOV solution based on binary Configurator input
- * -Update configurator based on TOV solution
- *
- * @tparam config_t: binary config type
- * @param[input] bconfig: binary Configurator file
- * @param[return] TOV solution filename
- */
-
-template <typename config_t>
-std::string solve_NS_from_binary(config_t& bconfig, const size_t bco);
-
-/**
- * solve_BH_from_binary
- *
- * -Solve BH solution based on binary Configurator input
- * -Update configurator based on BH solution
- *
- * @tparam config_t: binary config type
- * @param[input] bconfig: binary Configurator file
- * @param[return] TOV solution filename
- */
-
-template <typename config_t>
-std::string solve_BH_from_binary(config_t& bconfig, const size_t bco);
-
 /**
  * check_dist
  *
@@ -83,4 +46,4 @@ inline void check_dist(double dist,
 }  // namespace FUKA_Solvers
 }  // namespace Kadath
 
-#include "bco_solver_utils_imp.cpp"
+#include "simple_calculations.cpp"

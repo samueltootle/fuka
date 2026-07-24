@@ -33,69 +33,69 @@ namespace FUKA_Solvers {
 
 template <typename config_t, typename space_t = Space_adapted_bh>
 class bh_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
- public:
-  using typename XCTS_Solver<config_t, space_t>::base_config_t;
-  using typename XCTS_Solver<config_t, space_t>::base_space_t;
+   public:
+    using typename XCTS_Solver<config_t, space_t>::base_config_t;
+    using typename XCTS_Solver<config_t, space_t>::base_space_t;
 
-  using scalar_t = Scalar&;
-  using vector_t = Vector&;
+    using scalar_t = Scalar&;
+    using vector_t = Vector&;
 
- private:
-  scalar_t conf;
-  scalar_t lapse;
-  vector_t shift;
-  Metric_flat fmet;
-  std::array<int, 2> excluded_doms{0, 1};
+   private:
+    scalar_t conf;
+    scalar_t lapse;
+    vector_t shift;
+    Metric_flat fmet;
+    std::array<int, 2> excluded_doms{0, 1};
 
-  // Specify base class members used to avoid this->
-  using XCTS_Solver<config_t, space_t>::space;
-  using XCTS_Solver<config_t, space_t>::bconfig;
-  using XCTS_Solver<config_t, space_t>::basis;
-  using XCTS_Solver<config_t, space_t>::cfields;
-  using XCTS_Solver<config_t, space_t>::coord_vectors;
-  using XCTS_Solver<config_t, space_t>::ndom;
-  using XCTS_Solver<config_t, space_t>::check_max_iter_exceeded;
-  using XCTS_Solver<config_t, space_t>::solution_exists;
-  using XCTS_Solver<config_t, space_t>::checkpoint;
-  using XCTS_Solver<config_t, space_t>::solver_stage;
+    // Specify base class members used to avoid this->
+    using XCTS_Solver<config_t, space_t>::space;
+    using XCTS_Solver<config_t, space_t>::bconfig;
+    using XCTS_Solver<config_t, space_t>::basis;
+    using XCTS_Solver<config_t, space_t>::cfields;
+    using XCTS_Solver<config_t, space_t>::coord_vectors;
+    using XCTS_Solver<config_t, space_t>::ndom;
+    using XCTS_Solver<config_t, space_t>::check_max_iter_exceeded;
+    using XCTS_Solver<config_t, space_t>::solution_exists;
+    using XCTS_Solver<config_t, space_t>::checkpoint;
+    using XCTS_Solver<config_t, space_t>::solver_stage;
 
- public:
-  // solver is not trivially constructable since Kadath containers are not
-  // trivially constructable
-  bh_3d_xcts_solver() = delete;
+   public:
+    // solver is not trivially constructable since Kadath containers are not
+    // trivially constructable
+    bh_3d_xcts_solver() = delete;
 
-  bh_3d_xcts_solver(config_t& config_in,
-                    space_t& space_in,
-                    Base_tensor& base_in,
-                    Scalar& conf_in,
-                    Scalar& lapse_in,
-                    Vector& shift_in);
+    bh_3d_xcts_solver(config_t& config_in,
+                      space_t& space_in,
+                      Base_tensor& base_in,
+                      Scalar& conf_in,
+                      Scalar& lapse_in,
+                      Vector& shift_in);
 
-  // syst always requires the same initialization for the stages
-  void syst_init(System_of_eqs& syst);
+    // syst always requires the same initialization for the stages
+    void syst_init(System_of_eqs& syst);
 
-  // diagnostics at runtime
-  void print_diagnostics_norot(const System_of_eqs& syst,
-                               const int ite = 0,
-                               const double conv = 0) const;
-  void print_diagnostics(const System_of_eqs& syst,
-                         const int ite = 0,
-                         const double conv = 0) const override;
+    // diagnostics at runtime
+    void print_diagnostics_norot(const System_of_eqs& syst,
+                                 const int ite = 0,
+                                 const double conv = 0) const;
+    void print_diagnostics(const System_of_eqs& syst,
+                           const int ite = 0,
+                           const double conv = 0) const override;
 
-  std::string converged_filename(const std::string stage = "") const override;
+    std::string converged_filename(const std::string stage = "") const override;
 
-  void save_to_file() const override {
-    Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift);
-  }
+    void save_to_file() const override {
+        Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift);
+    }
 
-  // solve driver
-  int solve();
+    // solve driver
+    int solve();
 
-  // solver stages
-  int fixed_lapse_stage();
-  int von_Neumann_stage(std::string stage_text = "TOTAL_BC");
+    // solver stages
+    int fixed_lapse_stage();
+    int von_Neumann_stage(std::string stage_text = "TOTAL_BC");
 
-  /**
+    /**
    * binary_boost_stage
    *
    * based on an input binary Configurator file, we boost the BH accordingly
@@ -104,8 +104,8 @@ class bh_3d_xcts_solver : public XCTS_Solver<config_t, space_t> {
    * @param[input] bco: index of BCO - needed to determine coordinate shift
    * based on BCO location in binary space
    */
-  int binary_boost_stage(kadath_config_boost<BIN_INFO>& binconfig,
-                         const size_t bco);
+    int binary_boost_stage(kadath_config_boost<BIN_INFO>& binconfig,
+                           const size_t bco);
 };
 
 /** @}*/

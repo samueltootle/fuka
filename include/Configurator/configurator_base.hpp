@@ -27,16 +27,16 @@ namespace FUKA_Config {
 // using namespace Kadath::FUKA_Config_Utils;
 
 class configurator_base {
- protected:
-  std::string filename{};
-  std::string outputdir{"./"};
-  Tree tree;
+   protected:
+    std::string filename{};
+    std::string outputdir{"./"};
+    Tree tree;
 
- public:
-  configurator_base() = default;
-  configurator_base(std::string ifile) : filename(ifile){};
+   public:
+    configurator_base() = default;
+    configurator_base(std::string ifile) : filename(ifile) {};
 
-  /**
+    /**
    * configurator_base::config_filename_abs
    *
    * returns the config filename based with absolute path.  This reduced
@@ -44,9 +44,9 @@ class configurator_base {
    *
    * @return string with <outputdir/filename.info>
    */
-  const std::string config_filename_abs() const;
+    const std::string config_filename_abs() const;
 
-  /**
+    /**
    * configurator_base::set_filename
    *
    * Sets the config filename.  If the input string contains a path '/'
@@ -55,26 +55,26 @@ class configurator_base {
    *
    * @param[input] filename: string with filename and possibly the output dir
    */
-  void set_filename(std::string fname);
+    void set_filename(std::string fname);
 
-  /**
+    /**
    * configurator_base::set_outputdir
    *
    * Sets the config output directory.  Appends '/' if not found
    *
    * @param[input] dir: string with the output dir
    */
-  void set_outputdir(std::string dir);
+    void set_outputdir(std::string dir);
 
-  /**
+    /**
    * configurator_base::config_filename()
    * @return filename: returns constant filename
    */
-  const std::string config_filename() const { return filename; }
+    const std::string config_filename() const { return filename; }
 
-  void read_config();
+    void read_config();
 
-  Tree const& get_config_tree() const { return tree; }
+    Tree const& get_config_tree() const { return tree; }
 };
 
 /**

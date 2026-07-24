@@ -35,77 +35,82 @@ template <class eos_t,
           typename config_t,
           typename space_t = Kadath::Space_bin_ns>
 class bns_xcts_solver : XCTS_Solver<config_t, space_t> {
- public:
-  using typename XCTS_Solver<config_t, space_t>::base_config_t;
-  using typename XCTS_Solver<config_t, space_t>::base_space_t;
+   public:
+    using typename XCTS_Solver<config_t, space_t>::base_config_t;
+    using typename XCTS_Solver<config_t, space_t>::base_space_t;
 
- private:
-  Scalar& conf;
-  Scalar& lapse;
-  Scalar& logh;
-  Scalar& phi;
-  Vector& shift;
-  Metric_flat fmet;
+   private:
+    Scalar& conf;
+    Scalar& lapse;
+    Scalar& logh;
+    Scalar& phi;
+    Vector& shift;
+    Metric_flat fmet;
 
-  const double xc1;
-  const double xc2;
-  const double xo{0.};
+    const double xc1;
+    const double xc2;
+    const double xo{0.};
 
-  // Specify base class members used to avoid this->
-  using XCTS_Solver<config_t, space_t>::space;
-  using XCTS_Solver<config_t, space_t>::bconfig;
-  using XCTS_Solver<config_t, space_t>::basis;
-  using XCTS_Solver<config_t, space_t>::cfields;
-  using XCTS_Solver<config_t, space_t>::coord_vectors;
-  using XCTS_Solver<config_t, space_t>::ndom;
-  using XCTS_Solver<config_t, space_t>::check_max_iter_exceeded;
-  using XCTS_Solver<config_t, space_t>::solution_exists;
-  using XCTS_Solver<config_t, space_t>::extract_eos_name;
-  using XCTS_Solver<config_t, space_t>::checkpoint;
-  using XCTS_Solver<config_t, space_t>::solver_stage;
+    // Specify base class members used to avoid this->
+    using XCTS_Solver<config_t, space_t>::space;
+    using XCTS_Solver<config_t, space_t>::bconfig;
+    using XCTS_Solver<config_t, space_t>::basis;
+    using XCTS_Solver<config_t, space_t>::cfields;
+    using XCTS_Solver<config_t, space_t>::coord_vectors;
+    using XCTS_Solver<config_t, space_t>::ndom;
+    using XCTS_Solver<config_t, space_t>::check_max_iter_exceeded;
+    using XCTS_Solver<config_t, space_t>::solution_exists;
+    using XCTS_Solver<config_t, space_t>::extract_eos_name;
+    using XCTS_Solver<config_t, space_t>::checkpoint;
+    using XCTS_Solver<config_t, space_t>::solver_stage;
 
- public:
-  // solver is not trivially constructable since Kadath containers are not
-  // trivially constructable
-  bns_xcts_solver() = delete;
+   public:
+    // solver is not trivially constructable since Kadath containers are not
+    // trivially constructable
+    bns_xcts_solver() = delete;
 
-  bns_xcts_solver(config_t& config_in,
-                  space_t& space_in,
-                  Base_tensor& base_in,
-                  Scalar& conf_in,
-                  Scalar& lapse_in,
-                  Vector& shift_in,
-                  Scalar& logh_in,
-                  Scalar& phi_in);
+    bns_xcts_solver(config_t& config_in,
+                    space_t& space_in,
+                    Base_tensor& base_in,
+                    Scalar& conf_in,
+                    Scalar& lapse_in,
+                    Vector& shift_in,
+                    Scalar& logh_in,
+                    Scalar& phi_in);
 
-  // syst always requires the same initialization for the stages
-  void syst_init(System_of_eqs& syst);
-  void syst_init_Aterms(System_of_eqs& syst);
+    // syst always requires the same initialization for the stages
+    void syst_init(System_of_eqs& syst);
+    void syst_init_Aterms(System_of_eqs& syst);
 
-  // diagnostics at runtime
-  void print_diagnostics(const System_of_eqs& syst,
-                         const int ite = 0,
-                         const double conv = 0) const override;
+    // diagnostics at runtime
+    void print_diagnostics(const System_of_eqs& syst,
+                           const int ite = 0,
+                           const double conv = 0) const override;
 
-  std::string converged_filename(const std::string stage = "") const override;
+    std::string converged_filename(const std::string stage = "") const override;
 
-  void save_to_file() const override {
-    ::Kadath::bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh,
-                                      phi);
-  }
+    void save_to_file() const override {
+        ::Kadath::bco_utils::save_to_file(space,
+                                          bconfig,
+                                          conf,
+                                          lapse,
+                                          shift,
+                                          logh,
+                                          phi);
+    }
 
-  // solve driver
-  int solve();
+    // solve driver
+    int solve();
 
-  /**
+    /**
    * hydrostatic_equilibrium stage
    *
    * The binary is solved using the force balance equations
    * in addition to solving the relativisitc Euler equation
    * to obtain a binary in hydrostatic equilibrium.
    */
-  int hydrostatic_equilibrium_stage();
-  /**
+    int hydrostatic_equilibrium_stage();
+    /**
    * hydro_rescaling_stages
    *
    * The binary is solved using fixed orbital velocity
@@ -115,10 +120,10 @@ class bns_xcts_solver : XCTS_Solver<config_t, space_t> {
    * @param[input] stage_text: Some changes are made based on TOTAL_BC or
    * ECC_RED stage.
    */
-  int hydro_rescaling_stages(std::string stage_text);
+    int hydro_rescaling_stages(std::string stage_text);
 
-  // Update bconfig(HC) and bconfig(NC)
-  void update_config_quantities(System_of_eqs& syst);
+    // Update bconfig(HC) and bconfig(NC)
+    void update_config_quantities(System_of_eqs& syst);
 };
 
 /** @}*/

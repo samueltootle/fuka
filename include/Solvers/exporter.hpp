@@ -45,29 +45,29 @@ static std::mutex copy_mutex;
  */
 template <class config_t, class space_t>
 struct Exporter {
-  using base_config_t = std::decay_t<config_t>;
-  using base_space_t = std::decay_t<space_t>;
+    using base_config_t = std::decay_t<config_t>;
+    using base_space_t = std::decay_t<space_t>;
 
-  ptr_data_member(space_t, space, unique);
-  ptr_data_member(base_config_t, bconfig, unique);
+    ptr_data_member(space_t, space, unique);
+    ptr_data_member(base_config_t, bconfig, unique);
 
- protected:
-  int ndom{};
+   protected:
+    int ndom{};
 
- public:
-  Exporter() : space(nullptr) {}
+   public:
+    Exporter() : space(nullptr) {}
 
-  Exporter(std::string config_filename) : space(nullptr), bconfig(nullptr) {
-    bconfig.reset(new base_config_t{config_filename});
-    bconfig->open_config();
-  }
+    Exporter(std::string config_filename) : space(nullptr), bconfig(nullptr) {
+        bconfig.reset(new base_config_t{config_filename});
+        bconfig->open_config();
+    }
 
-  virtual void load_solution_from_file() {
-    std::string spacein{bconfig->space_filename()};
-    FILE* ff1 = fopen(spacein.c_str(), "r");
-    space.reset(new space_t{ff1});
-    fclose(ff1);
-    ndom = space->get_nbr_domains();
-  }
+    virtual void load_solution_from_file() {
+        std::string spacein{bconfig->space_filename()};
+        FILE* ff1 = fopen(spacein.c_str(), "r");
+        space.reset(new space_t{ff1});
+        fclose(ff1);
+        ndom = space->get_nbr_domains();
+    }
 };
 }  // namespace Kadath::FUKA_Solvers

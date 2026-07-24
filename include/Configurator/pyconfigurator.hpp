@@ -51,15 +51,15 @@ using namespace Kadath::FUKA_Config;
  */
 template <class bconfig_t, typename... idx_t>
 boost::python::dict build_config_dict(bconfig_t& bconfig, idx_t... bco) {
-  auto map = bconfig.get_map(bco...);
-  boost::python::dict config;
-  for (auto& tup : map) {
-    auto name{tup.first};
-    auto index{tup.second};
-    if (!std::isnan(bconfig.set(index, bco...)))
-      config[name] = bconfig(index, bco...);
-  }
-  return config;
+    auto map = bconfig.get_map(bco...);
+    boost::python::dict config;
+    for (auto& tup : map) {
+        auto name{tup.first};
+        auto index{tup.second};
+        if (!std::isnan(bconfig.set(index, bco...)))
+            config[name] = bconfig(index, bco...);
+    }
+    return config;
 }
 
 /**
@@ -75,26 +75,26 @@ template <class bconfig_t, typename... idx_t>
 void add_eos_todict(bconfig_t& bconfig,
                     boost::python::dict& config,
                     idx_t... bco) {
-  // map of <std::string, enum>
-  auto map = bconfig.get_eos_map(bco...);
-  for (auto& tup : map) {
-    auto name{tup.first};
-    auto index{tup.second};
+    // map of <std::string, enum>
+    auto map = bconfig.get_eos_map(bco...);
+    for (auto& tup : map) {
+        auto name{tup.first};
+        auto index{tup.second};
 
-    auto assign_val = [&](auto&& v) {
-      using v_t = std::decay_t<decltype(v)>;
-      if constexpr (std::is_same_v<v_t, double>) {
-        if (!std::isnan(v))
-          config[name] = v;
-      } else {
-        config[name] = v;
-      }
-    };
+        auto assign_val = [&](auto&& v) {
+            using v_t = std::decay_t<decltype(v)>;
+            if constexpr (std::is_same_v<v_t, double>) {
+                if (!std::isnan(v))
+                    config[name] = v;
+            } else {
+                config[name] = v;
+            }
+        };
 
-    // EOS Params are stored in a std::variant
-    std::visit(assign_val, bconfig.set_eos(index, bco...));
-  }
-  return;
+        // EOS Params are stored in a std::variant
+        std::visit(assign_val, bconfig.set_eos(index, bco...));
+    }
+    return;
 }
 
 /**
@@ -110,29 +110,29 @@ template <class bconfig_t, typename... idx_t>
 void add_diffrot_todict(bconfig_t& bconfig,
                         boost::python::dict& config,
                         idx_t... bco) {
-  // map of <std::string, enum>
-  boost::python::dict diffrot;
-  auto map = bconfig.get_diffrot_map(bco...);
-  for (auto& tup : map) {
-    auto name{tup.first};
-    auto index{tup.second};
+    // map of <std::string, enum>
+    boost::python::dict diffrot;
+    auto map = bconfig.get_diffrot_map(bco...);
+    for (auto& tup : map) {
+        auto name{tup.first};
+        auto index{tup.second};
 
-    auto assign_val = [&](auto&& v) {
-      using v_t = std::decay_t<decltype(v)>;
-      if constexpr (std::is_same_v<v_t, double>) {
-        if (!std::isnan(v))
-          diffrot[name] = v;
-      } else {
-        diffrot[name] = v;
-      }
-    };
+        auto assign_val = [&](auto&& v) {
+            using v_t = std::decay_t<decltype(v)>;
+            if constexpr (std::is_same_v<v_t, double>) {
+                if (!std::isnan(v))
+                    diffrot[name] = v;
+            } else {
+                diffrot[name] = v;
+            }
+        };
 
-    // Differential Rotation Params are stored in a std::variant
-    std::visit(assign_val, bconfig.set_diffrot(index, bco...));
-  }
-  if (boost::python::len(diffrot) > 0)
-    config["differential_rotation"] = diffrot;
-  return;
+        // Differential Rotation Params are stored in a std::variant
+        std::visit(assign_val, bconfig.set_diffrot(index, bco...));
+    }
+    if (boost::python::len(diffrot) > 0)
+        config["differential_rotation"] = diffrot;
+    return;
 }
 
 /**
@@ -142,33 +142,33 @@ void add_diffrot_todict(bconfig_t& bconfig,
  */
 template <class config_t>
 struct Configurator_reader_t {
-  Configurator_reader_t(std::string const filename_)
-      : filename(filename_), bconfig(config_t(filename)) {
-    add_dict();
-  }
+    Configurator_reader_t(std::string const filename_)
+        : filename(filename_), bconfig(config_t(filename)) {
+        add_dict();
+    }
 
-  // Keep this public to make it easy to access
-  boost::python::dict config;
+    // Keep this public to make it easy to access
+    boost::python::dict config;
 
- protected:
-  /**
+   protected:
+    /**
    * @brief Add a dictionary to this->config
    *
    * @tparam NS If a NS is present we extract EOS info
    * @tparam idx_t index pack
    * @param bco optional index (for binary configs)
    */
-  template <bool NS = false, typename... idx_t>
-  void add_dict(idx_t... bco) {
-    std::string dict_name{bconfig.get_name_string(bco...)};
-    boost::python::dict tmp = build_config_dict(bconfig, bco...);
-    if constexpr (NS)
-      add_eos_todict(bconfig, tmp, bco...);
-    config[dict_name] = tmp;
-  };
+    template <bool NS = false, typename... idx_t>
+    void add_dict(idx_t... bco) {
+        std::string dict_name{bconfig.get_name_string(bco...)};
+        boost::python::dict tmp = build_config_dict(bconfig, bco...);
+        if constexpr (NS)
+            add_eos_todict(bconfig, tmp, bco...);
+        config[dict_name] = tmp;
+    };
 
-  std::string filename{};
-  config_t bconfig;
+    std::string filename{};
+    config_t bconfig;
 };
 
 using bin_config_t = kadath_config_boost<BIN_INFO>;
@@ -178,20 +178,20 @@ using bin_config_t = kadath_config_boost<BIN_INFO>;
  *
  */
 struct bin_Configurator_reader_t : Configurator_reader_t<bin_config_t> {
-  bin_Configurator_reader_t(std::string const filename_)
-      : Configurator_reader_t(filename_) {
-    // Base constructor only extracts binary parameters
-    // Here we add the seperate configurations for each compact object
-    if (bconfig.get_name_string(BCO1)[0] == 'n')
-      add_dict<true>(BCO1);
-    else
-      add_dict(BCO1);
+    bin_Configurator_reader_t(std::string const filename_)
+        : Configurator_reader_t(filename_) {
+        // Base constructor only extracts binary parameters
+        // Here we add the seperate configurations for each compact object
+        if (bconfig.get_name_string(BCO1)[0] == 'n')
+            add_dict<true>(BCO1);
+        else
+            add_dict(BCO1);
 
-    if (bconfig.get_name_string(BCO2)[0] == 'n')
-      add_dict<true>(BCO2);
-    else
-      add_dict(BCO2);
-  }
+        if (bconfig.get_name_string(BCO2)[0] == 'n')
+            add_dict<true>(BCO2);
+        else
+            add_dict(BCO2);
+    }
 };
 
 using ns_config_t = kadath_config_boost<BCO_NS_INFO>;
@@ -201,27 +201,27 @@ using ns_config_t = kadath_config_boost<BCO_NS_INFO>;
  *
  */
 struct ns_Configurator_reader_t : Configurator_reader_t<ns_config_t> {
-  ns_Configurator_reader_t(std::string const filename_)
-      : Configurator_reader_t(filename_) {
-    // The base class only extracts the object parameters
-    // Here we extract the dictionary and add the EOS information
-    auto dict_name = bconfig.get_name_string();
-    boost::python::dict dict =
-        boost::python::extract<boost::python::dict>(config[dict_name]);
+    ns_Configurator_reader_t(std::string const filename_)
+        : Configurator_reader_t(filename_) {
+        // The base class only extracts the object parameters
+        // Here we extract the dictionary and add the EOS information
+        auto dict_name = bconfig.get_name_string();
+        boost::python::dict dict =
+            boost::python::extract<boost::python::dict>(config[dict_name]);
 
-    add_eos_todict(bconfig, dict);
-    add_diffrot_todict(bconfig, dict);
-    config[dict_name] = dict;
-  }
+        add_eos_todict(bconfig, dict);
+        add_diffrot_todict(bconfig, dict);
+        config[dict_name] = dict;
+    }
 };
 
 // dummy constructor function, defining readers through boost python
 template <typename reader_t>
 void constructPythonConfigurator(std::string reader_name) {
-  using namespace boost::python;
+    using namespace boost::python;
 
-  auto reader = class_<reader_t>(reader_name.c_str(), init<std::string>());
-  reader.def_readonly("config", &reader_t::config);
+    auto reader = class_<reader_t>(reader_name.c_str(), init<std::string>());
+    reader.def_readonly("config", &reader_t::config);
 }
 }  // namespace FUKA_pyTools
 }  // namespace Kadath

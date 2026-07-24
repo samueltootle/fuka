@@ -34,14 +34,14 @@
 int main() {
   using namespace Kadath::Margherita;
   using namespace Kadath::FUKA_EOS;
-  // Margherita_setup_polytrope("gam2.polytrope");
-  setup_Cold_Table("togashi.lorene",1000);
+  Margherita_setup_polytrope("../../../eos/twins.polytrope");
+  //setup_Cold_Table("togashi.lorene",1000);
   // auto tov = std::make_unique<MargheritaTOV<Cold_PWPoly>>();
-  auto tov = std::make_unique<MargheritaTOV<FUKA_EOS_Wrapper<margherita_eos_t, margherita_1d>>>();
+  auto tov = std::make_unique<MargheritaTOV<FUKA_EOS_Wrapper<fuka_eos_t, margherita_pwp>>>();
 //  tov->adaptive = false;
 //  tov->rk45 = false;
-  //tov->solve(1.37e-3);
-  tov->solve_for_MADM(1.4003505615);
+  tov->solve(0.0025551);
+  //tov->solve_for_MADM(1.4003505615);
   auto& state = tov->state;
   std::cout << *tov << std::endl;
   return 0;
