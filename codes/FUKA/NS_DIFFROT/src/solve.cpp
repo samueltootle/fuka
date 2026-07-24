@@ -58,13 +58,17 @@ int main(int argc, char** argv) {
                 bconfig.set_stage(STAGES::TOTAL_BC) = false;
                 bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
                 bconfig.set_stage(STAGES::DIFF_ROT) = true;
+                bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
+                bconfig.control(CONTROLS::USE_ISO_SOLVER) = true;
                 initialize_diffrot(bconfig);
                 bconfig.write_minimal_config();
             } else {
                 bconfig.set_defaults();
                 bconfig.set_stage(STAGES::TOTAL_BC) = false;
                 bconfig.set_stage(STAGES::UNIFORM_ROT) = true;
+                bconfig.set_stage(STAGES::DIFF_ROT) = true;
                 bconfig.control(CONTROLS::SEQUENCES) = InitSolver::setup_first;
+                bconfig.control(CONTROLS::USE_ISO_SOLVER) = true;
                 initialize_diffrot(bconfig);
                 bconfig.write_config();
             }
