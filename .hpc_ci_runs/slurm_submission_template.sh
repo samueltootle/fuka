@@ -45,9 +45,6 @@ generate_submission() {
 
 #SBATCH --ntasks=$ntasks
 
-export I_MPI_DEBUG=100
-export I_MPI_OFI_LIBRARY_INTERNAL=0
-
 echo "Solver: $solver_path"
 echo "Input File: $input_file"
 

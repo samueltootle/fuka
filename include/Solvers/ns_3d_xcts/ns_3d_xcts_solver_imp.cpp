@@ -89,6 +89,7 @@ int ns_3d_xcts_solver<eos_t, config_t, space_t>::solve() {
     if (rank == 0)
         std::cout << "Last stage: " << last_stage << "\n";
 
+    // FIXME this will be resolved in future patch
     double const final_chi = bconfig.seq_setting(SEQ_SETTINGS::FINAL_CHI);
     double const initial_chi = bconfig(BCO_PARAMS::CHI);
 
