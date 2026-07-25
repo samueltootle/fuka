@@ -123,10 +123,31 @@ config_t ns_isotropic_sequence(config_t& seqconfig,
         exit_status =
             ns_isotropic_base_solution_driver(bconfig, outputdir, &seq);
 
+        bconfig.control(CONTROLS::SEQUENCES) = false;
+        if (last_stage_idx == STAGES::DIFF_ROT &&
+            (final_MADM - bconfig(BCO_PARAMS::MADM)) > 1e-1) {
+            ns_sequence tmp_seq("madm", BCO_PARAMS::MADM);
+            tmp_seq.set(bconfig(BCO_PARAMS::MADM),
+                        bconfig(BCO_PARAMS::MADM),
+                        final_MADM);
+
+            // FIXME This should be driveable most likely
+            auto const step_size =
+                std::min((final_MADM - bconfig(BCO_PARAMS::MADM)) / 5., 0.1);
+            tmp_seq.set_N(std::ceil((final_MADM - bconfig(BCO_PARAMS::MADM)) /
+                                    step_size));
+            for (auto val = tmp_seq.init(); tmp_seq.loop_condition(val);
+                 val += tmp_seq.step_size()) {
+                stage_enabled[last_stage_idx] = true;
+                bconfig.set(tmp_seq.get_indices()) = val;
+                exit_status =
+                    ns_isotropic_driver(bconfig, tmp_res, outputdir, &tmp_seq);
+            }
+        }
+
         // Update config such that the next solving round uses
         // the final ADM mass and spin
         bconfig(BCO_PARAMS::MADM) = final_MADM;
-        bconfig.control(CONTROLS::SEQUENCES) = false;
     }
     exit_status = ns_isotropic_base_solution_driver(bconfig, outputdir, &seq);
 
