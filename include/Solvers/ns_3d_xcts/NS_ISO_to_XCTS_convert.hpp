@@ -113,9 +113,15 @@ struct NS_ISO_to_XCTS_convert {
                     auto z = zz(pos);
                     auto all_data = input_reader.export_pointwise(x, y, z);
                     auto const rho = all_data[input_reader_t::OUTPUT_VARS::RHO];
-                    auto const h = EOS<eos_t, DENSITY>::h_cold__rho(rho);
-                    logh.set_domain(dom).set(pos) =
-                        (std::log(h) < 0) ? 0. : std::log(h);
+                    auto logh_val = 0.;
+                    if (std::isfinite(rho) && rho > 0.) {
+                        auto const h = EOS<eos_t, DENSITY>::h_cold__rho(rho);
+                        auto const logh_try = std::log(h);
+                        if (std::isfinite(logh_try) && logh_try > 0.) {
+                            logh_val = logh_try;
+                        }
+                    }
+                    logh.set_domain(dom).set(pos) = logh_val;
                     lapse.set_domain(dom).set(pos) =
                         all_data[input_reader_t::OUTPUT_VARS::ALPHA];
 
