@@ -69,8 +69,12 @@ int ns_isotropic_norot_solver<eos_t, config_t, space_t>::solve() {
     this->solver_stage = STAGES::NOROT_BC;
     // If we start from scratch, we currently need
     // to fix the stellar surface otherwise the solver
-    // more often than not diverges.
-    if (bconfig.control(CONTROLS::SEQUENCES)) {
+    // more often than not diverges for polytropes
+    auto this_eos = eos_t::get_eos_type();
+    bool fixed_r = (this_eos == FUKA_EOS::fuka_eos_t::margherita_pwp ||
+                    this_eos == FUKA_EOS::fuka_eos_t::ghl_eos_simple ||
+                    this_eos == FUKA_EOS::fuka_eos_t::ghl_eos_hybrid);
+    if (bconfig.control(CONTROLS::SEQUENCES) && fixed_r) {
         bconfig.control(CONTROLS::USE_FIXED_R) = true;
         exit_status = norot_stage(true);
         // Rerun with fixed central enthalpy, but with
