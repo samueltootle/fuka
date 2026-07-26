@@ -78,8 +78,14 @@ void CFMS_NS_Exporter::load_solution_from_file() {
     shift.reset(new Vector(*space.get(), ff1));
     logh.reset(new Scalar(*space.get(), ff1));
 
+    conformal_factor->coef();
+    lapse->coef();
+    shift->coef();
+    logh->coef();
+
     if (bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
         diff_omega.reset(new Scalar(*space.get(), ff1));
+        diff_omega->coef();
     }
 
     fclose(ff1);

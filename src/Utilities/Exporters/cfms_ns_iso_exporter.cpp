@@ -88,11 +88,19 @@ void CFMS_NS_ISO_Exporter::load_solution_from_file() {
     Nu.reset(new Scalar(*space.get(), ff1));
     logh.reset(new Scalar(*space.get(), ff1));
     lap_Bterm.reset(new Scalar(*space.get(), ff1));
+
+    lap_Aterm->coef();
+    Nu->coef();
+    logh->coef();
+    lap_Bterm->coef();
+
     if (bconfig->set_field(Kadath::FUKA_Config::BCO_FIELDS::LAP_WTERM)) {
         lap_omega_term.reset(new Scalar(*space.get(), ff1));
+        lap_omega_term->coef();
 
         if (bconfig->field(Kadath::FUKA_Config::BCO_FIELDS::DIFF_OMEGA)) {
             omega.reset(new Scalar(*space.get(), ff1));
+            omega->coef();
 #ifdef DEBUG
             std::cout << "**** Reading Differentially rotating solution ****\n";
 #endif

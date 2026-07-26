@@ -74,6 +74,12 @@ void CFMS_BNS_Exporter::load_solution_from_file() {
     logh.reset(new Scalar(*space.get(), ff1));
     velpotential.reset(new Scalar(*space.get(), ff1));
 
+    conformal_factor->coef();
+    lapse->coef();
+    shift->coef();
+    logh->coef();
+    velpotential->coef();
+
     fclose(ff1);
 
     ndom = space->get_nbr_domains();
