@@ -53,6 +53,10 @@ void CFMS_BBH_Exporter::load_solution_from_file() {
     lapse.reset(new Scalar(*space.get(), ff1));
     shift.reset(new Vector(*space.get(), ff1));
 
+    conformal_factor->coef();
+    lapse->coef();
+    shift->coef();
+
     fclose(ff1);
 
     ndom = space->get_nbr_domains();
