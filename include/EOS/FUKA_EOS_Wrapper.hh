@@ -43,6 +43,7 @@ typedef enum {
 
 template <class FUKA_eos_t, FUKA_eos_t eos>
 struct FUKA_EOS_Wrapper {
+    static inline const FUKA_eos_t get_eos_type() { return eos; }
 #ifdef WITH_GRHAYL_EOS
     static std::unique_ptr<ghl_eos_parameters> ghl_eos_params;
 #endif

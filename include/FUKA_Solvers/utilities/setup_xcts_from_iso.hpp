@@ -15,7 +15,10 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig,
     std::string output_path = (bconfig.control(CONTROLS::SAVE_COS))
                                   ? get_cos_path()
                                   : bconfig.config_outputdir() + "/COs";
-    fs::create_directory(output_path);
+    if (rank == 0) {
+        fs::create_directories(output_path);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
 
     kadath_config_boost<BCO_ISO_NS_INFO> nsconfig;
     nsconfig.set_defaults();
@@ -36,7 +39,8 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig,
         nsconfig.set_stage(i) = bconfig.set_stage(i);
     }
     nsconfig.set_stage(STAGES::UNIFORM_ROT) =
-        bconfig.set_stage(STAGES::TOTAL_BC);
+        bconfig.set_stage(STAGES::TOTAL_BC) ||
+        bconfig.set_stage(STAGES::UNIFORM_ROT);
     nsconfig.set_stage(STAGES::TOTAL_BC) = false;
 
     // Tells the NS driver to initialize the numerical space and fields
@@ -55,13 +59,10 @@ std::string solve_NS_ISO_from_XCTS_config(config_t& bconfig,
 
     const std::string eos_type = bconfig.template eos<std::string>(EOSTYPE);
     nsconfig.control(CONTROLS::SEQUENCES) = false;
-    if (rank == 0) {
-        EOS_Function_Dispatcher::dispatch<NS_ISO_to_XCTS_convert>(
-            ns_iso_sol_config,
-            eos_type,
-            ns_iso_sol_config,
-            output_path);
-    }
+    EOS_Function_Dispatcher::dispatch<NS_ISO_to_XCTS_convert>(ns_iso_sol_config,
+                                                              eos_type,
+                                                              ns_iso_sol_config,
+                                                              output_path);
     ns_iso_sol_config.set_filename("initns_xcts.info");
     ns_iso_sol_config.set_outputdir(output_path);
     MPI_Barrier(MPI_COMM_WORLD);

@@ -1,4 +1,6 @@
 #pragma once
+#include <mpi.h>
+#include <stdexcept>
 #include "Configurator/config_bco.hpp"
 #include "EOS/EOS.hh"
 #include "EOS/FUKA_EOS_Utilities.hh"
@@ -26,6 +28,11 @@ struct NS_ISO_to_XCTS_convert {
         const Domain_polar_shell_outer_adapted* old_outer_adapted =
             dynamic_cast<const Domain_polar_shell_outer_adapted*>(
                 old_space->get_domain(old_space->ADAPTED_OUTER));
+        if (old_outer_adapted == nullptr) {
+            throw std::runtime_error(
+                "NS_ISO_to_XCTS_convert: failed to cast old adapted outer "
+                "domain");
+        }
         old_space_radius.set_domain(old_space->ADAPTED_OUTER) =
             old_outer_adapted->get_outer_radius();
 
@@ -76,6 +83,10 @@ struct NS_ISO_to_XCTS_convert {
         const Domain_shell_inner_adapted* new_inner_adapted =
             dynamic_cast<const Domain_shell_inner_adapted*>(
                 space.get_domain(2));
+        if (new_outer_adapted == nullptr || new_inner_adapted == nullptr) {
+            throw std::runtime_error(
+                "NS_ISO_to_XCTS_convert: failed to cast new adapted domains");
+        }
 
         // update adapted domain mapping
         Kadath::bco_utils::interp_adapted_mapping(new_outer_adapted,
@@ -113,9 +124,15 @@ struct NS_ISO_to_XCTS_convert {
                     auto z = zz(pos);
                     auto all_data = input_reader.export_pointwise(x, y, z);
                     auto const rho = all_data[input_reader_t::OUTPUT_VARS::RHO];
-                    auto const h = EOS<eos_t, DENSITY>::h_cold__rho(rho);
-                    logh.set_domain(dom).set(pos) =
-                        (std::log(h) < 0) ? 0. : std::log(h);
+                    auto logh_val = 0.;
+                    if (std::isfinite(rho) && rho > 0.) {
+                        auto const h = EOS<eos_t, DENSITY>::h_cold__rho(rho);
+                        auto const logh_try = std::log(h);
+                        if (std::isfinite(logh_try) && logh_try > 0.) {
+                            logh_val = logh_try;
+                        }
+                    }
+                    logh.set_domain(dom).set(pos) = logh_val;
                     lapse.set_domain(dom).set(pos) =
                         all_data[input_reader_t::OUTPUT_VARS::ALPHA];
 
@@ -152,6 +169,7 @@ struct NS_ISO_to_XCTS_convert {
                 }
             } while (pos.inc());
         };
+
         for (int i = 0; i < ndom; ++i)
             convert_fields(i);
 
@@ -191,15 +209,24 @@ struct NS_ISO_to_XCTS_convert {
         stage_enabled.fill(false);
         stage_enabled[last_stage_idx] = true;
 
-        if (bconfig.set_field(BCO_FIELDS::DIFF_OMEGA))
-            bco_utils::save_to_file(space,
-                                    bconfig,
-                                    conf,
-                                    lapse,
-                                    shift,
-                                    logh,
-                                    omega);
-        else
-            bco_utils::save_to_file(space, bconfig, conf, lapse, shift, logh);
+        int rank = 0;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        if (rank == 0) {
+            if (bconfig.set_field(BCO_FIELDS::DIFF_OMEGA))
+                bco_utils::save_to_file(space,
+                                        bconfig,
+                                        conf,
+                                        lapse,
+                                        shift,
+                                        logh,
+                                        omega);
+            else
+                bco_utils::save_to_file(space,
+                                        bconfig,
+                                        conf,
+                                        lapse,
+                                        shift,
+                                        logh);
+        }
     }
 };
