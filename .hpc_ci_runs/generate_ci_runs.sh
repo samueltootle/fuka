@@ -252,7 +252,7 @@ generate_ns_diffrot_ci_runs() {
     $FUKA_SOLVER_DIR/NS_DIFFROT/bin/Release/solve
 
     update_root "ns" "chi" "0.1" "initial_ns.info"
-    update_root "ns" "madm" "2.3" "initial_ns.info"
+    update_root "ns" "madm" "1.6" "initial_ns.info"
     update_root "ns" "res" "13" "initial_ns.info"
 
     update_root "ns" "A_ratio" "1" "initial_ns.info"
@@ -263,6 +263,34 @@ generate_ns_diffrot_ci_runs() {
         "$FUKA_SOLVER_DIR/NS_DIFFROT" \
         "initial_ns.info" \
         "ns_diffrot_second_run" \
+        "200" \
+        "24:00:00" \
+        "$1"
+
+    cd ..
+
+    mkdir -p $HOME_KADATH/.hpc_ci_runs/CIs/NS_DIFFROT/ns_diffrot_third_run/
+    cd $HOME_KADATH/.hpc_ci_runs/CIs/NS_DIFFROT/ns_diffrot_third_run/
+
+    $FUKA_SOLVER_DIR/NS_DIFFROT/bin/Release/solve
+
+    update_root "ns" "chi" "0.6" "initial_ns.info"
+    update_root "ns" "madm" "2.3" "initial_ns.info"
+    update_root "ns" "res" "13" "initial_ns.info"
+    update_root "ns" "eosfile" "togashi.lorene" "initial_ns.info"
+    update_root "ns" "eostype" "Cold_Table" "initial_ns.info"
+
+    update_root "stages" "differential_rotation" "off" "initial_ns.info"
+    update_root "stages" "uniform_rotation" "on" "initial_ns.info"
+
+    update_root "sequence_controls" "use_iso_solver" "off" "initial_ns.info"
+
+
+    generate_submission \
+        `pwd` \
+        "$FUKA_SOLVER_DIR/NS_DIFFROT" \
+        "initial_ns.info" \
+        "ns_diffrot_third_run" \
         "200" \
         "24:00:00" \
         "$1"
