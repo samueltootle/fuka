@@ -239,6 +239,7 @@ const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS = {
 const std::map<std::string, META_PARAMS> MMETA_PARAMS = {
     {"git_hash", GIT_HASH},
     {"git_describe", GIT_DESCRIBE},
+    {"build_date", BUILD_DATE},
 };
 /** @}*/
 }  // namespace FUKA_Config

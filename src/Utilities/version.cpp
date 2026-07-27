@@ -12,6 +12,10 @@ std::string git_describe() {
     return GIT_DESCRIBE;
 }
 
+std::string build_date() {
+    return BUILD_DATE;
+}
+
 bool git_dirty() {
     return GIT_DIRTY;
 }

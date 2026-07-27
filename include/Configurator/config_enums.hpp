@@ -193,7 +193,7 @@ enum DIFFROT_PARAMS {
     NUM_DIFFROT_PARAMS
 };
 
-enum META_PARAMS { GIT_HASH = 0, GIT_DESCRIBE, NUM_META_PARAMS };
+enum META_PARAMS { GIT_HASH = 0, GIT_DESCRIBE, BUILD_DATE, NUM_META_PARAMS };
 
 /**@{
   * extern definitions of maps containing the maps of strings for each parameter
