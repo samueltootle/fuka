@@ -20,7 +20,7 @@ bool is_older_than(const std::string& v, const std::string& target) {
 }
 
 std::string fuka_version() {
-    return GIT_HASH;
+    return VERSION;
 }
 
 std::string git_hash() {
