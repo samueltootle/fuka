@@ -1,0 +1,19 @@
+#pragma once
+#include<string>
+
+namespace Kadath::FUKA_Solvers {
+
+constexpr const char* VERSION      = "@PROJECT_VERSION@";
+constexpr const char* GIT_HASH     = "@GIT_HASH@";
+constexpr const char* GIT_DESCRIBE = "@GIT_DESCRIBE@";
+constexpr const char* BUILD_DATE   = "@BUILD_DATE@";
+constexpr bool        GIT_DIRTY    = @GIT_DIRTY@;
+
+
+std::string git_hash();
+
+std::string git_describe();
+
+bool git_dirty();
+
+}
