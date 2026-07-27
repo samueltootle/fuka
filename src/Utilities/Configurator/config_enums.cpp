@@ -236,6 +236,10 @@ const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS = {
     {"A", DIFF_A},              // Parameter in various laws
     {"B", DIFF_B},              // Parameter in various laws
 };
+const std::map<std::string, META_PARAMS> MMETA_PARAMS = {
+    {"git_hash", GIT_HASH},
+    {"git_describe", GIT_DESCRIBE},
+};
 /** @}*/
 }  // namespace FUKA_Config
 }  // namespace Kadath

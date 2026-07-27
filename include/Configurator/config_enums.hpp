@@ -193,6 +193,8 @@ enum DIFFROT_PARAMS {
     NUM_DIFFROT_PARAMS
 };
 
+enum META_PARAMS { GIT_HASH = 0, GIT_DESCRIBE, NUM_META_PARAMS };
+
 /**@{
   * extern definitions of maps containing the maps of strings for each parameter
   * name to the associated enumerator index
@@ -219,6 +221,7 @@ extern const std::map<std::string, STAGES> MNSSTAGE;
 extern const std::map<std::string, CONTROLS> MMIN_CONTROLS;
 extern const std::map<std::string, STAGES> M2DNSSTAGE;
 extern const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS;
+extern const std::map<std::string, META_PARAMS> MMETA_PARAMS;
 /**@} end extern group definition*/
 /**@} end config_enums group*/
 
