@@ -33,6 +33,7 @@ kadath_config_boost<ParamC>::kadath_config_boost() : configurator_base() {
     controls.fill(false);
     seq_settings.fill(std::nan("1"));
     set_seq_defaults();
+    update_metadata();
 }
 
 template <typename ParamC>
@@ -76,6 +77,10 @@ int kadath_config_boost<ParamC>::open_config() {
         read_keys(MSEQ_SETTINGS,
                   seq_settings,
                   read_branch(tree, "sequence_settings"));
+    if (tree.find("metadata") != tree.not_found())
+        read_keys(MMETA_PARAMS, metadata, read_branch(tree, "metadata"));
+    else
+        set_metadata_defaults();
     return status;
 }
 
@@ -124,6 +129,9 @@ void kadath_config_boost<ParamC>::write_config(std::string ofile) {
     s = "sequence_settings";
     new_tree.push_back(
         std::make_pair(s, build_branch<Tree>(MSEQ_SETTINGS, seq_settings)));
+    s = "metadata";
+    new_tree.push_back(
+        std::make_pair(s, build_branch<Tree>(MMETA_PARAMS, metadata)));
 
     if (ofile != "null") {
         //this will update outputdir if ofile includes a path
@@ -167,6 +175,9 @@ void kadath_config_boost<ParamC>::write_minimal_config(std::string ofile) {
     auto control_map = append_map(MCONTROLS, MMIN_CONTROLS, controls);
     new_tree.push_back(
         std::make_pair(s, build_branch<Tree>(control_map, controls, true)));
+    s = "metadata";
+    new_tree.push_back(
+        std::make_pair(s, build_branch<Tree>(MMETA_PARAMS, metadata)));
 
     if (ofile != "null") {
         //this will update outputdir if ofile includes a path
@@ -189,6 +200,12 @@ template <typename T>
 std::ostream& operator<<(std::ostream& out,
                          const kadath_config_boost<T>& config) {
     out << config.container;
+    std::string s = "FUKA Metadata";
+    int n = ((42 - s.size()) > 0) ? 42 - s.size() : s.size() - 42;
+    n /= 2;
+    std::string title = std::string(n, '*') + s + std::string(n, '*');
+    out << title << std::endl;
+    print_params(MMETA_PARAMS, config.get_metadata(), out);
     return out;
 }
 
@@ -197,7 +214,7 @@ std::ostream& operator<<(std::ostream& out,
  *
  * returns the space filename based on the config filename.  This reduced
  * a lot of repeat code.
- * 
+ *
  * @return string with <outputdir/filename.dat>
  */
 template <typename ParamC>
