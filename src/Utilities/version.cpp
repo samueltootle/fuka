@@ -7,7 +7,13 @@ namespace Kadath::FUKA {
 std::tuple<int, int, int> parse_version(const std::string& v) {
     int major = 0, minor = 0, patch = 0;
     char dot;
-    std::istringstream iss(v);
+
+    std::string s = v;
+    if (!s.empty() && (s[0] == 'v' || s[0] == 'V')) {
+        s.erase(0, 1);
+    }
+
+    std::istringstream iss(s);
     iss >> major >> dot >> minor;
     if (iss >> dot >> patch) {
         // patch present
