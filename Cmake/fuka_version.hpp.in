@@ -1,5 +1,7 @@
 #pragma once
-#include<string>
+#include <string>
+#include <sstream>
+#include <tuple>
 
 namespace Kadath::FUKA {
 
@@ -9,6 +11,7 @@ constexpr const char* GIT_DESCRIBE = "@GIT_DESCRIBE@";
 constexpr const char* BUILD_DATE   = "@BUILD_DATE@";
 constexpr bool        GIT_DIRTY    = @GIT_DIRTY@;
 
+std::string fuka_version();
 
 std::string git_hash();
 
@@ -18,4 +21,7 @@ std::string build_date();
 
 bool git_dirty();
 
+std::tuple<int, int, int> parse_version(const std::string& v);
+
+bool is_older_than(const std::string& v, const std::string& target);
 }
