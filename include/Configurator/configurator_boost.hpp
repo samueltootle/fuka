@@ -175,6 +175,11 @@ struct kadath_config_boost : public configurator_base {
         metadata[META_PARAMS::GIT_HASH] = "XXXXXXX";
         metadata[META_PARAMS::GIT_DESCRIBE] = "vX.X.X-XX-gXXXXXXX-dirty";
         metadata[META_PARAMS::BUILD_DATE] = Kadath::FUKA::build_date();
+
+        // Attempt to make things consistent with previous
+        // "Fix" to distinguish between v2.3 and <v2.3
+        // due to changes in the BNS solver.
+        // This hack should be deprecated with CONTROLS::NEW_ID
         if (this->controls[CONTROLS::NEW_ID]) {
             metadata[META_PARAMS::GIT_DESCRIBE] = "v2.3.X-XX-gXXXXXXX-dirty";
         }
