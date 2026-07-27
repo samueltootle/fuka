@@ -2,7 +2,7 @@
 
 #include "FUKA_Solvers/utilities/fuka_version.hpp"
 
-namespace Kadath::FUKA_Solvers {
+namespace Kadath::FUKA {
 
 std::string git_hash() {
     return GIT_HASH;
@@ -16,4 +16,4 @@ bool git_dirty() {
     return GIT_DIRTY;
 }
 
-}  // namespace Kadath::FUKA_Solvers
+}  // namespace Kadath::FUKA

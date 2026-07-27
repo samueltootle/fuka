@@ -1,7 +1,7 @@
 #pragma once
 #include<string>
 
-namespace Kadath::FUKA_Solvers {
+namespace Kadath::FUKA {
 
 constexpr const char* VERSION      = "@PROJECT_VERSION@";
 constexpr const char* GIT_HASH     = "@GIT_HASH@";
