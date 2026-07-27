@@ -72,15 +72,25 @@ int kadath_config_boost<ParamC>::open_config() {
     if (tree.find("stages") != tree.not_found())
         read_keys(MSTAGE, stages, read_branch(tree, "stages"));
     if (tree.find("sequence_controls") != tree.not_found())
-        read_keys(MCONTROLS, controls, read_branch(tree, "sequence_controls"));
+        read_keys(MCONTROLS_READ,
+                  controls,
+                  read_branch(tree, "sequence_controls"));
     if (tree.find("sequence_settings") != tree.not_found())
         read_keys(MSEQ_SETTINGS,
                   seq_settings,
                   read_branch(tree, "sequence_settings"));
-    if (tree.find("metadata") != tree.not_found())
+    if (tree.find("metadata") != tree.not_found()) {
         read_keys(MMETA_PARAMS, metadata, read_branch(tree, "metadata"));
-    else
+
+        controls[CONTROLS::NEW_ID] =
+            (Kadath::FUKA::is_older_than(
+                std::get<std::string>(metadata[META_PARAMS::FUKA_VERSION]),
+                "2.2"))
+                ? true
+                : false;
+    } else {
         set_metadata_defaults();
+    }
     return status;
 }
 

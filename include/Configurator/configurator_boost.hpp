@@ -162,6 +162,7 @@ struct kadath_config_boost : public configurator_base {
      *
      */
     void update_metadata() {
+        metadata[META_PARAMS::FUKA_VERSION] = Kadath::FUKA::fuka_version();
         metadata[META_PARAMS::GIT_HASH] = Kadath::FUKA::git_hash();
         metadata[META_PARAMS::GIT_DESCRIBE] = Kadath::FUKA::git_describe();
         metadata[META_PARAMS::BUILD_DATE] = Kadath::FUKA::build_date();
@@ -172,8 +173,10 @@ struct kadath_config_boost : public configurator_base {
      *
      */
     void set_metadata_defaults() {
+
+        metadata[META_PARAMS::FUKA_VERSION] = "2.X.X";
         metadata[META_PARAMS::GIT_HASH] = "XXXXXXX";
-        metadata[META_PARAMS::GIT_DESCRIBE] = "vX.X.X-XX-gXXXXXXX-dirty";
+        metadata[META_PARAMS::GIT_DESCRIBE] = "v2.X.X-XX-gXXXXXXX-dirty";
         metadata[META_PARAMS::BUILD_DATE] = Kadath::FUKA::build_date();
 
         // Attempt to make things consistent with previous
@@ -181,6 +184,7 @@ struct kadath_config_boost : public configurator_base {
         // due to changes in the BNS solver.
         // This hack should be deprecated with CONTROLS::NEW_ID
         if (this->controls[CONTROLS::NEW_ID]) {
+            metadata[META_PARAMS::FUKA_VERSION] = "2.3.X";
             metadata[META_PARAMS::GIT_DESCRIBE] = "v2.3.X-XX-gXXXXXXX-dirty";
         }
     }
