@@ -87,7 +87,8 @@ int kadath_config_boost<ParamC>::open_config() {
             controls[CONTROLS::NEW_ID] =
                 Kadath::FUKA::is_older_than(*ver, "v2.2");
         } else {
-            throw std::invalid_argument("\nFUKA_VERSION is not a string\n)");
+            throw std::invalid_argument(
+                "\nFUKA_VERSION is not in the format of vX.X.X\n)");
         }
     } else {
         set_metadata_defaults();
