@@ -82,12 +82,13 @@ int kadath_config_boost<ParamC>::open_config() {
     if (tree.find("metadata") != tree.not_found()) {
         read_keys(MMETA_PARAMS, metadata, read_branch(tree, "metadata"));
 
-        controls[CONTROLS::NEW_ID] =
-            (Kadath::FUKA::is_older_than(
-                std::get<std::string>(metadata[META_PARAMS::FUKA_VERSION]),
-                "2.2"))
-                ? true
-                : false;
+        if (auto* ver = std::get_if<std::string>(
+                &metadata[META_PARAMS::FUKA_VERSION])) {
+            controls[CONTROLS::NEW_ID] =
+                Kadath::FUKA::is_older_than(*ver, "v2.2");
+        } else {
+            throw std::invalid_argument("\nFUKA_VERSION is not a string\n)");
+        }
     } else {
         set_metadata_defaults();
     }
