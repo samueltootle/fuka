@@ -193,7 +193,13 @@ enum DIFFROT_PARAMS {
     NUM_DIFFROT_PARAMS
 };
 
-enum META_PARAMS { GIT_HASH = 0, GIT_DESCRIBE, BUILD_DATE, NUM_META_PARAMS };
+enum META_PARAMS {
+    FUKA_VERSION = 0,
+    GIT_HASH,
+    GIT_DESCRIBE,
+    BUILD_DATE,
+    NUM_META_PARAMS
+};
 
 /**@{
   * extern definitions of maps containing the maps of strings for each parameter
@@ -210,6 +216,7 @@ extern const std::map<std::string, BCO_FIELDS> MBCO_SFIELDS_0;
 extern const std::map<std::string, BCO_FIELDS> MBCO_SFIELDS_1;
 extern const std::map<std::string, STAGES> MSTAGE;
 extern const std::map<std::string, CONTROLS> MCONTROLS;
+extern const std::map<std::string, CONTROLS> MCONTROLS_READ;
 extern const std::map<std::string, SEQ_SETTINGS> MSEQ_SETTINGS;
 extern const std::map<std::string, STAGES> MBINHEADONSTAGE;
 extern const std::map<std::string, STAGES> MBNSSTAGE;

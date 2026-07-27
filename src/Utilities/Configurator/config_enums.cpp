@@ -190,6 +190,18 @@ const std::map<std::string, STAGES> MBINHEADONSTAGE = {
     {"headon", HEADON},
 };
 
+const std::map<std::string, CONTROLS> MCONTROLS_READ = {
+    {"use_pn", USE_PN},           ///< Replaces ADOT and ECC_OMEGA with PN
+    {"sequences", SEQUENCES},     ///< Enable sequence generation - placeholder
+    {"checkpoint", CHECKPOINT},   ///< Save intermediate results during solve
+    {"corot_binary", COROT_BIN},  ///< Toggle binary is purely corotating
+    {"fixed_lapse", USE_FIXED_LAPSE},  ///< Use fixed lapse BC on black holes
+    {"resolve", RESOLVE},  ///<Force resolve of ID even if a checkpoint exists
+    {"centralized_cos", SAVE_COS},  ///< Save CO solutions to a central location
+    {"new_initial_data", NEW_ID},  ///< Import using a new ID format - DEPRECATE
+    {"use_iso_solver", USE_ISO_SOLVER},  ///< Use the ISO solver for NSs
+};
+
 const std::map<std::string, CONTROLS> MCONTROLS = {
     {"use_pn", USE_PN},           ///< Replaces ADOT and ECC_OMEGA with PN
     {"sequences", SEQUENCES},     ///< Enable sequence generation - placeholder
@@ -198,7 +210,6 @@ const std::map<std::string, CONTROLS> MCONTROLS = {
     {"fixed_lapse", USE_FIXED_LAPSE},  ///< Use fixed lapse BC on black holes
     {"resolve", RESOLVE},  ///<Force resolve of ID even if a checkpoint exists
     {"centralized_cos", SAVE_COS},  ///< Save CO solutions to a central location
-    {"new_initial_data", NEW_ID},   ///< Import using a new ID format
     {"use_iso_solver", USE_ISO_SOLVER},  ///< Use the ISO solver for NSs
 };
 
@@ -220,7 +231,6 @@ const std::map<std::string, CONTROLS> MMIN_CONTROLS = {
     {"fixed_lapse", USE_FIXED_LAPSE},  ///< Use fixed lapse BC on black holes
     {"centralized_cos", SAVE_COS},  ///< Save CO solutions to a central location
     {"use_iso_solver", USE_ISO_SOLVER},  ///< Use the ISO solver for NSs
-    {"new_initial_data", NEW_ID},        ///< Import using an old ID format
 };
 
 const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS = {
@@ -237,6 +247,7 @@ const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS = {
     {"B", DIFF_B},              // Parameter in various laws
 };
 const std::map<std::string, META_PARAMS> MMETA_PARAMS = {
+    {"fuka_version", FUKA_VERSION},
     {"git_hash", GIT_HASH},
     {"git_describe", GIT_DESCRIBE},
     {"build_date", BUILD_DATE},
