@@ -1,4 +1,4 @@
-import urllib, urllib.request, urllib.parse, json
+import urllib, urllib.request, json
 
 citation_stats = {'max': 0, 'mean': 0, 'total': 0, 'N': 0}
 
@@ -15,6 +15,7 @@ def get_record(recid: str):
 def generate_publication_lists(publication_id_list: list) -> list:
     global citation_stats
     pub_str_list = []
+    thesis_id_list= []
     for pub_id in publication_id_list:
         record = get_record(str(pub_id))
 
@@ -27,7 +28,10 @@ def generate_publication_lists(publication_id_list: list) -> list:
         title = metadata['titles'][0]['title']
 
         refurl = None
-        if 'dois' in metadata:
+        if metadata['document_type'][0] == 'thesis':
+            thesis_id_list.append(pub_id)
+            continue
+        elif 'dois' in metadata:
             DOI = metadata['dois'][0]['value']
             refurl = rf"[DOI:{DOI}](https://doi.org/{DOI})"
         elif 'arxiv_eprints' in metadata:
@@ -44,13 +48,61 @@ def generate_publication_lists(publication_id_list: list) -> list:
         citation_stats['max'] = max(citation_stats['max'], citations)
         citation_stats['total'] += citations
         citation_stats['N'] += 1
-    return pub_str_list
+    return pub_str_list, thesis_id_list
+
+# generate a list of thesis strings
+def generate_thesis_list(publication_id_list: list) -> list:
+    thesis_str_list = []
+    for pub_id in publication_id_list:
+        record = get_record(str(pub_id))
+
+        metadata = record['metadata']
+        author_data = metadata['authors'][0]
+
+        author_Str = author_data['full_name']
+
+        affilitation = 'Unknown Affiliation'
+        if 'affiliations' in author_data:
+            affilitation = author_data['affiliations'][0].get('value', 'Unknown Affiliation')
+        elif 'raw_affiliations' in author_data:
+            affilitation = author_data['raw_affiliations'][0].get('value', 'Unknown Affiliation')
+
+
+        title = metadata['titles'][0]['title']
+
+        refurl = f"[InspireHep Link](https://inspirehep.net/literature/{pub_id})"
+
+        output_str = f"-# ***{title}***; {author_Str}; *{affilitation}*; {refurl}   \n"
+        thesis_str_list.append(output_str)
+
+    return thesis_str_list
 
 """
 This list is defined manually so as to ensure only publications where FUKA was used to enable scientific discovery.
 Therefore, it must be updated periodically.
 """
 publication_id_list = [
+    3182792,
+    3181098,
+    3179986,
+    3178892,
+    3178413,
+    3167914,
+    3167532,
+    3165053,
+    3163010,
+    3151473,
+    3136094,
+    3136359,
+    3127729,
+    3130476,
+    3112069,
+    3110479,
+    3142790,
+    3098884,
+    3097845,
+    3093918,
+    3086228,
     3062871,
     2974355,
     2960930,
@@ -63,6 +115,7 @@ publication_id_list = [
     2928739,
     2912216,
     2911149,
+    2900920,
     2893312,
     2874509,
     2871942,
@@ -101,6 +154,7 @@ publication_id_list = [
     2668036,
     2653780,
     2642224,
+    2641410,
     2635821,
     2593596,
     2080528,
@@ -110,14 +164,20 @@ publication_id_list = [
     1835650,
 ]
 
-pub_str_list = generate_publication_lists(publication_id_list)
+pub_str_list, thesis_id_list = generate_publication_lists(publication_id_list)
+thesis_str_list = generate_thesis_list(thesis_id_list)
 citation_stats['mean'] = citation_stats['total'] / citation_stats['N']
 
 output_file = "FUKA_ENABLED_PUBLICATIONS.md"
 
 with open(output_file, 'w') as f:
-    f.write('\page fukascience Research Enabled by FUKA\n\n')
-    f.write('## Known scientific works enabled by the FUKA suite of initial data solvers\n\n')
+    f.write(f'{r"\page"} fukascience Research Enabled by FUKA\n\n')
+
+    f.write('## Known academic theses enabled by the FUKA\n\n')
+    for thesis_str in thesis_str_list:
+        f.write(thesis_str)
+
+    f.write('\n\n## Known scientific articles enabled by the FUKA\n\n')
     for pub_str in pub_str_list:
         f.write(pub_str)
 

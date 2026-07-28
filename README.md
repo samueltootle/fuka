@@ -7,7 +7,7 @@ Included are the Frankfurt initial data solvers and utilities based on the Kadat
   spectral solver library.  The original solvers written by the aforementioned authors
   (hereafter denoted as FUKAv1) are deprecated, but can be obtained by checking out
   the previous version of FUKA `git checkout fukav2.1` which are then located in
-  are located in `./codes/FUKAv1/[BH, NS, BHNS, BNS, BBH]` respectively.
+  `./codes/FUKAv1/[BH, NS, BHNS, BNS, BBH]` respectively.
 
   The FUKA solvers from now are can be found in ./codes/FUKA/[BH, NS, BHNS, BNS, BBH] respectively.
 	The latest FUKA solvers includes support for polytropic equations of state as well as tabulated EOS
@@ -17,7 +17,26 @@ Included are the Frankfurt initial data solvers and utilities based on the Kadat
   The `GRHayL` can be found [here](https://github.com/GRHayL/GRHayL) and needs to be installed separately before
   compiling the Kadath library and, after, the FUKA codes.
 
-## FUKAv2.3 Release Notes:
+## FUKAv2.4 Notes:
+1. The solution INFO file for new solutions now contains a `metadata`
+   section which includes
+    * build date
+    * FUKA version
+    * GIT information
+2. `metadata` will take the place of the temporary fix, `new_initial_data` control.
+    * `fuka_version` is now used to distinguish initial data generations.
+      The other parameters are just for information and debugging.
+    * `new_initial_data` can still be used to distinguish solutions from \< v2.3.  This currently only effects BNS solutions before and after v2.3, as noted below in FUKAv2.3 notes.
+    * Alternatively, one can manually add metadata to their previous solutions, at a minimum:
+
+```
+metadata
+{
+    fuka_version v2.2.0
+}
+```
+
+## FUKAv2.3 Notes:
 ### Refactored features
 1. Many components of the Kadath library have been refactored to support copy constructor operations
     * Note: This only works with memory pools turned off, e.g. `-DDEFAULT_KAD_MEM` and should only be used

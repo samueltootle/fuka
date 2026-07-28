@@ -86,6 +86,7 @@ void save_to_file(std::stringstream& base_fname,
                   config_t& bconfig,
                   fields_t&... fields) {
     bconfig.set_filename(base_fname.str());
+    bconfig.update_metadata();
     bconfig.write_config();
     std::string kadath_filename = bconfig.space_filename();
     FILE* ff = fopen(kadath_filename.c_str(), "w");
@@ -112,6 +113,7 @@ void save_to_file(std::stringstream& base_fname,
  */
 template <typename space_t, typename config_t, typename... fields_t>
 void save_to_file(space_t& space, config_t& bconfig, fields_t&... fields) {
+    bconfig.update_metadata();
     bconfig.write_config();
 
     std::string kadath_filename = bconfig.space_filename();

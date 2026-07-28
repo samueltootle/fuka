@@ -17,6 +17,8 @@
 */
 
 #pragma once
+#include <variant>
+#include "FUKA_Solvers/utilities/fuka_version.hpp"
 #include "config_enums.hpp"
 #include "config_utils_boost.hpp"
 #include "configurator_base.hpp"
@@ -55,6 +57,7 @@ struct kadath_config_boost : public configurator_base {
     SArray stages{};
     CArray controls{};
     std::array<double, NUM_SEQ_SETTINGS> seq_settings{};
+    std::array<std::string, NUM_META_PARAMS> metadata{};
     ParamC container;  ///< Parameter container
 
    public:
@@ -130,6 +133,8 @@ struct kadath_config_boost : public configurator_base {
 
     auto const& seq_setting(const int idx) const { return seq_settings[idx]; }
 
+    auto const& get_metadata() const { return metadata; }
+
     /**
    * kadath_config_boost::initialize_binary
    * initialize binary parameter container based on node types
@@ -150,6 +155,38 @@ struct kadath_config_boost : public configurator_base {
    * for a given parameter container, use the conatainers minimal defaults.
    */
     void set_minimal_defaults() { container.set_minimal_defaults(*this); }
+
+    /**
+     * @brief Update metadata parameters with current build information
+     *
+     */
+    void update_metadata() {
+        metadata[META_PARAMS::FUKA_VERSION] = Kadath::FUKA::fuka_version();
+        metadata[META_PARAMS::GIT_HASH] = Kadath::FUKA::git_hash();
+        metadata[META_PARAMS::GIT_DESCRIBE] = Kadath::FUKA::git_describe();
+        metadata[META_PARAMS::BUILD_DATE] = Kadath::FUKA::build_date();
+    }
+
+    /**
+     * @brief Set garbage defaults
+     *
+     */
+    void set_metadata_defaults() {
+
+        metadata[META_PARAMS::FUKA_VERSION] = "v2.X.X";
+        metadata[META_PARAMS::GIT_HASH] = "XXXXXXX";
+        metadata[META_PARAMS::GIT_DESCRIBE] = "v2.X.X-XX-gXXXXXXX-dirty";
+        metadata[META_PARAMS::BUILD_DATE] = Kadath::FUKA::build_date();
+
+        // Attempt to make things consistent with previous
+        // "Fix" to distinguish between v2.3 and <v2.3
+        // due to changes in the BNS solver.
+        // This hack should be deprecated with CONTROLS::NEW_ID
+        if (this->controls[CONTROLS::NEW_ID]) {
+            metadata[META_PARAMS::FUKA_VERSION] = "v2.3.X";
+            metadata[META_PARAMS::GIT_DESCRIBE] = "v2.3.X-XX-gXXXXXXX-dirty";
+        }
+    }
 
     /**
    * kadath_config_boost::get_map

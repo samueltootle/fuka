@@ -135,6 +135,22 @@ void read_keys(const map_t& storage_map,
     return;
 }
 
+template <typename ary_t, typename map_t, typename tree_t>
+void read_keys_as_string(const map_t& storage_map,
+                         ary_t& storage,
+                         const tree_t& tree) noexcept {
+    for (const auto& ele : storage_map) {
+        if (tree.find(ele.first.data()) != tree.not_found()) {
+            auto key = tree.get_child(ele.first.data()).data();
+            int idx = ele.second;
+
+            std::string val = key;
+            storage[idx] = key;
+        }
+    }
+    return;
+}
+
 template <typename map_t, typename ary_t>
 void print_params(const map_t& storage_map,
                   const ary_t& storage,
@@ -161,9 +177,10 @@ void print_params(const map_t& storage_map,
         };
         const auto& ele = storage.at(a.second);
         //Checks if the type stored in Array is fundamental - i.e. not a std::variant
-        if constexpr (!std::is_fundamental<var_t>::value)
+        if constexpr (!std::is_fundamental<var_t>::value &&
+                      !std::is_same_v<var_t, std::string>)
             std::visit(print, ele);
-        else if constexpr (std::is_fundamental<var_t>::value)
+        else
             print(ele);
     }
     return;
@@ -199,9 +216,10 @@ tree_t build_branch(const map_t& storage_map,
                 branch.put(a.first, arg);
         };
         //Checks if the type stored in Array is fundamental - i.e. not a std::variant
-        if constexpr (!std::is_fundamental<var_t>::value)
+        if constexpr (!std::is_fundamental<var_t>::value &&
+                      !std::is_same_v<var_t, std::string>)
             std::visit(add_key, storage[a.second]);
-        else if constexpr (std::is_fundamental<var_t>::value)
+        else
             add_key(storage[a.second]);
     }
     return branch;

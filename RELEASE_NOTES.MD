@@ -1,5 +1,10 @@
 # Frankfurt University/Kadath Initial Data (FUKA) - Release Notes
 
+## v2.4
+### New Features
+* Metadata related to FUKA version, commit, and build date is now part of
+  the INFO file for each solution.
+
 ## v2.3
 ### Removed Features
 * FUKAv1 Codes have been removed.

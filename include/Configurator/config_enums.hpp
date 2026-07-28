@@ -193,6 +193,14 @@ enum DIFFROT_PARAMS {
     NUM_DIFFROT_PARAMS
 };
 
+enum META_PARAMS {
+    FUKA_VERSION = 0,
+    GIT_HASH,
+    GIT_DESCRIBE,
+    BUILD_DATE,
+    NUM_META_PARAMS
+};
+
 /**@{
   * extern definitions of maps containing the maps of strings for each parameter
   * name to the associated enumerator index
@@ -208,6 +216,7 @@ extern const std::map<std::string, BCO_FIELDS> MBCO_SFIELDS_0;
 extern const std::map<std::string, BCO_FIELDS> MBCO_SFIELDS_1;
 extern const std::map<std::string, STAGES> MSTAGE;
 extern const std::map<std::string, CONTROLS> MCONTROLS;
+extern const std::map<std::string, CONTROLS> MCONTROLS_READ;
 extern const std::map<std::string, SEQ_SETTINGS> MSEQ_SETTINGS;
 extern const std::map<std::string, STAGES> MBINHEADONSTAGE;
 extern const std::map<std::string, STAGES> MBNSSTAGE;
@@ -219,6 +228,7 @@ extern const std::map<std::string, STAGES> MNSSTAGE;
 extern const std::map<std::string, CONTROLS> MMIN_CONTROLS;
 extern const std::map<std::string, STAGES> M2DNSSTAGE;
 extern const std::map<std::string, DIFFROT_PARAMS> MDIFFROT_PARAMS;
+extern const std::map<std::string, META_PARAMS> MMETA_PARAMS;
 /**@} end extern group definition*/
 /**@} end config_enums group*/
 
