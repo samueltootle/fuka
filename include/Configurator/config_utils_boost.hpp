@@ -50,7 +50,7 @@ namespace FUKA_Config_Utils {
   *
   * Checks to determine if a variable is NaN.  Execution fails if variable is NaN
 	* or not found in the map at all.
-  * 
+  *
   * @tparam map_t map type
 	* @tparam T var type
 	* @param[input] map: std::map containing enum/string maps - used only for error deduction
@@ -65,7 +65,7 @@ bool check_for_nan(const map_t& map, const T& var, const int idx);
   * read_branch
   *
   * Given an input tree, return a branch based on a give node name
-  * 
+  *
   * @tparam tree_t tree type
   * @param[input] tree: tree to read branch from
   * @param[input] node: node string branch should come from
@@ -79,14 +79,14 @@ tree_t read_branch(const tree_t& tree, std::string node);
   *
 	* store node names into storage array based on expected node names map.
 	* rsuffix = remove suffix - necessary to remove 1 or 2 from bh1, etc since we map only the pure names (bh, ns, etc)
-  * 
+  *
   * @tparam ary_t array type
   * @tparam map_t map type
   * @tparam tree_t tree type
   * @param[input]  storage_map: map of keys that we know how to store
   * @param[output] storage array: to store read-in keys into
   * @param[input]  tree: tree to read branch from
-  * @param[input]  rsuffix: whether we need to remove suffix (e.g. NS1 -> NS) 
+  * @param[input]  rsuffix: whether we need to remove suffix (e.g. NS1 -> NS)
   */
 template <typename ary_t, typename map_t, typename tree_t>
 void get_branch_nodes(const map_t& storage_map,
@@ -100,7 +100,7 @@ void get_branch_nodes(const map_t& storage_map,
   * from a tree/branch, read all keys and store those found in storage_map into storage
 	* -Unknown parameters are ignored.
   * -Boolean parameters not found are set to false
-  * 
+  *
   * @tparam ary_t array type
   * @tparam map_t map type
   * @tparam tree_t tree type
@@ -112,6 +112,26 @@ template <typename ary_t, typename map_t, typename tree_t>
 void read_keys(const map_t& storage_map,
                ary_t& storage,
                const tree_t& tree) noexcept;
+
+/**
+  * read_keys
+  *
+  * from a tree/branch, read all keys and store those found in storage_map into storage
+	* -Unknown parameters are ignored.
+  * -Boolean parameters not found are set to false
+  * -All values are read and stored as strings
+  *
+  * @tparam ary_t array type
+  * @tparam map_t map type
+  * @tparam tree_t tree type
+  * @param[input]  storage_map: map of keys that we know how to store
+  * @param[output] storage array: to store read-in keys into
+  * @param[input]  tree: tree to read branch from
+  */
+template <typename ary_t, typename map_t, typename tree_t>
+void read_keys_as_string(const map_t& storage_map,
+                         ary_t& storage,
+                         const tree_t& tree) noexcept;
 
 /**
   * print_params
@@ -134,7 +154,7 @@ void print_params(const map_t& storage_map,
   * build_branch
   *
   * from a storage array, prepare a branch for being written to file
-  * 
+  *
   * @tparam ary_t array type
   * @tparam map_t map type
   * @tparam tree_t branch type
@@ -153,7 +173,7 @@ tree_t build_branch(const map_t& storage_map,
   *
   * from an array of bools, determine the last enabled, true, in the array
   * and determine the associated mapping.  Returns a tuple with the name and index
-  * 
+  *
   * @tparam ary_t array type
   * @tparam map_t map type
   * @param[input] storage_map: map of boolean parameters
@@ -168,7 +188,7 @@ std::tuple<std::string, int> get_last_enabled(map_t enum_map, ary_t toggle);
   *
   * Same as get_last_enabled_no_throw only an exception will throw if an
   * active stage is not found
-  * 
+  *
   * @tparam ary_t array type
   * @tparam map_t map type
   * @param[input] storage_map: map of boolean parameters
@@ -181,10 +201,10 @@ std::tuple<std::string, int> get_last_enabled(map_t enum_map, ary_t toggle);
 /**
  * append_map
  *
- * Here we check to see if there is an enabled value in the boolean storage array that corresponds\n 
- * to a key/value pair that doesn't already exist in the parial_map.  IFF one is found, we add it\n 
- * to a new map and return it.\n 
- * This is primarily useful for developers so they can have non-standard stages enabled in the\n 
+ * Here we check to see if there is an enabled value in the boolean storage array that corresponds\n
+ * to a key/value pair that doesn't already exist in the parial_map.  IFF one is found, we add it\n
+ * to a new map and return it.\n
+ * This is primarily useful for developers so they can have non-standard stages enabled in the\n
  * config file which aren't deleted after a run.
  *
  * @tparam map_t: type of the map <string, enum>
@@ -250,11 +270,11 @@ auto find_leaf(tree_t const& tree, std::string key) {
 /**
  * @brief Checks if all storage elements are std::nan.  Works
  * for fundamental and variant types
- * 
+ *
  * @tparam ary_t Template argument for storage array
  * @param storage storage array
  * @return true if all elements are std::nan
- * @return false 
+ * @return false
  */
 template <class ary_t>
 constexpr inline bool is_storage_all_nan(ary_t& storage);
@@ -262,7 +282,7 @@ constexpr inline bool is_storage_all_nan(ary_t& storage);
 /**
  * @brief Recursively add branch data and update the data
  * path
- * 
+ *
  * @tparam tree_t Boost tree type by default
  * @param tree Tree to add data to
  * @param branch Branch to read data from
