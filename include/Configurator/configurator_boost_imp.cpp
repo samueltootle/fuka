@@ -80,16 +80,12 @@ int kadath_config_boost<ParamC>::open_config() {
                   seq_settings,
                   read_branch(tree, "sequence_settings"));
     if (tree.find("metadata") != tree.not_found()) {
-        read_keys(MMETA_PARAMS, metadata, read_branch(tree, "metadata"));
-
-        if (auto* ver = std::get_if<std::string>(
-                &metadata[META_PARAMS::FUKA_VERSION])) {
-            controls[CONTROLS::NEW_ID] =
-                Kadath::FUKA::is_older_than(*ver, "v2.2");
-        } else {
-            throw std::invalid_argument(
-                "\nFUKA_VERSION is not in the format of vX.X.X\n)");
-        }
+        read_keys_as_string(MMETA_PARAMS,
+                            metadata,
+                            read_branch(tree, "metadata"));
+        controls[CONTROLS::NEW_ID] =
+            Kadath::FUKA::is_older_than(metadata[META_PARAMS::FUKA_VERSION],
+                                        "v2.2");
     } else {
         set_metadata_defaults();
     }
