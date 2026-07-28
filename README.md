@@ -11,7 +11,7 @@ Included are the Frankfurt initial data solvers and utilities based on the Kadat
 
   The FUKA solvers from now are can be found in ./codes/FUKA/[BH, NS, BHNS, BNS, BBH] respectively.
 	The latest FUKA solvers includes support for polytropic equations of state as well as tabulated EOS
-  in the standard LORENE format.  Examples and additional details can be found in the [eos](https://bitbucket.org/fukaws/fuka/src/fuka/eos/) directory.
+  in the standard LORENE format.  Examples and additional details can be found in the [eos](https://github.com/samueltootle/fuka/tree/fuka/eos/) directory.
 
   As of FUKAv2.3, FUKA now supports *stellar collapse* format equations of state using the `GRHayLEOS` library.
   The `GRHayL` can be found [here](https://github.com/GRHayL/GRHayL) and needs to be installed separately before
@@ -103,10 +103,10 @@ and additions that differ from base Kadath.
 1.  This branch includes memory optimizations that inspired portions of the optimization (now main) branch
 2.  Modification/addition of numerical spaces for the BH, BBH, BNS, and BHNS
 3.  Addition of an equation of state infrastructure utilizing Margherita standalone to handle
-tabulated and polytropic EOS - see [include/EOS](https://bitbucket.org/fukaws/fuka/src/fuka/include/EOS)
+tabulated and polytropic EOS - see [include/EOS](https://github.com/samueltootle/fuka/tree/fuka/include/EOS)
 4.  Addition of the Configurator framework to enable extensibility of solvers by managing controls,
-stages, and key variables - see [include/Configurator](https://bitbucket.org/fukaws/fuka/src/fuka/include/Configurator)
-5.  Addition of exporters for all the previously mentioned ID types - see [src/Utilities/Exporters](https://bitbucket.org/fukaws/fuka/src/fuka/src/Utilities/Exporters)
+stages, and key variables - see [include/Configurator](https://github.com/samueltootle/fuka/tree/fuka/include/Configurator)
+5.  Addition of exporters for all the previously mentioned ID types - see [src/Utilities/Exporters](https://github.com/samueltootle/fuka/tree/fuka/src/Utilities/Exporters)
 
 **Note: as of summer 2021, the FUKA solvers are based on the deprecated branch of Kadath.  Given the optimizations and changes made
 within the FUKA branch conflict with those implimented in the `master` branch (previously the `optimized` branch), a considerable
@@ -160,16 +160,16 @@ Example using GNU+mpi compilers:
     `cmake -DCMAKE_BUILD_TYPE=Release -DPAR_VERSION=On -DMPI_CXX_COMPILER=mpic++ -DMPI_C_COMPILER=mpicc -DGRHAYL_EOS=OFF ..`
 
 In most HPC systems, `cmake` will likely not find the dependency libraries that the user may intend.  Therefore,
-one must specify them manually through the [CMakeLocal.cmake](https://bitbucket.org/fukaws/fuka/src/fuka/Cmake/CMakeLocal.cmake) file
+one must specify them manually through the [CMakeLocal.cmake](https://github.com/samueltootle/fuka/tree/fuka/Cmake/CMakeLocal.cmake) file
 (the `fftw` and `scalapack` libraries must usually be provided in this way).
-Some working [CMakeLocal.cmake](https://bitbucket.org/fukaws/fuka/src/fuka/Cmake/CMakeLocal.cmake) files
+Some working [CMakeLocal.cmake](https://github.com/samueltootle/fuka/tree/fuka/Cmake/CMakeLocal.cmake) files
 are provided for HPC systems in Germany as well as examples for personal computers.
 
 Once cmake has been successfully invoked, use make -j $KAD_NUMC to start the compilation.
 
 ## Compiling the library with the compile script
 
-A script called [compile](https://bitbucket.org/fukaws/fuka/src/fuka/build_release/compile) is also provided that can be used to facilitate the installation process. So long as the above environment variables are set and the libraries are found, no additional input is necessary.
+A script called [compile](https://github.com/samueltootle/fuka/tree/fuka/build_release/compile) is also provided that can be used to facilitate the installation process. So long as the above environment variables are set and the libraries are found, no additional input is necessary.
 Run the compile script within the `build_release` directory using
 
 `. compile`
@@ -177,7 +177,7 @@ Run the compile script within the `build_release` directory using
 in order to build the library.
 
 ## Compiling FUKA solvers
-The above mentioned [compile script](https://bitbucket.org/fukaws/fuka/src/fuka/build_release/compile) has been added as a symbolic link to the FUKAv1 and FUKAv2 solver directories for convenience to compile the individual solvers.
+The above mentioned [compile script](https://github.com/samueltootle/fuka/tree/fuka/build_release/compile) has been added as a symbolic link to the FUKAv1 and FUKAv2 solver directories for convenience to compile the individual solvers.
 
 # 5. Dependencies
 
@@ -191,5 +191,5 @@ The above mentioned [compile script](https://bitbucket.org/fukaws/fuka/src/fuka/
 6. scaLAPACK
 7. MPI
 8. Boost
-9. Boost::python (to compile [PythonTools](https://bitbucket.org/fukaws/fuka/src/fuka/codes/PythonTools/))
+9. Boost::python (to compile [PythonTools](https://github.com/samueltootle/fuka/tree/fuka/codes/PythonTools/))
 10. (optional) [GRHayL](https://github.com/GRHayL/GRHayL)

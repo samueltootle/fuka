@@ -82,7 +82,7 @@ see `$HOME_KADATH/include/EOS/EOS.hh`.
 
 To initialize an EOS manager, the following parameters need to be set
 within the
-[config](https://bitbucket.org/fukaws/fuka/src/fuka/include/Configurator/)
+[config](https://github.com/samueltootle/fuka/tree/fuka/include/Configurator/)
 file
 
 ```

@@ -36,7 +36,7 @@ concerned with the parameters necessary to generate initial data.
 
 ## v2.1
 This release includes a rewrite and reorganization of the Python readers for FUKA initial data among many bug fixes and quality of life changes.
-The old python readers have thus been removed from the solvers and are now centrally located in the [codes/PythonTools](https://bitbucket.org/fukaws/fuka/src/fuka/codes/PythonTools) directory.
+The old python readers have thus been removed from the solvers and are now centrally located in the [codes/PythonTools](https://github.com/samueltootle/fuka/tree/fuka/codes/PythonTools) directory.
 
 Along side of the FUKAv2.1 release is the official inclusion of the thorns to import FUKA initial data into the Einstein Toolkit - [ticket](https://bitbucket.org/einsteintoolkit/tickets/issues/2692/inclusion-of-fuka-importer-thorns). Please note the import thorns are not activated by default due to the need for Boost libraries.  For an example thorn to provide Boost libraries within the Einstein Toolkit, see [https://github.com/dradice/Boost](https://github.com/dradice/Boost).
 
@@ -46,14 +46,14 @@ binary initial data using the KADATH spectral software.  The v2 solvers aim to m
 isolated solutions to setup the initial guess for binary ID.  Additionally, v2 aims to automate the generation of ID by minimizing
 the workflow for the user.  Finally, v2 allows quite for considerable flexibility in setting up the config file to make ID generation
 as efficient as possible within the KADATH framework including reusing previously solved implicit isolated solutions.  For more details,
-please see the documentation in the [FUKAv2](https://bitbucket.org/fukaws/fuka/src/fuka/codes/FUKAv2_Solvers/).
+please see the documentation in the [FUKAv2](https://github.com/samueltootle/fuka/tree/fuka/codes/FUKAv2_Solvers/).
 
   - FUKAv1 Specific: There have been some core changes to various utilities used when constructing ID that have required some refactoring of the v1 solvers.  Spot testing has been done to ensure these codes function as originally intended - however - these codes, overall, remain unchanged.
 
 ## v1.0
 The first release of the FUKA codes were released in 2021 alongside the code paper which can be found here https://arxiv.org/abs/2103.09911
 
-The original codes can be found in [FUKAv1](https://bitbucket.org/fukaws/fuka/src/fuka/codes/FUKAv1_Solvers/) and exist primarily
+The original codes can be found in [FUKAv1](https://github.com/samueltootle/fuka/tree/fuka/codes/FUKAv1_Solvers/) and exist primarily
 for historical purposes and should not be used by new users.  However, those that wish to develop more complicated codes within
 KADATH may find them useful as their structure is less abstract.
 
