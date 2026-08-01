@@ -93,14 +93,16 @@ void CFMS_BH_Exporter::populate_quants() {
     quants[XCTS_VARS::XCTS_BETA2] = std::cref((*shift)(2));
     quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
-    export_utils::add_tensor_refs(quants,
-                                  {XCTS_VARS::XCTS_A11,
-                                   XCTS_VARS::XCTS_A12,
-                                   XCTS_VARS::XCTS_A13,
-                                   XCTS_VARS::XCTS_A22,
-                                   XCTS_VARS::XCTS_A23,
-                                   XCTS_VARS::XCTS_A33},
-                                  *A);
+    if (A) {
+        export_utils::add_tensor_refs(quants,
+                                      {XCTS_VARS::XCTS_A11,
+                                       XCTS_VARS::XCTS_A12,
+                                       XCTS_VARS::XCTS_A13,
+                                       XCTS_VARS::XCTS_A22,
+                                       XCTS_VARS::XCTS_A23,
+                                       XCTS_VARS::XCTS_A33},
+                                      *A);
+    }
     export_ready = true;
 }
 
