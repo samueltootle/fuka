@@ -106,12 +106,12 @@ struct CFMS_BH_Exporter
     using Exporter<config_t, space_t>::ndom;
 
     // CFMS_BH imported fields from file
-    ptr_data_member(Scalar, conformal_factor, unique);
-    ptr_data_member(Scalar, lapse, unique);
-    ptr_data_member(Vector, shift, unique);
+    ptr_data_member(Scalar, conformal_factor, shared);
+    ptr_data_member(Scalar, lapse, shared);
+    ptr_data_member(Vector, shift, shared);
 
     // Constructed objects
-    ptr_data_member(Tensor, A, unique);
+    ptr_data_member(Tensor, A, shared);
 
    protected:
     std::vector<std::reference_wrapper<const Scalar>> quants;
