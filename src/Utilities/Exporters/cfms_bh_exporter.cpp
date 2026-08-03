@@ -22,6 +22,7 @@ CFMS_BH_Exporter::CFMS_BH_Exporter(CFMS_BH_Exporter const& r) {
               quant_vals_origin.begin());
     export_ready = true;
     // For testing only
+    // bconfig->set_filename("test.info");
     // Kadath::bco_utils::save_to_file(*space, *bconfig, *conformal_factor, *lapse, *shift);
     // std::cout << "copy\n";
 }
@@ -93,17 +94,14 @@ void CFMS_BH_Exporter::populate_quants() {
     quants[XCTS_VARS::XCTS_BETA2] = std::cref((*shift)(2));
     quants[XCTS_VARS::XCTS_BETA3] = std::cref((*shift)(3));
 
-    if (A) {
-        export_utils::add_tensor_refs(quants,
-                                      {XCTS_VARS::XCTS_A11,
-                                       XCTS_VARS::XCTS_A12,
-                                       XCTS_VARS::XCTS_A13,
-                                       XCTS_VARS::XCTS_A22,
-                                       XCTS_VARS::XCTS_A23,
-                                       XCTS_VARS::XCTS_A33},
-                                      *A);
-    }
-    export_ready = true;
+    export_utils::add_tensor_refs(quants,
+                                  {XCTS_VARS::XCTS_A11,
+                                   XCTS_VARS::XCTS_A12,
+                                   XCTS_VARS::XCTS_A13,
+                                   XCTS_VARS::XCTS_A22,
+                                   XCTS_VARS::XCTS_A23,
+                                   XCTS_VARS::XCTS_A33},
+                                  *A);
 }
 
 CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise_subset(
@@ -117,12 +115,14 @@ CFMS_BH_Exporter::interp_ary_t CFMS_BH_Exporter::interpolate_pointwise_subset(
 
     quant_vals.fill(0);
 
-    // interpolation_factor determines which region we interpolate from.
-    // When we fill the nucleus, we fill starting at 0.85 * r_ah after prefilling is complete
-    // otherwise interpolation_factor is 1 (e.g. the excision radius)
-    double interpolation_factor = (export_ready) ? 0.85 : 1.;
-    double rbh = interpolation_factor *
-                 bco_utils::get_radius(space->get_domain(2), INNER_BC);
+    // interpolation_dom determines which region we interpolate from.
+    // When export_ready is true, (the outer adapted domain has been populated)
+    // we interpolate from the inner domain rather than the excision surface.
+    // This ensures continuity at the excision boundary as well as at the BH
+    // origin.  When export_ready is false, we interpolate from the excision surface
+    int const interpolation_dom = (export_ready) ? 1 : 2;
+    double rbh =
+        bco_utils::get_radius(space->get_domain(interpolation_dom), INNER_BC);
 
     double r2yz = y * y + z * z;
 

@@ -73,7 +73,13 @@ struct CFMS_BH_Exporter
     XCTS_ALPHA,
     XCTS_BETA1,
     XCTS_BETA2,
-    XCTS_BETA3
+    XCTS_BETA3,
+    XCTS_A11,
+    XCTS_A12,
+    XCTS_A13,
+    XCTS_A22,
+    XCTS_A23,
+    XCTS_A33,
   };
 
   std::vector<CFMS_BH_Exporter::XCTS_VARS> xcts_all_indicies{
@@ -153,12 +159,11 @@ struct CFMS_BH_Exporter
           lapse(nullptr),
           shift(nullptr) {
         load_solution_from_file();
-        populate_quants();
-        // Fill outer adapted domain with smooth junk
-        export_utils::partial_fill_excision(*this, 1, 2);
-
         extract_computed_grid_functions();
         populate_quants();
+
+        // Fill outer adapted domain with smooth junk
+        export_utils::partial_fill_excision(*this, 1, 2);
 
         // Store origin value for use by excision filling of nucleus dom
         this->export_pointwise(0., 0., 0.);
