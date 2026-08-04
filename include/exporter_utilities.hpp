@@ -554,7 +554,8 @@ void partial_fill_excision(bh_exporter_t& bh_exporter,
                            const int src_dom) {
     using namespace Kadath;
 
-    // We set this to false to ensure that bh_exporter.interpolate_pointwise will not fit to origin
+    // We set this to false to ensure that
+    // bh_exporter.interpolate_pointwise will not fit to origin
     bh_exporter.set__export_ready(false);
 
     auto dom = bh_exporter.get_space()->get_domain(dom_to_fill);
@@ -568,12 +569,18 @@ void partial_fill_excision(bh_exporter_t& bh_exporter,
     auto& lapse = bh_exporter.get_lapse();
     auto& conf = bh_exporter.get_conformal_factor();
     auto& shift = bh_exporter.get_shift();
+    auto& A = bh_exporter.get_A();
 
     do {
         if (pos(0) < npts(0) - 1) {
             double x = xx(pos);
             double y = yy(pos);
             double z = zz(pos);
+
+            // This function can, in principle, be used to interpolate
+            // a subset of the grid functions that normally exported. i.e.
+            // there is no reason to interpolate fluid quantities
+            // insidde the excision region.
             bh_exporter.interpolate_pointwise__solution_gfs(x, y, z);
             auto qv = bh_exporter.get__quant_vals();
             conf->set_domain(dom_to_fill).set(pos) =
@@ -587,6 +594,19 @@ void partial_fill_excision(bh_exporter_t& bh_exporter,
                 qv[bh_exporter_t::XCTS_VARS::XCTS_BETA2];
             shift->set(3).set_domain(dom_to_fill).set(pos) =
                 qv[bh_exporter_t::XCTS_VARS::XCTS_BETA3];
+
+            A->set(1, 1).set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_A11];
+            A->set(1, 2).set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_A12];
+            A->set(1, 3).set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_A13];
+            A->set(2, 2).set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_A22];
+            A->set(2, 3).set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_A23];
+            A->set(3, 3).set_domain(dom_to_fill).set(pos) =
+                qv[bh_exporter_t::XCTS_VARS::XCTS_A33];
         } else {
             Index bcpos(pos);
             bcpos.set(0) = 0;
@@ -598,12 +618,25 @@ void partial_fill_excision(bh_exporter_t& bh_exporter,
                 shift->set(i).set_domain(dom_to_fill).set(pos) =
                     shift->set(i).set_domain(src_dom)(bcpos);
             }
+            A->set(1, 1).set_domain(dom_to_fill).set(pos) =
+                A->set(1, 1).set_domain(src_dom).set(bcpos);
+            A->set(1, 2).set_domain(dom_to_fill).set(pos) =
+                A->set(1, 2).set_domain(src_dom).set(bcpos);
+            A->set(1, 3).set_domain(dom_to_fill).set(pos) =
+                A->set(1, 3).set_domain(src_dom).set(bcpos);
+            A->set(2, 2).set_domain(dom_to_fill).set(pos) =
+                A->set(2, 2).set_domain(src_dom).set(bcpos);
+            A->set(2, 3).set_domain(dom_to_fill).set(pos) =
+                A->set(2, 3).set_domain(src_dom).set(bcpos);
+            A->set(3, 3).set_domain(dom_to_fill).set(pos) =
+                A->set(3, 3).set_domain(src_dom).set(bcpos);
         }
     } while (pos.inc());
 
     conf->std_base();
     lapse->std_base();
     shift->std_base();
+    A->std_base();
 }
 
 std::string throw_no_multithreaded_support_error(std::string not_implemented);
